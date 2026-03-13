@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable;
+
+    protected $fillable = [
+        'name', 'email', 'password', 'role', 'agency_id',
+        'phone', 'avatar', 'city', 'bio', 'birth_date',
+    ];
+
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password'          => 'hashed',
+            'birth_date'        => 'date',
+        ];
+    }
+
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isAgency(): bool
+    {
+        return $this->role === 'agency';
+    }
+
+    public function favoriteTours()
+    {
+        return $this->belongsToMany(Tour::class, 'favorites')->withTimestamps();
+    }
+
+    public function hasFavorited(Tour $tour): bool
+    {
+        return $this->favoriteTours()->where('tour_id', $tour->id)->exists();
+    }
+}
+
