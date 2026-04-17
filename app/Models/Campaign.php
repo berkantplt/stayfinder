@@ -25,6 +25,7 @@ class Campaign extends Model
 
     public function getFormattedDiscountPriceAttribute(): string
     {
-        return number_format($this->discount_price, 0, ',', '.') . ' ₺';
+        $symbol = $this->tour?->currency_symbol ?? \App\Models\Tour::currencySymbol('TRY');
+        return number_format($this->discount_price, 0, ',', '.') . ' ' . $symbol;
     }
 }

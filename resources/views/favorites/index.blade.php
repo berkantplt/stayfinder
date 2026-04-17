@@ -39,6 +39,11 @@
                         </div>
                     </div>
                 </a>
+                
+                {{-- Compare Button for Favorites --}}
+                <div style="padding:0 16px 16px 16px;">
+                    <button type="button" class="btn btn-outline btn-sm compare-toggle" data-tour-id="{{ $tour->id }}" onclick="window.toggleCompare({{ $tour->id }})" style="width:100%;border-radius:8px;font-size:13px;padding:8px 10px;">+ Karşılaştır</button>
+                </div>
             </div>
             @endforeach
         </div>

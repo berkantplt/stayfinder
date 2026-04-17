@@ -18,7 +18,6 @@ class AdminController extends Controller
             'agencies'    => Agency::count(),
             'tours'       => Tour::count(),
             'activeTours' => Tour::active()->count(),
-            'users'       => User::count(),
             'clicks'      => \App\Models\TourClick::count(),
             'views'       => \App\Models\TourView::count(),
         ];

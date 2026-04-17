@@ -109,6 +109,8 @@
                 <select name="sort" form="filter-form" class="filter-select" style="padding:8px 16px;width:auto;background:transparent;">
                     <option value="price_asc" {{ request('sort') == 'price_asc' ? 'selected' : '' }}>Fiyat (Artan)</option>
                     <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>Fiyat (Azalan)</option>
+                    <option value="popular" {{ request('sort') == 'popular' ? 'selected' : '' }}>En Popüler</option>
+                    <option value="reviews" {{ request('sort') == 'reviews' ? 'selected' : '' }}>En Çok Yorumlanan</option>
                     <option value="date" {{ request('sort') == 'date' ? 'selected' : '' }}>Tarih (Yakın)</option>
                     <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>En Yeni Eklenenler</option>
                 </select>
@@ -147,7 +149,7 @@
                             </div>
                         @endif
                         
-                        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
+                        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                             <div>
                                 @php $campaign = $tour->activeCampaign; @endphp
                                 @if($campaign)
@@ -157,7 +159,10 @@
                                     <div class="price-tag" style="font-size:20px;">{{ $tour->formatted_price }}</div>
                                 @endif
                             </div>
-                            <span class="btn btn-primary btn-sm" style="border-radius:8px;">İncele</span>
+                            <div style="display:flex;gap:8px;">
+                                <button type="button" class="btn btn-outline btn-sm compare-toggle" data-tour-id="{{ $tour->id }}" onclick="event.preventDefault(); window.toggleCompare({{ $tour->id }})" style="border-radius:8px;font-size:12px;padding:6px 10px;">+ Karşılaştır</button>
+                                <span class="btn btn-primary btn-sm" style="border-radius:8px;">İncele</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -273,6 +278,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const doc = parser.parseFromString(html, 'text/html');
             const newResults = doc.getElementById('tours-results');
             document.getElementById('tours-results').innerHTML = newResults.innerHTML;
+            
+            // Re-bind compare buttons state
+            if(typeof window.updateCompareUI === 'function') window.updateCompareUI();
         })
         .catch(error => {
             console.error('Error fetching search results:', error);

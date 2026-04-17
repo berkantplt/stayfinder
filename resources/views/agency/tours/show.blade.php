@@ -63,7 +63,7 @@
                         <div style="font-weight:600;color:#0f172a;">⏱ {{ $tour->duration_days }} gün</div>
                     </div>
                     <div class="stat-card" style="padding:16px;">
-                        <div style="font-size:12px;color:#94a3b8;margin-bottom:2px;">Fiyat</div>
+                        <div style="font-size:12px;color:#94a3b8;margin-bottom:2px;">Başlangıç Fiyatı</div>
                         <div style="font-weight:700;color:#059669;">{{ $tour->formatted_price }}</div>
                     </div>
                 </div>
@@ -82,13 +82,16 @@
                                 <input type="date" name="departure_date" required>
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:12px;">Dönüş Tarihi *</label>
-                                <input type="date" name="return_date" required>
+                                <label style="font-size:12px;">Fiyat ({{ $tour->currency_symbol }}) *</label>
+                                <input type="number" name="price" min="0" step="0.01" value="{{ old('price', $tour->price) }}" required>
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;">Etiket (opsiyonel)</label>
                                 <input type="text" name="label" placeholder="Ör: Bayram Özel">
                             </div>
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                            Dönüş tarihi otomatik hesaplanır: {{ $tour->duration_days }} gün için kalkış + {{ max(0, $tour->duration_days - 1) }} gün.
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm" style="margin-top:10px;">Tarih Ekle</button>
                     </form>
@@ -104,6 +107,7 @@
                                     <span style="font-weight:600;font-size:14px;">📅 {{ $date->departure_date->format('d M Y') }}</span>
                                     <span style="color:var(--text-muted);margin:0 4px;">→</span>
                                     <span style="font-weight:600;font-size:14px;">{{ $date->return_date->format('d M Y') }}</span>
+                                    <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;margin-left:6px;">{{ number_format((float) ($date->price ?? $tour->price), 0, ',', '.') }} {{ $tour->currency_symbol }}</span>
                                     @if($date->label)
                                         <span class="badge badge-accent" style="font-size:11px;margin-left:6px;">{{ $date->label }}</span>
                                     @endif
@@ -131,8 +135,8 @@
                                         <input type="date" name="departure_date" value="{{ $date->departure_date->format('Y-m-d') }}" required>
                                     </div>
                                     <div class="form-group" style="margin-bottom:0;">
-                                        <label style="font-size:11px;">Dönüş</label>
-                                        <input type="date" name="return_date" value="{{ $date->return_date->format('Y-m-d') }}" required>
+                                        <label style="font-size:11px;">Fiyat</label>
+                                        <input type="number" name="price" min="0" step="0.01" value="{{ number_format((float) ($date->price ?? $tour->price), 2, '.', '') }}" required>
                                     </div>
                                     <div class="form-group" style="margin-bottom:0;">
                                         <label style="font-size:11px;">Etiket</label>

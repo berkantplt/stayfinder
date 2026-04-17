@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AiSearchLog;
 use App\Models\Tour;
 use App\Models\Agency;
 use App\Models\Category;
@@ -71,10 +72,17 @@ class TourController extends Controller
 
         // Sort
         $sort = $request->input('sort', 'price_asc');
+        
+        if (in_array($sort, ['popular', 'reviews'])) {
+            $query->withCount(['clicks', 'views', 'reviews']);
+        }
+
         match ($sort) {
             'price_desc'  => $query->orderByDesc('price'),
             'date'        => $query->orderBy('departure_date'),
             'newest'      => $query->orderByDesc('created_at'),
+            'popular'     => $query->orderByRaw('(clicks_count + views_count) DESC')->orderByDesc('reviews_count'),
+            'reviews'     => $query->orderByDesc('reviews_count')->orderByDesc('id'),
             default       => $query->orderBy('price'),
         };
 
@@ -88,8 +96,9 @@ class TourController extends Controller
         return view('tours.index', compact('tours', 'destinations', 'agencies', 'categories'));
     }
 
-    public function show(Tour $tour)
+    public function show(Request $request, Tour $tour)
     {
+        $this->captureAiSelection($request, $tour);
         $tour->load('agency', 'dates', 'category');
 
         // Record view
@@ -137,6 +146,81 @@ class TourController extends Controller
             ? $reviews->firstWhere('user_id', auth()->id())
             : null;
 
-        return view('tours.show', compact('tour', 'otherOffers', 'similarTours', 'reviews', 'avgRating', 'userReview'));
+        // Price history (last 30 days)
+        $priceHistory = $tour->priceHistories()
+            ->where('recorded_at', '>=', now()->subDays(30))
+            ->orderBy('recorded_at')
+            ->get();
+
+        $priceLabels = $priceHistory->pluck('recorded_at')->map(fn($d) => $d->format('d M'))->values();
+        $priceData   = $priceHistory->pluck('price')->values();
+
+        return view('tours.show', compact(
+            'tour', 'otherOffers', 'similarTours', 'reviews', 'avgRating', 'userReview',
+            'priceLabels', 'priceData'
+        ));
+    }
+
+    private function captureAiSelection(Request $request, Tour $tour): void
+    {
+        if (!$request->filled('ai_log_id')) {
+            return;
+        }
+
+        $log = AiSearchLog::find((int) $request->query('ai_log_id'));
+        if (!$log) {
+            return;
+        }
+
+        // Basic ownership checks: user and/or session should match.
+        if ($log->user_id !== null && $log->user_id !== auth()->id()) {
+            return;
+        }
+
+        $sessionId = $request->session()->getId();
+        if ($log->session_id && $log->session_id !== $sessionId) {
+            return;
+        }
+
+        $resultIds = is_array($log->result_tour_ids)
+            ? array_map('intval', $log->result_tour_ids)
+            : [];
+        if (!empty($resultIds) && !in_array((int) $tour->id, $resultIds, true)) {
+            return;
+        }
+
+        if ($log->selected_tour_id) {
+            return;
+        }
+
+        $rank = (int) $request->query('ai_rank', 0);
+        $log->update([
+            'selected_tour_id' => $tour->id,
+            'selected_rank' => $rank > 0 ? $rank : null,
+            'selected_at' => now(),
+        ]);
+    }
+
+    public function compare(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        
+        if (empty($ids) || !is_array($ids)) {
+            return redirect()->route('tours.index')->with('error', 'Karşılaştırılacak tur bulunamadı.');
+        }
+
+        // Limit to 3 tours for visual consistency 
+        $tours = Tour::whereIn('id', array_slice($ids, 0, 3))
+            ->with(['agency', 'category', 'dates' => function($q) {
+                $q->orderBy('departure_date');
+            }])
+            ->active()
+            ->get();
+
+        if ($tours->count() < 2) {
+            return redirect()->route('tours.index')->with('error', 'Karşılaştırma yapmak için en az 2 aktif tur seçmelisiniz.');
+        }
+
+        return view('tours.compare', compact('tours'));
     }
 }

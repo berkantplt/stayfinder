@@ -2,27 +2,47 @@
 
 namespace App\Models;
 
+use App\Observers\TourObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
+use App\Notifications\NewTourNotification;
+use App\Notifications\PriceDropNotification;
+use App\Models\User;
+
+#[ObservedBy(TourObserver::class)]
 class Tour extends Model
 {
     use HasFactory;
+
+    public const SUPPORTED_CURRENCIES = [
+        'TRY' => ['label' => 'Türk Lirası', 'symbol' => '₺'],
+        'USD' => ['label' => 'ABD Doları', 'symbol' => '$'],
+        'EUR' => ['label' => 'Euro', 'symbol' => '€'],
+        'GBP' => ['label' => 'İngiliz Sterlini', 'symbol' => '£'],
+        'AED' => ['label' => 'BAE Dirhemi', 'symbol' => 'AED'],
+        'SAR' => ['label' => 'Suudi Riyali', 'symbol' => 'SAR'],
+    ];
 
     protected $fillable = [
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
         'price', 'currency', 'duration_days', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'tour_url', 'is_active',
+        'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa'
     ];
 
     protected $casts = [
-        'price'          => 'decimal:2',
-        'duration_days'  => 'integer',
-        'departure_date' => 'date',
-        'return_date'    => 'date',
-        'is_active'      => 'boolean',
+        'price'             => 'decimal:2',
+        'duration_days'     => 'integer',
+        'departure_date'    => 'date',
+        'return_date'       => 'date',
+        'is_active'         => 'boolean',
+        'embedding'         => 'array',
+        'is_international'  => 'boolean',
+        'requires_visa'     => 'boolean',
     ];
 
     protected static function booted(): void
@@ -30,6 +50,36 @@ class Tour extends Model
         static::creating(function (Tour $tour) {
             if (empty($tour->slug)) {
                 $tour->slug = Str::slug($tour->title) . '-' . Str::random(5);
+            }
+        });
+
+        // Auto-record price history & send new tour notification
+        static::created(function (Tour $tour) {
+            $tour->priceHistories()->create([
+                'price'       => $tour->price,
+                'recorded_at' => now()->toDateString(),
+            ]);
+
+            // Notify all users about new tour
+            $users = User::all();
+            \Illuminate\Support\Facades\Notification::send($users, new NewTourNotification($tour));
+        });
+
+        static::updating(function (Tour $tour) {
+            if ($tour->isDirty('price')) {
+                $oldPrice = $tour->getOriginal('price');
+                $newPrice = $tour->price;
+
+                $tour->priceHistories()->create([
+                    'price'       => $newPrice,
+                    'recorded_at' => now()->toDateString(),
+                ]);
+
+                // If price dropped, notify all users
+                if ($newPrice < $oldPrice) {
+                    $users = User::all();
+                    \Illuminate\Support\Facades\Notification::send($users, new PriceDropNotification($tour));
+                }
             }
         });
     }
@@ -62,6 +112,11 @@ class Tour extends Model
     public function campaigns()
     {
         return $this->hasMany(Campaign::class);
+    }
+
+    public function priceHistories()
+    {
+        return $this->hasMany(PriceHistory::class)->orderBy('recorded_at');
     }
 
     public function getActiveCampaignAttribute()
@@ -103,6 +158,22 @@ class Tour extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->price, 0, ',', '.') . ' ₺';
+        return number_format($this->price, 0, ',', '.') . ' ' . $this->currency_symbol;
+    }
+
+    public function getCurrencySymbolAttribute(): string
+    {
+        return self::currencySymbol($this->currency);
+    }
+
+    public static function supportedCurrencies(): array
+    {
+        return self::SUPPORTED_CURRENCIES;
+    }
+
+    public static function currencySymbol(?string $code): string
+    {
+        $normalized = strtoupper(trim((string) $code));
+        return self::SUPPORTED_CURRENCIES[$normalized]['symbol'] ?? '₺';
     }
 }

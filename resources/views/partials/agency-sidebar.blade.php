@@ -33,6 +33,9 @@
         <a href="{{ route('agency.campaigns.index') }}" class="sidebar-link {{ request()->routeIs('agency.campaigns.index') ? 'active' : '' }}">
             <span class="sidebar-icon">🏷️</span> Kampanyalar
         </a>
+        <a href="{{ route('agency.coupons.index') }}" class="sidebar-link {{ request()->routeIs('agency.coupons*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🎟️</span> Kuponlar
+        </a>
         <a href="{{ route('agency.stats') }}" class="sidebar-link {{ request()->routeIs('agency.stats') ? 'active' : '' }}">
             <span class="sidebar-icon">📈</span> İstatistikler
         </a>

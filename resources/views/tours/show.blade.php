@@ -1,5 +1,33 @@
 @extends('layouts.app')
 @section('title', $tour->title . ' — StayFinder')
+@section('description', \Illuminate\Support\Str::limit(strip_tags($tour->description), 150))
+@if($tour->image)
+    @section('og_image', url($tour->image))
+@endif
+
+@push('head')
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org/",
+  "@@type": "Product",
+  "name": "{{ $tour->title }}",
+  "image": "{{ $tour->image ? url($tour->image) : asset('images/og-default.png') }}",
+  "description": "{{ \Illuminate\Support\Str::limit(strip_tags($tour->description), 150) }}",
+  "brand": {
+    "@@type": "Brand",
+    "name": "{{ $tour->agency->name ?? 'StayFinder' }}"
+  },
+  "offers": {
+    "@@type": "Offer",
+    "url": "{{ request()->url() }}",
+    "priceCurrency": "{{ $tour->currency ?? 'TRY' }}",
+    "price": "{{ $tour->price }}",
+    "availability": "https://schema.org/InStock",
+    "validFrom": "{{ $tour->departure_date ? $tour->departure_date->toIso8601String() : now()->toIso8601String() }}"
+  }
+}
+</script>
+@endpush
 
 @section('content')
 <div class="container">
@@ -29,15 +57,42 @@
                 </div>
 
                 {{-- Tour Dates --}}
-                @if($tour->dates->count())
+                @php
+                    $upcomingDates = $tour->dates
+                        ->filter(fn($date) => $date->departure_date && $date->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
+                        ->sortBy('departure_date')
+                        ->values();
+                    $allDates = $tour->dates
+                        ->sortBy('departure_date')
+                        ->values();
+                @endphp
+                @if($upcomingDates->count())
                 <div style="margin-bottom:20px;">
                     <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">📅 Kalkış Tarihleri</div>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                        @foreach($tour->dates->where('departure_date', '>=', now()) as $date)
+                        @foreach($upcomingDates as $date)
                         <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;">
                             <span style="font-weight:600;">{{ $date->departure_date->format('d M Y') }}</span>
                             <span style="color:var(--text-muted);margin:0 3px;">→</span>
                             <span style="font-weight:600;">{{ $date->return_date->format('d M Y') }}</span>
+                            <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;margin-left:6px;">{{ number_format((float) ($date->price ?? $tour->price), 0, ',', '.') }} {{ $tour->currency_symbol }}</span>
+                            @if($date->label)
+                                <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @elseif($allDates->count())
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">📅 Tur Tarihleri</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        @foreach($allDates as $date)
+                        <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;{{ $date->departure_date->isPast() ? 'opacity:0.7;' : '' }}">
+                            <span style="font-weight:600;">{{ $date->departure_date->format('d M Y') }}</span>
+                            <span style="color:var(--text-muted);margin:0 3px;">→</span>
+                            <span style="font-weight:600;">{{ $date->return_date->format('d M Y') }}</span>
+                            <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;margin-left:6px;">{{ number_format((float) ($date->price ?? $tour->price), 0, ',', '.') }} {{ $tour->currency_symbol }}</span>
                             @if($date->label)
                                 <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
                             @endif
@@ -80,7 +135,8 @@
 
             {{-- Right: Pricing & Agency --}}
             <div class="detail-sidebar">
-                {{-- Favorite button --}}
+                
+                
                 @auth
                 @php $isFav = auth()->user()->hasFavorited($tour); @endphp
                 <form method="POST" action="{{ route('favorites.toggle', $tour) }}" style="margin-bottom:12px;">
@@ -90,6 +146,13 @@
                     </button>
                 </form>
                 @endauth
+                
+                {{-- Compare button --}}
+                <div style="margin-bottom:16px;">
+                    <button type="button" class="compare-toggle" data-tour-id="{{ $tour->id }}" onclick="window.toggleCompare({{ $tour->id }})" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);color:var(--text-sec);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;">
+                        + Karşılaştır
+                    </button>
+                </div>
 
                 {{-- Main Price Card --}}
                 @php $campaign = $tour->activeCampaign; @endphp
@@ -179,6 +242,32 @@
             </div>
         </div>
 
+        {{-- Price History Chart --}}
+        @if($priceData->count() >= 2)
+        <div style="margin-top:32px;">
+            <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+                    <span style="font-size:18px;">📊</span>
+                    <h3 style="font-size:16px;font-weight:700;color:#0f172a;">Fiyat Geçmişi (Son 30 Gün)</h3>
+                    @php
+                        $firstPrice = $priceData->first();
+                        $lastPrice  = $priceData->last();
+                        $diff = $lastPrice - $firstPrice;
+                        $pct  = $firstPrice > 0 ? round(($diff / $firstPrice) * 100) : 0;
+                    @endphp
+                    @if($diff != 0)
+                    <span style="font-size:13px;font-weight:700;color:{{ $diff < 0 ? '#059669' : '#dc2626' }};background:{{ $diff < 0 ? '#d1fae5' : '#fef2f2' }};padding:4px 12px;border-radius:20px;">
+                        {{ $diff < 0 ? '↓' : '↑' }} %{{ abs($pct) }} {{ $diff < 0 ? 'düşüş' : 'artış' }}
+                    </span>
+                    @endif
+                </div>
+                <div style="position:relative;height:200px;">
+                    <canvas id="priceHistoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- Reviews --}}
         <div style="margin-top:40px;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
@@ -267,3 +356,75 @@
 </div>
 @endsection
 
+@push('scripts')
+@if(isset($priceData) && $priceData->count() >= 2)
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('priceHistoryChart').getContext('2d');
+    const currencySymbol = @json($tour->currency_symbol);
+    
+    // Create gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, 'rgba(13, 148, 136, 0.4)'); // Teal transparent
+    gradient.addColorStop(1, 'rgba(13, 148, 136, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: @json($priceLabels),
+            datasets: [{
+                label: 'Fiyat (' + currencySymbol + ')',
+                data: @json($priceData),
+                borderColor: '#0d9488', // Accent teal
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4, // Smooth curves
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#0d9488',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { size: 13, family: 'Inter' },
+                    bodyFont: { size: 14, family: 'Inter', weight: 'bold' },
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return new Intl.NumberFormat('tr-TR').format(context.raw) + ' ' + currencySymbol;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { font: { family: 'Inter', size: 12 }, color: '#64748b' }
+                },
+                y: {
+                    grid: { color: '#f1f5f9', drawBorder: false },
+                    ticks: {
+                        font: { family: 'Inter', size: 12 },
+                        color: '#64748b',
+                        callback: function(value) { return new Intl.NumberFormat('tr-TR').format(value); }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+@endif
+@endpush

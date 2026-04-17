@@ -1,6 +1,29 @@
 @extends('layouts.app')
 @section('title', $post->title . ' — StayFinder Blog')
 @section('description', $post->meta_description ?: $post->excerpt)
+@if($post->image)
+    @section('og_image', url($post->image))
+@endif
+
+@push('head')
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "Article",
+  "headline": "{{ $post->title }}",
+  "image": [
+    "{{ $post->image ? url($post->image) : asset('images/og-default.png') }}"
+   ],
+  "datePublished": "{{ $post->published_at ? $post->published_at->toIso8601String() : $post->created_at->toIso8601String() }}",
+  "dateModified": "{{ $post->updated_at->toIso8601String() }}",
+  "author": [{
+      "@@type": "Person",
+      "name": "StayFinder Editör",
+      "url": "{{ url('/') }}"
+    }]
+}
+</script>
+@endpush
 
 @section('content')
 <div class="container">

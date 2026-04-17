@@ -1,0 +1,1025 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AiSearchLog;
+use App\Models\Tour;
+use App\Services\KnowledgeService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use OpenAI\Laravel\Facades\OpenAI;
+
+class AiSearchController extends Controller
+{
+    public function search(Request $request)
+    {
+        $data = $this->performAiSearch($request, (string) $request->input('q', ''));
+        if (isset($data['error'])) return back()->with('error', $data['error']);
+        if (!$data) return back();
+
+        return view('tours.ai-results', [
+            'results' => $data['results'],
+            'query' => $request->input('q'),
+            'aiComment' => $data['aiComment'],
+            'logId' => $data['log_id'] ?? null,
+        ]);
+    }
+
+    public function searchApi(Request $request)
+    {
+        $data = $this->performAiSearch($request, (string) $request->input('q', ''));
+        if (isset($data['error'])) return response()->json(['error' => $data['error']], 500);
+        
+        return response()->json($data);
+    }
+
+    private function performAiSearch(Request $request, string $query): ?array
+    {
+        $query = trim($query);
+        if ($query === '') return null;
+
+        try {
+            $startedAt = microtime(true);
+
+            // 1. Niyet Analizi (LLM)
+            $analysisResponse = OpenAI::chat()->create([
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    ['role' => 'system', 'content' => 'Kullanıcı cümlesinden şu alanları çıkarıp sadece JSON dön: max_budget(number|null), is_international(boolean|null), requires_visa(boolean|null), preferred_min_days(number|null), preferred_max_days(number|null), preferred_month(number|null, 1-12), wants_nature(boolean|null), avoid_crowded_city(boolean|null), wants_lively(boolean|null), preferred_destination(string|null), exclude_destinations(array|string|null), search_query(string). Eğer emin değilsen null dön.'],
+                    ['role' => 'user', 'content' => $query],
+                ],
+                'response_format' => ['type' => 'json_object'],
+            ]);
+
+            $analysis = json_decode($analysisResponse->choices[0]->message->content, true) ?: [];
+
+            $maxBudget = isset($analysis['max_budget']) ? (int) $analysis['max_budget'] : null;
+            $isInternational = $this->toNullableBool($analysis['is_international'] ?? null);
+            if ($isInternational === null) {
+                $isInternational = $this->detectInternationalIntent($query);
+            }
+            $requiresVisa = $this->toNullableBool($analysis['requires_visa'] ?? null);
+            $minDays = isset($analysis['preferred_min_days']) ? (int) $analysis['preferred_min_days'] : null;
+            $maxDays = isset($analysis['preferred_max_days']) ? (int) $analysis['preferred_max_days'] : null;
+            $preferredMonth = $this->extractPreferredMonth($analysis, $query);
+            $wantsNature = $this->toNullableBool($analysis['wants_nature'] ?? null);
+            if ($wantsNature === null) {
+                $wantsNature = $this->detectNatureIntent($query);
+            }
+            $avoidCrowdedCity = $this->toNullableBool($analysis['avoid_crowded_city'] ?? null);
+            if ($avoidCrowdedCity === null) {
+                $avoidCrowdedCity = $this->detectEscapeCityIntent($query);
+            }
+            $wantsLively = $this->toNullableBool($analysis['wants_lively'] ?? null);
+            if ($wantsLively === null) {
+                $wantsLively = $this->detectLivelyIntent($query);
+            }
+            $preferredDestination = $this->extractPreferredDestination($analysis, $query);
+            $excludedDestinations = $this->extractExcludedDestinations($analysis, $query);
+            if ($preferredDestination !== null && $this->destinationInList($preferredDestination, $excludedDestinations)) {
+                $preferredDestination = null;
+            }
+            $cleanQuery = trim((string) ($analysis['search_query'] ?? $query));
+            if ($cleanQuery === '') $cleanQuery = $query;
+            if ($preferredDestination !== null) {
+                $normalizedCleanQuery = $this->normalizeText($cleanQuery);
+                $normalizedPreferredDestination = $this->normalizeText($preferredDestination);
+                if (!str_contains($normalizedCleanQuery, $normalizedPreferredDestination)) {
+                    $cleanQuery = trim($cleanQuery . ' ' . $preferredDestination);
+                }
+            }
+
+            // 2. Vektör Oluşturma
+            $embeddingResponse = OpenAI::embeddings()->create([
+                'model' => 'text-embedding-3-small',
+                'input' => $cleanQuery,
+            ]);
+            $queryVector = $embeddingResponse->embeddings[0]->embedding;
+
+            // 3. Veritabanı Filtreleme
+            $toursQuery = Tour::whereNotNull('embedding')->where('is_active', true);
+            if ($maxBudget && $maxBudget > 0) {
+                // Soft upper bound: budget üstünü tamamen dışlamadan aday havuzunu daralt.
+                $toursQuery->where('price', '<=', $maxBudget * 1.8);
+            }
+            if ($isInternational !== null) $toursQuery->where('is_international', $isInternational);
+            if ($requiresVisa !== null) $toursQuery->where('requires_visa', $requiresVisa);
+            if ($minDays && $minDays > 0) $toursQuery->where('duration_days', '>=', max(1, $minDays - 1));
+            if ($maxDays && $maxDays > 0) $toursQuery->where('duration_days', '<=', $maxDays + 1);
+            if ($preferredDestination !== null) {
+                $this->applyDestinationConstraint($toursQuery, $preferredDestination);
+            }
+            if (!empty($excludedDestinations)) {
+                $this->applyExcludedDestinationsConstraint($toursQuery, $excludedDestinations);
+            }
+
+            $tours = $toursQuery->get();
+            $candidateCount = $tours->count();
+
+            // 4. Hibrit skor: semantic + kullanıcı niyeti odaklı kriterler
+            $rankedTours = $tours->map(function ($tour) use ($queryVector, $maxBudget, $isInternational, $requiresVisa, $minDays, $maxDays, $wantsNature, $avoidCrowdedCity, $wantsLively, $preferredMonth, $preferredDestination, $excludedDestinations) {
+                $semanticScore = $this->cosineSimilarity($queryVector, $tour->embedding);
+                $budgetScore = $this->scoreBudget((float) $tour->price, $maxBudget);
+                $internationalScore = $this->scoreExactBool($tour->is_international, $isInternational);
+                $visaScore = $this->scoreExactBool($tour->requires_visa, $requiresVisa);
+                $durationScore = $this->scoreDuration((int) $tour->duration_days, $minDays, $maxDays);
+                $natureScore = $this->scoreNatureFit(
+                    (string) $tour->title,
+                    (string) $tour->destination,
+                    (string) ($tour->description ?? ''),
+                    (string) ($tour->included ?? ''),
+                    $wantsNature,
+                    $avoidCrowdedCity
+                );
+                $cityEscapeScore = $this->scoreCityEscape((string) $tour->destination, $avoidCrowdedCity);
+                $livelyScore = $this->scoreLivelyFit(
+                    (string) $tour->title,
+                    (string) $tour->destination,
+                    (string) ($tour->description ?? ''),
+                    (string) ($tour->included ?? ''),
+                    $wantsLively,
+                    $avoidCrowdedCity
+                );
+                $destinationScore = $this->scoreDestinationMatch(
+                    $tour,
+                    $preferredDestination,
+                    $excludedDestinations
+                );
+                $monthScore = $this->scoreMonth((string) $tour->departure_date, $preferredMonth);
+
+                $tour->similarity = $semanticScore;
+                $tour->nature_score = $natureScore;
+                $tour->city_escape_score = $cityEscapeScore;
+                $tour->lively_score = $livelyScore;
+                $tour->destination_score = $destinationScore;
+                $tour->month_score = $monthScore;
+                $tour->compatibility_score = $this->computeCompatibilityScore(
+                    [
+                        'semantic' => $semanticScore,
+                        'budget' => $budgetScore,
+                        'international' => $internationalScore,
+                        'visa' => $visaScore,
+                        'duration' => $durationScore,
+                        'nature' => $natureScore,
+                        'city_escape' => $cityEscapeScore,
+                        'lively' => $livelyScore,
+                        'month' => $monthScore,
+                        'destination' => $destinationScore,
+                    ],
+                    [
+                        'max_budget' => $maxBudget,
+                        'is_international' => $isInternational,
+                        'requires_visa' => $requiresVisa,
+                        'preferred_min_days' => $minDays,
+                        'preferred_max_days' => $maxDays,
+                        'wants_nature' => $wantsNature,
+                        'avoid_crowded_city' => $avoidCrowdedCity,
+                        'wants_lively' => $wantsLively,
+                        'preferred_month' => $preferredMonth,
+                        'preferred_destination' => $preferredDestination,
+                        'excluded_destinations' => $excludedDestinations,
+                    ]
+                );
+
+                return $tour;
+            })->sortByDesc('compatibility_score')->values();
+
+            if ($avoidCrowdedCity === true) {
+                $nonCrowded = $rankedTours->reject(fn($tour) => $this->isCrowdedCity((string) $tour->destination))->values();
+                $crowded = $rankedTours->filter(fn($tour) => $this->isCrowdedCity((string) $tour->destination))->values();
+                if ($nonCrowded->isNotEmpty()) {
+                    $rankedTours = $nonCrowded->concat($crowded)->values();
+                }
+            }
+
+            if ($preferredDestination !== null) {
+                $destinationMatched = $rankedTours
+                    ->filter(fn($tour) => $this->matchesRequestedDestination($tour, $preferredDestination))
+                    ->values();
+                $rankedTours = $destinationMatched;
+            }
+
+            if (!empty($excludedDestinations)) {
+                $rankedTours = $rankedTours
+                    ->reject(fn($tour) => $this->matchesAnyDestination($tour, $excludedDestinations))
+                    ->values();
+            }
+
+            $results = $rankedTours->take(5)->values();
+
+            // 5. RAG (Bilgi Bankası) Entegrasyonu
+            $knowledgeService = new KnowledgeService();
+            $relevantChunks = $knowledgeService->findRelevantChunks($query);
+            $knowledgeContext = $knowledgeService->buildContext($relevantChunks);
+
+            // 6. Akıllı, "Mekan Sahibi" Yorumu (RAG + Turlar)
+            $aiComment = $this->buildAiComment($query, $results, $knowledgeContext, $preferredDestination);
+
+            $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
+
+            // Sadece frontend'in ihtiyacı olan alanları döndür (embedding hariç)
+            $cleanResults = $results->map(function ($tour, $index) {
+                return [
+                    'id'             => $tour->id,
+                    'title'          => $tour->title,
+                    'slug'           => $tour->slug,
+                    'url'            => route('tours.show', $tour->id),
+                    'destination'    => $tour->destination,
+                    'price'          => $tour->price,
+                    'currency'       => $tour->currency,
+                    'duration_days'  => $tour->duration_days,
+                    'departure_date' => $tour->departure_date,
+                    'image'          => $tour->image,
+                    'rank'           => $index + 1,
+                    'similarity'     => round((float) $tour->similarity, 6),
+                    'compatibility_score' => round((float) $tour->compatibility_score, 6),
+                    'nature_score'   => round((float) ($tour->nature_score ?? 1.0), 6),
+                    'city_escape_score' => round((float) ($tour->city_escape_score ?? 1.0), 6),
+                    'lively_score'   => round((float) ($tour->lively_score ?? 1.0), 6),
+                    'destination_score' => round((float) ($tour->destination_score ?? 1.0), 6),
+                    'month_score'    => round((float) ($tour->month_score ?? 1.0), 6),
+                ];
+            });
+
+            // 6. Eğitim/veri toplama logu
+            $log = AiSearchLog::create([
+                'user_id' => auth()->id(),
+                'session_id' => $request->session()->getId(),
+                'raw_query' => $query,
+                'normalized_query' => $cleanQuery,
+                'intent' => $analysis,
+                'applied_filters' => [
+                    'max_budget' => $maxBudget,
+                    'is_international' => $isInternational,
+                    'requires_visa' => $requiresVisa,
+                    'preferred_min_days' => $minDays,
+                    'preferred_max_days' => $maxDays,
+                    'preferred_month' => $preferredMonth,
+                    'wants_nature' => $wantsNature,
+                    'avoid_crowded_city' => $avoidCrowdedCity,
+                    'wants_lively' => $wantsLively,
+                    'preferred_destination' => $preferredDestination,
+                    'exclude_destinations' => $excludedDestinations,
+                ],
+                'candidate_count' => $candidateCount,
+                'result_tour_ids' => $cleanResults->pluck('id')->values()->all(),
+                'result_scores' => $cleanResults->map(function ($item) {
+                    return [
+                        'tour_id' => $item['id'],
+                        'rank' => $item['rank'],
+                        'compatibility_score' => $item['compatibility_score'],
+                        'semantic_score' => $item['similarity'],
+                        'nature_score' => $item['nature_score'],
+                        'city_escape_score' => $item['city_escape_score'],
+                        'lively_score' => $item['lively_score'],
+                        'destination_score' => $item['destination_score'],
+                        'month_score' => $item['month_score'],
+                    ];
+                })->values()->all(),
+                'latency_ms' => $latencyMs,
+            ]);
+
+            return [
+                'results'   => $cleanResults,
+                'aiComment' => $aiComment,
+                'log_id' => $log->id,
+            ];
+
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    private function cosineSimilarity($vec1, $vec2)
+    {
+        $dotProduct = 0; $norm1 = 0; $norm2 = 0;
+        foreach ($vec1 as $i => $val) {
+            $dotProduct += $val * $vec2[$i];
+            $norm1 += $val ** 2;
+            $norm2 += $vec2[$i] ** 2;
+        }
+        return ($norm1 == 0 || $norm2 == 0) ? 0 : ($dotProduct / (sqrt($norm1) * sqrt($norm2)));
+    }
+
+    private function toNullableBool(mixed $value): ?bool
+    {
+        if ($value === null) return null;
+        if (is_bool($value)) return $value;
+
+        $normalized = strtolower(trim((string) $value));
+        if (in_array($normalized, ['true', '1', 'yes', 'evet'], true)) return true;
+        if (in_array($normalized, ['false', '0', 'no', 'hayir', 'hayır'], true)) return false;
+
+        return null;
+    }
+
+    private function scoreBudget(float $price, ?int $maxBudget): float
+    {
+        if (!$maxBudget || $maxBudget <= 0) return 1.0;
+        if ($price <= $maxBudget) return 1.0;
+
+        $overRatio = ($price - $maxBudget) / max(1, $maxBudget);
+        return max(0.0, 1.0 - min(1.0, $overRatio));
+    }
+
+    private function scoreExactBool(bool $actual, ?bool $expected): float
+    {
+        if ($expected === null) return 1.0;
+        return $actual === $expected ? 1.0 : 0.0;
+    }
+
+    private function scoreDuration(int $days, ?int $minDays, ?int $maxDays): float
+    {
+        if (!$minDays && !$maxDays) return 1.0;
+
+        $min = $minDays && $minDays > 0 ? $minDays : null;
+        $max = $maxDays && $maxDays > 0 ? $maxDays : null;
+
+        if ($min !== null && $max !== null && $min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+
+        if ($min !== null && $max !== null) {
+            if ($days >= $min && $days <= $max) return 1.0;
+            $distance = $days < $min ? ($min - $days) : ($days - $max);
+            return max(0.0, 1.0 - min(1.0, $distance / 7));
+        }
+
+        if ($min !== null) {
+            if ($days >= $min) return 1.0;
+            return max(0.0, 1.0 - min(1.0, ($min - $days) / 7));
+        }
+
+        if ($max !== null) {
+            if ($days <= $max) return 1.0;
+            return max(0.0, 1.0 - min(1.0, ($days - $max) / 7));
+        }
+
+        return 1.0;
+    }
+
+    private function computeCompatibilityScore(array $scores, array $criteria): float
+    {
+        $weights = [
+            'budget' => 0.16,
+            'international' => 0.08,
+            'visa' => 0.07,
+            'duration' => 0.10,
+            'nature' => 0.09,
+            'city_escape' => 0.12,
+            'lively' => 0.14,
+            'month' => 0.06,
+            'destination' => 0.16,
+        ];
+
+        $active = [
+            'budget' => !empty($criteria['max_budget']) && (int) $criteria['max_budget'] > 0,
+            'international' => $criteria['is_international'] !== null,
+            'visa' => $criteria['requires_visa'] !== null,
+            'duration' => ((int) ($criteria['preferred_min_days'] ?? 0) > 0) || ((int) ($criteria['preferred_max_days'] ?? 0) > 0),
+            'nature' => $criteria['wants_nature'] === true,
+            'city_escape' => $criteria['avoid_crowded_city'] === true,
+            'lively' => $criteria['wants_lively'] !== null,
+            'month' => (int) ($criteria['preferred_month'] ?? 0) > 0,
+            'destination' => !empty($criteria['preferred_destination']),
+        ];
+
+        $activeCount = count(array_filter($active, fn($isActive) => $isActive === true));
+        $baseWeight = max(0.30, 0.56 - ($activeCount * 0.06));
+
+        if (($criteria['wants_lively'] ?? null) === true && ($criteria['avoid_crowded_city'] ?? null) === true) {
+            $weights['lively'] = 0.22;
+            $weights['city_escape'] = 0.10;
+        }
+
+        if (!empty($criteria['preferred_destination'])) {
+            $weights['destination'] = 0.22;
+        }
+
+        $weighted = $baseWeight * (float) ($scores['semantic'] ?? 0.0);
+        $totalWeight = $baseWeight;
+
+        foreach ($weights as $key => $weight) {
+            if (!($active[$key] ?? false)) {
+                continue;
+            }
+
+            $weighted += $weight * (float) ($scores[$key] ?? 0.0);
+            $totalWeight += $weight;
+        }
+
+        if ($totalWeight <= 0) {
+            return $this->clamp01((float) ($scores['semantic'] ?? 0.0));
+        }
+
+        return $this->clamp01($weighted / $totalWeight);
+    }
+
+    private function extractPreferredMonth(array $analysis, string $query): ?int
+    {
+        $monthFromAnalysis = isset($analysis['preferred_month']) ? (int) $analysis['preferred_month'] : null;
+        if ($monthFromAnalysis !== null && $monthFromAnalysis >= 1 && $monthFromAnalysis <= 12) {
+            return $monthFromAnalysis;
+        }
+
+        $normalized = $this->normalizeText($query);
+        $monthMap = [
+            'ocak' => 1,
+            'subat' => 2,
+            'mart' => 3,
+            'nisan' => 4,
+            'mayis' => 5,
+            'haziran' => 6,
+            'temmuz' => 7,
+            'agustos' => 8,
+            'eylul' => 9,
+            'ekim' => 10,
+            'kasim' => 11,
+            'aralik' => 12,
+        ];
+
+        foreach ($monthMap as $name => $value) {
+            if (str_contains($normalized, $name)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function extractPreferredDestination(array $analysis, string $query): ?string
+    {
+        $normalizedQuery = $this->normalizeText($query);
+        $fromAnalysis = trim((string) ($analysis['preferred_destination'] ?? ''));
+        if ($fromAnalysis !== '') {
+            $matched = $this->findKnownDestinationFromText($fromAnalysis);
+            if ($matched !== null && !$this->isDestinationExplicitlyExcludedInText($normalizedQuery, $matched)) {
+                return $matched;
+            }
+
+            $fallback = trim(preg_replace('/\s+/u', ' ', mb_substr($fromAnalysis, 0, 80)));
+            $wordCount = count(array_filter(preg_split('/\s+/u', $this->normalizeText($fallback)) ?: []));
+            if ($fallback !== '' && $wordCount <= 3 && !$this->isDestinationExplicitlyExcludedInText($normalizedQuery, $fallback)) {
+                return $fallback;
+            }
+        }
+
+        $fromQuery = $this->findKnownDestinationFromText($query);
+        if ($fromQuery !== null && !$this->isDestinationExplicitlyExcludedInText($normalizedQuery, $fromQuery)) {
+            return $fromQuery;
+        }
+
+        return null;
+    }
+
+    private function getKnownDestinations(): Collection
+    {
+        return cache()->remember('ai_search_known_destinations_v1', now()->addHours(6), function () {
+            return Tour::query()
+                ->where('is_active', true)
+                ->whereNotNull('destination')
+                ->where('destination', '!=', '')
+                ->distinct()
+                ->pluck('destination')
+                ->map(fn($destination) => trim((string) $destination))
+                ->filter()
+                ->unique()
+                ->sortByDesc(fn($destination) => mb_strlen($destination, 'UTF-8'))
+                ->values();
+        });
+    }
+
+    private function queryMentionsDestination(string $normalizedQuery, string $destination): bool
+    {
+        $normalizedDestination = $this->normalizeText($destination);
+        if (mb_strlen($normalizedDestination, 'UTF-8') < 3) {
+            return false;
+        }
+
+        $pattern = '/\b' . preg_quote($normalizedDestination, '/') . '(?:[a-z]+)?\b/u';
+        if (preg_match($pattern, $normalizedQuery) === 1) {
+            return true;
+        }
+
+        return str_contains($normalizedQuery, $normalizedDestination);
+    }
+
+    private function findKnownDestinationFromText(string $text): ?string
+    {
+        $normalizedText = $this->normalizeText($text);
+        if ($normalizedText === '') {
+            return null;
+        }
+
+        foreach ($this->getKnownDestinations() as $destination) {
+            if ($this->queryMentionsDestination($normalizedText, $destination)) {
+                return $destination;
+            }
+        }
+
+        return null;
+    }
+
+    private function extractExcludedDestinations(array $analysis, string $query): array
+    {
+        $explicit = collect($this->normalizeDestinationArray($analysis['exclude_destinations'] ?? null))
+            ->map(function (string $item) {
+                $known = $this->findKnownDestinationFromText($item);
+                return $known ?? $item;
+            })
+            ->filter(fn($item) => trim((string) $item) !== '')
+            ->values()
+            ->all();
+        $normalizedQuery = $this->normalizeText($query);
+        $detected = [];
+
+        foreach ($this->getKnownDestinations() as $destination) {
+            if ($this->isDestinationExplicitlyExcludedInText($normalizedQuery, (string) $destination)) {
+                $detected[] = (string) $destination;
+            }
+        }
+
+        $combined = array_values(array_unique(array_merge($explicit, $detected)));
+        return array_values(array_filter($combined, fn($value) => trim((string) $value) !== ''));
+    }
+
+    private function isDestinationExplicitlyExcludedInText(string $normalizedQuery, string $destination): bool
+    {
+        $normalizedDestination = $this->normalizeText($destination);
+        if ($normalizedDestination === '') {
+            return false;
+        }
+
+        $patterns = [
+            $normalizedDestination . 'dan farkli',
+            $normalizedDestination . 'den farkli',
+            $normalizedDestination . 'dan baska',
+            $normalizedDestination . 'den baska',
+            $normalizedDestination . ' yerine',
+            $normalizedDestination . ' disinda',
+            $normalizedDestination . ' haric',
+            $normalizedDestination . ' haricinde',
+            $normalizedDestination . ' istemiyorum',
+            $normalizedDestination . ' olmasin',
+            $normalizedDestination . ' kadar kalabalik olmasin',
+            $normalizedDestination . ' kadar yogun olmasin',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (str_contains($normalizedQuery, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeDestinationArray(mixed $value): array
+    {
+        if ($value === null) {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $pieces = preg_split('/[,;]+/u', $value) ?: [];
+            return array_values(array_filter(array_map('trim', $pieces)));
+        }
+
+        if (is_array($value)) {
+            return array_values(array_filter(array_map(
+                fn($item) => trim((string) $item),
+                $value
+            )));
+        }
+
+        return [];
+    }
+
+    private function applyDestinationConstraint(Builder $query, string $preferredDestination): void
+    {
+        $terms = $this->destinationSearchTerms($preferredDestination);
+        if (empty($terms)) {
+            return;
+        }
+
+        $query->where(function (Builder $destinationQuery) use ($terms) {
+            foreach ($terms as $index => $term) {
+                $operator = $index === 0 ? 'whereRaw' : 'orWhereRaw';
+                $like = '%' . $term . '%';
+
+                $destinationQuery->{$operator}('LOWER(destination) LIKE ?', [$like]);
+                $destinationQuery->orWhereRaw('LOWER(title) LIKE ?', [$like]);
+            }
+        });
+    }
+
+    private function applyExcludedDestinationsConstraint(Builder $query, array $excludedDestinations): void
+    {
+        if (empty($excludedDestinations)) {
+            return;
+        }
+
+        $query->where(function (Builder $scope) use ($excludedDestinations) {
+            foreach ($excludedDestinations as $destination) {
+                $terms = $this->destinationSearchTerms((string) $destination);
+                foreach ($terms as $term) {
+                    $like = '%' . $term . '%';
+                    $scope->where(function (Builder $row) use ($like) {
+                        $row->whereRaw('LOWER(COALESCE(destination, \'\')) NOT LIKE ?', [$like])
+                            ->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', [$like]);
+                    });
+                }
+            }
+        });
+    }
+
+    private function destinationSearchTerms(string $preferredDestination): array
+    {
+        $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $preferredDestination);
+        $sanitized = trim(preg_replace('/\s+/u', ' ', (string) $sanitized));
+        $raw = mb_strtolower($sanitized, 'UTF-8');
+        $normalized = $this->normalizeText($sanitized);
+
+        $terms = array_values(array_unique(array_filter([$raw, $normalized])));
+        foreach (preg_split('/\s+/', $normalized) ?: [] as $piece) {
+            if (mb_strlen($piece, 'UTF-8') >= 4) {
+                $terms[] = $piece;
+            }
+        }
+
+        return array_values(array_unique($terms));
+    }
+
+    private function matchesRequestedDestination(Tour $tour, string $preferredDestination): bool
+    {
+        $haystack = $this->normalizeText((string) $tour->destination . ' ' . (string) $tour->title);
+        foreach ($this->destinationSearchTerms($preferredDestination) as $term) {
+            if (str_contains($haystack, $this->normalizeText($term))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function matchesAnyDestination(Tour $tour, array $destinations): bool
+    {
+        foreach ($destinations as $destination) {
+            if ($this->matchesRequestedDestination($tour, (string) $destination)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function destinationInList(string $destination, array $destinations): bool
+    {
+        $normalizedDestination = $this->normalizeText($destination);
+        if ($normalizedDestination === '') {
+            return false;
+        }
+
+        foreach ($destinations as $item) {
+            $normalizedItem = $this->normalizeText((string) $item);
+            if ($normalizedItem === '') {
+                continue;
+            }
+
+            if (
+                $normalizedItem === $normalizedDestination ||
+                str_contains($normalizedItem, $normalizedDestination) ||
+                str_contains($normalizedDestination, $normalizedItem)
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function scoreDestinationMatch(Tour $tour, ?string $preferredDestination, array $excludedDestinations): float
+    {
+        if (!empty($excludedDestinations) && $this->matchesAnyDestination($tour, $excludedDestinations)) {
+            return 0.0;
+        }
+
+        if ($preferredDestination === null) {
+            return 1.0;
+        }
+
+        return $this->matchesRequestedDestination($tour, $preferredDestination) ? 1.0 : 0.05;
+    }
+
+    private function buildAiComment(string $query, Collection $results, string $context, ?string $preferredDestination): string
+    {
+        try {
+            $toursInfo = $results->isNotEmpty() 
+                ? "Bulunan uygun turlar:\n" . $results->map(fn($t) => "- {$t->title} ({$t->destination}): {$t->price} {$t->currency}, {$t->duration_days} gün")->implode("\n")
+                : "Uyan aktif bir tur şu an bulunamadı.";
+
+            $systemPrompt = "Sen StayFinder sitesinin mekan sahibi ve uzman tur danışmanısın. Samimi, yardımsever ve çok bilgili bir üslubun var. " .
+                "Sana verilen 'BİLGİ BANKASI' içeriğini ve 'BULUNAN TURLAR' listesini kullanarak kullanıcı sorusuna cevap ver.\n\n" .
+                "KURALLAR:\n" .
+                "1. Sadece sana verilen bilgileri kullan, bilmediğin konularda uydurma yapma.\n" .
+                "2. Yanıtın mutlaka samimi olsun (örneğin: 'Tabii ki yardımcı olayım', 'Harika bir seçim!').\n" .
+                "3. Eğer turlar varsa, onları doğal bir şekilde cümlenin içinde öner.\n" .
+                "4. Eğer turlardan bahsetmiyorsan bile site politikalarından veya destinasyon bilgilerinden bahset.\n" .
+                "5. Yanıtın çok uzun olmasın (max 3-4 cümle).\n\n" .
+                "BİLGİ BANKASI:\n$context\n\n" .
+                "BULUNAN TURLAR:\n$toursInfo";
+
+            $response = OpenAI::chat()->create([
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $query],
+                ],
+                'max_tokens' => 300,
+            ]);
+
+            return $response->choices[0]->message->content;
+
+        } catch (\Exception $e) {
+            Log::error("[AiSearchController] Yorum oluşturma hatası: " . $e->getMessage());
+            return "Şu an senin için en iyi seçenekleri araştırıyorum. İşte bulduğum turlar:";
+        }
+    }
+
+    private function detectNatureIntent(string $query): ?bool
+    {
+        $text = $this->normalizeText($query);
+        $natureKeywords = ['doga', 'yesil', 'orman', 'yayla', 'dag', 'gol', 'nehir', 'deniz', 'sakin', 'huzur', 'kafa dinlemek', 'kalabaliktan uzak'];
+        foreach ($natureKeywords as $keyword) {
+            if (str_contains($text, $keyword)) return true;
+        }
+
+        return null;
+    }
+
+    private function detectInternationalIntent(string $query): ?bool
+    {
+        $text = $this->normalizeText($query);
+
+        $domesticSignals = ['yurt ici', 'yurt icinde', 'turkiye', 'turkiyede', 'ulke ici', 'anadolu'];
+        foreach ($domesticSignals as $signal) {
+            if (str_contains($text, $signal)) return false;
+        }
+
+        $internationalSignals = ['yurt disi', 'avrupa', 'balkan', 'schengen', 'vize', 'yurtdisi'];
+        foreach ($internationalSignals as $signal) {
+            if (str_contains($text, $signal)) return true;
+        }
+
+        return null;
+    }
+
+    private function detectEscapeCityIntent(string $query): ?bool
+    {
+        $text = $this->normalizeText($query);
+        $escapeKeywords = [
+            'sehir stresi',
+            'sehirden uzak',
+            'kalabalik istemiyorum',
+            'kalabalik olmasin',
+            'kadar kalabalik olmasin',
+            'huzurlu',
+            'sakin',
+            'kafa dinlemek',
+            'gurultuden uzak',
+        ];
+        foreach ($escapeKeywords as $keyword) {
+            if (str_contains($text, $keyword)) return true;
+        }
+
+        return null;
+    }
+
+    private function detectLivelyIntent(string $query): ?bool
+    {
+        $text = $this->normalizeText($query);
+        $positiveKeywords = ['hareketli', 'canli', 'eglenceli', 'gece hayati', 'sosyal', 'aktif'];
+        $negativeKeywords = ['sakin', 'sessiz', 'huzurlu', 'kafa dinlemek', 'dingin'];
+
+        foreach ($positiveKeywords as $keyword) {
+            if (str_contains($text, $keyword)) {
+                return true;
+            }
+        }
+
+        foreach ($negativeKeywords as $keyword) {
+            if (str_contains($text, $keyword)) {
+                return false;
+            }
+        }
+
+        return null;
+    }
+
+    private function scoreNatureFit(
+        string $title,
+        string $destination,
+        string $description,
+        string $included,
+        ?bool $wantsNature,
+        ?bool $avoidCrowdedCity
+    ): float {
+        if ($wantsNature !== true && $avoidCrowdedCity !== true) {
+            return 1.0;
+        }
+
+        $haystack = $this->normalizeText(trim($title . ' ' . $destination . ' ' . $description . ' ' . $included));
+        $positiveKeywords = ['doga', 'yesil', 'orman', 'yayla', 'kamp', 'trek', 'yuruyus', 'gol', 'nehir', 'kanyon', 'koy', 'deniz', 'sahil', 'adalar', 'milli park', 'huzur', 'sakin'];
+        $urbanKeywords = ['bogaz', 'sehir', 'merkez', 'metropol', 'trafik', 'avm', 'isiklar', 'taksim', 'kadikoy', 'besiktas', 'gece hayati'];
+
+        $positiveHits = 0;
+        foreach ($positiveKeywords as $keyword) {
+            if (str_contains($haystack, $keyword)) $positiveHits++;
+        }
+
+        $urbanHits = 0;
+        foreach ($urbanKeywords as $keyword) {
+            if (str_contains($haystack, $keyword)) $urbanHits++;
+        }
+
+        $positiveScore = min(1.0, $positiveHits / 4);
+        $urbanPenalty = min(1.0, $urbanHits / 4);
+        $keywordScore = $this->clamp01(0.45 + ($positiveScore * 0.65) - ($urbanPenalty * 0.55));
+
+        if ($avoidCrowdedCity === true && $this->isCrowdedCity($destination)) {
+            $keywordScore *= 0.45;
+        }
+
+        return $this->clamp01($keywordScore);
+    }
+
+    private function scoreCityEscape(string $destination, ?bool $avoidCrowdedCity): float
+    {
+        if ($avoidCrowdedCity !== true) {
+            return 1.0;
+        }
+
+        $crowd = $this->destinationDynamics($destination)['crowd'];
+        if ($crowd <= 0.55) return 1.0;
+        if ($crowd <= 0.70) return 0.78;
+        if ($crowd <= 0.82) return 0.48;
+        return 0.12;
+    }
+
+    private function scoreLivelyFit(
+        string $title,
+        string $destination,
+        string $description,
+        string $included,
+        ?bool $wantsLively,
+        ?bool $avoidCrowdedCity
+    ): float {
+        if ($wantsLively === null) {
+            return 1.0;
+        }
+
+        $haystack = $this->normalizeText(trim($title . ' ' . $destination . ' ' . $description . ' ' . $included));
+        $livelyKeywords = ['hareketli', 'canli', 'eglence', 'gece hayati', 'festival', 'bar', 'sahil', 'marina', 'club'];
+        $calmKeywords = ['sakin', 'sessiz', 'huzurlu', 'kamp', 'yayla', 'doga', 'dinlenme'];
+
+        $livelyHits = 0;
+        foreach ($livelyKeywords as $keyword) {
+            if (str_contains($haystack, $keyword)) $livelyHits++;
+        }
+
+        $calmHits = 0;
+        foreach ($calmKeywords as $keyword) {
+            if (str_contains($haystack, $keyword)) $calmHits++;
+        }
+
+        $profile = $this->destinationDynamics($destination);
+        $activitySignal = $this->clamp01(
+            0.30
+            + (($profile['lively'] - 0.35) * 1.10)
+            + ($livelyHits * 0.08)
+            - ($calmHits * 0.09)
+        );
+
+        if ($wantsLively === false) {
+            return $this->clamp01(1.0 - $activitySignal);
+        }
+
+        $score = $activitySignal;
+        if ($avoidCrowdedCity === true) {
+            $crowd = $profile['crowd'];
+            if ($crowd >= 0.92) $score *= 0.30;
+            elseif ($crowd >= 0.86) $score *= 0.48;
+            elseif ($crowd >= 0.78) $score *= 0.68;
+            elseif ($crowd <= 0.42) $score *= 0.50;
+            elseif ($crowd <= 0.52) $score *= 0.72;
+            elseif ($crowd >= 0.58 && $crowd <= 0.74) $score = min(1.0, $score + 0.08);
+        }
+
+        return $this->clamp01($score);
+    }
+
+    private function destinationDynamics(string $destination): array
+    {
+        $text = $this->normalizeText($destination);
+        $profiles = [
+            'istanbul' => ['crowd' => 0.98, 'lively' => 0.90],
+            'ankara' => ['crowd' => 0.90, 'lively' => 0.74],
+            'izmir' => ['crowd' => 0.78, 'lively' => 0.82],
+            'antalya' => ['crowd' => 0.74, 'lively' => 0.86],
+            'bodrum' => ['crowd' => 0.68, 'lively' => 0.86],
+            'marmaris' => ['crowd' => 0.66, 'lively' => 0.80],
+            'fethiye' => ['crowd' => 0.58, 'lively' => 0.68],
+            'kapadokya' => ['crowd' => 0.54, 'lively' => 0.62],
+            'trabzon' => ['crowd' => 0.48, 'lively' => 0.34],
+            'rize' => ['crowd' => 0.42, 'lively' => 0.35],
+            'mardin' => ['crowd' => 0.50, 'lively' => 0.52],
+            'eskisehir' => ['crowd' => 0.62, 'lively' => 0.76],
+            'canakkale' => ['crowd' => 0.56, 'lively' => 0.64],
+            'dubai' => ['crowd' => 0.86, 'lively' => 0.92],
+            'londra' => ['crowd' => 0.88, 'lively' => 0.90],
+            'paris' => ['crowd' => 0.86, 'lively' => 0.88],
+            'roma' => ['crowd' => 0.80, 'lively' => 0.84],
+            'new york' => ['crowd' => 0.92, 'lively' => 0.94],
+        ];
+
+        foreach ($profiles as $name => $profile) {
+            if (str_contains($text, $name)) {
+                return $profile;
+            }
+        }
+
+        return [
+            'crowd' => $this->isCrowdedCity($destination) ? 0.84 : 0.54,
+            'lively' => 0.56,
+        ];
+    }
+
+    private function scoreMonth(string $departureDate, ?int $preferredMonth): float
+    {
+        if ($preferredMonth === null || $preferredMonth < 1 || $preferredMonth > 12) {
+            return 1.0;
+        }
+
+        if (trim($departureDate) === '') {
+            return 0.55;
+        }
+
+        try {
+            $month = (int) date('n', strtotime($departureDate));
+            if ($month <= 0) {
+                return 0.55;
+            }
+
+            if ($month === $preferredMonth) {
+                return 1.0;
+            }
+
+            $distance = abs($month - $preferredMonth);
+            $distance = min($distance, 12 - $distance);
+            return $this->clamp01(1.0 - ($distance / 6));
+        } catch (\Throwable $e) {
+            return 0.55;
+        }
+    }
+
+    private function isCrowdedCity(string $destination): bool
+    {
+        $text = $this->normalizeText($destination);
+        $crowdedCities = ['istanbul', 'ankara', 'izmir', 'bursa', 'adana', 'konya', 'gaziantep', 'kocaeli', 'mersin'];
+        foreach ($crowdedCities as $city) {
+            if (str_contains($text, $city)) return true;
+        }
+
+        return false;
+    }
+
+    private function normalizeText(string $text): string
+    {
+        $normalized = mb_strtolower($text, 'UTF-8');
+
+        if (class_exists(\Normalizer::class)) {
+            $decomposed = \Normalizer::normalize($normalized, \Normalizer::FORM_D);
+            if (is_string($decomposed)) {
+                $normalized = preg_replace('/\p{Mn}+/u', '', $decomposed) ?? $decomposed;
+            }
+        }
+
+        $normalized = str_replace('i̇', 'i', $normalized);
+        $normalized = strtr($normalized, [
+            'ı' => 'i',
+            'ğ' => 'g',
+            'ü' => 'u',
+            'ş' => 's',
+            'ö' => 'o',
+            'ç' => 'c',
+        ]);
+
+        return trim(preg_replace('/\s+/u', ' ', $normalized) ?? $normalized);
+    }
+
+    private function clamp01(float $value): float
+    {
+        return max(0.0, min(1.0, $value));
+    }
+}

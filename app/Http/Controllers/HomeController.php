@@ -12,12 +12,38 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $popularTours = Tour::with('agency')
+        $query = Tour::with(['agency', 'category'])
             ->active()
-            ->whereHas('agency', fn($q) => $q->active())
-            ->orderBy('price')
-            ->limit(8)
-            ->get();
+            ->whereHas('agency', fn($q) => $q->active());
+
+        // Filtering
+        if (request('category')) {
+            $cat = \App\Models\Category::where('slug', request('category'))->first();
+            if ($cat) {
+                $catIds = collect([$cat->id])->merge($cat->children()->pluck('id'));
+                $query->whereIn('category_id', $catIds);
+            }
+        }
+
+        if (request('destination')) {
+            $query->where('destination', request('destination'));
+        }
+
+        // Sorting
+        $sort = request('sort', 'price_asc');
+        if ($sort === 'price_desc') {
+            $query->orderByDesc('price');
+        } elseif ($sort === 'price_asc') {
+            $query->orderBy('price');
+        } else {
+            $query->orderBy('price');
+        }
+
+        $popularTours = $query->limit(8)->get();
+
+        if (request()->ajax()) {
+            return view('partials.tour_grid', compact('popularTours'))->render();
+        }
 
         // Get destinations from managed table with tour counts
         $destinations = Destination::active()
@@ -31,6 +57,19 @@ class HomeController extends Controller
                 return $dest;
             })
             ->filter(fn($d) => $d->tour_count > 0);
+
+        // All active destinations for filter dropdown
+        $allDestinations = Tour::active()
+            ->whereNotNull('destination')
+            ->distinct()
+            ->pluck('destination');
+
+        // All active categories (parent → children tree)
+        $categories = \App\Models\Category::active()
+            ->parents()
+            ->with(['children' => fn($q) => $q->active()->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
 
         $agencyCount = Agency::active()->count();
         $tourCount   = Tour::active()->count();
@@ -50,6 +89,30 @@ class HomeController extends Controller
                 ->values();
         }
 
-        return view('home', compact('popularTours', 'destinations', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners'));
+        // Fetch Featured Cities from Database
+        $featuredCities = \App\Models\FeaturedCity::with('images')
+            ->active()
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function($city) {
+                return [
+                    'name' => $city->name,
+                    'country' => $city->country,
+                    'images' => $city->images->map(fn($img) => asset('storage/' . $img->image_path))->toArray(),
+                    'count' => Tour::active()->where('destination', $city->name)->count()
+                ];
+            })
+            // Show cities that have images, even if they have 0 tours currently
+            ->filter(fn($city) => count($city['images']) > 0)
+            ->values();
+
+        // Fallback for demo if DB is empty
+        if ($featuredCities->isEmpty()) {
+            $featuredCities = collect([
+                ['name' => 'Paris', 'country' => 'Fransa', 'images' => [asset('images/featured_cities/paris.png')], 'count' => 12],
+            ]);
+        }
+
+        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities'));
     }
 }

@@ -12,16 +12,21 @@ use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 // Public
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/turlar', [TourController::class, 'index'])->name('tours.index');
+Route::get('/turlar/karsilastir', [TourController::class, 'compare'])->name('tours.compare');
 Route::get('/turlar/{tour}', [TourController::class, 'show'])->name('tours.show');
 Route::get('/acentalar/{agency}', [AgencyController::class, 'show'])->name('agencies.show');
 Route::get('/destinasyonlar/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show');
 Route::get('/blog', [PostController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('blog.show');
+Route::get('/yapay-zeka-arama', [\App\Http\Controllers\AiSearchController::class, 'search'])->name('ai.search');
+Route::get('/yapay-zeka-arama-api', [\App\Http\Controllers\AiSearchController::class, 'searchApi'])->name('ai.search.api');
 
 // Favorites (auth required)
 Route::middleware('auth')->group(function () {
@@ -34,6 +39,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profilim/duzenle', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profilim', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profilim/sifre', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    // Notifications
+    Route::get('/bildirimler', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/bildirimler/{id}/okundu', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/bildirimler/hepsini-oku', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 });
 
 // Click tracking redirect
@@ -121,6 +131,13 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
     Route::get('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'index'])->name('campaigns.index');
     Route::post('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'store'])->name('campaigns.store');
     Route::delete('/kampanyalar/{campaign}', [\App\Http\Controllers\Agency\CampaignController::class, 'destroy'])->name('campaigns.destroy');
+
+    // Coupons
+    Route::resource('/kuponlar', \App\Http\Controllers\Agency\CouponController::class)
+        ->names('coupons')
+        ->parameters(['kuponlar' => 'coupon'])
+        ->only(['index', 'store', 'destroy']);
+    Route::post('/kuponlar/{coupon}/toggle', [\App\Http\Controllers\Agency\CouponController::class, 'toggle'])->name('coupons.toggle');
 });
 
 // Admin Panel
@@ -137,6 +154,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // Category Management
     Route::resource('/kategoriler', \App\Http\Controllers\Admin\CategoryController::class)->names('categories')->except(['create', 'show', 'edit']);
+
+    // Coupons
+    Route::resource('/kuponlar', \App\Http\Controllers\Admin\CouponController::class)
+        ->names('coupons')
+        ->parameters(['kuponlar' => 'coupon'])
+        ->except(['create', 'show', 'edit']);
+    Route::post('/kuponlar/{coupon}/toggle', [\App\Http\Controllers\Admin\CouponController::class, 'toggle'])->name('coupons.toggle');
+    
+    // Reports
+    Route::get('/raporlar', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
     Route::post('/kategoriler/{category}/toggle', [\App\Http\Controllers\Admin\CategoryController::class, 'toggle'])->name('categories.toggle');
 
     // Blog management
@@ -153,4 +180,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::put('/bannerlar/{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'update'])->name('banners.update');
     Route::patch('/bannerlar/{banner}/toggle', [\App\Http\Controllers\Admin\BannerController::class, 'toggle'])->name('banners.toggle');
     Route::delete('/bannerlar/{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy'])->name('banners.destroy');
+
+    // Featured Cities (Story) management
+    Route::get('/one-cikan-sehirler', [\App\Http\Controllers\Admin\FeaturedCityController::class, 'index'])->name('featured_cities.index');
+    Route::post('/one-cikan-sehirler', [\App\Http\Controllers\Admin\FeaturedCityController::class, 'store'])->name('featured_cities.store');
+    Route::put('/one-cikan-sehirler/{city}', [\App\Http\Controllers\Admin\FeaturedCityController::class, 'update'])->name('featured_cities.update');
+    Route::delete('/one-cikan-sehirler/{city}', [\App\Http\Controllers\Admin\FeaturedCityController::class, 'destroy'])->name('featured_cities.destroy');
+    Route::post('/one-cikan-sehirler/{city}/gorsel', [\App\Http\Controllers\Admin\FeaturedCityController::class, 'addImage'])->name('featured_cities.add_image');
+    Route::delete('/one-cikan-sehirler/gorsel/{image}', [\App\Http\Controllers\Admin\FeaturedCityController::class, 'destroyImage'])->name('featured_cities.destroy_image');
 });

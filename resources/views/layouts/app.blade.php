@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'StayFinder — Tur Karşılaştırma')</title>
     <meta name="description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    {{-- Open Graph --}}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="@yield('title', 'StayFinder — Tur Karşılaştırma')">
+    <meta property="og:description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
+    <meta property="og:locale" content="tr_TR">
+    <meta property="og:site_name" content="StayFinder">
+
+    {{-- Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', 'StayFinder — Tur Karşılaştırma')">
+    <meta name="twitter:description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
+    <meta name="twitter:image" content="@yield('og_image', asset('images/og-default.png'))">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -32,15 +49,21 @@
         .nav-logo { font-size:20px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; letter-spacing:-0.5px; flex-shrink:0; }
         .nav-logo span { color:var(--accent); }
         .nav-links { display:flex; align-items:center; gap:20px; margin-left:auto; } 
-        .nav-links a { color:#475569; font-weight:600; font-size:14.5px; transition:all 0.2s; display:flex; align-items:center; gap:6px; letter-spacing:0.1px; }
-        .nav-links a:hover { color:var(--accent); }
+        .nav-links a:not(.nav-btn) { color:#475569; font-weight:600; font-size:14.5px; transition:all 0.2s; display:flex; align-items:center; gap:6px; letter-spacing:0.1px; padding:6px 0; border-bottom:2px solid transparent; }
+        .nav-links a:not(.nav-btn):hover { color:var(--accent); }
+        .nav-links a.nav-active:not(.nav-btn) { color:var(--accent); border-bottom-color:var(--accent); }
+        
         .nav-profile { display:flex; align-items:center; gap:8px; color:#64748b; font-size:14.5px; font-weight:500; padding:0 16px; border-left:1px solid #e2e8f0; height:24px; margin-left:4px; }
-        .nav-btn { padding:8px 16px; border-radius:8px; font-size:14px; font-weight:600; border:1px solid #e2e8f0; background:var(--white); color:#0f172a; cursor:pointer; transition:all 0.2s; }
-        .nav-btn:hover { background:#f8fafc; border-color:#cbd5e1; }
-        .nav-btn-primary { background:var(--accent); color:var(--white); border:none; }
-        .nav-btn-primary:hover { background:var(--accent-hover); color:var(--white); transform:translateY(-1px); }
-        .nav-logout-btn { padding:6px 16px; border-radius:8px; font-size:14px; font-weight:600; border:1px solid #e2e8f0; background:var(--white); color:#0f172a; cursor:pointer; transition:all 0.2s; margin-left:8px; }
-        .nav-logout-btn:hover { background:#f8fafc; border-color:#cbd5e1; }
+        
+        .nav-btn { display:inline-flex; align-items:center; justify-content:center; padding:0 20px; height:40px; border-radius:10px; font-size:14.5px; font-weight:600; border:1px solid #cbd5e1; background:var(--white); color:#0f172a; cursor:pointer; transition:all 0.2s; flex-shrink:0; white-space:nowrap; text-decoration:none; }
+        .nav-btn:hover { background:#f8fafc; border-color:#94a3b8; }
+        .nav-btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .nav-btn-primary:hover { background:var(--accent-dark); color:#fff; border-color:var(--accent-dark); transform:translateY(-1px); box-shadow:0 6px 14px -4px rgba(13,148,136,0.4); }
+        
+        .nav-profile { display:flex; align-items:center; gap:8px; color:#64748b; font-size:14px; font-weight:600; padding:0 16px; border-left:1px solid #e2e8f0; height:24px; margin-left:4px; }
+        .nav-logout-btn { background:none; border:none; color:#ef4444; font-family:var(--font); font-size:14px; font-weight:700; cursor:pointer; padding:6px 12px; border-radius:8px; transition:all 0.2s; }
+        .nav-logout-btn:hover { background:#fef2f2; color:#dc2626; }
+        
         /* Mobile menu */
         .mobile-menu-btn {
             display:none; width:40px; height:40px; align-items:center; justify-content:center;
@@ -63,6 +86,14 @@
         .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
         .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
         .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+
+        @media(max-width: 992px) {
+            .grid-4 { grid-template-columns:repeat(2,1fr); }
+            .grid-3 { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width: 640px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns:1fr; }
+        }
 
         /* ── Cards ── */
         .card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:all .25s ease; }
@@ -250,15 +281,24 @@
 
         @yield('styles')
     </style>
+    @stack('head')
 </head>
 <body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }}">
     <nav class="nav">
         <div class="container nav-inner">
             <a href="{{ route('home') }}" class="nav-logo">🏖️ Stay<span>Finder</span></a>
             <div class="nav-links">
-                <a href="{{ route('tours.index') }}">Turlar</a>
-                <a href="{{ route('blog.index') }}">Blog</a>
+                <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar') ? 'nav-active' : '' }}">Turlar</a>
+                <a href="{{ route('blog.index') }}" class="{{ request()->is('blog*') ? 'nav-active' : '' }}">Blog</a>
                 @auth
+                    @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
+                    <a href="{{ route('notifications.index') }}" class="nav-notification-icon {{ request()->routeIs('notifications.index') ? 'active' : '' }}" style="position:relative; margin-right:15px; font-size:20px; text-decoration:none;">
+                        🔔
+                        @if($unreadCount > 0)
+                        <span style="position:absolute; top:-5px; right:-8px; background:#ef4444; color:white; font-size:10px; font-weight:800; padding:2px 5px; border-radius:100px; line-height:1; min-width:14px; text-align:center; border:2px solid white;">{{ $unreadCount }}</span>
+                        @endif
+                    </a>
+
                     @if(auth()->user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}">Admin Panel</a>
                     @elseif(auth()->user()->isAgency())
@@ -268,7 +308,7 @@
                     @endif
                     
                     <div class="nav-profile">
-                        👤 {{ auth()->user()->name }}
+                        <span style="font-size:16px;">👤</span> {{ auth()->user()->name }}
                     </div>
 
                     <form method="POST" action="{{ route('logout') }}" style="display:inline;margin:0;">
@@ -286,6 +326,8 @@
             <a href="{{ route('tours.index') }}">🧭 Turlar</a>
             <a href="{{ route('blog.index') }}">✍️ Blog</a>
             @auth
+                @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
+                <a href="{{ route('notifications.index') }}">🔔 Bildirimler @if($unreadCount > 0) <span style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px; margin-left:5px;">{{ $unreadCount }}</span> @endif</a>
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.dashboard') }}">⚙️ Admin Panel</a>
                 @elseif(auth()->user()->isAgency())
@@ -324,6 +366,517 @@
             <div class="footer-bottom">StayFinder © 2026 · Tüm hakları saklıdır.</div>
         </div>
     </footer>
+
+    <div id="compare-bar" style="display:none;position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:1600;background:#0f172a;color:#f8fafc;border:1px solid rgba(255,255,255,0.15);border-radius:16px;box-shadow:0 16px 32px rgba(2,6,23,0.35);padding:12px 16px;min-width:320px;max-width:calc(100vw - 24px);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div style="font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;">
+                <span style="width:24px;height:24px;border-radius:999px;background:#0d9488;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">✓</span>
+                <span><span id="compare-count">0</span> tur seçildi</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" onclick="window.clearCompare()" style="border:1px solid rgba(255,255,255,0.25);background:transparent;color:#cbd5e1;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;">Temizle</button>
+                <button type="button" onclick="window.goToCompare()" style="border:none;background:#0d9488;color:white;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;">Karşılaştır</button>
+            </div>
+        </div>
+    </div>
+
+    @php
+        $hideAiChat = request()->is('admin*')
+            || request()->is('super-admin*')
+            || request()->is('superadmin*')
+            || (auth()->check() && in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'], true));
+    @endphp
+
+    @if(!$hideAiChat)
+    {{-- AI Chatbot Trigger & Window (PREMIUM V2 - DARK GLASS) --}}
+    <div id="ai-chat-container" style="position:fixed; bottom:24px; right:24px; z-index:2000; font-family:var(--font); width:max-content; max-width:calc(100vw - 48px);">
+        {{-- Floating Glass Bar --}}
+        <div id="ai-chat-trigger" onclick="toggleAIChat()" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); color:white; padding:10px 20px; border-radius:100px; cursor:pointer; display:flex; align-items:center; gap:12px; box-shadow:0 10px 40px rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.15); transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); white-space:nowrap; flex-wrap:nowrap; user-select:none;">
+            <div style="width:32px; height:32px; background:linear-gradient(135deg, #0d9488, #2dd4bf); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 12px rgba(13,148,136,0.3);">🤖</div>
+            <div style="font-size:13px; font-weight:700; letter-spacing:-0.2px; color:#f1f5f9;">Hayalindeki tatili anlat...</div>
+        </div>
+
+        {{-- Premium Chat Window (Dark Glass) --}}
+        <div id="ai-chat-window" style="display:none; position:absolute; bottom:70px; right:0; width:min(400px, 90vw); height:600px; background:rgba(15,23,42,0.75); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); border-radius:24px; box-shadow:0 30px 60px -12px rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); overflow:hidden; flex-direction:column; animation:premiumSlideIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);">
+            {{-- Header --}}
+            <div style="border-bottom:1px solid rgba(255,255,255,0.1); color:white; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; position:relative;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:40px; height:40px; background:rgba(255,255,255,0.1); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; border:1px solid rgba(255,255,255,0.05);">🤖</div>
+                    <div>
+                        <div style="font-size:16px; font-weight:800; letter-spacing:-0.4px;">StayFinder AI</div>
+                        <div style="display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#34d399; margin-top:2px;">
+                            <span style="width:6px; height:6px; background:#34d399; border-radius:50%; display:inline-block; animation:pulse 2s infinite;"></span>
+                            Sana özel tatil asistanı
+                        </div>
+                    </div>
+                </div>
+                <button onclick="toggleAIChat()" style="background:rgba(255,255,255,0.1); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:background 0.2s;">&times;</button>
+            </div>
+            
+            {{-- Messages Area --}}
+            <div id="ai-chat-messages" style="flex:1; min-height:0; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:16px; align-items:stretch;">
+                <div class="ai-msg-ai">
+                    Selam! 👋 Ben senin kişisel tatil uzmanıyım. <span style="font-weight:700; color:#2dd4bf;">Kültür, vize, bütçe</span> veya sadece <span style="font-weight:700; color:#2dd4bf;">hayallerindeki doğayı</span> anlat, senin için en iyi turu saniyeler içinde bulayım!
+                </div>
+                
+                {{-- Suggestion Chips --}}
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">
+                    <button onclick="setSuggestion('Vizesiz en iyi yurt dışı turları hangileri?')" class="suggestion-chip">🌍 Vizesiz Turlar</button>
+                    <button onclick="setSuggestion('20.000 TL bütçe ile tatil önerisi.')" class="suggestion-chip">💰 Bütçe Dostu</button>
+                    <button onclick="setSuggestion('Huzurlu bir doğa ve deniz tatili istiyorum.')" class="suggestion-chip">🌿 Doğa & Deniz</button>
+                    <button onclick="setSuggestion('Bana en lüks gemi turlarını göster.')" class="suggestion-chip">🚢 Gemi Turları</button>
+                </div>
+            </div>
+
+            {{-- Input Area --}}
+            <div style="padding:16px; border-top:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2);">
+                <div style="display:flex; gap:10px; background:rgba(255,255,255,0.05); padding:6px; border-radius:18px; border:1px solid rgba(255,255,255,0.1);">
+                    <input type="text" id="ai-chat-input" placeholder="Hayalindeki rotayı tarif et..." style="flex:1; border:none; padding:10px 15px; font-size:14px; outline:none; font-family:var(--font); background:transparent; color:white;">
+                    <button onclick="sendAIChatMessage()" style="background:linear-gradient(135deg, #0d9488, #2dd4bf); color:white; border:none; width:42px; height:42px; border-radius:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 16px rgba(13,148,136,0.25); transition:all 0.3s; flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+                <div style="font-size:10px; text-align:center; color:rgba(255,255,255,0.4); margin-top:10px; font-weight:600; letter-spacing:0.3px;">Powered by StayFinder AI Engine</div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes premiumSlideIn { from { transform: translateY(40px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        @keyframes messageSlide { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        #ai-chat-input::placeholder { color: rgba(255,255,255,0.4); }
+        
+        .suggestion-chip { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); padding:8px 14px; border-radius:100px; font-size:12px; font-weight:600; color:#e2e8f0; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+        .suggestion-chip:hover { background:rgba(45,212,191,0.2); border-color:#2dd4bf; color:white; transform:translateY(-1px); }
+        
+        #ai-chat-trigger:hover { transform: scale(1.02) translateY(-2px); box-shadow:0 15px 50px rgba(0,0,0,0.3); }
+        
+        #ai-chat-messages > * { flex-shrink:0; }
+        .ai-msg-ai { background:rgba(255,255,255,0.1); padding:16px 20px; border-radius:20px 20px 20px 6px; font-size:14px; color:#f8fafc; max-width:85%; border:1px solid rgba(255,255,255,0.05); animation:messageSlide 0.3s ease; line-height:1.5; }
+        .ai-msg-user { background:linear-gradient(135deg, #0d9488, #2dd4bf) !important; color:white !important; border-radius:20px 20px 6px 20px !important; align-self:flex-end !important; padding:14px 18px !important; font-size:14px !important; max-width:85% !important; box-shadow:0 8px 20px rgba(13,148,136,0.2) !important; animation:messageSlide 0.3s ease; line-height:1.5; }
+
+        .ai-tour-carousel { flex:0 0 auto; min-height:252px; }
+        .ai-tour-card { background:rgba(0,0,0,0.25); border-radius:16px; border:1px solid rgba(255,255,255,0.12); transition:transform 0.3s, box-shadow 0.3s; flex:0 0 220px; min-width:220px; min-height:252px; overflow:hidden; }
+        .ai-tour-card:hover { transform:translateY(-4px); box-shadow:0 20px 40px rgba(0,0,0,0.3); border-color:rgba(255,255,255,0.2); }
+        .ai-tour-card > a { min-height:252px; display:flex !important; flex-direction:column; text-decoration:none; color:white; }
+        .ai-tour-card-content { padding:14px; display:flex; flex-direction:column; flex:1; }
+        .ai-tour-card-bottom { margin-top:auto; display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1); }
+        
+        /* Custom scrollbar for chat */
+        #ai-chat-messages::-webkit-scrollbar { width: 6px; }
+        #ai-chat-messages::-webkit-scrollbar-track { background: transparent; }
+        #ai-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        
+        .ai-tour-carousel::-webkit-scrollbar { height: 4px; }
+        .ai-tour-carousel::-webkit-scrollbar-track { background: transparent; }
+        .ai-tour-carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+        #ai-chat-messages::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+
+    <script>
+        // --- AI Chatbot Core ---
+        let isDragging = false;
+        let dragStartX, dragStartY;
+
+        function positionAIChatWindow() {
+            const container = document.getElementById('ai-chat-container');
+            const windowObj = document.getElementById('ai-chat-window');
+            if (!container || !windowObj) return;
+
+            const margin = 12;
+            const gap = 10;
+
+            // Keep panel fully visible on short screens
+            windowObj.style.maxHeight = Math.max(320, window.innerHeight - (margin * 2)) + 'px';
+
+            const wasHidden = (windowObj.style.display === 'none' || getComputedStyle(windowObj).display === 'none');
+            if (wasHidden) {
+                windowObj.style.display = 'flex';
+                windowObj.style.visibility = 'hidden';
+            }
+
+            // Reset anchors before measuring / placing
+            windowObj.style.top = 'auto';
+            windowObj.style.bottom = 'auto';
+            windowObj.style.left = 'auto';
+            windowObj.style.right = 'auto';
+
+            const rect = container.getBoundingClientRect();
+            const panelWidth = windowObj.offsetWidth;
+            const panelHeight = windowObj.offsetHeight;
+
+            // Horizontal: keep panel inside viewport (prefer right-aligned to trigger)
+            const desiredLeft = rect.right - panelWidth;
+            const clampedLeft = Math.min(
+                Math.max(desiredLeft, margin),
+                window.innerWidth - panelWidth - margin
+            );
+            windowObj.style.left = (clampedLeft - rect.left) + 'px';
+
+            // Vertical: prefer above trigger; if not possible, place below; always clamp in viewport
+            const topIfAbove = rect.top - panelHeight - gap;
+            const topIfBelow = rect.bottom + gap;
+            let panelTop = topIfAbove;
+
+            if (topIfAbove < margin && topIfBelow + panelHeight <= window.innerHeight - margin) {
+                panelTop = topIfBelow;
+            }
+
+            panelTop = Math.min(
+                Math.max(panelTop, margin),
+                window.innerHeight - panelHeight - margin
+            );
+            windowObj.style.top = (panelTop - rect.top) + 'px';
+
+            if (wasHidden) {
+                windowObj.style.display = 'none';
+                windowObj.style.visibility = '';
+            }
+        }
+
+        function toggleAIChat() {
+            if (isDragging) return;
+            const windowObj = document.getElementById('ai-chat-window');
+            const trigger = document.getElementById('ai-chat-trigger');
+            if (windowObj.style.display === 'none') {
+                windowObj.style.display = 'flex';
+                windowObj.style.visibility = 'hidden';
+                positionAIChatWindow();
+                windowObj.style.visibility = 'visible';
+                trigger.style.opacity = '0';
+                trigger.style.pointerEvents = 'none';
+                document.getElementById('ai-chat-input').focus();
+            } else {
+                windowObj.style.display = 'none';
+                trigger.style.opacity = '1';
+                trigger.style.pointerEvents = 'auto';
+            }
+        }
+
+        function setSuggestion(text) {
+            document.getElementById('ai-chat-input').value = text;
+            sendAIChatMessage();
+        }
+
+        async function sendAIChatMessage() {
+            const input = document.getElementById('ai-chat-input');
+            const messages = document.getElementById('ai-chat-messages');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 1. User Message
+            const userMsg = document.createElement('div');
+            userMsg.className = "ai-msg-user";
+            userMsg.innerText = text;
+            messages.appendChild(userMsg);
+            input.value = '';
+            messages.scrollTop = messages.scrollHeight;
+
+            // 2. Premium Loading
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = "ai-msg-ai";
+            loadingMsg.innerHTML = `<div style="display:flex; gap:5px; align-items:center;"><span style="font-size:13px; font-weight:700;">StayFinder AI</span> <div class="dots-load">...</div></div> <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Senin için seçenekleri analiz ediyorum...</div>`;
+            messages.appendChild(loadingMsg);
+            messages.scrollTop = messages.scrollHeight;
+
+            try {
+                const response = await fetch(`/yapay-zeka-arama-api?q=${encodeURIComponent(text)}&_t=${Date.now()}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate'
+                    }
+                });
+                const data = await response.json();
+                messages.removeChild(loadingMsg);
+
+                // 3. AI response
+                const aiMsg = document.createElement('div');
+                aiMsg.className = "ai-msg-ai";
+                aiMsg.innerHTML = `<div style="font-size:12px; font-weight:800; color:#2dd4bf; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Zeka Yanıtı</div> <div>${data.aiComment || "İşte senin için bulduğum en iyi turlar:"}</div>`;
+                messages.appendChild(aiMsg);
+
+                // 4. Tour results
+                console.log('AI DATA:', data);
+                var tourList = data.results;
+                if (!Array.isArray(tourList)) {
+                    tourList = Object.values(tourList || {});
+                }
+                console.log('TOURS FOUND:', tourList.length);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                if (tourList.length > 0) {
+                    // Yatay kaydırma container
+                    var carousel = document.createElement('div');
+                    carousel.style.cssText = 'display:flex; flex:0 0 auto; overflow-x:auto; overflow-y:visible; align-items:stretch; gap:10px; padding:4px 0 12px 0; margin-bottom:10px; min-height:252px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;';
+                    carousel.className = 'ai-tour-carousel';
+
+                    tourList.forEach(function(tour, idx) {
+                        console.log('Rendering tour #' + idx, tour.title);
+                        var card = buildTourCard(tour, idx, data.log_id || null);
+                        carousel.appendChild(card);
+                    });
+                    
+                    messages.appendChild(carousel);
+
+                    // Kısa, güvenli auto-scroll: kartlar ezilmeden en alta götür.
+                    var scrollBottom = function() {
+                        messages.scrollTop = messages.scrollHeight;
+                    };
+                    requestAnimationFrame(scrollBottom);
+                    setTimeout(scrollBottom, 60);
+                    setTimeout(scrollBottom, 240);
+                    carousel.querySelectorAll('img').forEach(function(imgEl) {
+                        imgEl.addEventListener('load', scrollBottom, { once: true });
+                    });
+                } else if (!data.aiComment) {
+                    var noResult = document.createElement('div');
+                    noResult.className = 'ai-msg-ai';
+                    noResult.textContent = 'Maalesef kriterlerine net uyan bir tur bulamadım. 😔 Alternatif rotalar arayalım mı?';
+                    messages.appendChild(noResult);
+                }
+                messages.scrollTop = messages.scrollHeight;
+            } catch (err) {
+                console.error('AI Error:', err);
+                if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
+                var errorMsg = document.createElement('div');
+                errorMsg.className = 'ai-msg-ai';
+                errorMsg.textContent = '⚠️ Turlar listelenirken hata oluştu: ' + err.message;
+                messages.appendChild(errorMsg);
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+
+        // Tur kartı oluşturma fonksiyonu (innerHTML kullanmadan güvenli DOM oluşturma)
+        function buildTourCard(tour, index, logId) {
+            var rawScore = (typeof tour.compatibility_score === 'number')
+                ? tour.compatibility_score
+                : (typeof tour.similarity === 'number' ? tour.similarity : 0.8);
+            var similarity = Math.round(Math.max(0, Math.min(1, rawScore)) * 100);
+            var destination = tour.destination || 'Dünya';
+            var title = tour.title || 'Keşfedilecek Tur';
+            var price = tour.price ? new Intl.NumberFormat('tr-TR').format(tour.price) : '0';
+            var currencyCode = (tour.currency || 'TRY').toUpperCase();
+            var currencySymbols = {
+                TRY: '₺',
+                USD: '$',
+                EUR: '€',
+                GBP: '£',
+                AED: 'AED',
+                SAR: 'SAR'
+            };
+            var currency = currencySymbols[currencyCode] || currencyCode;
+            var slug = tour.slug || '';
+            var detailUrl = tour.url
+                || (tour.id ? ('/turlar/' + tour.id) : '')
+                || (slug ? ('/turlar/' + slug) : '/turlar');
+            var duration = tour.duration_days ? tour.duration_days + ' Gün' : '';
+            var image = tour.image || 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600';
+            var rank = typeof tour.rank === 'number' ? tour.rank : (index + 1);
+
+            // Ana kart wrapper — sabit genişlik, kare format
+            var wrapper = document.createElement('div');
+            wrapper.className = 'ai-tour-card';
+            wrapper.style.cssText = 'flex:0 0 220px; flex-shrink:0; min-width:220px; min-height:252px; background:rgba(255,255,255,0.08); border-radius:16px; border:1px solid rgba(255,255,255,0.15); scroll-snap-align:start; transition:transform 0.3s, box-shadow 0.3s; overflow:hidden;';
+            wrapper.onmouseenter = function() { this.style.transform = 'translateY(-4px)'; this.style.boxShadow = '0 16px 32px rgba(0,0,0,0.3)'; };
+            wrapper.onmouseleave = function() { this.style.transform = ''; this.style.boxShadow = ''; };
+
+            // Link
+            var link = document.createElement('a');
+            var finalUrl = new URL(detailUrl, window.location.origin);
+            if (logId) finalUrl.searchParams.set('ai_log_id', String(logId));
+            finalUrl.searchParams.set('ai_rank', String(rank));
+            link.href = finalUrl.pathname + finalUrl.search;
+            link.style.cssText = 'text-decoration:none; color:white; display:flex; flex-direction:column; min-height:252px;';
+
+            // Görsel container — kare görsel
+            var imgContainer = document.createElement('div');
+            imgContainer.style.cssText = 'position:relative; width:100%; height:140px; background:#1e293b;';
+
+            var img = document.createElement('img');
+            img.src = image;
+            img.alt = title;
+            img.style.cssText = 'width:100%; height:140px; object-fit:cover; display:block;';
+            img.onerror = function() { this.src = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600'; };
+            imgContainer.appendChild(img);
+
+            // Uyumluluk badge
+            var badge = document.createElement('div');
+            badge.style.cssText = 'position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; color:#34d399;';
+            badge.textContent = '%' + similarity + ' Uyumlu';
+            imgContainer.appendChild(badge);
+
+            // Gradient overlay
+            var gradient = document.createElement('div');
+            gradient.style.cssText = 'position:absolute; bottom:0; left:0; width:100%; height:50%; background:linear-gradient(to top, rgba(15,23,42,0.8), transparent);';
+            imgContainer.appendChild(gradient);
+
+            link.appendChild(imgContainer);
+
+            // İçerik bölümü
+            var content = document.createElement('div');
+            content.className = 'ai-tour-card-content';
+            content.style.cssText = 'padding:14px; display:flex; flex-direction:column; flex:1;';
+
+            var dest = document.createElement('div');
+            dest.style.cssText = 'font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;';
+            dest.textContent = destination + (duration ? ' • ' + duration : '');
+            content.appendChild(dest);
+
+            var titleEl = document.createElement('div');
+            titleEl.style.cssText = 'font-size:14px; font-weight:800; margin-top:4px; color:#f8fafc; line-height:1.4;';
+            titleEl.textContent = title;
+            content.appendChild(titleEl);
+
+            // Alt satır: fiyat + incele butonu
+            var bottom = document.createElement('div');
+            bottom.className = 'ai-tour-card-bottom';
+            bottom.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);';
+
+            var priceEl = document.createElement('div');
+            priceEl.style.cssText = 'font-size:16px; font-weight:900; color:#34d399;';
+            priceEl.textContent = price + ' ' + currency;
+            bottom.appendChild(priceEl);
+
+            var btn = document.createElement('div');
+            btn.style.cssText = 'font-size:11px; font-weight:700; color:#0f172a; background:#34d399; padding:6px 12px; border-radius:100px;';
+            btn.textContent = 'İncele →';
+            bottom.appendChild(btn);
+
+            content.appendChild(bottom);
+            link.appendChild(content);
+            wrapper.appendChild(link);
+
+            return wrapper;
+        }
+
+        // --- Draggable Setup ---
+        function initDraggableChat() {
+            const container = document.getElementById('ai-chat-container');
+            const trigger = document.getElementById('ai-chat-trigger');
+            let offsetX, offsetY;
+
+            trigger.addEventListener('mousedown', (e) => {
+                isDragging = false;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                const rect = container.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                // Prevent stretching while dragging: lock to current fixed box
+                container.style.position = 'fixed';
+                container.style.left = rect.left + 'px';
+                container.style.top = rect.top + 'px';
+                container.style.right = 'auto';
+                container.style.bottom = 'auto';
+                container.style.transition = 'none';
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                if (Math.abs(e.clientX - dragStartX) > 5 || Math.abs(e.clientY - dragStartY) > 5) {
+                    isDragging = true;
+                    container.style.position = 'fixed';
+                    container.style.left = (e.clientX - offsetX) + 'px';
+                    container.style.top = (e.clientY - offsetY) + 'px';
+                }
+            }
+
+            function onMouseUp(e) {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                if (isDragging) {
+                    const margin = 24;
+                    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    const rect = container.getBoundingClientRect();
+                    const dists = { left: rect.left, right: w - rect.right, top: rect.top, bottom: h - rect.bottom };
+                    const min = Math.min(dists.left, dists.right, dists.top, dists.bottom);
+                    container.style.transition = 'all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1)';
+                    const maxLeft = Math.max(margin, w - container.offsetWidth - margin);
+                    const maxTop = Math.max(margin, h - container.offsetHeight - margin);
+
+                    if (min === dists.left) {
+                        container.style.left = margin + 'px';
+                        container.style.top = clamp(rect.top, margin, maxTop) + 'px';
+                    } else if (min === dists.right) {
+                        container.style.left = maxLeft + 'px';
+                        container.style.top = clamp(rect.top, margin, maxTop) + 'px';
+                    } else if (min === dists.top) {
+                        container.style.top = margin + 'px';
+                        container.style.left = clamp(rect.left, margin, maxLeft) + 'px';
+                    } else {
+                        container.style.top = maxTop + 'px';
+                        container.style.left = clamp(rect.left, margin, maxLeft) + 'px';
+                    }
+
+                    const chatWindow = document.getElementById('ai-chat-window');
+                    if (chatWindow && chatWindow.style.display === 'flex') {
+                        positionAIChatWindow();
+                    }
+                }
+                setTimeout(() => { isDragging = false; }, 50);
+            }
+        }
+
+        document.getElementById('ai-chat-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendAIChatMessage(); });
+        document.addEventListener('DOMContentLoaded', initDraggableChat);
+        window.addEventListener('resize', () => {
+            const chatWindow = document.getElementById('ai-chat-window');
+            if (chatWindow && chatWindow.style.display === 'flex') {
+                positionAIChatWindow();
+            }
+        });
+
+        // --- Comparison Code Fix ---
+        let comparedTours = JSON.parse(localStorage.getItem('compared_tours') || '[]');
+        const comparePageUrl = @json(route('tours.compare'));
+        function updateCompareUI() {
+            const bar = document.getElementById('compare-bar');
+            if (bar) {
+                const countEl = document.getElementById('compare-count');
+                if (countEl) countEl.innerText = comparedTours.length;
+                bar.style.display = comparedTours.length > 0 ? 'block' : 'none';
+            }
+            document.querySelectorAll('.compare-toggle').forEach(btn => {
+                const id = parseInt(btn.dataset.tourId);
+                if (comparedTours.includes(id)) { btn.innerHTML = '✓ Eklendi'; btn.style.background = '#059669'; btn.style.color = '#fff'; }
+                else { btn.innerHTML = '+ Karşılaştır'; btn.style.background = '#fff'; btn.style.color = '#475569'; }
+            });
+        }
+        window.toggleCompare = function(id) { 
+            id = parseInt(id); const idx = comparedTours.indexOf(id);
+            if (idx > -1) comparedTours.splice(idx, 1);
+            else if (comparedTours.length < 3) comparedTours.push(id);
+            else alert('En fazla 3 tur.');
+            localStorage.setItem('compared_tours', JSON.stringify(comparedTours));
+            updateCompareUI();
+        };
+        window.clearCompare = function() {
+            comparedTours = [];
+            localStorage.setItem('compared_tours', JSON.stringify(comparedTours));
+            updateCompareUI();
+        };
+        window.goToCompare = function() {
+            if (comparedTours.length < 2) {
+                alert('Karşılaştırma için en az 2 tur seçmelisin.');
+                return;
+            }
+            const query = comparedTours.map(function(id) {
+                return 'ids[]=' + encodeURIComponent(id);
+            }).join('&');
+            window.location.href = comparePageUrl + '?' + query;
+        };
+        document.addEventListener('DOMContentLoaded', updateCompareUI);
+    </script>
+    @endif
+
     @stack('scripts')
 </body>
 </html>

@@ -21,7 +21,7 @@
             .stat-card-link .stat-card { cursor:pointer; }
             .stat-card-link .stat-card div[style*="font-size:13px"] { white-space:nowrap; font-size:12px !important; }
         </style>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:32px;">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px;">
             <a href="{{ route('admin.agencies') }}" class="stat-card-link">
                 <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
@@ -49,22 +49,13 @@
                     <div style="width:48px;height:48px;"><canvas id="ring3"></canvas></div>
                 </div>
             </a>
-            <a href="{{ route('admin.agencies') }}" class="stat-card-link">
-                <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-size:24px;font-weight:800;color:#f59e0b;">{{ $stats['users'] }}</div>
-                        <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Kullanıcı</div>
-                    </div>
-                    <div style="width:48px;height:48px;"><canvas id="ring4"></canvas></div>
-                </div>
-            </a>
             <a href="{{ route('admin.tours') }}" class="stat-card-link">
                 <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <div style="font-size:24px;font-weight:800;color:#ec4899;">{{ $stats['clicks'] }}</div>
                         <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Toplam Tıklama</div>
                     </div>
-                    <div style="width:48px;height:48px;"><canvas id="ring5"></canvas></div>
+                    <div style="width:48px;height:48px;"><canvas id="ring4"></canvas></div>
                 </div>
             </a>
             <a href="{{ route('admin.tours') }}" class="stat-card-link">
@@ -73,7 +64,7 @@
                         <div style="font-size:24px;font-weight:800;color:#8b5cf6;">{{ $stats['views'] }}</div>
                         <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Görüntülenme</div>
                     </div>
-                    <div style="width:48px;height:48px;"><canvas id="ring6"></canvas></div>
+                    <div style="width:48px;height:48px;"><canvas id="ring5"></canvas></div>
                 </div>
             </a>
         </div>
@@ -158,9 +149,8 @@ function renderRing(id, hexColor, fillPercent) {
 renderRing('ring1', '#10b981', 35); // Acenta
 renderRing('ring2', '#10b981', 85); // Aktif Tur
 renderRing('ring3', '#6366f1', 95); // Toplam Tur
-renderRing('ring4', '#f59e0b', 55); // Kullanıcı
-renderRing('ring5', '#ec4899', 25); // Toplam Tıklama
-renderRing('ring6', '#8b5cf6', 75); // Görüntülenme
+renderRing('ring4', '#ec4899', 25); // Toplam Tıklama
+renderRing('ring5', '#8b5cf6', 75); // Görüntülenme
 
 // Daily Clicks & Views Premium Line Chart
 const dailyCtx = document.getElementById('dailyChart').getContext('2d');

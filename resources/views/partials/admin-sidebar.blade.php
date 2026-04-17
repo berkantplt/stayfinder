@@ -36,6 +36,15 @@
         <a href="{{ route('admin.banners.index') }}" class="sidebar-link {{ request()->routeIs('admin.banners*') ? 'active' : '' }}">
             <span class="sidebar-icon">🖼️</span> Banner Yönetimi
         </a>
+        <a href="{{ route('admin.featured_cities.index') }}" class="sidebar-link {{ request()->routeIs('admin.featured_cities*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🏙️</span> Öne Çıkan Şehirler
+        </a>
+        <a href="{{ route('admin.coupons.index') }}" class="sidebar-link {{ request()->routeIs('admin.coupons*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🎟️</span> Kupon Yönetimi
+        </a>
+        <a href="{{ route('admin.reports.index') }}" class="sidebar-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
+            <span class="sidebar-icon">📈</span> Raporlar
+        </a>
         <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;">
         <a href="{{ route('home') }}" class="sidebar-link">
             <span class="sidebar-icon">🌍</span> Siteye Dön
