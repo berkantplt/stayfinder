@@ -302,7 +302,9 @@
                     @if(auth()->user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}">Admin Panel</a>
                     @elseif(auth()->user()->isAgency())
-                        <a href="{{ route('agency.dashboard') }}">Panelim</a>
+                        <a href="{{ auth()->user()->agencyApproved() ? route('agency.dashboard') : route('agency.application.status') }}">
+                            {{ auth()->user()->agencyApproved() ? 'Panelim' : 'Başvuru Durumu' }}
+                        </a>
                     @else
                         <a href="{{ route('favorites.index') }}">Favorilerim</a>
                     @endif
@@ -331,7 +333,9 @@
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.dashboard') }}">⚙️ Admin Panel</a>
                 @elseif(auth()->user()->isAgency())
-                    <a href="{{ route('agency.dashboard') }}">📊 Panelim</a>
+                    <a href="{{ auth()->user()->agencyApproved() ? route('agency.dashboard') : route('agency.application.status') }}">
+                        {{ auth()->user()->agencyApproved() ? '📊 Panelim' : '📝 Başvuru Durumu' }}
+                    </a>
                 @else
                     <a href="{{ route('favorites.index') }}">❤️ Favorilerim</a>
                     <a href="{{ route('profile.show') }}">👤 Profilim</a>
@@ -360,7 +364,7 @@
                     <p style="font-size:14px;line-height:1.8;">Türkiye'nin en iyi tur acentalarından fiyatları karşılaştırın. En uygun turu bulun.</p>
                 </div>
                 <div><h4>Platform</h4><ul><li><a href="{{ route('tours.index') }}">Turlar</a></li><li><a href="#">Nasıl Çalışır?</a></li></ul></div>
-                <div><h4>Acentalar</h4><ul><li><a href="{{ route('login') }}">Acenta Girişi</a></li><li><a href="#">Acenta Ol</a></li></ul></div>
+                <div><h4>Acentalar</h4><ul><li><a href="{{ route('login') }}">Acenta Girişi</a></li><li><a href="{{ route('agency.register') }}">Acenta Ol</a></li></ul></div>
                 <div><h4>Yasal</h4><ul><li><a href="#">Gizlilik</a></li><li><a href="#">Kullanım Koşulları</a></li></ul></div>
             </div>
             <div class="footer-bottom">StayFinder © 2026 · Tüm hakları saklıdır.</div>
@@ -384,6 +388,8 @@
         $hideAiChat = request()->is('admin*')
             || request()->is('super-admin*')
             || request()->is('superadmin*')
+            || request()->is('acenta*')
+            || request()->routeIs('agency.*')
             || (auth()->check() && in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'], true));
     @endphp
 

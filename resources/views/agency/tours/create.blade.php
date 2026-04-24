@@ -177,22 +177,29 @@
                 <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">Yeni Tur Ekle</h1>
             </div>
 
-            <div style="display:flex; gap:24px; max-width:94%; margin:0 auto; align-items: flex-start;">
-                <!-- Sol Taraf: Form -->
-                <div style="flex: 1; min-width: 0;">
+            <div style="max-width:94%; margin:0 auto;">
+                <div style="max-width:960px;">
                     @if($errors->any())
                         <div class="alert alert-error" style="margin-bottom: 24px;">
                             @foreach($errors->all() as $e) {{ $e }}<br> @endforeach
                         </div>
                     @endif
 
+                    @unless($canCreateTours)
+                        <div class="alert alert-error" style="margin-bottom: 24px;">
+                            Tur paylaşabilmek için önce en az 1 kategori için aylık yetki satın almalısınız.
+                            <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkilendirme Merkezi</a>
+                        </div>
+                    @endunless
+
                     <div class="stat-card" style="padding:32px;">
+                @if($canCreateTours)
                 <form method="POST" action="{{ route('agency.tours.store') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="form-group"><label>Tur Adı *</label><input type="text" name="title" value="{{ old('title') }}" required></div>
                     <div class="form-group">
-                        <label>Kategori</label>
-                        <select name="category_id">
+                        <label>Kategori Yetkisi *</label>
+                        <select name="category_id" required>
                             <option value="">Kategori Seçin</option>
                             @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->icon }} {{ $cat->name }}</option>
@@ -294,14 +301,17 @@
                     </div>
                     </div>
                 </form>
-                </div>
-
-                <!-- Sağ Taraf: SEO Widget -->
-                <div style="width: 320px; flex-shrink: 0;">
-                    @include('partials.seo-score-widget')
+                @else
+                    <div style="text-align:center;padding:32px 16px;">
+                        <div style="font-size:15px;color:#475569;margin-bottom:16px;">Önce kategori yetkisi satın alın, ardından bu alandan tur paylaşın.</div>
+                        <a href="{{ route('agency.category-licenses.index') }}" class="btn btn-primary">Kategori Yetkilendirme Merkezi</a>
+                    </div>
+                    </div>
+                @endif
                 </div>
             </div>
 
+            @if($canCreateTours)
             <script>
             const initialPricingOptions = @json($oldPricingOptions);
             const minSelectableDate = '{{ now()->toDateString() }}';
@@ -706,6 +716,7 @@
                 }
             });
             </script>
+            @endif
         </div>
     </div>
 </div>

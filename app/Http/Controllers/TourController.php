@@ -98,6 +98,8 @@ class TourController extends Controller
 
     public function show(Request $request, Tour $tour)
     {
+        abort_unless($tour->isPubliclyVisible() && $tour->agency?->is_active, 404);
+
         $this->captureAiSelection($request, $tour);
         $tour->load('agency', 'dates', 'category');
 

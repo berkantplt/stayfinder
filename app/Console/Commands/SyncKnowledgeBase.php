@@ -42,7 +42,10 @@ class SyncKnowledgeBase extends Command
     private function syncTours()
     {
         $this->comment('Turlar senkronize ediliyor...');
-        $tours = Tour::where('is_active', true)->with('category', 'agency')->get();
+        $tours = Tour::active()
+            ->whereHas('agency', fn($agencyQuery) => $agencyQuery->active())
+            ->with('category', 'agency')
+            ->get();
         
         foreach ($tours as $tour) {
             $content = "Tur: {$tour->title}\n" .

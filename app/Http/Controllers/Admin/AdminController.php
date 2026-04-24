@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
+use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\User;
+use App\Support\CategoryLicensing;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -56,7 +59,16 @@ class AdminController extends Controller
 
     public function agencies(Request $request)
     {
-        $query = Agency::withCount('tours');
+        $query = Agency::withCount([
+            'tours',
+            'activeTours as active_tours_count',
+        ]);
+
+        if (CategoryLicensing::schemaReady()) {
+            $query->withCount([
+                'activeCategorySubscriptions as active_category_subscriptions_count',
+            ]);
+        }
 
         if ($request->filled('q')) {
             $searchTerm = $request->q;
@@ -79,6 +91,153 @@ class AdminController extends Controller
         return view('admin.agencies', compact('agencies'));
     }
 
+    public function agencyApplications()
+    {
+        $pendingApplications = Agency::pendingApproval()
+            ->withCount([
+                'tours',
+                'activeTours as active_tours_count',
+            ])
+            ->orderBy('created_at')
+            ->paginate(12, ['*'], 'pending');
+
+        $recentApplications = Agency::query()
+            ->whereIn('approval_status', [Agency::STATUS_APPROVED, Agency::STATUS_REJECTED])
+            ->withCount([
+                'tours',
+                'activeTours as active_tours_count',
+            ])
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get();
+
+        $applicationStats = [
+            'pending' => Agency::pendingApproval()->count(),
+            'approved' => Agency::approved()->count(),
+            'rejected' => Agency::rejected()->count(),
+            'today' => Agency::query()->whereDate('created_at', Carbon::today())->count(),
+        ];
+
+        return view('admin.agency-applications', compact(
+            'pendingApplications',
+            'recentApplications',
+            'applicationStats'
+        ));
+    }
+
+    public function showAgency(Agency $agency)
+    {
+        $agency->loadCount([
+            'tours',
+            'activeTours as active_tours_count',
+        ]);
+
+        $hasCategoryLicensing = CategoryLicensing::schemaReady();
+
+        $accessibleCategories = collect();
+        $ownedCategories = collect();
+        $usedCategories = collect();
+        $recentOrders = collect();
+        $monthlyCategoryValue = 0;
+        $lifetimeOrderValue = 0;
+
+        if ($hasCategoryLicensing) {
+            $agency->loadCount([
+                'activeCategorySubscriptions as active_category_subscriptions_count',
+                'categoryOrders as category_orders_count',
+            ]);
+
+            $activeSubscriptions = $agency->activeCategorySubscriptions()
+                ->with('category.parent')
+                ->orderBy('expires_at')
+                ->get();
+
+            $accessibleCategories = $agency->accessibleCategoriesQuery()
+                ->with('parent')
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
+
+            $usedCategories = Category::query()
+                ->with('parent')
+                ->whereHas('tours', fn($query) => $query->where('agency_id', $agency->id))
+                ->withCount([
+                    'tours as tours_count' => fn($query) => $query->where('agency_id', $agency->id),
+                    'tours as active_tours_count' => fn($query) => $query->where('agency_id', $agency->id)->where('is_active', true),
+                ])
+                ->orderByDesc('active_tours_count')
+                ->orderByDesc('tours_count')
+                ->orderBy('name')
+                ->get();
+
+            $usedCategoriesById = $usedCategories->keyBy('id');
+            $subscriptionsByCategoryId = $activeSubscriptions->keyBy('category_id');
+
+            $ownedCategories = $accessibleCategories
+                ->map(function (Category $category) use ($agency, $subscriptionsByCategoryId, $usedCategoriesById) {
+                    $subscription = $subscriptionsByCategoryId->get($category->id);
+                    $usage = $usedCategoriesById->get($category->id);
+
+                    return (object) [
+                        'category' => $category,
+                        'source' => $agency->legacy_category_access ? 'legacy' : 'purchase',
+                        'source_label' => $agency->legacy_category_access ? 'Geçiş erişimi' : 'Satın alındı',
+                        'monthly_price' => (float) ($subscription?->monthly_price ?? $category->monthly_price),
+                        'started_at' => $subscription?->started_at,
+                        'expires_at' => $subscription?->expires_at,
+                        'tours_count' => (int) ($usage?->tours_count ?? 0),
+                        'active_tours_count' => (int) ($usage?->active_tours_count ?? 0),
+                    ];
+                })
+                ->sort(function ($left, $right) {
+                    return ($right->active_tours_count <=> $left->active_tours_count)
+                        ?: ($right->tours_count <=> $left->tours_count)
+                        ?: strcmp($left->category->name, $right->category->name);
+                })
+                ->values();
+
+            $recentOrders = $agency->categoryOrders()
+                ->with('items.category')
+                ->orderByDesc('purchased_at')
+                ->limit(12)
+                ->get();
+
+            $monthlyCategoryValue = $agency->legacy_category_access
+                ? round($usedCategories->sum(fn(Category $category) => (float) $category->monthly_price), 2)
+                : round($activeSubscriptions->sum(fn($subscription) => (float) $subscription->monthly_price), 2);
+
+            $lifetimeOrderValue = round($agency->categoryOrders()->sum('subtotal'), 2);
+        } else {
+            $agency->category_orders_count = 0;
+            $agency->active_category_subscriptions_count = 0;
+        }
+
+        $recentTours = $agency->tours()
+            ->with('category.parent')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        $stats = [
+            'active_tours' => $agency->active_tours_count,
+            'open_categories' => $ownedCategories->count(),
+            'used_categories' => $usedCategories->count(),
+            'monthly_value' => $monthlyCategoryValue,
+            'total_orders' => (int) ($agency->category_orders_count ?? 0),
+            'lifetime_order_value' => $lifetimeOrderValue,
+        ];
+
+        return view('admin.agency-show', compact(
+            'agency',
+            'hasCategoryLicensing',
+            'ownedCategories',
+            'usedCategories',
+            'recentOrders',
+            'recentTours',
+            'stats'
+        ));
+    }
+
     public function createAgency()
     {
         return view('admin.agency-create');
@@ -94,7 +253,11 @@ class AdminController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $agency = Agency::create($validated);
+        $agency = Agency::create(array_merge($validated, [
+            'approval_status' => Agency::STATUS_APPROVED,
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+        ]));
 
         User::create([
             'name'      => $agency->name . ' Yönetici',
@@ -106,6 +269,45 @@ class AdminController extends Controller
 
         return redirect()->route('admin.agencies')
             ->with('success', 'Acenta oluşturuldu.');
+    }
+
+    public function approveAgencyApplication(Request $request, Agency $agency)
+    {
+        $validated = $request->validate([
+            'approval_notes' => 'nullable|string|max:2000',
+        ]);
+
+        $agency->update([
+            'approval_status' => Agency::STATUS_APPROVED,
+            'approval_notes' => $validated['approval_notes'] ?? null,
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+            'is_active' => true,
+        ]);
+
+        return redirect()
+            ->route('admin.agency-applications')
+            ->with('success', $agency->name . ' başvurusu onaylandı.');
+    }
+
+    public function rejectAgencyApplication(Request $request, Agency $agency)
+    {
+        $validated = $request->validate([
+            'approval_notes' => 'nullable|string|max:2000',
+        ]);
+
+        $agency->update([
+            'approval_status' => Agency::STATUS_REJECTED,
+            'approval_notes' => $validated['approval_notes'] ?? null,
+            'approved_at' => null,
+            'approved_by' => auth()->id(),
+            'is_active' => false,
+            'legacy_category_access' => false,
+        ]);
+
+        return redirect()
+            ->route('admin.agency-applications')
+            ->with('success', $agency->name . ' başvurusu reddedildi.');
     }
 
     public function toggleAgency(Agency $agency)

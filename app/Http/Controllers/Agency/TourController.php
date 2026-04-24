@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Agency;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agency;
+use App\Models\Category;
 use App\Models\Tour;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -13,19 +15,27 @@ class TourController extends Controller
 {
     public function index()
     {
-        $tours = auth()->user()->agency
+        $agency = auth()->user()->agency;
+
+        $tours = $agency
             ->tours()
+            ->with('category')
             ->orderByDesc('created_at')
             ->paginate(15);
 
-        return view('agency.tours.index', compact('tours'));
+        $canCreateTours = $agency->legacy_category_access || count($agency->accessibleCategoryIds()) > 0;
+
+        return view('agency.tours.index', compact('tours', 'canCreateTours'));
     }
 
     public function create()
     {
-        $categories = \App\Models\Category::active()->parents()->with('children')->orderBy('sort_order')->get();
+        $agency = auth()->user()->agency;
+        $categories = $this->resolveAgencyCategoryTree($agency);
         $currencyOptions = Tour::supportedCurrencies();
-        return view('agency.tours.create', compact('categories', 'currencyOptions'));
+        $canCreateTours = $agency->legacy_category_access || $categories->isNotEmpty();
+
+        return view('agency.tours.create', compact('categories', 'currencyOptions', 'canCreateTours'));
     }
 
     public function show(Tour $tour)
@@ -43,8 +53,10 @@ class TourController extends Controller
 
     public function store(Request $request)
     {
+        $agency = auth()->user()->agency;
+
         $validated = $request->validate([
-            'category_id'    => 'nullable|exists:categories,id',
+            'category_id'    => 'required|exists:categories,id',
             'title'          => 'required|string|max:255',
             'destination'    => 'required|string|max:100',
             'description'    => 'nullable|string',
@@ -55,6 +67,8 @@ class TourController extends Controller
             'image'          => 'nullable|image|max:5120',
             'tour_url'       => 'nullable|url',
         ]);
+        $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
+
         $dates = $this->prepareValidatedDatePrices(
             (array) $request->input('pricing_options', []),
             (array) $request->input('departure_dates', []),
@@ -68,7 +82,7 @@ class TourController extends Controller
             unset($validated['image']);
         }
 
-        $validated['agency_id'] = auth()->user()->agency_id;
+        $validated['agency_id'] = $agency->id;
         $validated['price'] = $this->resolveBasePrice($dates);
         $primaryDate = $this->resolvePrimaryDate($dates);
         $validated['departure_date'] = $primaryDate['departure_date'];
@@ -84,17 +98,21 @@ class TourController extends Controller
     public function edit(Tour $tour)
     {
         $this->authorize($tour);
-        $categories = \App\Models\Category::active()->parents()->with('children')->orderBy('sort_order')->get();
+        $agency = auth()->user()->agency;
+        $categories = $this->resolveAgencyCategoryTree($agency);
         $currencyOptions = Tour::supportedCurrencies();
-        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions'));
+        $currentCategoryAccessible = $agency->hasCategoryAccess($tour->category_id);
+
+        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions', 'currentCategoryAccessible'));
     }
 
     public function update(Request $request, Tour $tour)
     {
         $this->authorize($tour);
+        $agency = auth()->user()->agency;
 
         $validated = $request->validate([
-            'category_id'    => 'nullable|exists:categories,id',
+            'category_id'    => 'required|exists:categories,id',
             'title'          => 'required|string|max:255',
             'destination'    => 'required|string|max:100',
             'description'    => 'nullable|string',
@@ -106,6 +124,8 @@ class TourController extends Controller
             'tour_url'       => 'nullable|url',
             'is_active'      => 'boolean',
         ]);
+        $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
+
         $dates = $this->prepareValidatedDatePrices(
             (array) $request->input('pricing_options', []),
             (array) $request->input('departure_dates', []),
@@ -148,6 +168,46 @@ class TourController extends Controller
         if ($tour->agency_id !== auth()->user()->agency_id) {
             abort(403);
         }
+    }
+
+    private function ensureAgencyHasCategoryAccess(Agency $agency, int $categoryId): void
+    {
+        if ($agency->hasCategoryAccess($categoryId)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'category_id' => 'Bu kategoride tur yayınlamak için önce Kategori Yetkilendirme Merkezi üzerinden aylık yetki satın almalısınız.',
+        ]);
+    }
+
+    private function resolveAgencyCategoryTree(Agency $agency)
+    {
+        $accessibleCategoryIds = $agency->accessibleCategoryIds();
+
+        if (empty($accessibleCategoryIds)) {
+            return collect();
+        }
+
+        return Category::active()
+            ->parents()
+            ->where(function ($query) use ($accessibleCategoryIds) {
+                $query
+                    ->whereIn('id', $accessibleCategoryIds)
+                    ->orWhereHas('children', function ($childQuery) use ($accessibleCategoryIds) {
+                        $childQuery->active()->whereIn('id', $accessibleCategoryIds);
+                    });
+            })
+            ->with([
+                'children' => function ($childQuery) use ($accessibleCategoryIds) {
+                    $childQuery
+                        ->active()
+                        ->whereIn('id', $accessibleCategoryIds)
+                        ->orderBy('sort_order');
+                },
+            ])
+            ->orderBy('sort_order')
+            ->get();
     }
 
     private function resolveBasePrice(array $dates): float

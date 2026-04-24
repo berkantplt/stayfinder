@@ -30,6 +30,9 @@
         <a href="{{ route('agency.tours.create') }}" class="sidebar-link {{ request()->routeIs('agency.tours.create') ? 'active' : '' }}">
             <span class="sidebar-icon">➕</span> Tur Ekle
         </a>
+        <a href="{{ route('agency.category-licenses.index') }}" class="sidebar-link {{ request()->routeIs('agency.category-licenses*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🧾</span> Kategori Yetkileri
+        </a>
         <a href="{{ route('agency.campaigns.index') }}" class="sidebar-link {{ request()->routeIs('agency.campaigns.index') ? 'active' : '' }}">
             <span class="sidebar-icon">🏷️</span> Kampanyalar
         </a>

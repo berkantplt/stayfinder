@@ -281,7 +281,10 @@
                 <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">Acentanızın turlarını yayınlayın</h3>
                 <p style="opacity:.9;font-size:14px;">Turlarınızı binlerce potansiyel müşteriye ücretsiz ulaştırın.</p>
             </div>
-            <a href="{{ route('login') }}" class="btn" style="background:white;color:var(--accent);font-weight:700;">Acenta Girişi →</a>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="{{ route('agency.register') }}" class="btn" style="background:white;color:var(--accent);font-weight:700;">Acenta Ol →</a>
+                <a href="{{ route('login') }}" class="btn" style="background:rgba(255,255,255,.14);color:white;border:1px solid rgba(255,255,255,.28);font-weight:700;">Giriş Yap</a>
+            </div>
         </div>
     </div>
 </div>

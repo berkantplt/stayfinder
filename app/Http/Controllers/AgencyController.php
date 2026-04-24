@@ -9,7 +9,9 @@ class AgencyController extends Controller
     public function index()
     {
         $agencies = Agency::active()
-            ->withCount('activeTours')
+            ->withCount([
+                'tours as active_tours_count' => fn($query) => $query->active(),
+            ])
             ->orderBy('name')
             ->get();
 
@@ -18,7 +20,15 @@ class AgencyController extends Controller
 
     public function show(Agency $agency)
     {
-        $agency->load(['activeTours' => fn($q) => $q->orderBy('price')]);
+        abort_unless($agency->is_active, 404);
+
+        $agency->setRelation(
+            'activeTours',
+            $agency->tours()
+                ->active()
+                ->orderBy('price')
+                ->get()
+        );
 
         return view('agencies.show', compact('agency'));
     }

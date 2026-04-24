@@ -35,6 +35,10 @@
             Hesabınız yok mu? <a href="{{ route('register') }}" style="color:var(--accent);font-weight:700;">Kayıt Ol</a>
         </div>
 
+        <div style="text-align:center;margin-top:10px;font-size:14px;color:#475569;">
+            Acenta mısınız? <a href="{{ route('agency.register') }}" style="color:var(--accent);font-weight:700;">Acenta hesabı oluşturun</a>
+        </div>
+
         <div style="text-align:center;margin-top:20px;font-size:13px;color:#64748b;padding-top:20px;border-top:1px solid #e2e8f0;">
             Demo: <strong>admin@stayfinder.com</strong> / password
         </div>

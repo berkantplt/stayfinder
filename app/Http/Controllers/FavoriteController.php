@@ -9,6 +9,8 @@ class FavoriteController extends Controller
 {
     public function toggle(Tour $tour)
     {
+        abort_unless($tour->isPubliclyVisible() && $tour->agency?->is_active, 404);
+
         $user = auth()->user();
 
         if ($user->favoriteTours()->where('tour_id', $tour->id)->exists()) {

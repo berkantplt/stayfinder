@@ -98,7 +98,9 @@ class AiSearchController extends Controller
             $queryVector = $embeddingResponse->embeddings[0]->embedding;
 
             // 3. Veritabanı Filtreleme
-            $toursQuery = Tour::whereNotNull('embedding')->where('is_active', true);
+            $toursQuery = Tour::whereNotNull('embedding')
+                ->active()
+                ->whereHas('agency', fn($agencyQuery) => $agencyQuery->active());
             if ($maxBudget && $maxBudget > 0) {
                 // Soft upper bound: budget üstünü tamamen dışlamadan aday havuzunu daralt.
                 $toursQuery->where('price', '<=', $maxBudget * 1.8);
@@ -477,7 +479,8 @@ class AiSearchController extends Controller
     {
         return cache()->remember('ai_search_known_destinations_v1', now()->addHours(6), function () {
             return Tour::query()
-                ->where('is_active', true)
+                ->active()
+                ->whereHas('agency', fn($agencyQuery) => $agencyQuery->active())
                 ->whereNotNull('destination')
                 ->where('destination', '!=', '')
                 ->distinct()

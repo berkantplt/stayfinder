@@ -19,12 +19,18 @@
                 <div class="alert alert-error">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
             @endif
 
+            @unless($categoryLicensingReady)
+                <div class="alert alert-error" style="max-width:94%;margin-left:auto;margin-right:auto;">
+                    Kategori yetkilendirme veritabanı migration'ı henüz uygulanmamış. Fiyat alanları aktif değil; eski kategori yönetimi çalışmaya devam eder.
+                </div>
+            @endunless
+
             {{-- Create Category Form --}}
             <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;margin-bottom:24px;max-width:94%;margin-left:auto;margin-right:auto;">
                 <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">+ Yeni Kategori Ekle</h3>
                 <form method="POST" action="{{ route('admin.categories.store') }}">
                     @csrf
-                    <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:12px;align-items:end;">
+                    <div style="display:grid;grid-template-columns:repeat({{ $categoryLicensingReady ? 6 : 5 }}, 1fr);gap:12px;align-items:end;">
                         <div class="form-group" style="margin:0;">
                             <label>Ad *</label>
                             <input type="text" name="name" required placeholder="Kültür Turları">
@@ -42,6 +48,12 @@
                                 @endforeach
                             </select>
                         </div>
+                        @if($categoryLicensingReady)
+                            <div class="form-group" style="margin:0;">
+                                <label>Aylık Ücret (TL)</label>
+                                <input type="number" name="monthly_price" value="2000" min="0" step="0.01" required>
+                            </div>
+                        @endif
                         <div class="form-group" style="margin:0;">
                             <label>Sıralama</label>
                             <input type="number" name="sort_order" value="0">
@@ -54,7 +66,7 @@
             {{-- Categories Table --}}
             <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;max-width:94%;margin-left:auto;margin-right:auto;">
                 <table class="table" style="margin:0;border:none;">
-                    <thead><tr><th>İkon & Ad</th><th>Üst Kategori</th><th>Sıralama</th><th>Durum</th><th>İşlemler</th></tr></thead>
+                    <thead><tr><th>İkon & Ad</th><th>Üst Kategori</th>@if($categoryLicensingReady)<th>Aylık Ücret</th>@endif<th>Sıralama</th><th>Durum</th><th>İşlemler</th></tr></thead>
                     <tbody>
                         @forelse($categories as $category)
                         <tr style="border-bottom:1px solid var(--border-light);">
@@ -71,6 +83,9 @@
                                     <span style="color:var(--text-muted);font-style:italic;">Ana Kategori</span>
                                 @endif
                             </td>
+                            @if($categoryLicensingReady)
+                                <td>{{ number_format((float) $category->monthly_price, 0, ',', '.') }} TL</td>
+                            @endif
                             <td>{{ $category->sort_order }}</td>
                             <td>
                                 <form method="POST" action="{{ route('admin.categories.toggle', $category) }}">
@@ -82,7 +97,19 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:4px;">
-                                    <button type="button" class="btn btn-outline btn-sm" onclick="editCategory({{ json_encode($category) }})">✏️ Düzenle</button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline btn-sm"
+                                        data-name="{{ $category->name }}"
+                                        data-icon="{{ $category->icon }}"
+                                        @if($categoryLicensingReady)
+                                        data-monthly-price="{{ number_format((float) $category->monthly_price, 2, '.', '') }}"
+                                        @endif
+                                        data-sort-order="{{ $category->sort_order }}"
+                                        data-parent-id="{{ $category->parent_id }}"
+                                        data-update-url="{{ route('admin.categories.update', $category) }}"
+                                        onclick="editCategory(this)"
+                                    >✏️ Düzenle</button>
                                     <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" onsubmit="return confirm('Kategori silinsin mi?');">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">🗑️ Sil</button>
@@ -91,7 +118,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Kategori bulunamadı.</td></tr>
+                        <tr><td colspan="{{ $categoryLicensingReady ? 6 : 5 }}" style="text-align:center;color:var(--text-muted);padding:24px;">Kategori bulunamadı.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -110,6 +137,9 @@
             <div class="form-group"><label>Ad *</label><input type="text" name="name" id="editName" required></div>
             <div class="form-row">
                 <div class="form-group"><label>İkon (Emoji)</label><input type="text" name="icon" id="editIcon"></div>
+                @if($categoryLicensingReady)
+                    <div class="form-group"><label>Aylık Ücret (TL)</label><input type="number" name="monthly_price" id="editMonthlyPrice" min="0" step="0.01" required></div>
+                @endif
                 <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort"></div>
             </div>
             <div class="form-group">
@@ -130,12 +160,15 @@
 </div>
 
 <script>
-function editCategory(cat) {
-    document.getElementById('editForm').action = '/admin/categories/' + cat.id;
-    document.getElementById('editName').value = cat.name;
-    document.getElementById('editIcon').value = cat.icon || '';
-    document.getElementById('editSort').value = cat.sort_order || 0;
-    document.getElementById('editParent').value = cat.parent_id || '';
+function editCategory(button) {
+    document.getElementById('editForm').action = button.dataset.updateUrl;
+    document.getElementById('editName').value = button.dataset.name || '';
+    document.getElementById('editIcon').value = button.dataset.icon || '';
+    @if($categoryLicensingReady)
+    document.getElementById('editMonthlyPrice').value = button.dataset.monthlyPrice || 0;
+    @endif
+    document.getElementById('editSort').value = button.dataset.sortOrder || 0;
+    document.getElementById('editParent').value = button.dataset.parentId || '';
     document.getElementById('editModal').style.display = 'flex';
 }
 function closeEditModal() {

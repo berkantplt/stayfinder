@@ -51,20 +51,49 @@
             @else
                 <div class="card" style="padding:0;overflow:hidden;">
                     <table class="table">
-                        <thead><tr><th>Acenta</th><th>E-posta</th><th>Telefon</th><th>Tur</th><th>Durum</th><th>İşlem</th></tr></thead>
+                        <thead><tr><th>Acenta</th><th>E-posta</th><th>Telefon</th><th>Aktif Tur</th><th>Kategori Yetkisi</th><th>Onay</th><th>Durum</th><th>İşlem</th></tr></thead>
                         <tbody>
                             @foreach($agencies as $a)
                             <tr>
-                                <td style="font-weight:600;">{{ $a->name }}</td>
+                                <td style="font-weight:600;">
+                                    <a href="{{ route('admin.agencies.show', $a) }}" style="color:#0f172a;text-decoration:none;">{{ $a->name }}</a>
+                                </td>
                                 <td>{{ $a->email ?? '—' }}</td>
                                 <td>{{ $a->phone ?? '—' }}</td>
-                                <td>{{ $a->tours_count }}</td>
+                                <td>
+                                    <div style="font-weight:700;color:#0f172a;">{{ $a->active_tours_count }}</div>
+                                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Toplam {{ $a->tours_count }}</div>
+                                </td>
+                                <td>
+                                    @if($a->legacy_category_access ?? false)
+                                        <span class="badge" style="background:#fff7ed;color:#9a3412;border:none;">Geçiş erişimi</span>
+                                    @else
+                                        <span class="badge {{ ($a->active_category_subscriptions_count ?? 0) > 0 ? 'badge-green' : '' }}" style="{{ ($a->active_category_subscriptions_count ?? 0) > 0 ? '' : 'background:#eef2ff;color:#3730a3;border:none;' }}">
+                                            {{ $a->active_category_subscriptions_count ?? 0 }} aktif lisans
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(($a->approval_status ?? 'approved') === 'pending')
+                                        <span class="badge" style="background:#fff7ed;color:#9a3412;border:none;">Onay bekliyor</span>
+                                    @elseif(($a->approval_status ?? 'approved') === 'rejected')
+                                        <span class="badge" style="background:#fef2f2;color:#991b1b;border:none;">Reddedildi</span>
+                                    @else
+                                        <span class="badge badge-green">Onaylı</span>
+                                    @endif
+                                </td>
                                 <td><span class="badge {{ $a->is_active ? 'badge-green' : '' }}" style="{{ !$a->is_active ? 'background:#fef2f2;color:#991b1b;' : '' }}">{{ $a->is_active ? 'Aktif' : 'Pasif' }}</span></td>
                                 <td>
-                                    <form method="POST" action="{{ route('admin.agencies.toggle', $a) }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline btn-sm">{{ $a->is_active ? 'Pasif Yap' : 'Aktif Yap' }}</button>
-                                    </form>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                        <a href="{{ route('admin.agencies.show', $a) }}" class="btn btn-outline btn-sm">Görüntüle</a>
+                                        @if(($a->approval_status ?? 'approved') === 'pending')
+                                            <a href="{{ route('admin.agency-applications') }}" class="btn btn-outline btn-sm">Başvuruya Git</a>
+                                        @endif
+                                        <form method="POST" action="{{ route('admin.agencies.toggle', $a) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline btn-sm">{{ $a->is_active ? 'Pasif Yap' : 'Aktif Yap' }}</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach

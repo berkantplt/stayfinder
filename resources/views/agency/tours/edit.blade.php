@@ -177,22 +177,29 @@
                 <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">Turu Düzenle</h1>
             </div>
 
-            <div style="display:flex; gap:24px; align-items: flex-start;">
-                <!-- Sol Taraf: Form -->
-                <div style="flex: 1; min-width: 0;">
+            <div>
+                <div style="max-width:960px;">
                     @if($errors->any())
                         <div class="alert alert-error" style="margin-bottom: 24px;">
                             @foreach($errors->all() as $e) {{ $e }}<br> @endforeach
                         </div>
                     @endif
 
+                    @unless($currentCategoryAccessible)
+                        <div class="alert alert-error" style="margin-bottom: 24px;">
+                            Bu turun mevcut kategorisi için aktif yetkiniz kalmamış görünüyor. Güncelleyebilmek için yetkili bir kategori seçin veya
+                            <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkilendirme Merkezi</a>
+                            üzerinden yeni kategori yetkisi alın.
+                        </div>
+                    @endunless
+
                     <div class="stat-card" style="padding:32px;">
                 <form method="POST" action="{{ route('agency.tours.update', $tour) }}" enctype="multipart/form-data">
                     @csrf @method('PUT')
                     <div class="form-group"><label>Tur Adı *</label><input type="text" name="title" value="{{ old('title', $tour->title) }}" required></div>
                     <div class="form-group">
-                        <label>Kategori</label>
-                        <select name="category_id">
+                        <label>Kategori Yetkisi *</label>
+                        <select name="category_id" required>
                             <option value="">Kategori Seçin</option>
                             @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ old('category_id', $tour->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->icon }} {{ $cat->name }}</option>
@@ -326,11 +333,6 @@
                     </div>
                     </div>
                 </form>
-                </div>
-
-                <!-- Sağ Taraf: SEO Widget -->
-                <div style="width: 310px; flex-shrink: 0;">
-                    @include('partials.seo-score-widget')
                 </div>
             </div>
 

@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Observers\TourObserver;
+use App\Support\CategoryLicensing;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Query\Builder as BaseBuilder;
 use Illuminate\Support\Str;
 
 use App\Notifications\NewTourNotification;
@@ -136,7 +138,38 @@ class Tour extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        if (!CategoryLicensing::schemaReady()) {
+            return $query->where('is_active', true);
+        }
+
+        return $query
+            ->where('is_active', true)
+            ->where(function ($accessQuery) {
+                $accessQuery
+                    ->where(function ($legacyQuery) {
+                        $legacyQuery
+                            ->whereHas('agency', fn($agencyQuery) => $agencyQuery->where('legacy_category_access', true))
+                            ->where(function ($categoryQuery) {
+                                $categoryQuery
+                                    ->whereNull('category_id')
+                                    ->orWhereHas('category', fn($activeCategoryQuery) => $activeCategoryQuery->active());
+                            });
+                    })
+                    ->orWhere(function ($licensedQuery) {
+                        $licensedQuery
+                            ->whereNotNull('category_id')
+                            ->whereHas('category', fn($categoryQuery) => $categoryQuery->active())
+                            ->whereExists(function (BaseBuilder $subscriptionQuery) {
+                                $subscriptionQuery
+                                    ->selectRaw('1')
+                                    ->from('agency_category_subscriptions')
+                                    ->whereColumn('agency_category_subscriptions.agency_id', 'tours.agency_id')
+                                    ->whereColumn('agency_category_subscriptions.category_id', 'tours.category_id')
+                                    ->where('agency_category_subscriptions.status', AgencyCategorySubscription::STATUS_ACTIVE)
+                                    ->whereDate('agency_category_subscriptions.expires_at', '>=', now()->toDateString());
+                            });
+                    });
+            });
     }
 
     public function scopeDestination($query, string $destination)
@@ -175,5 +208,30 @@ class Tour extends Model
     {
         $normalized = strtoupper(trim((string) $code));
         return self::SUPPORTED_CURRENCIES[$normalized]['symbol'] ?? '₺';
+    }
+
+    public function isPubliclyVisible(): bool
+    {
+        $this->loadMissing('agency', 'category');
+
+        if (!$this->is_active || !$this->agency?->is_active) {
+            return false;
+        }
+
+        if (!CategoryLicensing::schemaReady()) {
+            return !$this->category_id || (bool) $this->category?->is_active;
+        }
+
+        if ($this->agency->legacy_category_access) {
+            return !$this->category_id || (bool) $this->category?->is_active;
+        }
+
+        if (!$this->category_id || !$this->category?->is_active) {
+            return false;
+        }
+
+        return $this->agency->activeCategorySubscriptions()
+            ->where('category_id', $this->category_id)
+            ->exists();
     }
 }

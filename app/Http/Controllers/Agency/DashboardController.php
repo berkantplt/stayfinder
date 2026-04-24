@@ -8,6 +8,17 @@ use App\Models\TourView;
 
 class DashboardController extends Controller
 {
+    public function applicationStatus()
+    {
+        $agency = auth()->user()->agency;
+
+        if ($agency?->isApproved()) {
+            return redirect()->route('agency.dashboard');
+        }
+
+        return view('agency.application-status', compact('agency'));
+    }
+
     public function index()
     {
         $agency = auth()->user()->agency;

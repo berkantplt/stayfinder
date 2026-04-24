@@ -44,6 +44,11 @@ class User extends Authenticatable
         return $this->role === 'agency';
     }
 
+    public function agencyApproved(): bool
+    {
+        return $this->isAgency() && $this->agency?->isApproved();
+    }
+
     public function favoriteTours()
     {
         return $this->belongsToMany(Tour::class, 'favorites')->withTimestamps();
@@ -54,4 +59,3 @@ class User extends Authenticatable
         return $this->favoriteTours()->where('tour_id', $tour->id)->exists();
     }
 }
-

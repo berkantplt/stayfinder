@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Support\CategoryLicensing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -13,21 +14,31 @@ class CategoryController extends Controller
     {
         $categories = Category::with('parent', 'children')->orderBy('sort_order')->get();
         $parentCategories = Category::parents()->orderBy('name')->get();
+        $categoryLicensingReady = CategoryLicensing::schemaReady();
 
-        return view('admin.categories.index', compact('categories', 'parentCategories'));
+        return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady'));
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'name'        => 'required|string|max:100',
             'icon'        => 'nullable|string|max:20',
             'description' => 'nullable|string',
             'parent_id'   => 'nullable|exists:categories,id',
             'sort_order'  => 'nullable|integer',
-        ]);
+        ];
+
+        if (CategoryLicensing::schemaReady()) {
+            $rules['monthly_price'] = 'required|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules);
 
         $validated['slug'] = Str::slug($validated['name']);
+        if (CategoryLicensing::schemaReady()) {
+            $validated['monthly_price'] = round((float) $validated['monthly_price'], 2);
+        }
 
         Category::create($validated);
 
@@ -36,15 +47,24 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
-        $validated = $request->validate([
+        $rules = [
             'name'        => 'required|string|max:100',
             'icon'        => 'nullable|string|max:20',
             'description' => 'nullable|string',
             'parent_id'   => 'nullable|exists:categories,id',
             'sort_order'  => 'nullable|integer',
-        ]);
+        ];
+
+        if (CategoryLicensing::schemaReady()) {
+            $rules['monthly_price'] = 'required|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules);
 
         $validated['slug'] = Str::slug($validated['name']);
+        if (CategoryLicensing::schemaReady()) {
+            $validated['monthly_price'] = round((float) $validated['monthly_price'], 2);
+        }
 
         $category->update($validated);
 

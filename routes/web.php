@@ -4,9 +4,11 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\AgencyController;
 use App\Http\Controllers\Agency\TourController as AgencyTourController;
+use App\Http\Controllers\Agency\CategoryLicenseController as AgencyCategoryLicenseController;
 use App\Http\Controllers\Agency\DashboardController as AgencyDashboardController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
+use App\Http\Controllers\Admin\CategoryLicenseController as AdminCategoryLicenseController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\ReviewController;
@@ -48,6 +50,8 @@ Route::middleware('auth')->group(function () {
 
 // Click tracking redirect
 Route::get('/git/{tour}', function (\App\Models\Tour $tour) {
+    abort_unless($tour->isPubliclyVisible() && $tour->agency?->is_active, 404);
+
     \App\Models\TourClick::create([
         'tour_id'    => $tour->id,
         'agency_id'  => $tour->agency_id,
@@ -72,7 +76,13 @@ Route::post('/giris', function (\Illuminate\Http\Request $request) {
         $user = auth()->user();
 
         if ($user->isAdmin()) return redirect()->route('admin.dashboard');
-        if ($user->isAgency()) return redirect()->route('agency.dashboard');
+        if ($user->isAgency()) {
+            if (!$user->agencyApproved()) {
+                return redirect()->route('agency.application.status');
+            }
+
+            return redirect()->route('agency.dashboard');
+        }
         return redirect()->route('home');
     }
 
@@ -80,18 +90,65 @@ Route::post('/giris', function (\Illuminate\Http\Request $request) {
 })->name('login.post');
 
 Route::get('/kayit', function () { return view('auth.register'); })->name('register');
+Route::get('/acenta-kayit', function () {
+    return redirect()->route('register', ['type' => 'agency']);
+})->name('agency.register');
 Route::post('/kayit', function (\Illuminate\Http\Request $request) {
+    $accountType = $request->input('account_type', 'visitor');
+
+    if ($accountType === 'agency') {
+        $validated = $request->validate([
+            'account_type' => 'required|in:agency,visitor',
+            'agency_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:50',
+            'website_url' => 'nullable|url|max:255',
+            'description' => 'nullable|string|max:2000',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+            $agency = \App\Models\Agency::create([
+                'name' => $validated['agency_name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
+                'website_url' => $validated['website_url'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'is_active' => false,
+                'approval_status' => \App\Models\Agency::STATUS_PENDING,
+                'legacy_category_access' => false,
+            ]);
+
+            return \App\Models\User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+                'role' => 'agency',
+                'agency_id' => $agency->id,
+                'phone' => $validated['phone'] ?? null,
+            ]);
+        });
+
+        \Illuminate\Support\Facades\Auth::login($user);
+
+        return redirect()
+            ->route('agency.application.status')
+            ->with('success', 'Acenta başvurunuz alındı. Admin onayı sonrası paneliniz açılacak.');
+    }
+
     $validated = $request->validate([
-        'name'     => 'required|string|max:255',
-        'email'    => 'required|email|unique:users,email',
+        'account_type' => 'required|in:agency,visitor',
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
         'password' => 'required|string|min:6|confirmed',
     ]);
 
     $user = \App\Models\User::create([
-        'name'     => $validated['name'],
-        'email'    => $validated['email'],
+        'name' => $validated['name'],
+        'email' => $validated['email'],
         'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
-        'role'     => 'visitor',
+        'role' => 'visitor',
     ]);
 
     \Illuminate\Support\Facades\Auth::login($user);
@@ -106,47 +163,64 @@ Route::post('/cikis', function () {
 
 // Agency Panel
 Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->group(function () {
-    Route::get('/', [AgencyDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/turlar', [AgencyTourController::class, 'index'])->name('tours.index');
-    Route::get('/turlar/ekle', [AgencyTourController::class, 'create'])->name('tours.create');
-    Route::post('/turlar', [AgencyTourController::class, 'store'])->name('tours.store');
-    Route::get('/turlar/{tour}', [AgencyTourController::class, 'show'])->name('tours.show');
-    Route::get('/turlar/{tour}/duzenle', [AgencyTourController::class, 'edit'])->name('tours.edit');
-    Route::put('/turlar/{tour}', [AgencyTourController::class, 'update'])->name('tours.update');
-    Route::delete('/turlar/{tour}', [AgencyTourController::class, 'destroy'])->name('tours.destroy');
+    Route::get('/basvuru-durumu', [AgencyDashboardController::class, 'applicationStatus'])->name('application.status');
 
-    // Tour dates
-    Route::post('/turlar/{tour}/tarihler', [\App\Http\Controllers\Agency\TourDateController::class, 'store'])->name('tours.dates.store');
-    Route::put('/turlar/{tour}/tarihler/{date}', [\App\Http\Controllers\Agency\TourDateController::class, 'update'])->name('tours.dates.update');
-    Route::delete('/turlar/{tour}/tarihler/{date}', [\App\Http\Controllers\Agency\TourDateController::class, 'destroy'])->name('tours.dates.destroy');
+    Route::middleware('agency.approved')->group(function () {
+        Route::get('/', [AgencyDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/kategori-yetkilendirme', [AgencyCategoryLicenseController::class, 'index'])->name('category-licenses.index');
+        Route::post('/kategori-yetkilendirme/sepet', [AgencyCategoryLicenseController::class, 'addToCart'])->name('category-licenses.cart.add');
+        Route::delete('/kategori-yetkilendirme/sepet/{category}', [AgencyCategoryLicenseController::class, 'removeFromCart'])->name('category-licenses.cart.remove');
+        Route::post('/kategori-yetkilendirme/satin-al', [AgencyCategoryLicenseController::class, 'checkout'])->name('category-licenses.checkout');
+        Route::get('/turlar', [AgencyTourController::class, 'index'])->name('tours.index');
+        Route::get('/turlar/ekle', [AgencyTourController::class, 'create'])->name('tours.create');
+        Route::post('/turlar', [AgencyTourController::class, 'store'])->name('tours.store');
+        Route::get('/turlar/{tour}', [AgencyTourController::class, 'show'])->name('tours.show');
+        Route::get('/turlar/{tour}/duzenle', [AgencyTourController::class, 'edit'])->name('tours.edit');
+        Route::put('/turlar/{tour}', [AgencyTourController::class, 'update'])->name('tours.update');
+        Route::delete('/turlar/{tour}', [AgencyTourController::class, 'destroy'])->name('tours.destroy');
 
-    // Profile
-    Route::get('/profil', [\App\Http\Controllers\Agency\ProfileController::class, 'edit'])->name('profile');
-    Route::put('/profil', [\App\Http\Controllers\Agency\ProfileController::class, 'update'])->name('profile.update');
+        // Tour dates
+        Route::post('/turlar/{tour}/tarihler', [\App\Http\Controllers\Agency\TourDateController::class, 'store'])->name('tours.dates.store');
+        Route::put('/turlar/{tour}/tarihler/{date}', [\App\Http\Controllers\Agency\TourDateController::class, 'update'])->name('tours.dates.update');
+        Route::delete('/turlar/{tour}/tarihler/{date}', [\App\Http\Controllers\Agency\TourDateController::class, 'destroy'])->name('tours.dates.destroy');
 
-    // Stats
-    Route::get('/istatistik', [\App\Http\Controllers\Agency\StatsController::class, 'index'])->name('stats');
+        // Profile
+        Route::get('/profil', [\App\Http\Controllers\Agency\ProfileController::class, 'edit'])->name('profile');
+        Route::put('/profil', [\App\Http\Controllers\Agency\ProfileController::class, 'update'])->name('profile.update');
 
-    // Campaigns
-    Route::get('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'index'])->name('campaigns.index');
-    Route::post('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'store'])->name('campaigns.store');
-    Route::delete('/kampanyalar/{campaign}', [\App\Http\Controllers\Agency\CampaignController::class, 'destroy'])->name('campaigns.destroy');
+        // Stats
+        Route::get('/istatistik', [\App\Http\Controllers\Agency\StatsController::class, 'index'])->name('stats');
 
-    // Coupons
-    Route::resource('/kuponlar', \App\Http\Controllers\Agency\CouponController::class)
-        ->names('coupons')
-        ->parameters(['kuponlar' => 'coupon'])
-        ->only(['index', 'store', 'destroy']);
-    Route::post('/kuponlar/{coupon}/toggle', [\App\Http\Controllers\Agency\CouponController::class, 'toggle'])->name('coupons.toggle');
+        // Campaigns
+        Route::get('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'index'])->name('campaigns.index');
+        Route::post('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'store'])->name('campaigns.store');
+        Route::delete('/kampanyalar/{campaign}', [\App\Http\Controllers\Agency\CampaignController::class, 'destroy'])->name('campaigns.destroy');
+
+        // Coupons
+        Route::resource('/kuponlar', \App\Http\Controllers\Agency\CouponController::class)
+            ->names('coupons')
+            ->parameters(['kuponlar' => 'coupon'])
+            ->only(['index', 'store', 'destroy']);
+        Route::post('/kuponlar/{coupon}/toggle', [\App\Http\Controllers\Agency\CouponController::class, 'toggle'])->name('coupons.toggle');
+    });
 });
 
 // Admin Panel
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/kategori-yetkilendirme', [AdminCategoryLicenseController::class, 'index'])->name('category-licenses.index');
+    Route::get('/kategori-yetkilendirme/kategori-tarifesi', [AdminCategoryLicenseController::class, 'pricing'])->name('category-licenses.pricing');
+    Route::get('/kategori-yetkilendirme/acenta-erisimleri', [AdminCategoryLicenseController::class, 'access'])->name('category-licenses.access');
+    Route::get('/kategori-yetkilendirme/siparisler', [AdminCategoryLicenseController::class, 'orders'])->name('category-licenses.orders');
+    Route::put('/kategori-yetkilendirme/fiyat/{category}', [AdminCategoryLicenseController::class, 'updatePricing'])->name('category-licenses.pricing.update');
     Route::get('/acentalar', [AdminController::class, 'agencies'])->name('agencies');
+    Route::get('/acenta-basvurulari', [AdminController::class, 'agencyApplications'])->name('agency-applications');
     Route::get('/acentalar/ekle', [AdminController::class, 'createAgency'])->name('agencies.create');
+    Route::get('/acentalar/{agency}', [AdminController::class, 'showAgency'])->name('agencies.show');
     Route::post('/acentalar', [AdminController::class, 'storeAgency'])->name('agencies.store');
     Route::post('/acentalar/{agency}/toggle', [AdminController::class, 'toggleAgency'])->name('agencies.toggle');
+    Route::post('/acenta-basvurulari/{agency}/onayla', [AdminController::class, 'approveAgencyApplication'])->name('agency-applications.approve');
+    Route::post('/acenta-basvurulari/{agency}/reddet', [AdminController::class, 'rejectAgencyApplication'])->name('agency-applications.reject');
     Route::get('/turlar', [AdminController::class, 'tours'])->name('tours');
     Route::get('/destinasyonlar', [AdminController::class, 'destinations'])->name('destinations');
     Route::put('/destinasyonlar/{destination}', [AdminController::class, 'updateDestination'])->name('destinations.update');

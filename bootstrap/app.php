@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'agency.approved' => \App\Http\Middleware\EnsureAgencyApproved::class,
         ]);
 
         // Trust all proxies (required for Cloudflare tunnel / ngrok)

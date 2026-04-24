@@ -12,7 +12,9 @@ class SitemapController extends Controller
     public function index(): Response
     {
         $xml = cache()->remember('sitemap_xml', now()->addHours(6), function () {
-            $tours = Tour::where('is_active', true)->get();
+            $tours = Tour::active()
+                ->whereHas('agency', fn($agencyQuery) => $agencyQuery->active())
+                ->get();
             $posts = Post::latest()->get();
             $destinations = Destination::all();
 
