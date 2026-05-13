@@ -21,6 +21,10 @@ class AiSearchLog extends Model
         'selected_tour_id',
         'selected_rank',
         'selected_at',
+        'conversation_id',
+        'parent_log_id',
+        'turn_type',
+        'ai_comment',
     ];
 
     protected $casts = [

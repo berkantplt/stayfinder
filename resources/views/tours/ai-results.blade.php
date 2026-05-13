@@ -33,6 +33,7 @@
             $tourRank = is_array($tour) ? ($tour['rank'] ?? ($loop->index + 1)) : ($tour->rank ?? ($loop->index + 1));
             $tourPrice = is_array($tour) ? ($tour['price'] ?? 0) : ($tour->price ?? 0);
             $tourCurrency = is_array($tour) ? ($tour['currency'] ?? 'TRY') : ($tour->currency ?? 'TRY');
+            $llmReason = is_array($tour) ? ($tour['llm_reason'] ?? null) : ($tour->llm_reason ?? null);
             $detailUrlWithLog = $detailUrl;
             if (!empty($logId)) {
                 $detailUrlWithLog = $detailUrl . (str_contains($detailUrl, '?') ? '&' : '?') . 'ai_log_id=' . $logId . '&ai_rank=' . $tourRank;
@@ -50,6 +51,11 @@
                     </div>
                 </div>
                 <h3 class="card-title">{{ $tourTitle }}</h3>
+                @if(!empty($llmReason))
+                <div style="margin-top:10px; padding:10px 12px; background:#f8fafc; border-left:3px solid #6366f1; border-radius:6px; font-size:13px; color:#475569; line-height:1.5;">
+                    <span style="font-weight:600; color:#4338ca;">Neden bu tur:</span> {{ $llmReason }}
+                </div>
+                @endif
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
                     <div class="price-tag">{{ number_format($tourPrice, 0) }} {{ $tourCurrency }}</div>
                     <a href="{{ $detailUrlWithLog }}" class="btn btn-outline btn-sm">Detaylar</a>

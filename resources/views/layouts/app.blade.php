@@ -588,13 +588,18 @@
             messages.scrollTop = messages.scrollHeight;
 
             try {
-                const response = await fetch(`/yapay-zeka-arama-api?q=${encodeURIComponent(text)}&_t=${Date.now()}`, {
+                const convId = window.__aiConversationId || '';
+                const convParam = convId ? `&conversation_id=${encodeURIComponent(convId)}` : '';
+                const response = await fetch(`/yapay-zeka-arama-api?q=${encodeURIComponent(text)}${convParam}&_t=${Date.now()}`, {
                     headers: {
                         'Accept': 'application/json',
                         'Cache-Control': 'no-cache, no-store, must-revalidate'
                     }
                 });
                 const data = await response.json();
+                if (data && data.conversation_id) {
+                    window.__aiConversationId = data.conversation_id;
+                }
                 messages.removeChild(loadingMsg);
 
                 // 3. AI response

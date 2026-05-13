@@ -10,44 +10,44 @@ class KnowledgeService
 {
     /**
      * Kullanıcı sorusuna en yakın bilgi parçalarını bulur.
+     * $queryVector verilirse yeniden embedding çağrısı yapılmaz.
+     * Düşük skorlu (alakasız) chunk'lar gürültü olmasın diye eşiklenir.
      */
-    public function findRelevantChunks(string $query, int $limit = 5): array
-    {
+    public function findRelevantChunks(
+        string $query,
+        int $limit = 5,
+        ?array $queryVector = null,
+        float $minScore = 0.30
+    ): array {
         try {
-            // 1. Sorunun embedding'ini al
-            $response = OpenAI::embeddings()->create([
-                'model' => 'text-embedding-3-small',
-                'input' => $query,
-            ]);
+            if ($queryVector === null) {
+                $response = OpenAI::embeddings()->create([
+                    'model' => 'text-embedding-3-small',
+                    'input' => $query,
+                ]);
+                $queryVector = $response->embeddings[0]->embedding;
+            }
 
-            $queryVector = $response->embeddings[0]->embedding;
-
-            // 2. Tüm vektörlü chunk'ları getir (Şu an sayı az olduğu için PHP ile dot product yapıyoruz)
             $chunks = KnowledgeChunk::whereNotNull('embedding')->get();
-            
+
             $results = [];
             foreach ($chunks as $chunk) {
                 $score = $this->cosineSimilarity($queryVector, $chunk->embedding);
-                $results[] = [
-                    'score' => $score,
-                    'chunk' => $chunk
-                ];
+                if ($score < $minScore) {
+                    continue;
+                }
+                $results[] = ['score' => $score, 'chunk' => $chunk];
             }
 
-            // 3. Skora göre sırala ve limitli dön
             usort($results, fn($a, $b) => $b['score'] <=> $a['score']);
 
             return array_slice($results, 0, $limit);
-
-        } catch (\Exception $e) {
-            Log::error("[KnowledgeService] Arama hatası: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('[KnowledgeService] Arama hatası: ' . $e->getMessage());
             return [];
         }
     }
 
-    /**
-     * Bulunan parçaları GPT için bir context metnine dönüştürür.
-     */
     public function buildContext(array $relevantChunks): string
     {
         if (empty($relevantChunks)) return "Ek bilgi bulunamadı.";
@@ -62,22 +62,24 @@ class KnowledgeService
         return $context;
     }
 
-    /**
-     * İki vektör arasındaki Cosine Similarity'yi hesaplar.
-     */
     private function cosineSimilarity(array $vecA, array $vecB): float
     {
-        $dotProduct = 0;
-        $normA = 0;
-        $normB = 0;
-
-        foreach ($vecA as $i => $val) {
-            $dotProduct += $val * $vecB[$i];
-            $normA += $val * $val;
-            $normB += $vecB[$i] * $vecB[$i];
+        if (count($vecA) !== count($vecB) || empty($vecA)) {
+            return 0.0;
         }
 
-        if ($normA == 0 || $normB == 0) return 0;
+        $dotProduct = 0.0;
+        $normA = 0.0;
+        $normB = 0.0;
+
+        foreach ($vecA as $i => $val) {
+            $b = (float) ($vecB[$i] ?? 0.0);
+            $dotProduct += $val * $b;
+            $normA += $val * $val;
+            $normB += $b * $b;
+        }
+
+        if ($normA == 0.0 || $normB == 0.0) return 0.0;
 
         return $dotProduct / (sqrt($normA) * sqrt($normB));
     }
