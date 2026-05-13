@@ -27,8 +27,12 @@ Route::get('/acentalar/{agency}', [AgencyController::class, 'show'])->name('agen
 Route::get('/destinasyonlar/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show');
 Route::get('/blog', [PostController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('blog.show');
-Route::get('/yapay-zeka-arama', [\App\Http\Controllers\AiSearchController::class, 'search'])->name('ai.search');
-Route::get('/yapay-zeka-arama-api', [\App\Http\Controllers\AiSearchController::class, 'searchApi'])->name('ai.search.api');
+Route::get('/yapay-zeka-arama', [\App\Http\Controllers\AiSearchController::class, 'chat'])->name('ai.search');
+Route::get('/yapay-zeka-arama/{uuid}', [\App\Http\Controllers\AiSearchController::class, 'chat'])->name('ai.search.show')->whereUuid('uuid');
+Route::middleware('throttle:ai_search')->group(function () {
+    Route::post('/yapay-zeka-arama/mesaj', [\App\Http\Controllers\AiSearchController::class, 'sendMessage'])->name('ai.search.message');
+    Route::get('/yapay-zeka-arama-api', [\App\Http\Controllers\AiSearchController::class, 'searchApi'])->name('ai.search.api');
+});
 
 // Favorites (auth required)
 Route::middleware('auth')->group(function () {
@@ -47,6 +51,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/bildirimler/{id}/okundu', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/bildirimler/hepsini-oku', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 });
+
+// iyzico ödeme callback — public + CSRF muaf (bootstrap/app.php içinde except listesine eklendi)
+Route::post('/iyzico-callback/{order}', [\App\Http\Controllers\Agency\CategoryLicenseController::class, 'iyzicoCallback'])
+    ->name('agency.category-licenses.iyzico.callback');
 
 // Click tracking redirect
 Route::get('/git/{tour}', function (\App\Models\Tour $tour) {
@@ -170,7 +178,9 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         Route::get('/kategori-yetkilendirme', [AgencyCategoryLicenseController::class, 'index'])->name('category-licenses.index');
         Route::post('/kategori-yetkilendirme/sepet', [AgencyCategoryLicenseController::class, 'addToCart'])->name('category-licenses.cart.add');
         Route::delete('/kategori-yetkilendirme/sepet/{category}', [AgencyCategoryLicenseController::class, 'removeFromCart'])->name('category-licenses.cart.remove');
-        Route::post('/kategori-yetkilendirme/satin-al', [AgencyCategoryLicenseController::class, 'checkout'])->name('category-licenses.checkout');
+        Route::get('/kategori-yetkilendirme/odeme', [AgencyCategoryLicenseController::class, 'checkoutForm'])->name('category-licenses.checkout-form');
+        Route::post('/kategori-yetkilendirme/odeme', [AgencyCategoryLicenseController::class, 'initiatePayment'])->name('category-licenses.initiate-payment');
+        Route::get('/kategori-yetkilendirme/odeme/{order}/sonuc', [AgencyCategoryLicenseController::class, 'paymentResult'])->name('category-licenses.payment.result');
         Route::get('/turlar', [AgencyTourController::class, 'index'])->name('tours.index');
         Route::get('/turlar/ekle', [AgencyTourController::class, 'create'])->name('tours.create');
         Route::post('/turlar', [AgencyTourController::class, 'store'])->name('tours.store');
@@ -227,7 +237,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/destinasyonlar/{destination}/toggle', [AdminController::class, 'toggleDestination'])->name('destinations.toggle');
 
     // Category Management
-    Route::resource('/kategoriler', \App\Http\Controllers\Admin\CategoryController::class)->names('categories')->except(['create', 'show', 'edit']);
+    Route::resource('/kategoriler', \App\Http\Controllers\Admin\CategoryController::class)
+        ->names('categories')
+        ->parameters(['kategoriler' => 'category'])
+        ->except(['create', 'show', 'edit']);
 
     // Coupons
     Route::resource('/kuponlar', \App\Http\Controllers\Admin\CouponController::class)

@@ -24,6 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Trust all proxies (required for Cloudflare tunnel / ngrok)
         $middleware->trustProxies(at: '*');
+
+        // iyzico kendi session'umuzu bilmiyor; callback POST'unu CSRF'den muaf tut.
+        $middleware->validateCsrfTokens(except: [
+            'iyzico-callback/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
@@ -44,6 +49,22 @@ return Application::configure(basePath: dirname(__DIR__))
         */
         RateLimiter::for('search', function (Request $request) {
             return Limit::perMinute(60)->by($request->ip());
+        });
+
+        /*
+        |----------------------------------------------------------------------
+        | Rate Limiter: ai_search
+        |----------------------------------------------------------------------
+        |
+        | AI tarafı her istek başına OpenAI API çağrısı yapar; kötü niyetli
+        | trafik fatura riski. Anonim kullanıcı IP başına dakikada 10, auth'lu
+        | kullanıcı user_id başına dakikada 30 istek.
+        |
+        */
+        RateLimiter::for('ai_search', function (Request $request) {
+            return $request->user()
+                ? Limit::perMinute(30)->by('ai:user:' . $request->user()->id)
+                : Limit::perMinute(10)->by('ai:ip:' . $request->ip());
         });
     })
     ->create();

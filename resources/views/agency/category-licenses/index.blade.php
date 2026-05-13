@@ -173,10 +173,9 @@
                                     <strong style="font-size:20px;color:#0f172a;">{{ number_format($cartTotal, 0, ',', '.') }} TL</strong>
                                 </div>
                                 <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Satın alım sonrası kategoriler 1 aylık aktif edilir.</div>
-                                <form method="POST" action="{{ route('agency.category-licenses.checkout') }}" style="margin-top:16px;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Aylık Yetkileri Satın Al</button>
-                                </form>
+                                <a href="{{ route('agency.category-licenses.checkout-form') }}" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;">
+                                    Ödemeye Geç
+                                </a>
                             </div>
                         @endif
                     </div>

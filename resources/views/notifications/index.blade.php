@@ -16,6 +16,12 @@
 
         <div class="card" style="padding:0; overflow:hidden;">
             @forelse($notifications as $notification)
+            @php
+                $notificationTourId = $notification->data['tour_id'] ?? null;
+                $notificationUrl = $notificationTourId
+                    ? route('tours.show', $notificationTourId)
+                    : ($notification->data['url'] ?? route('home'));
+            @endphp
             <div style="padding:20px; border-bottom:1px solid #f1f5f9; display:flex; gap:16px; align-items:flex-start; background: {{ $notification->read_at ? '#fff' : '#f8fafc' }}; transition: background 0.2s;">
                 <div style="font-size:24px; background:#fff; width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
                     {{ $notification->data['icon'] ?? '🔔' }}
@@ -27,7 +33,7 @@
                     </div>
                     <p style="font-size:14px; color:var(--text-sec); margin-bottom:12px;">{{ $notification->data['message'] }}</p>
                     <div style="display:flex; gap:12px; align-items:center;">
-                        <a href="{{ $notification->data['url'] }}" class="btn btn-primary btn-sm" style="padding:4px 12px; font-size:12px;">İncele</a>
+                        <a href="{{ $notificationUrl }}" class="btn btn-primary btn-sm" style="padding:4px 12px; font-size:12px;">İncele</a>
                         @if(!$notification->read_at)
                         <form action="{{ route('notifications.read', $notification->id) }}" method="POST">
                             @csrf

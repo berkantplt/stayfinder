@@ -11,7 +11,16 @@ class AgencyCategoryOrder extends Model
 {
     use HasFactory;
 
+    public const STATUS_PENDING = 'pending';
     public const STATUS_PAID = 'paid';
+    public const STATUS_FAILED = 'failed';
+    public const STATUS_CANCELLED = 'cancelled';
+
+    public const PROVIDER_IYZICO = 'iyzico';
+    public const PROVIDER_MANUAL = 'manual';
+
+    public const BUYER_INDIVIDUAL = 'individual';
+    public const BUYER_CORPORATE = 'corporate';
 
     protected $fillable = [
         'agency_id',
@@ -20,12 +29,21 @@ class AgencyCategoryOrder extends Model
         'subtotal',
         'currency',
         'status',
+        'payment_provider',
+        'provider_token',
+        'provider_payment_id',
+        'buyer_type',
+        'buyer_snapshot',
         'purchased_at',
+        'paid_at',
+        'failure_reason',
     ];
 
     protected $casts = [
         'subtotal' => 'decimal:2',
         'purchased_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'buyer_snapshot' => 'array',
     ];
 
     public function agency(): BelongsTo
@@ -36,5 +54,20 @@ class AgencyCategoryOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(AgencyCategoryOrderItem::class, 'order_id');
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === self::STATUS_PAID;
+    }
+
+    public function isFailed(): bool
+    {
+        return in_array($this->status, [self::STATUS_FAILED, self::STATUS_CANCELLED], true);
     }
 }

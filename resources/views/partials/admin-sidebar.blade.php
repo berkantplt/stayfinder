@@ -20,6 +20,7 @@
     </style>
 
     @php($categoryLicensingActive = request()->routeIs('admin.category-licenses*'))
+    @php($pendingAgencyApplicationsCount = \App\Models\Agency::pendingApproval()->count())
 
     <div style="display:flex;flex-direction:column;">
         <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -29,7 +30,11 @@
             <span class="sidebar-icon">🏢</span> Acentalar
         </a>
         <a href="{{ route('admin.agency-applications') }}" class="sidebar-link {{ request()->routeIs('admin.agency-applications*') ? 'active' : '' }}">
-            <span class="sidebar-icon">📝</span> Acenta Başvuruları
+            <span class="sidebar-icon">📝</span>
+            <span style="flex:1;">Acenta Başvuruları</span>
+            @if($pendingAgencyApplicationsCount > 0)
+                <span style="min-width:22px;height:22px;border-radius:999px;background:#f97316;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;padding:0 7px;">{{ $pendingAgencyApplicationsCount }}</span>
+            @endif
         </a>
         <a href="{{ route('admin.tours') }}" class="sidebar-link {{ request()->routeIs('admin.tours') ? 'active' : '' }}">
             <span class="sidebar-icon">📋</span> Tüm Turlar

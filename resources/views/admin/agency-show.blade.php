@@ -43,8 +43,23 @@
                     Kategori yetkilendirme tabloları bu ortamda hazır değil. Detay ekranı yalnızca temel acenta bilgilerini gösteriyor.
                 </div>
             @elseif(($agency->approval_status ?? 'approved') === 'pending')
-                <div style="max-width:94%;margin:0 auto 24px;padding:14px 16px;border-radius:16px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;line-height:1.6;">
-                    Bu başvuru henüz admin onayı bekliyor. Başvurular ekranından onaylayabilir veya reddedebilirsiniz.
+                <div style="max-width:94%;margin:0 auto 24px;padding:18px;border-radius:16px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;">
+                    <div style="font-size:14px;line-height:1.6;font-weight:700;margin-bottom:14px;">
+                        Bu başvuru henüz admin onayı bekliyor. Buradan doğrudan onaylayabilir veya reddedebilirsiniz.
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+                        <form method="POST" action="{{ route('admin.agency-applications.approve', $agency) }}" style="display:flex;flex-direction:column;gap:10px;">
+                            @csrf
+                            <textarea name="approval_notes" rows="3" placeholder="Onay notu (opsiyonel)" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #fed7aa;background:#fff;font-size:14px;outline:none;resize:vertical;"></textarea>
+                            <button type="submit" class="btn btn-primary" style="justify-content:center;">Onayla</button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.agency-applications.reject', $agency) }}" style="display:flex;flex-direction:column;gap:10px;">
+                            @csrf
+                            <textarea name="approval_notes" rows="3" placeholder="Red nedeni (opsiyonel)" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #fecaca;background:#fff;font-size:14px;outline:none;resize:vertical;"></textarea>
+                            <button type="submit" class="btn btn-outline" style="justify-content:center;color:#991b1b;border-color:#fecaca;background:#fff5f5;">Reddet</button>
+                        </form>
+                    </div>
                 </div>
             @elseif(($agency->approval_status ?? 'approved') === 'rejected')
                 <div style="max-width:94%;margin:0 auto 24px;padding:14px 16px;border-radius:16px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px;line-height:1.6;">

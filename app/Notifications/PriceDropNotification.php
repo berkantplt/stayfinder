@@ -37,7 +37,7 @@ class PriceDropNotification extends Notification
             'tour_id' => $this->tour->id,
             'title' => 'Fiyat Düştü!',
             'message' => "{$this->tour->title} turunun fiyatı düştü! Yeni fiyat: " . $this->tour->formatted_price,
-            'url' => route('tours.show', $this->tour->slug),
+            'url' => route('tours.show', $this->tour),
             'icon' => '📉'
         ];
     }

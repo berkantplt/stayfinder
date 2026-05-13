@@ -87,6 +87,16 @@ class AdminController extends Controller
             }
         }
 
+        if ($request->filled('approval_status')) {
+            if ($request->approval_status === Agency::STATUS_PENDING) {
+                $query->pendingApproval();
+            } elseif ($request->approval_status === Agency::STATUS_APPROVED) {
+                $query->approved();
+            } elseif ($request->approval_status === Agency::STATUS_REJECTED) {
+                $query->rejected();
+            }
+        }
+
         $agencies = $query->orderBy('name')->paginate(15)->withQueryString();
         return view('admin.agencies', compact('agencies'));
     }

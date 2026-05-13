@@ -50,7 +50,7 @@ class NewTourNotification extends Notification
             'tour_id' => $this->tour->id,
             'title' => 'Yeni Tur Eklendi!',
             'message' => "Yeni bir macera seni bekliyor: {$this->tour->title}. Hemen incele!",
-            'url' => route('tours.show', $this->tour->slug),
+            'url' => route('tours.show', $this->tour),
             'icon' => '✨'
         ];
     }

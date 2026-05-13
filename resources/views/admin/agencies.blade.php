@@ -30,9 +30,18 @@
                         <option value="passive" {{ request('status') === 'passive' ? 'selected' : '' }}>Sadece Pasifler</option>
                     </select>
                 </div>
+                <div class="form-group" style="width:210px;margin-bottom:0;">
+                    <label style="font-size:13px;color:#475569;">Onay Durumu</label>
+                    <select name="approval_status" style="background:#f8fafc;border:1px solid #e2e8f0;padding:11px 16px;border-radius:12px;width:100%;font-size:15px;outline:none;transition:border-color 0.2s;">
+                        <option value="">Tümü</option>
+                        <option value="pending" {{ request('approval_status') === 'pending' ? 'selected' : '' }}>Onay Bekleyenler</option>
+                        <option value="approved" {{ request('approval_status') === 'approved' ? 'selected' : '' }}>Onaylılar</option>
+                        <option value="rejected" {{ request('approval_status') === 'rejected' ? 'selected' : '' }}>Reddedilenler</option>
+                    </select>
+                </div>
                 <div style="display:flex;gap:10px;">
                     <button type="submit" class="btn btn-primary" style="padding:11px 24px;">Filtrele</button>
-                    <a href="{{ route('admin.agencies') }}" id="clear-filters" class="btn btn-outline" style="padding:11px 16px;display:{{ request()->hasAny(['q', 'status']) ? 'block' : 'none' }};">Temizle</a>
+                    <a href="{{ route('admin.agencies') }}" id="clear-filters" class="btn btn-outline" style="padding:11px 16px;display:{{ request()->hasAny(['q', 'status', 'approval_status']) ? 'block' : 'none' }};">Temizle</a>
                 </div>
             </form>
         </div>
@@ -118,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('search-form');
     const inputQ = form.querySelector('input[name="q"]');
     const selectStatus = form.querySelector('select[name="status"]');
+    const selectApprovalStatus = form.querySelector('select[name="approval_status"]');
     const resultsContainer = document.getElementById('agencies-results');
     const clearBtn = document.getElementById('clear-filters');
     let debounceTimer;
@@ -140,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Show/hide clear button based on parameters
                     const urlObj = new URL(url);
-                    if (urlObj.searchParams.get('q') || urlObj.searchParams.get('status')) {
+                    if (urlObj.searchParams.get('q') || urlObj.searchParams.get('status') || urlObj.searchParams.get('approval_status')) {
                         clearBtn.style.display = 'block';
                     } else {
                         clearBtn.style.display = 'none';
@@ -154,6 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = new URL(form.action);
         if (inputQ.value.trim()) url.searchParams.set('q', inputQ.value.trim());
         if (selectStatus.value) url.searchParams.set('status', selectStatus.value);
+        if (selectApprovalStatus.value) url.searchParams.set('approval_status', selectApprovalStatus.value);
         fetchResults(url.toString());
     }
 
@@ -165,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Dropdown change
     selectStatus.addEventListener('change', triggerSearch);
+    selectApprovalStatus.addEventListener('change', triggerSearch);
 
     // Form submit prevention and trigger via JS
     form.addEventListener('submit', (e) => {
@@ -177,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         inputQ.value = '';
         selectStatus.value = '';
+        selectApprovalStatus.value = '';
         triggerSearch();
     });
 
