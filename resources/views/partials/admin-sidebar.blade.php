@@ -77,6 +77,9 @@
         <a href="{{ route('admin.reports.index') }}" class="sidebar-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
             <span class="sidebar-icon">📈</span> Raporlar
         </a>
+        <a href="{{ route('admin.destination-profiles.index') }}" class="sidebar-link {{ request()->routeIs('admin.destination-profiles*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🌐</span> Destinasyon Profilleri
+        </a>
         <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;">
         <a href="{{ route('home') }}" class="sidebar-link">
             <span class="sidebar-icon">🌍</span> Siteye Dön

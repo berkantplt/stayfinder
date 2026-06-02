@@ -48,13 +48,13 @@ class DestinationProfileService
         }
 
         if ($profile) {
-            $result = [
-                'crowd' => (float) $profile->crowd_score,
-                'lively' => (float) $profile->liveliness_score,
-                'source' => $profile->source,
-            ];
-
+            $result = $this->profileToArray($profile);
             Cache::put('dest_profile:' . $normalized, $result, self::CACHE_TTL_SECONDS);
+
+            // Schema değiştiyse arka planda yeniden zenginleştir
+            if ($profile->needsEnrichment()) {
+                $this->scheduleEnrichment($profile->city, $profile->normalized_city);
+            }
 
             return $result;
         }
@@ -66,6 +66,25 @@ class DestinationProfileService
         Cache::put('dest_profile:' . $normalized, $result, self::CACHE_TTL_SECONDS);
 
         return $result;
+    }
+
+    /**
+     * @return array{crowd: float, lively: float, source: string, country: ?string, summary: ?string, climate_by_month: ?array, vibe_tags: ?array, best_months: ?array, crowded_months: ?array, requires_visa_for_tr: ?bool}
+     */
+    private function profileToArray(\App\Models\DestinationProfile $profile): array
+    {
+        return [
+            'crowd' => (float) $profile->crowd_score,
+            'lively' => (float) $profile->liveliness_score,
+            'source' => $profile->source,
+            'country' => $profile->country,
+            'summary' => $profile->summary,
+            'climate_by_month' => $profile->climate_by_month,
+            'vibe_tags' => $profile->vibe_tags,
+            'best_months' => $profile->best_months,
+            'crowded_months' => $profile->crowded_months,
+            'requires_visa_for_tr' => $profile->requires_visa_for_tr,
+        ];
     }
 
     /**
@@ -96,7 +115,7 @@ class DestinationProfileService
     }
 
     /**
-     * @return array{crowd: float, lively: float, source: string}
+     * @return array{crowd: float, lively: float, source: string, country: null, summary: null, climate_by_month: null, vibe_tags: null, best_months: null, crowded_months: null, requires_visa_for_tr: null}
      */
     private function defaultProfile(): array
     {
@@ -104,6 +123,13 @@ class DestinationProfileService
             'crowd' => self::DEFAULT_CROWD,
             'lively' => self::DEFAULT_LIVELY,
             'source' => DestinationProfile::SOURCE_DEFAULT,
+            'country' => null,
+            'summary' => null,
+            'climate_by_month' => null,
+            'vibe_tags' => null,
+            'best_months' => null,
+            'crowded_months' => null,
+            'requires_visa_for_tr' => null,
         ];
     }
 }

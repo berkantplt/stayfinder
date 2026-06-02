@@ -31,13 +31,21 @@ Route::get('/yapay-zeka-arama', [\App\Http\Controllers\AiSearchController::class
 Route::get('/yapay-zeka-arama/{uuid}', [\App\Http\Controllers\AiSearchController::class, 'chat'])->name('ai.search.show')->whereUuid('uuid');
 Route::middleware('throttle:ai_search')->group(function () {
     Route::post('/yapay-zeka-arama/mesaj', [\App\Http\Controllers\AiSearchController::class, 'sendMessage'])->name('ai.search.message');
+    Route::post('/yapay-zeka-arama/mesaj/akis', [\App\Http\Controllers\AiSearchController::class, 'streamMessage'])->name('ai.search.message.stream');
     Route::get('/yapay-zeka-arama-api', [\App\Http\Controllers\AiSearchController::class, 'searchApi'])->name('ai.search.api');
+    Route::post('/yapay-zeka-arama/{log}/reddet', [\App\Http\Controllers\AiSearchController::class, 'rejectTour'])
+        ->whereNumber('log')
+        ->name('ai.search.reject');
 });
 
 // Favorites (auth required)
 Route::middleware('auth')->group(function () {
     Route::post('/favoriler/{tour}', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
     Route::get('/favorilerim', [FavoriteController::class, 'index'])->name('favorites.index');
+
+    // Müşterinin görebileceği aktif kuponlar (acentaların tanımladığı + admin global)
+    Route::get('/kuponlarim', [\App\Http\Controllers\Customer\CouponController::class, 'index'])->name('customer.coupons.index');
+
     Route::post('/turlar/{tour}/yorum', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/yorum/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     // Profile
@@ -204,6 +212,8 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         // Campaigns
         Route::get('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'index'])->name('campaigns.index');
         Route::post('/kampanyalar', [\App\Http\Controllers\Agency\CampaignController::class, 'store'])->name('campaigns.store');
+        Route::get('/kampanyalar/{campaign}/duzenle', [\App\Http\Controllers\Agency\CampaignController::class, 'edit'])->name('campaigns.edit');
+        Route::put('/kampanyalar/{campaign}', [\App\Http\Controllers\Agency\CampaignController::class, 'update'])->name('campaigns.update');
         Route::delete('/kampanyalar/{campaign}', [\App\Http\Controllers\Agency\CampaignController::class, 'destroy'])->name('campaigns.destroy');
 
         // Coupons
@@ -251,6 +261,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     
     // Reports
     Route::get('/raporlar', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+
+    // Destination Profiles (AI-fed + manuel düzenlenebilir)
+    Route::get('/destinasyon-profilleri', [\App\Http\Controllers\Admin\DestinationProfileController::class, 'index'])->name('destination-profiles.index');
+    Route::get('/destinasyon-profilleri/{profile}/duzenle', [\App\Http\Controllers\Admin\DestinationProfileController::class, 'edit'])->name('destination-profiles.edit');
+    Route::put('/destinasyon-profilleri/{profile}', [\App\Http\Controllers\Admin\DestinationProfileController::class, 'update'])->name('destination-profiles.update');
+    Route::post('/destinasyon-profilleri/{profile}/yeniden-uret', [\App\Http\Controllers\Admin\DestinationProfileController::class, 'regenerate'])->name('destination-profiles.regenerate');
+    Route::delete('/destinasyon-profilleri/{profile}', [\App\Http\Controllers\Admin\DestinationProfileController::class, 'destroy'])->name('destination-profiles.destroy');
     Route::post('/kategoriler/{category}/toggle', [\App\Http\Controllers\Admin\CategoryController::class, 'toggle'])->name('categories.toggle');
 
     // Blog management

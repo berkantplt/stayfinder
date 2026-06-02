@@ -2,24 +2,31 @@
 
 namespace App\Observers;
 
+use App\Console\Commands\SyncKnowledgeBase;
+use App\Jobs\GenerateDestinationProfileJob;
 use App\Jobs\GenerateTourEmbeddingJob;
+use App\Models\DestinationProfile;
 use App\Models\Tour;
 use Illuminate\Support\Facades\Log;
 
 class TourObserver
 {
     /**
-     * Yeni tur oluşturulduğunda embedding'ini arka planda üret.
+     * Yeni tur oluşturulduğunda embedding, destinasyon profili ve knowledge chunk
+     * üret.
      */
     public function created(Tour $tour): void
     {
-        Log::info("[TourObserver] Yeni tur eklendi: #{$tour->id} ({$tour->title}). Embedding kuyruğa alınıyor...");
+        Log::info("[TourObserver] Yeni tur eklendi: #{$tour->id} ({$tour->title}). Embedding ve destinasyon profili kuyruğa alınıyor...");
         GenerateTourEmbeddingJob::dispatch($tour->id)->onQueue('default');
+
+        $this->dispatchDestinationEnrichmentIfNeeded((string) $tour->destination);
+        $this->syncKnowledgeChunkFor($tour);
     }
 
     /**
      * Tur güncellendiğinde, AI aramasını etkileyen bir alan değiştiyse
-     * embedding'i yeniden oluştur.
+     * embedding'i yeniden oluştur. Destinasyon değiştiyse yeni şehir için profil tetikle.
      */
     public function updated(Tour $tour): void
     {
@@ -42,6 +49,19 @@ class TourObserver
             Log::info("[TourObserver] Tur güncellendi: #{$tour->id} ({$tour->title}). Embedding yeniden oluşturulacak...");
             GenerateTourEmbeddingJob::dispatch($tour->id)->onQueue('default');
         }
+
+        if ($tour->wasChanged('destination')) {
+            $this->dispatchDestinationEnrichmentIfNeeded((string) $tour->destination);
+        }
+
+        // Knowledge chunk: title/destination/description değiştiyse RAG bağlamı güncellensin
+        $knowledgeFields = ['title', 'destination', 'description', 'price', 'currency', 'duration_days'];
+        foreach ($knowledgeFields as $field) {
+            if ($tour->wasChanged($field)) {
+                $this->syncKnowledgeChunkFor($tour);
+                break;
+            }
+        }
     }
 
     /**
@@ -51,5 +71,76 @@ class TourObserver
     {
         Log::info("[TourObserver] Tur silindi: #{$tour->id} ({$tour->title}). Destinasyon cache temizleniyor...");
         cache()->forget('ai_search_known_destinations_v1');
+    }
+
+    /**
+     * Tur'un metin alanlarından KnowledgeChunk içeriği üretip syncSingle çağırır.
+     * content_hash değişimi varsa embedding null'lar + GenerateKnowledgeEmbeddingJob
+     * dispatch edilir (SyncKnowledgeBase::syncSingle içinde).
+     */
+    private function syncKnowledgeChunkFor(Tour $tour): void
+    {
+        if (!$tour->is_active) {
+            return; // Pasif turlar RAG'a girmesin
+        }
+
+        $tour->loadMissing('agency', 'category');
+
+        $content = "Tur: {$tour->title}\n" .
+            "Destinasyon: {$tour->destination}\n" .
+            "Fiyat: {$tour->price} {$tour->currency}\n" .
+            "Süre: {$tour->duration_days} Gün\n" .
+            "Acente: {$tour->agency?->name}\n" .
+            "Kategori: {$tour->category?->name}\n" .
+            "Açıklama: " . strip_tags((string) $tour->description);
+
+        SyncKnowledgeBase::syncSingle('tour', $tour->id, $tour->title, $content);
+    }
+
+    /**
+     * Destinasyon string'i için profile yoksa veya enrichment_version eskimişse
+     * arka planda LLM job dispatch. Multi-city ("Paris, Roma") string'lerinde
+     * her parça için ayrı kontrol — bilinmeyen yeni şehirler de zenginleşir.
+     */
+    private function dispatchDestinationEnrichmentIfNeeded(string $destination): void
+    {
+        $destination = trim($destination);
+        if ($destination === '') {
+            return;
+        }
+
+        // Multi-city destination: virgül/ile ile böl, her şehri ayrı ele al
+        $parts = preg_split('/\s*[,;\/&]\s*|\s+ve\s+/u', $destination) ?: [$destination];
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '' || mb_strlen($part, 'UTF-8') < 3) {
+                continue;
+            }
+
+            $normalized = DestinationProfile::normalize($part);
+            $profile = DestinationProfile::where('normalized_city', $normalized)->first();
+
+            if ($profile && !$profile->needsEnrichment()) {
+                continue;
+            }
+
+            Log::info('[TourObserver] Destinasyon enrichment dispatch', ['city' => $part]);
+
+            // Placeholder yoksa oluştur (sonsuz dispatch'i önlemek için DestinationProfileService
+            // pattern'ı buraya da uyarlandı)
+            if (!$profile) {
+                DestinationProfile::create([
+                    'city' => $part,
+                    'normalized_city' => $normalized,
+                    'crowd_score' => 0.50,
+                    'liveliness_score' => 0.50,
+                    'source' => DestinationProfile::SOURCE_DEFAULT,
+                    'enrichment_version' => 1,
+                ]);
+            }
+
+            GenerateDestinationProfileJob::dispatch($part);
+        }
     }
 }

@@ -187,6 +187,220 @@ class ConversationService
     }
 
     /**
+     * Streaming versiyon — emit closure ile event akıtır.
+     * Akış: 'search' → ('tours' → 'comment'+ → 'done') | ('comment' → 'done') | 'error'
+     *
+     * Atomic kural: DB::transaction içinde HİÇBİR emit yok. Yazımlar bittikten sonra
+     * emit + streaming yapılır. Final content streaming sonrası ayrı UPDATE ile yazılır.
+     *
+     * @param  \Closure(string, mixed): void  $emit
+     * @return array{type: string, user: AiSearchMessage, assistant: AiSearchMessage}
+     * @throws LockTimeoutException Lock alınamadığında
+     */
+    public function respondStreamed(Request $request, AiSearchConversation $conversation, string $userMessage, \Closure $emit): array
+    {
+        $userMessage = trim($userMessage);
+        if ($userMessage === '') {
+            throw new \InvalidArgumentException('Boş mesaj gönderilemez.');
+        }
+
+        $lock = Cache::lock('ai_conv_lock:' . $conversation->id, self::LOCK_TTL_SECONDS);
+
+        return $lock->block(self::LOCK_BLOCK_SECONDS, function () use ($request, $conversation, $userMessage, $emit) {
+            $conversation->refresh();
+
+            // Phase 1: DB transaction içinde atomic yazımlar + arama
+            $turnState = DB::transaction(function () use ($request, $conversation, $userMessage) {
+                $userMsg = AiSearchMessage::create([
+                    'conversation_id' => $conversation->id,
+                    'role' => AiSearchMessage::ROLE_USER,
+                    'content' => $userMessage,
+                ]);
+
+                $previousIntent = $conversation->current_intent ?? [];
+                $clarificationsAsked = (int) ($previousIntent['_clarifications'] ?? 0);
+
+                // 1a. Clarification check
+                if ($clarificationsAsked < self::MAX_CLARIFICATIONS) {
+                    $question = $this->maybeAskClarification($userMessage, $previousIntent);
+
+                    if ($question !== null) {
+                        $assistantMsg = AiSearchMessage::create([
+                            'conversation_id' => $conversation->id,
+                            'role' => AiSearchMessage::ROLE_ASSISTANT,
+                            'content' => $question,
+                        ]);
+
+                        $conversation->update([
+                            'current_intent' => array_merge($previousIntent, ['_clarifications' => $clarificationsAsked + 1]),
+                            'last_message_at' => now(),
+                            'title' => $conversation->title ?: Str::limit($userMessage, 60),
+                        ]);
+
+                        return [
+                            'type' => 'clarification',
+                            'user' => $userMsg,
+                            'assistant' => $assistantMsg,
+                            'question' => $question,
+                        ];
+                    }
+                }
+
+                // 1b. Search (skipComment: streamComment dışarıda akıtacak)
+                $searchResult = $this->searchController->performAiSearch(
+                    $request,
+                    $userMessage,
+                    $previousIntent,
+                    skipComment: true
+                );
+
+                if (!is_array($searchResult) || isset($searchResult['error'])) {
+                    $errorMessage = $searchResult['error'] ?? 'Arama başarısız.';
+                    $assistantMsg = AiSearchMessage::create([
+                        'conversation_id' => $conversation->id,
+                        'role' => AiSearchMessage::ROLE_ASSISTANT,
+                        'content' => 'Üzgünüm, arama sırasında bir sorun oldu: ' . $errorMessage,
+                    ]);
+
+                    return [
+                        'type' => 'error',
+                        'user' => $userMsg,
+                        'assistant' => $assistantMsg,
+                        'error' => $errorMessage,
+                    ];
+                }
+
+                // Placeholder assistant message — content streaming sonrası UPDATE edilecek
+                $resultIds = collect($searchResult['results'])->pluck('id')->all();
+                $resultScores = collect($searchResult['results'])->map(fn($r) => [
+                    'tour_id' => $r['id'],
+                    'rank' => $r['rank'],
+                    'compatibility_score' => $r['compatibility_score'] ?? null,
+                ])->all();
+
+                $assistantMsg = AiSearchMessage::create([
+                    'conversation_id' => $conversation->id,
+                    'role' => AiSearchMessage::ROLE_ASSISTANT,
+                    'content' => '',
+                    'intent_snapshot' => $searchResult['intent'] ?? null,
+                    'result_tour_ids' => $resultIds,
+                    'result_scores' => $resultScores,
+                    'latency_ms' => $searchResult['latency_ms'] ?? null,
+                ]);
+
+                $mergedIntent = $searchResult['intent'] ?? $previousIntent;
+                if (isset($previousIntent['_clarifications'])) {
+                    $mergedIntent['_clarifications'] = $previousIntent['_clarifications'];
+                }
+
+                $conversation->update([
+                    'current_intent' => $mergedIntent,
+                    'last_result_tour_ids' => $resultIds,
+                    'last_message_at' => now(),
+                    'title' => $conversation->title ?: Str::limit($userMessage, 60),
+                ]);
+
+                return [
+                    'type' => 'search',
+                    'user' => $userMsg,
+                    'assistant' => $assistantMsg,
+                    'searchResult' => $searchResult,
+                ];
+            });
+
+            // Phase 2: DB transaction TAMAM. Şimdi emit + streaming yapılabilir.
+            $emit('search', [
+                'conversation_uuid' => $conversation->uuid,
+                'user_message' => [
+                    'id' => $turnState['user']->id,
+                    'role' => $turnState['user']->role,
+                    'content' => $turnState['user']->content,
+                    'created_at' => $turnState['user']->created_at?->toIso8601String(),
+                ],
+            ]);
+
+            if ($turnState['type'] === 'clarification') {
+                // Tek atışta soru — streaming çağrısı yok
+                $emit('comment', ['delta' => $turnState['question'], 'final' => $turnState['question']]);
+                $emit('done', [
+                    'is_clarification' => true,
+                    'assistant_message_id' => $turnState['assistant']->id,
+                ]);
+
+                return $turnState;
+            }
+
+            if ($turnState['type'] === 'error') {
+                $emit('error', ['message' => $turnState['error']]);
+                $emit('done', ['is_error' => true]);
+
+                return $turnState;
+            }
+
+            // Search akışı: tur kartları + streaming yorum
+            // log_id reject button'unun çalışması için tours event'ine ekleniyor
+            $emit('tours', [
+                'log_id' => $turnState['searchResult']['log_id'] ?? null,
+                'items' => $this->mapToursToCards($turnState['searchResult']['results']),
+            ]);
+
+            $ctx = $turnState['searchResult']['_comment_context'];
+            $fullContent = $this->searchController->streamComment(
+                $ctx['query'],
+                $ctx['results'],
+                $ctx['knowledge_context'],
+                $ctx['preferred_destination'],
+                function (string $delta) use ($emit) {
+                    $emit('comment', ['delta' => $delta]);
+                }
+            );
+
+            // Streaming tamamlandı — asistan mesajının final content'ini DB'ye yaz (atomik update)
+            $turnState['assistant']->update(['content' => $fullContent]);
+
+            $emit('done', [
+                'is_clarification' => false,
+                'assistant_message_id' => $turnState['assistant']->id,
+                'log_id' => $turnState['searchResult']['log_id'] ?? null,
+                'applied_filters' => $turnState['searchResult']['applied_filters'] ?? [],
+            ]);
+
+            return $turnState;
+        });
+    }
+
+    /**
+     * cleanResults formatındaki dizilerden frontend tur kartlarına dönüştürür.
+     * (Eloquent collection'dan dönüşen 'results' alanı içinde Tour modelleri var.)
+     */
+    private function mapToursToCards(\Illuminate\Support\Collection $results): array
+    {
+        $tourIds = $results->pluck('id')->filter()->values()->all();
+        $tours = empty($tourIds)
+            ? collect()
+            : \App\Models\Tour::with('agency')->whereIn('id', $tourIds)->get()->keyBy('id');
+
+        return $results->map(function ($r) use ($tours) {
+            $tour = $tours->get(is_object($r) ? $r->id : ($r['id'] ?? null));
+
+            $get = fn(string $key) => is_object($r) ? ($r->{$key} ?? null) : ($r[$key] ?? null);
+
+            return [
+                'id' => $get('id'),
+                'title' => $get('title'),
+                'destination' => $get('destination'),
+                'price' => $get('price'),
+                'currency' => $get('currency'),
+                'duration_days' => $get('duration_days'),
+                'image' => $get('image'),
+                'url' => route('tours.show', $get('id')),
+                'agency_name' => $tour?->agency?->name,
+                'compatibility_score' => $get('compatibility_score'),
+            ];
+        })->values()->all();
+    }
+
+    /**
      * Niyet eksikse Türkçe bir netleştirme sorusu döndürür, yeterliyse null.
      *
      * Tamamen deterministik (LLM kullanmaz). 4 sinyal ekseni: budget, destination,

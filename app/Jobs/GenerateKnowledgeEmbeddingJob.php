@@ -33,7 +33,7 @@ class GenerateKnowledgeEmbeddingJob implements ShouldQueue
 
         try {
             $response = OpenAI::embeddings()->create([
-                'model' => 'text-embedding-3-small',
+                'model' => config('ai.embedding_model', 'text-embedding-3-small'),
                 'input' => $chunk->content,
             ]);
 

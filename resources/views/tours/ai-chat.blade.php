@@ -89,6 +89,7 @@
     const messages = document.getElementById('chat-messages');
     const uuidInput = document.getElementById('conversation-uuid');
     const messageRoute = @json(route('ai.search.message'));
+    const streamRoute = @json(route('ai.search.message.stream'));
     const showRouteBase = @json(rtrim(route('ai.search'), '/'));
     const csrfToken = @json(csrf_token());
 
@@ -196,6 +197,130 @@
         document.getElementById('chat-loading')?.remove();
     }
 
+    // Streaming asistan balonu yarat — chunk geldikçe textContent append edilir
+    function startStreamingAssistant(isClarification) {
+        clearWelcome();
+        const tpl = document.getElementById('msg-template-assistant');
+        const node = tpl.content.cloneNode(true);
+        const commentEl = node.querySelector('[data-comment]');
+        commentEl.textContent = isClarification ? '🤔 ' : '';
+        if (isClarification) {
+            commentEl.style.background = '#fffbeb';
+            commentEl.style.borderColor = '#fde68a';
+            commentEl.style.color = '#78350f';
+        }
+        const grid = node.querySelector('[data-tours]');
+        const wrapper = node.firstElementChild;
+        messages.appendChild(node);
+        messages.scrollTop = messages.scrollHeight;
+        return { commentEl, grid, wrapper };
+    }
+
+    function renderTourCards(grid, tours, logId) {
+        if (!tours || !tours.length) return;
+        tours.forEach(t => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;transition:transform .15s,box-shadow .15s,opacity .35s;';
+            wrap.dataset.tourId = String(t.id);
+
+            const link = document.createElement('a');
+            link.href = t.url;
+            link.style.cssText = 'display:flex;flex-direction:column;text-decoration:none;color:inherit;';
+            link.onmouseenter = () => { wrap.style.transform = 'translateY(-2px)'; wrap.style.boxShadow = '0 4px 12px rgba(0,0,0,.08)'; };
+            link.onmouseleave = () => { wrap.style.transform = 'none'; wrap.style.boxShadow = 'none'; };
+            const img = t.image ? `<img src="${escapeHtml(t.image)}" style="width:100%;height:120px;object-fit:cover;">` : '<div style="width:100%;height:120px;background:#f1f5f9;"></div>';
+            const compat = t.compatibility_score != null ? `<div style="font-size:11px;color:#0f766e;font-weight:700;background:#ecfdf5;padding:2px 8px;border-radius:8px;display:inline-block;">%${Math.round(t.compatibility_score * 100)} uyumlu</div>` : '';
+            link.innerHTML = `
+                ${img}
+                <div style="padding:12px;display:flex;flex-direction:column;gap:6px;">
+                    <div style="font-size:11px;color:#6366f1;font-weight:700;text-transform:uppercase;">${escapeHtml(t.destination || '-')}</div>
+                    <div style="font-size:14px;font-weight:700;color:#0f172a;line-height:1.3;">${escapeHtml(t.title || 'Tur')}</div>
+                    <div style="font-size:12px;color:#64748b;">${escapeHtml(t.agency_name || '')} ${t.duration_days ? '· ' + t.duration_days + ' gün' : ''}</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                        <div style="font-size:15px;font-weight:800;color:#0f172a;">${Number(t.price || 0).toLocaleString('tr-TR')} ${escapeHtml(t.currency || 'TL')}</div>
+                        ${compat}
+                    </div>
+                </div>
+            `;
+            wrap.appendChild(link);
+
+            if (logId) {
+                wrap.appendChild(buildRejectControl(wrap, t.id, logId));
+            }
+            grid.appendChild(wrap);
+        });
+    }
+
+    function buildRejectControl(cardWrap, tourId, logId) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.title = 'Bu öneri uymaz';
+        btn.textContent = '✕';
+        btn.style.cssText = 'position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(15,23,42,0.6);color:#fff;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+
+        const popup = document.createElement('div');
+        popup.style.cssText = 'display:none;position:absolute;top:40px;right:8px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:5;flex-direction:column;gap:4px;min-width:170px;';
+
+        const reasons = [
+            ['too_expensive', '💸 Çok pahalı'],
+            ['wrong_destination', '🗺️ Yanlış destinasyon'],
+            ['wrong_vibe', '🎭 Tarzıma uymadı'],
+            ['other', '🤷 Diğer'],
+        ];
+        reasons.forEach(([key, label]) => {
+            const opt = document.createElement('button');
+            opt.type = 'button';
+            opt.textContent = label;
+            opt.style.cssText = 'background:transparent;border:none;text-align:left;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:#334155;';
+            opt.onmouseenter = () => { opt.style.background = '#f1f5f9'; };
+            opt.onmouseleave = () => { opt.style.background = 'transparent'; };
+            opt.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                rejectTour(cardWrap, tourId, key, logId);
+            };
+            popup.appendChild(opt);
+        });
+
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+        };
+
+        // Card wrapper'a popup ekle (button + popup)
+        const container = document.createElement('div');
+        container.appendChild(btn);
+        container.appendChild(popup);
+        return container;
+    }
+
+    async function rejectTour(cardWrap, tourId, reason, logId) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const res = await fetch(`/yapay-zeka-arama/${logId}/reddet`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ tour_id: tourId, reason }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                console.warn('Reject failed:', data.error || res.status);
+                return;
+            }
+            // Fade-out + remove
+            cardWrap.style.opacity = '0';
+            cardWrap.style.transform = 'scale(0.95)';
+            setTimeout(() => { cardWrap.remove(); }, 350);
+        } catch (err) {
+            console.error('Reject error', err);
+        }
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const text = input.value.trim();
@@ -207,12 +332,12 @@
         showLoading();
 
         try {
-            const res = await fetch(messageRoute, {
+            const res = await fetch(streamRoute, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
+                    'Accept': 'text/event-stream',
                 },
                 body: JSON.stringify({
                     message: text,
@@ -220,20 +345,79 @@
                 }),
             });
 
-            const data = await res.json();
-            hideLoading();
-
-            if (!res.ok || data.error) {
-                appendAssistant('Bir sorun oldu: ' + (data.error || 'Tekrar dener misin?'), []);
+            if (!res.ok) {
+                hideLoading();
+                appendAssistant('Sunucu hatası: HTTP ' + res.status, []);
                 return;
             }
 
-            if (!uuidInput.value && data.conversation_uuid) {
-                uuidInput.value = data.conversation_uuid;
-                window.history.replaceState({}, '', showRouteBase + '/' + data.conversation_uuid);
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let assistant = null;
+            let isClarification = false;
+            let loadingHidden = false;
+            const ensure = () => {
+                if (!loadingHidden) { hideLoading(); loadingHidden = true; }
+                if (!assistant) assistant = startStreamingAssistant(isClarification);
+            };
+
+            const onEvent = (eventName, data) => {
+                if (eventName === 'search') {
+                    if (!uuidInput.value && data.conversation_uuid) {
+                        uuidInput.value = data.conversation_uuid;
+                        window.history.replaceState({}, '', showRouteBase + '/' + data.conversation_uuid);
+                    }
+                } else if (eventName === 'tours') {
+                    ensure();
+                    // Yeni format: {log_id, items}. Eski format: array (backward compat)
+                    const items = Array.isArray(data) ? data : (data.items || []);
+                    const logId = (data && typeof data === 'object' && !Array.isArray(data)) ? data.log_id : null;
+                    renderTourCards(assistant.grid, items, logId);
+                    messages.scrollTop = messages.scrollHeight;
+                } else if (eventName === 'comment') {
+                    if (data.is_clarification === true) isClarification = true;
+                    ensure();
+                    if (data.delta) {
+                        assistant.commentEl.textContent += data.delta;
+                        messages.scrollTop = messages.scrollHeight;
+                    }
+                } else if (eventName === 'done') {
+                    if (data.is_clarification) {
+                        // Geç gelen clarification flag, varsa stilini güncelle
+                        if (assistant && !assistant.commentEl.style.background) {
+                            assistant.commentEl.style.background = '#fffbeb';
+                            assistant.commentEl.style.borderColor = '#fde68a';
+                            assistant.commentEl.style.color = '#78350f';
+                        }
+                    }
+                    if (!loadingHidden) { hideLoading(); loadingHidden = true; }
+                } else if (eventName === 'error') {
+                    if (!loadingHidden) { hideLoading(); loadingHidden = true; }
+                    appendAssistant('⚠️ ' + (data.message || 'Bir hata oluştu'), []);
+                }
+            };
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let sepIdx;
+                while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
+                    const chunk = buffer.slice(0, sepIdx);
+                    buffer = buffer.slice(sepIdx + 2);
+                    let eventName = 'message', dataStr = '';
+                    for (const line of chunk.split('\n')) {
+                        if (line.startsWith('event:')) eventName = line.slice(6).trim();
+                        else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
+                    }
+                    if (!dataStr) continue;
+                    try { onEvent(eventName, JSON.parse(dataStr)); }
+                    catch (e) { console.warn('SSE parse', e, dataStr); }
+                }
             }
 
-            appendAssistant(data.assistant_message?.content || '', data.tours || [], !!data.is_clarification);
+            if (!loadingHidden) hideLoading();
         } catch (err) {
             hideLoading();
             appendAssistant('Bağlantı hatası: ' + err.message, []);

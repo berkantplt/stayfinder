@@ -129,14 +129,38 @@
                     <select name="destination" class="home-filter-select">
                         <option value="">Destinasyon Seç</option>
                         @foreach($allDestinations as $dest)
-                            <option value="{{ $dest }}">{{ $dest }}</option>
+                            <option value="{{ $dest }}" {{ request('destination') === $dest ? 'selected' : '' }}>{{ $dest }}</option>
                         @endforeach
                     </select>
                 </div>
+                <div class="filter-select-group filter-agency-group" style="position:relative;">
+                    <input
+                        type="text"
+                        name="agency"
+                        list="agency-options"
+                        autocomplete="off"
+                        placeholder="🏢 Acenta ara..."
+                        value="{{ request('agency') }}"
+                        class="home-filter-select home-filter-agency"
+                    >
+                    <datalist id="agency-options">
+                        @foreach($activeAgencies as $agency)
+                            <option value="{{ $agency->name }}"></option>
+                        @endforeach
+                    </datalist>
+                    @if(request('agency'))
+                        <button
+                            type="button"
+                            onclick="clearAgencyFilter()"
+                            title="Temizle"
+                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;line-height:1;padding:4px;"
+                        >✕</button>
+                    @endif
+                </div>
                 <div class="filter-select-group">
                     <select name="sort" class="home-filter-select">
-                        <option value="price_asc">Fiyat (En Düşük)</option>
-                        <option value="price_desc">Fiyat (En Yüksek)</option>
+                        <option value="price_asc" {{ request('sort') === 'price_asc' ? 'selected' : '' }}>Fiyat (En Düşük)</option>
+                        <option value="price_desc" {{ request('sort') === 'price_desc' ? 'selected' : '' }}>Fiyat (En Yüksek)</option>
                     </select>
                 </div>
             </div>
@@ -649,6 +673,39 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchFilteredTours();
         });
     });
+
+    // Destination / Sort select'leri anında filtrele
+    filterForm.querySelectorAll('select[name="destination"], select[name="sort"]').forEach(sel => {
+        sel.addEventListener('change', fetchFilteredTours);
+    });
+
+    // Acenta search input: 300ms debounce + datalist seçimi anında
+    const agencyInput = filterForm.querySelector('input[name="agency"]');
+    if (agencyInput) {
+        let agencyTimer;
+        const debouncedFetch = () => {
+            clearTimeout(agencyTimer);
+            agencyTimer = setTimeout(fetchFilteredTours, 300);
+        };
+        agencyInput.addEventListener('input', debouncedFetch);
+        agencyInput.addEventListener('change', () => {
+            clearTimeout(agencyTimer);
+            fetchFilteredTours();
+        });
+        // Datalist'ten seçilen değer için de anlık tetikleme
+        agencyInput.addEventListener('blur', () => {
+            clearTimeout(agencyTimer);
+            fetchFilteredTours();
+        });
+    }
+
+    // Acenta filtresini sıfırla (✕ butonu)
+    window.clearAgencyFilter = function () {
+        if (agencyInput) {
+            agencyInput.value = '';
+            fetchFilteredTours();
+        }
+    };
 
 // --- Instagram Story Logic ---
 let currentCityIndex = 0;

@@ -29,6 +29,11 @@ class HomeController extends Controller
             $query->where('destination', request('destination'));
         }
 
+        // Acenta arama (kısmi eşleşme — kullanıcı "Jolly" yazabilir "Jolly Tur" bulunur)
+        if ($agencyQuery = trim((string) request('agency'))) {
+            $query->whereHas('agency', fn($aQ) => $aQ->where('name', 'like', '%' . $agencyQuery . '%'));
+        }
+
         // Sorting
         $sort = request('sort', 'price_asc');
         if ($sort === 'price_desc') {
@@ -63,6 +68,12 @@ class HomeController extends Controller
             ->whereNotNull('destination')
             ->distinct()
             ->pluck('destination');
+
+        // Acenta arama datalist'i için aktif + onaylı acentalar
+        $activeAgencies = Agency::active()
+            ->approved()
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
 
         // All active categories (parent → children tree)
         $categories = \App\Models\Category::active()
@@ -113,6 +124,6 @@ class HomeController extends Controller
             ]);
         }
 
-        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities'));
+        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'activeAgencies', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities'));
     }
 }

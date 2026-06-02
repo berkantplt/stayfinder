@@ -16,7 +16,7 @@ class KnowledgeService
         try {
             // 1. Sorunun embedding'ini al
             $response = OpenAI::embeddings()->create([
-                'model' => 'text-embedding-3-small',
+                'model' => config('ai.embedding_model', 'text-embedding-3-small'),
                 'input' => $query,
             ]);
 

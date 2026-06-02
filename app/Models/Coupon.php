@@ -40,4 +40,44 @@ class Coupon extends Model
     {
         return $this->belongsTo(Agency::class);
     }
+
+    /**
+     * Müşteriye gösterilebilir kuponlar:
+     *  - is_active = true
+     *  - starts_at NULL veya geçmişte
+     *  - expires_at NULL veya gelecekte
+     *  - max_uses NULL veya used_count < max_uses
+     */
+    public function scopeAvailable($query)
+    {
+        return $query
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('max_uses')->orWhereColumn('used_count', '<', 'max_uses');
+            });
+    }
+
+    public function getRemainingUsesAttribute(): ?int
+    {
+        if ($this->max_uses === null) {
+            return null; // sınırsız
+        }
+
+        return max(0, (int) $this->max_uses - (int) $this->used_count);
+    }
+
+    public function getFormattedDiscountAttribute(): string
+    {
+        if ($this->discount_type === 'percent') {
+            return '%' . rtrim(rtrim(number_format((float) $this->discount_value, 2, ',', ''), '0'), ',');
+        }
+
+        return number_format((float) $this->discount_value, 0, ',', '.') . ' ₺';
+    }
 }

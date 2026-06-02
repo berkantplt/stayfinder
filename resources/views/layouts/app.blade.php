@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'StayFinder — Tur Karşılaştırma')</title>
     <meta name="description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
     <link rel="canonical" href="{{ url()->current() }}">
@@ -307,8 +308,9 @@
                         </a>
                     @else
                         <a href="{{ route('favorites.index') }}">Favorilerim</a>
+                        <a href="{{ route('customer.coupons.index') }}">Kuponlarım</a>
                     @endif
-                    
+
                     <div class="nav-profile">
                         <span style="font-size:16px;">👤</span> {{ auth()->user()->name }}
                     </div>
@@ -338,6 +340,7 @@
                     </a>
                 @else
                     <a href="{{ route('favorites.index') }}">❤️ Favorilerim</a>
+                    <a href="{{ route('customer.coupons.index') }}">🎟️ Kuponlarım</a>
                     <a href="{{ route('profile.show') }}">👤 Profilim</a>
                 @endif
                 <div style="font-size:14px;color:var(--text-muted);padding:10px 0;border-bottom:none;">👤 {{ auth()->user()->name }}</div>
@@ -416,7 +419,10 @@
                         </div>
                     </div>
                 </div>
-                <button onclick="toggleAIChat()" style="background:rgba(255,255,255,0.1); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:background 0.2s;">&times;</button>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="resetAIChat()" title="Yeni konuşma" style="background:rgba(255,255,255,0.1); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:background 0.2s;">↻</button>
+                    <button onclick="toggleAIChat()" style="background:rgba(255,255,255,0.1); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:background 0.2s;">&times;</button>
+                </div>
             </div>
             
             {{-- Messages Area --}}
@@ -566,6 +572,17 @@
             sendAIChatMessage();
         }
 
+        function resetAIChat() {
+            try { localStorage.removeItem('stayfinder_ai_conv'); } catch (e) {}
+            const messages = document.getElementById('ai-chat-messages');
+            if (messages) {
+                // İlk welcome mesajı ve suggestion chips'i bırak, geri kalanı temizle
+                while (messages.children.length > 2) {
+                    messages.removeChild(messages.lastChild);
+                }
+            }
+        }
+
         async function sendAIChatMessage() {
             const input = document.getElementById('ai-chat-input');
             const messages = document.getElementById('ai-chat-messages');
@@ -588,64 +605,158 @@
             messages.scrollTop = messages.scrollHeight;
 
             try {
-                const response = await fetch(`/yapay-zeka-arama-api?q=${encodeURIComponent(text)}&_t=${Date.now()}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Cache-Control': 'no-cache, no-store, must-revalidate'
+                // Multi-turn: conversation_uuid localStorage'da tutulur.
+                const STORAGE_KEY = 'stayfinder_ai_conv';
+                const IDLE_MS = 30 * 60 * 1000;
+                let convData = null;
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && parsed.uuid && parsed.lastTs && (Date.now() - parsed.lastTs) < IDLE_MS) {
+                            convData = parsed;
+                        }
                     }
+                } catch (e) {}
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                // Streaming endpoint — SSE chunks geldiğinde anında render
+                const response = await fetch('/yapay-zeka-arama/mesaj/akis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'text/event-stream',
+                    },
+                    body: JSON.stringify({
+                        message: text,
+                        conversation_uuid: convData?.uuid || null,
+                    }),
                 });
-                const data = await response.json();
-                messages.removeChild(loadingMsg);
 
-                // 3. AI response
-                const aiMsg = document.createElement('div');
-                aiMsg.className = "ai-msg-ai";
-                aiMsg.innerHTML = `<div style="font-size:12px; font-weight:800; color:#2dd4bf; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Zeka Yanıtı</div> <div>${data.aiComment || "İşte senin için bulduğum en iyi turlar:"}</div>`;
-                messages.appendChild(aiMsg);
-
-                // 4. Tour results
-                console.log('AI DATA:', data);
-                var tourList = data.results;
-                if (!Array.isArray(tourList)) {
-                    tourList = Object.values(tourList || {});
-                }
-                console.log('TOURS FOUND:', tourList.length);
-
-                if (data.error) {
-                    throw new Error(data.error);
+                if (!response.ok) {
+                    throw new Error('Sunucu hatası: HTTP ' + response.status);
                 }
 
-                if (tourList.length > 0) {
-                    // Yatay kaydırma container
-                    var carousel = document.createElement('div');
-                    carousel.style.cssText = 'display:flex; flex:0 0 auto; overflow-x:auto; overflow-y:visible; align-items:stretch; gap:10px; padding:4px 0 12px 0; margin-bottom:10px; min-height:252px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;';
-                    carousel.className = 'ai-tour-carousel';
+                // SSE chunk parser
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-                    tourList.forEach(function(tour, idx) {
-                        console.log('Rendering tour #' + idx, tour.title);
-                        var card = buildTourCard(tour, idx, data.log_id || null);
-                        carousel.appendChild(card);
-                    });
-                    
-                    messages.appendChild(carousel);
+                // State değişkenleri
+                let aiMsg = null;
+                let contentEl = null;
+                let fullContent = '';
+                let isClarification = false;
+                let loadingRemoved = false;
+                let lastLogId = null;
 
-                    // Kısa, güvenli auto-scroll: kartlar ezilmeden en alta götür.
-                    var scrollBottom = function() {
-                        messages.scrollTop = messages.scrollHeight;
-                    };
-                    requestAnimationFrame(scrollBottom);
-                    setTimeout(scrollBottom, 60);
-                    setTimeout(scrollBottom, 240);
-                    carousel.querySelectorAll('img').forEach(function(imgEl) {
-                        imgEl.addEventListener('load', scrollBottom, { once: true });
-                    });
-                } else if (!data.aiComment) {
-                    var noResult = document.createElement('div');
-                    noResult.className = 'ai-msg-ai';
-                    noResult.textContent = 'Maalesef kriterlerine net uyan bir tur bulamadım. 😔 Alternatif rotalar arayalım mı?';
-                    messages.appendChild(noResult);
+                const scrollBottom = () => { messages.scrollTop = messages.scrollHeight; };
+
+                const ensureAiMsg = () => {
+                    if (aiMsg) return;
+                    if (!loadingRemoved) {
+                        if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
+                        loadingRemoved = true;
+                    }
+                    aiMsg = document.createElement('div');
+                    aiMsg.className = "ai-msg-ai";
+                    const labelColor = isClarification ? '#fbbf24' : '#2dd4bf';
+                    aiMsg.innerHTML = `<div style="font-size:12px; font-weight:800; color:${labelColor}; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Zeka Yanıtı</div><div data-ai-content style="white-space:pre-wrap;"></div>`;
+                    contentEl = aiMsg.querySelector('[data-ai-content]');
+                    messages.appendChild(aiMsg);
+                    scrollBottom();
+                };
+
+                const handleEvent = (eventName, data) => {
+                    if (eventName === 'search') {
+                        // Conversation UUID'i sakla
+                        if (data.conversation_uuid) {
+                            try {
+                                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                                    uuid: data.conversation_uuid, lastTs: Date.now(),
+                                }));
+                            } catch (e) {}
+                        }
+                    } else if (eventName === 'tours') {
+                        // Yeni format: {log_id, items}. Eski: array
+                        const tourList = Array.isArray(data) ? data : (data.items || []);
+                        if (data && typeof data === 'object' && !Array.isArray(data) && data.log_id) {
+                            lastLogId = data.log_id;
+                        }
+                        if (tourList.length > 0) {
+                            if (!loadingRemoved) {
+                                if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
+                                loadingRemoved = true;
+                            }
+                            const carousel = document.createElement('div');
+                            carousel.style.cssText = 'display:flex; flex:0 0 auto; overflow-x:auto; overflow-y:visible; align-items:stretch; gap:10px; padding:4px 0 12px 0; margin-bottom:10px; min-height:252px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;';
+                            carousel.className = 'ai-tour-carousel';
+                            tourList.forEach((tour, idx) => {
+                                carousel.appendChild(buildTourCard(tour, idx, lastLogId));
+                            });
+                            messages.appendChild(carousel);
+                            requestAnimationFrame(scrollBottom);
+                        }
+                    } else if (eventName === 'comment') {
+                        ensureAiMsg();
+                        if (data.delta) {
+                            fullContent += data.delta;
+                            contentEl.textContent = (isClarification ? '🤔 ' : '') + fullContent;
+                            scrollBottom();
+                        }
+                    } else if (eventName === 'done') {
+                        if (data.is_clarification) isClarification = true;
+                        if (data.log_id) lastLogId = data.log_id;
+                        if (!aiMsg && !loadingRemoved) {
+                            // Sonuç boş + comment yok edge case
+                            if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
+                            loadingRemoved = true;
+                            const noResult = document.createElement('div');
+                            noResult.className = 'ai-msg-ai';
+                            noResult.textContent = 'Maalesef kriterlerine net uyan bir tur bulamadım. 😔';
+                            messages.appendChild(noResult);
+                        }
+                        scrollBottom();
+                    } else if (eventName === 'error') {
+                        if (!loadingRemoved) {
+                            if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
+                            loadingRemoved = true;
+                        }
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'ai-msg-ai';
+                        errorMsg.textContent = '⚠️ ' + (data.message || 'Bir hata oluştu');
+                        messages.appendChild(errorMsg);
+                        scrollBottom();
+                    }
+                };
+
+                // SSE parsing loop
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    let sepIdx;
+                    while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
+                        const chunk = buffer.slice(0, sepIdx);
+                        buffer = buffer.slice(sepIdx + 2);
+
+                        let eventName = 'message';
+                        let dataStr = '';
+                        for (const line of chunk.split('\n')) {
+                            if (line.startsWith('event:')) eventName = line.slice(6).trim();
+                            else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
+                        }
+                        if (!dataStr) continue;
+                        try {
+                            handleEvent(eventName, JSON.parse(dataStr));
+                        } catch (e) {
+                            console.warn('SSE parse error', e, dataStr);
+                        }
+                    }
                 }
-                messages.scrollTop = messages.scrollHeight;
             } catch (err) {
                 console.error('AI Error:', err);
                 if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
@@ -757,7 +868,80 @@
             link.appendChild(content);
             wrapper.appendChild(link);
 
+            // Reject button + reason popup (sadece log_id varsa, yani search akışı sonucu)
+            if (logId && tour.id) {
+                wrapper.appendChild(buildAiRejectControl(wrapper, tour.id, logId));
+            }
+
             return wrapper;
+        }
+
+        function buildAiRejectControl(cardWrap, tourId, logId) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.title = 'Bu öneri uymaz';
+            btn.textContent = '✕';
+            btn.style.cssText = 'position:absolute; top:8px; left:8px; width:24px; height:24px; border-radius:50%; border:none; background:rgba(255,255,255,0.18); color:#fff; cursor:pointer; font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); z-index:3;';
+
+            var popup = document.createElement('div');
+            popup.style.cssText = 'display:none; position:absolute; top:36px; left:8px; background:#0f172a; border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:6px; z-index:4; flex-direction:column; gap:2px; min-width:160px; box-shadow:0 12px 24px rgba(0,0,0,.3);';
+
+            var reasons = [
+                ['too_expensive', '💸 Çok pahalı'],
+                ['wrong_destination', '🗺️ Yanlış destinasyon'],
+                ['wrong_vibe', '🎭 Tarz uymuyor'],
+                ['other', '🤷 Diğer'],
+            ];
+            reasons.forEach(function (pair) {
+                var opt = document.createElement('button');
+                opt.type = 'button';
+                opt.textContent = pair[1];
+                opt.style.cssText = 'background:transparent; border:none; text-align:left; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px; color:#e2e8f0;';
+                opt.onmouseenter = function () { this.style.background = 'rgba(255,255,255,0.08)'; };
+                opt.onmouseleave = function () { this.style.background = 'transparent'; };
+                opt.onclick = function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    submitAiRejection(cardWrap, tourId, pair[0], logId);
+                };
+                popup.appendChild(opt);
+            });
+
+            btn.onclick = function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+            };
+
+            var holder = document.createElement('div');
+            holder.appendChild(btn);
+            holder.appendChild(popup);
+            return holder;
+        }
+
+        async function submitAiRejection(cardWrap, tourId, reason, logId) {
+            try {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                var res = await fetch('/yapay-zeka-arama/' + logId + '/reddet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ tour_id: tourId, reason: reason }),
+                });
+                if (!res.ok) {
+                    console.warn('Reject failed', await res.text());
+                    return;
+                }
+                cardWrap.style.transition = 'opacity .35s, transform .35s';
+                cardWrap.style.opacity = '0';
+                cardWrap.style.transform = 'scale(0.9)';
+                setTimeout(function () { cardWrap.remove(); }, 350);
+            } catch (err) {
+                console.error('Reject error', err);
+            }
         }
 
         // --- Draggable Setup ---

@@ -65,6 +65,33 @@
                     $allDates = $tour->dates
                         ->sortBy('departure_date')
                         ->values();
+
+                    // Kampanya aktifken tarih kartlarında da indirimli fiyat göster
+                    $activeCampaignForDates = $tour->activeCampaign;
+                    $datePriceRenderer = function ($date) use ($tour, $activeCampaignForDates) {
+                        $original = (float) ($date->price ?? $tour->price);
+                        $currency = $tour->currency_symbol;
+
+                        if (!$activeCampaignForDates) {
+                            return '<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;margin-left:6px;">'
+                                . number_format($original, 0, ',', '.') . ' ' . e($currency)
+                                . '</span>';
+                        }
+
+                        // Pro-rata: tur.price'tan campaign indirimi oranı, date.price'a uygulanır
+                        $tourBase = max((float) $tour->price, 0.01);
+                        $discountRate = max(0.0, min(1.0, ($tourBase - (float) $activeCampaignForDates->discount_price) / $tourBase));
+                        $discounted = round($original * (1 - $discountRate), 2);
+                        $pctOff = (int) round($discountRate * 100);
+
+                        return '<span style="margin-left:6px;display:inline-flex;align-items:center;gap:6px;">'
+                            . '<s style="color:#94a3b8;font-size:11px;">' . number_format($original, 0, ',', '.') . ' ' . e($currency) . '</s>'
+                            . '<span style="padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;">'
+                            . number_format($discounted, 0, ',', '.') . ' ' . e($currency)
+                            . '</span>'
+                            . ($pctOff > 0 ? '<span style="font-size:10px;color:#16a34a;font-weight:700;">-%' . $pctOff . '</span>' : '')
+                            . '</span>';
+                    };
                 @endphp
                 @if($upcomingDates->count())
                 <div style="margin-bottom:20px;">
@@ -75,7 +102,7 @@
                             <span style="font-weight:600;">{{ $date->departure_date->format('d M Y') }}</span>
                             <span style="color:var(--text-muted);margin:0 3px;">→</span>
                             <span style="font-weight:600;">{{ $date->return_date->format('d M Y') }}</span>
-                            <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;margin-left:6px;">{{ number_format((float) ($date->price ?? $tour->price), 0, ',', '.') }} {{ $tour->currency_symbol }}</span>
+                            {!! $datePriceRenderer($date) !!}
                             @if($date->label)
                                 <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
                             @endif
@@ -92,7 +119,7 @@
                             <span style="font-weight:600;">{{ $date->departure_date->format('d M Y') }}</span>
                             <span style="color:var(--text-muted);margin:0 3px;">→</span>
                             <span style="font-weight:600;">{{ $date->return_date->format('d M Y') }}</span>
-                            <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;margin-left:6px;">{{ number_format((float) ($date->price ?? $tour->price), 0, ',', '.') }} {{ $tour->currency_symbol }}</span>
+                            {!! $datePriceRenderer($date) !!}
                             @if($date->label)
                                 <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
                             @endif

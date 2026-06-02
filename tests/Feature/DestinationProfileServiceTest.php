@@ -21,6 +21,7 @@ class DestinationProfileServiceTest extends TestCase
             'crowd_score' => 0.74,
             'liveliness_score' => 0.86,
             'source' => DestinationProfile::SOURCE_MANUAL,
+            'enrichment_version' => DestinationProfile::CURRENT_ENRICHMENT_VERSION,
             'generated_at' => now(),
         ]);
 
@@ -76,6 +77,7 @@ class DestinationProfileServiceTest extends TestCase
             'crowd_score' => 0.86,
             'liveliness_score' => 0.88,
             'source' => DestinationProfile::SOURCE_MANUAL,
+            'enrichment_version' => DestinationProfile::CURRENT_ENRICHMENT_VERSION,
             'generated_at' => now(),
         ]);
 
@@ -96,6 +98,7 @@ class DestinationProfileServiceTest extends TestCase
             'crowd_score' => 0.98,
             'liveliness_score' => 0.90,
             'source' => DestinationProfile::SOURCE_MANUAL,
+            'enrichment_version' => DestinationProfile::CURRENT_ENRICHMENT_VERSION,
             'generated_at' => now(),
         ]);
 

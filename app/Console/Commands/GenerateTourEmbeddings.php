@@ -52,7 +52,7 @@ class GenerateTourEmbeddings extends Command
                 ]));
                 
                 $response = \OpenAI\Laravel\Facades\OpenAI::embeddings()->create([
-                    'model' => 'text-embedding-3-small',
+                    'model' => config('ai.embedding_model', 'text-embedding-3-small'),
                     'input' => $inputText,
                 ]);
 
