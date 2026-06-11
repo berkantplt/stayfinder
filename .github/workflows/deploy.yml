@@ -1,0 +1,29 @@
+name: Deploy to Production
+
+# main'e her push'ta otomatik çalışır.
+# Ayrıca GitHub > Actions sekmesinden "Run workflow" ile elle de tetiklenebilir.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Aynı anda iki deploy'un çakışmasını önler.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Sunucuya deploy et
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH ile sunucuda deploy.sh çalıştır
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            bash deploy.sh
