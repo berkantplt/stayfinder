@@ -120,7 +120,7 @@ class HomeController extends Controller
         // Fallback for demo if DB is empty
         if ($featuredCities->isEmpty()) {
             $featuredCities = collect([
-                ['name' => 'Paris', 'country' => 'Fransa', 'images' => [asset('images/featured_cities/paris.png')], 'count' => 12],
+                ['name' => 'Paris', 'country' => 'Fransa', 'images' => [asset('images/featured_cities/paris.png')], 'count' => Tour::active()->where('destination', 'Paris')->count()],
             ]);
         }
 

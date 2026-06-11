@@ -175,7 +175,7 @@
                 <div class="iphone-card" onclick="openStory({{ $index }})">
                     <img src="{{ $city['images'][0] }}" alt="{{ $city['name'] }}" class="iphone-card-img">
                     <div class="iphone-card-overlay">
-                        <div class="iphone-card-badge">{{ $city['count'] }} Tur</div>
+                        <div class="iphone-card-badge">{{ $city['count'] > 0 ? $city['count'] . ' Tur' : 'Yakında' }}</div>
                         <div class="iphone-card-info">
                             <h3 class="iphone-card-city">{{ $city['name'] }}</h3>
                             <p class="iphone-card-country">{{ $city['country'] }}</p>
