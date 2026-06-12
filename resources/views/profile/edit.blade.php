@@ -19,31 +19,58 @@
         {{-- Profile Form --}}
         <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;">
             <h2 style="font-size:16px;font-weight:700;margin-bottom:18px;">👤 Kişisel Bilgiler</h2>
-            <form method="POST" action="{{ route('profile.update') }}">
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                 @csrf @method('PUT')
+
+                {{-- Avatar --}}
+                <div class="form-group">
+                    <label>Profil Fotoğrafı</label>
+                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
+                        @php
+                            $avatarUrl = $user->avatar
+                                ? (\Illuminate\Support\Str::startsWith($user->avatar, ['http://','https://']) ? $user->avatar : asset('storage/'.$user->avatar))
+                                : null;
+                        @endphp
+                        @if($avatarUrl)
+                            <img src="{{ $avatarUrl }}" alt="avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);">
+                        @else
+                            <div style="width:64px;height:64px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--accent);border:2px solid var(--border);">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</div>
+                        @endif
+                        <div style="flex:1;">
+                            <input type="file" name="avatar_file" accept="image/jpeg,image/png,image/webp">
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">JPG, PNG veya WEBP — max 2 MB</div>
+                            @if($avatarUrl)
+                                <label style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#dc2626;cursor:pointer;">
+                                    <input type="checkbox" name="remove_avatar" value="1"> Mevcut fotoğrafı kaldır
+                                </label>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Ad Soyad *</label>
                         <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
                     </div>
                     <div class="form-group">
-                        <label>Telefon</label>
-                        <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="05xx xxx xx xx">
+                        <label>E-posta *</label>
+                        <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
+                        <label>Telefon</label>
+                        <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="05xx xxx xx xx">
+                    </div>
+                    <div class="form-group">
                         <label>Şehir</label>
                         <input type="text" name="city" value="{{ old('city', $user->city) }}" placeholder="İstanbul">
                     </div>
-                    <div class="form-group">
-                        <label>Doğum Tarihi</label>
-                        <input type="date" name="birth_date" value="{{ old('birth_date', $user->birth_date?->format('Y-m-d')) }}">
-                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Profil Fotoğrafı URL</label>
-                    <input type="url" name="avatar" value="{{ old('avatar', $user->avatar) }}" placeholder="https://...">
+                    <label>Doğum Tarihi</label>
+                    <input type="date" name="birth_date" value="{{ old('birth_date', $user->birth_date?->format('Y-m-d')) }}">
                 </div>
                 <div class="form-group">
                     <label>Hakkımda</label>

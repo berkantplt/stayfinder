@@ -27,13 +27,29 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'phone'      => 'nullable|string|max:20',
-            'city'       => 'nullable|string|max:100',
-            'bio'        => 'nullable|string|max:500',
-            'birth_date' => 'nullable|date|before:today',
-            'avatar'     => 'nullable|url',
+            'name'         => 'required|string|max:255',
+            'email'        => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone'        => 'nullable|string|max:20',
+            'city'         => 'nullable|string|max:100',
+            'bio'          => 'nullable|string|max:500',
+            'birth_date'   => 'nullable|date|before:today',
+            'avatar_file'  => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
+            'remove_avatar' => 'nullable|boolean',
         ]);
+
+        if ($request->boolean('remove_avatar')) {
+            if ($user->avatar && !\Illuminate\Support\Str::startsWith($user->avatar, ['http://', 'https://'])) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+            $validated['avatar'] = null;
+        } elseif ($request->hasFile('avatar_file')) {
+            if ($user->avatar && !\Illuminate\Support\Str::startsWith($user->avatar, ['http://', 'https://'])) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+            $validated['avatar'] = $request->file('avatar_file')->store('avatars', 'public');
+        }
+
+        unset($validated['avatar_file'], $validated['remove_avatar']);
 
         $user->update($validated);
 

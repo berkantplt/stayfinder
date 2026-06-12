@@ -13,7 +13,7 @@
             <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
                 {{-- Avatar --}}
                 @if($user->avatar)
-                    <img src="{{ $user->avatar }}" alt="{{ $user->name }}" style="width:80px;height:80px;border-radius:50%;border:3px solid rgba(255,255,255,.4);object-fit:cover;">
+                    <img src="{{ \Illuminate\Support\Str::startsWith($user->avatar, ['http://','https://']) ? $user->avatar : asset('storage/'.$user->avatar) }}" alt="{{ $user->name }}" style="width:80px;height:80px;border-radius:50%;border:3px solid rgba(255,255,255,.4);object-fit:cover;">
                 @else
                     <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</div>
                 @endif

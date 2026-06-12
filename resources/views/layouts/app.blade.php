@@ -309,11 +309,17 @@
                     @else
                         <a href="{{ route('favorites.index') }}">Favorilerim</a>
                         <a href="{{ route('customer.coupons.index') }}">Kuponlarım</a>
+                        <a href="{{ route('profile.show') }}">Profilim</a>
                     @endif
 
-                    <div class="nav-profile">
-                        <span style="font-size:16px;">👤</span> {{ auth()->user()->name }}
-                    </div>
+                    <a href="{{ auth()->user()->isAdmin() || auth()->user()->isAgency() ? '#' : route('profile.show') }}" class="nav-profile" style="text-decoration:none;color:inherit;">
+                        @if(auth()->user()->avatar)
+                            <img src="{{ Str::startsWith(auth()->user()->avatar, ['http://','https://']) ? auth()->user()->avatar : asset('storage/'.auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
+                        @else
+                            <span style="font-size:16px;">👤</span>
+                        @endif
+                        {{ auth()->user()->name }}
+                    </a>
 
                     <form method="POST" action="{{ route('logout') }}" style="display:inline;margin:0;">
                         @csrf
