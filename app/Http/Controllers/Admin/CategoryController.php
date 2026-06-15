@@ -17,10 +17,16 @@ class CategoryController extends Controller
      */
     public function index()
     {
+        // Önce bağlı olduğu üst kategoriye göre (üst kategorinin sırası, sonra adı),
+        // ardından kendi içinde sıra numarası/adına göre — farklı grupların turları karışmasın
         $categories = Category::with('parent')
-            ->whereNotNull('parent_id')
-            ->orderBy('sort_order')
-            ->orderBy('name')
+            ->whereNotNull('categories.parent_id')
+            ->leftJoin('categories as parent_categories', 'categories.parent_id', '=', 'parent_categories.id')
+            ->orderBy('parent_categories.sort_order')
+            ->orderBy('parent_categories.name')
+            ->orderBy('categories.sort_order')
+            ->orderBy('categories.name')
+            ->select('categories.*')
             ->get();
         $parentCategories = Category::parents()->orderBy('sort_order')->orderBy('name')->get();
         $categoryLicensingReady = CategoryLicensing::schemaReady();

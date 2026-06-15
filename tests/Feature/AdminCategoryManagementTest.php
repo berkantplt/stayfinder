@@ -180,6 +180,31 @@ class AdminCategoryManagementTest extends TestCase
         $this->assertFalse($listed->contains('name', 'Ust Grup Abc'));
     }
 
+    public function test_alt_kategori_listesi_once_ust_kategoriye_sonra_sira_numarasina_gore_dizilir(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        // Üst kategoriler: Yurt İçi (sıra 1), Yurt Dışı (sıra 2)
+        $yurtIci = Category::create(['name' => 'Yurt İçi', 'slug' => 'yurt-ici', 'monthly_price' => 0, 'sort_order' => 1, 'is_active' => true]);
+        $yurtDisi = Category::create(['name' => 'Yurt Dışı', 'slug' => 'yurt-disi', 'monthly_price' => 0, 'sort_order' => 2, 'is_active' => true]);
+
+        // Karışık ekleme sırası; aynı sıra numaraları (1) ama farklı üst kategoriler
+        Category::create(['name' => 'Amerika', 'slug' => 'amerika', 'parent_id' => $yurtDisi->id, 'monthly_price' => 2000, 'sort_order' => 1, 'is_active' => true]);
+        Category::create(['name' => 'GAP', 'slug' => 'gap', 'parent_id' => $yurtIci->id, 'monthly_price' => 2000, 'sort_order' => 1, 'is_active' => true]);
+        Category::create(['name' => 'Karadeniz', 'slug' => 'karadeniz', 'parent_id' => $yurtIci->id, 'monthly_price' => 2000, 'sort_order' => 2, 'is_active' => true]);
+
+        $listed = $this->actingAs($admin)
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->viewData('categories');
+
+        // Beklenen sıra: Yurt İçi grubu (GAP sıra1, Karadeniz sıra2), sonra Yurt Dışı grubu (Amerika)
+        $this->assertSame(
+            ['GAP', 'Karadeniz', 'Amerika'],
+            $listed->pluck('name')->all()
+        );
+    }
+
     public function test_parents_page_lists_parent_categories_with_child_count(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
