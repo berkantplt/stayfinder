@@ -11,9 +11,11 @@ use RuntimeException;
 
 class TourUrlImporter
 {
-    private const MAX_BODY_BYTES = 500000;   // ~500KB üst sınır
+    private const MAX_BODY_BYTES = 500000;   // ~500KB ham gövde üst sınırı
 
-    private const MAX_TEXT_CHARS = 15000;    // LLM'e gönderilen temiz metin sınırı (dahil/hariç listeleri genelde altlarda)
+    private const SCAN_CHARS = 120000;       // odaklamadan önce taranan metin tavanı
+
+    private const MAX_TEXT_CHARS = 20000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
@@ -33,6 +35,10 @@ class TourUrlImporter
         if (trim($content) === '') {
             throw new RuntimeException('Sayfadan okunabilir içerik çıkarılamadı.');
         }
+
+        // Uzun sayfalarda ilgili bölümleri (fiyat, açıklama, dahil/hariç) bulup
+        // pencereleyerek LLM'e gönder — kör kesme bu bölümleri kaçırıyordu.
+        $content = $this->focusContent($content);
 
         $extracted = $this->extractWithLlm($content);
 
@@ -64,7 +70,7 @@ class TourUrlImporter
                     $markdown = trim($response->body());
                     // Anlamlı içerik geldiyse okuyucu sonucunu kullan
                     if (mb_strlen($markdown) >= 200) {
-                        return mb_substr($markdown, 0, self::MAX_TEXT_CHARS);
+                        return mb_substr($markdown, 0, self::SCAN_CHARS);
                     }
                 }
             } catch (\Throwable $e) {
@@ -162,7 +168,60 @@ class TourUrlImporter
 
         $combined = trim(implode("\n", $hints)."\n".$text);
 
-        return mb_substr($combined, 0, self::MAX_TEXT_CHARS);
+        return mb_substr($combined, 0, self::SCAN_CHARS);
+    }
+
+    /**
+     * Uzun sayfalarda kör kesme yerine ilgili bölümleri pencereler: baş kısım
+     * (başlık/fiyat/intro) + dahil/hariç/açıklama/program başlıkları çevresi.
+     * Kısa içerik olduğu gibi döner.
+     */
+    private function focusContent(string $text): string
+    {
+        if (mb_strlen($text) <= self::MAX_TEXT_CHARS) {
+            return $text;
+        }
+
+        $low = mb_strtolower($text);
+        $ranges = [[0, 8000]]; // baş: başlık, fiyat, giriş
+
+        $keywords = [
+            'fiyata dahil', 'dahil olan', 'dahil olmayan', 'dahil değil', 'hariç',
+            'açıklama', 'program', 'tur detay', 'tur prog', 'genel bilgi', 'gezi not', 'vize',
+        ];
+        foreach ($keywords as $kw) {
+            $pos = mb_strpos($low, $kw);
+            if ($pos !== false) {
+                $ranges[] = [max(0, $pos - 200), $pos + 3300];
+            }
+        }
+
+        usort($ranges, fn ($a, $b) => $a[0] <=> $b[0]);
+
+        $merged = [];
+        foreach ($ranges as $range) {
+            $last = count($merged) - 1;
+            if ($merged !== [] && $range[0] <= $merged[$last][1]) {
+                $merged[$last][1] = max($merged[$last][1], $range[1]);
+            } else {
+                $merged[] = $range;
+            }
+        }
+
+        $out = '';
+        foreach ($merged as [$start, $end]) {
+            if (mb_strlen($out) >= self::MAX_TEXT_CHARS) {
+                break;
+            }
+            $piece = mb_substr($text, $start, $end - $start);
+            $remaining = self::MAX_TEXT_CHARS - mb_strlen($out);
+            if (mb_strlen($piece) > $remaining) {
+                $piece = mb_substr($piece, 0, $remaining);
+            }
+            $out .= ($out === '' ? '' : "\n…\n").$piece;
+        }
+
+        return $out;
     }
 
     /**

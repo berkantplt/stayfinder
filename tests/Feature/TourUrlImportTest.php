@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Agency;
 use App\Models\User;
+use App\Services\TourImport\TourUrlImporter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -157,6 +158,27 @@ class TourUrlImportTest extends TestCase
         $this->actingAs($this->agencyUser)
             ->postJson(route('agency.tours.import'), ['url' => 'not-a-url'])
             ->assertStatus(422);
+    }
+
+    public function test_focus_content_keeps_relevant_sections_in_long_pages(): void
+    {
+        $importer = new TourUrlImporter;
+        $method = new \ReflectionMethod($importer, 'focusContent');
+        $method->setAccessible(true);
+
+        // ~70K karakter gürültü, dahil/hariç bölümü en sonda (kör kesme bunu kaçırırdı)
+        $noise = str_repeat('Menü bağlantısı ve alakasız içerik. ', 2000);
+        $text = "Başlık New York Turu\n".$noise
+            ."\n## Dahil Olan Hizmetler\n- Uçak bileti\n- Otel\n"
+            ."## Dahil Olmayan Hizmetler\n- Vize bedeli\n".$noise;
+
+        $out = $method->invoke($importer, $text);
+
+        $this->assertLessThanOrEqual(20000, mb_strlen($out));
+        $this->assertStringContainsString('Dahil Olan Hizmetler', $out);
+        $this->assertStringContainsString('Uçak bileti', $out);
+        $this->assertStringContainsString('Dahil Olmayan Hizmetler', $out);
+        $this->assertStringContainsString('Vize bedeli', $out);
     }
 
     public function test_guest_cannot_import(): void
