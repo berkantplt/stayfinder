@@ -12,7 +12,7 @@ class TourUrlImporter
 {
     private const MAX_BODY_BYTES = 500000;   // ~500KB üst sınır
 
-    private const MAX_TEXT_CHARS = 6000;     // LLM'e gönderilen temiz metin sınırı
+    private const MAX_TEXT_CHARS = 15000;    // LLM'e gönderilen temiz metin sınırı (dahil/hariç listeleri genelde altlarda)
 
     /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
@@ -107,9 +107,15 @@ class TourUrlImporter
         }
 
         $text = preg_replace('#<(script|style|noscript)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
+        // Liste/blok sınırlarına satır başı koy ki <li>/<br>/<p> maddeleri yapışmasın
+        // (dahil/hariç hizmet listeleri böyle korunur)
+        $text = preg_replace('#<\s*(br|/li|/p|/div|/tr|/h[1-6])\s*/?>#i', "\n", $text) ?? $text;
         $text = strip_tags($text);
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+        // Satır içi boşlukları sıkıştır ama satır sonlarını KORU
+        $text = preg_replace('/[ \t\x{00a0}]+/u', ' ', $text) ?? $text;
+        $text = preg_replace('/\s*\n\s*/u', "\n", $text) ?? $text;
+        $text = preg_replace('/\n{3,}/', "\n\n", $text) ?? $text;
         $text = trim($text);
 
         $combined = trim(implode("\n", $hints)."\n".$text);
@@ -134,9 +140,15 @@ class TourUrlImporter
         - currency (string|null): para birimi, yalnızca şunlardan biri: {$allowed}
         - price (number|null): kişi başı fiyat (sayı, para birimi sembolü olmadan)
         - description (string|null): kısa tur açıklaması
-        - included (string|null): fiyata dahil olanlar, her madde ayrı satır
-        - excluded (string|null): fiyata dahil olmayanlar, her madde ayrı satır
+        - included (string|null): fiyata DAHİL olan hizmetler, her madde ayrı satır
+        - excluded (string|null): fiyata dahil OLMAYAN hizmetler, her madde ayrı satır
         - departure_dates (array): kalkış tarihleri, YYYY-MM-DD formatında string dizisi; yoksa boş dizi
+
+        ÖNEMLİ — dahil/hariç hizmetler: Sayfada "Fiyata Dahil Olanlar", "Dahil Olan Hizmetler",
+        "Ücrete Dahildir", "Paket İçeriği" gibi başlıklar altındaki TÜM maddeleri 'included' içine;
+        "Fiyata Dahil Değildir", "Dahil Olmayan", "Hariç", "Ücrete Dahil Değildir" başlıkları
+        altındaki maddeleri 'excluded' içine, her madde AYRI SATIR olacak şekilde topla. Bu listeler
+        genelde sayfanın alt kısmındadır; metnin tamamını tara.
 
         Emin olmadığın alanda null (veya departure_dates için boş dizi) döndür; uydurma.
         Türkçe içerik üret. Yanıt SADECE geçerli JSON olmalı.
