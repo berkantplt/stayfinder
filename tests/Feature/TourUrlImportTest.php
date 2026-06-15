@@ -79,6 +79,32 @@ class TourUrlImportTest extends TestCase
         $this->assertSame(['2030-09-01'], $data['departure_dates']); // geçmiş tarih elendi
     }
 
+    public function test_reader_markdown_is_used_when_available(): void
+    {
+        $markdown = "# Karadeniz Turu\n\n## Fiyata Dahil Olanlar\n- Uçak\n- Otel\n\n"
+            .str_repeat('Detaylı tur açıklaması metni burada. ', 20);
+
+        Http::fake([
+            'https://r.jina.ai/*' => Http::response($markdown, 200),
+            '*' => Http::response('BU KULLANILMAMALI', 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $this->fakeOpenAi([
+            'title' => 'Karadeniz Turu',
+            'included' => "Uçak\nOtel",
+            'departure_dates' => [],
+        ]);
+
+        $response = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/karadeniz'])
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+
+        $this->assertSame('Karadeniz Turu', $response->json('data.title'));
+        $this->assertStringContainsString('Uçak', $response->json('data.included'));
+        Http::assertSent(fn ($r) => str_contains($r->url(), 'r.jina.ai'));
+    }
+
     public function test_unrecognized_currency_and_invalid_values_are_normalized(): void
     {
         Http::fake(['*' => Http::response('<html><body>İçerik</body></html>', 200, ['Content-Type' => 'text/html'])]);

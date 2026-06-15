@@ -5,6 +5,7 @@ namespace App\Services\TourImport;
 use App\Models\Tour;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 use RuntimeException;
 
@@ -27,16 +28,52 @@ class TourUrlImporter
         $url = trim($url);
         $this->assertSafeUrl($url);
 
-        $html = $this->fetch($url);
-        $text = $this->cleanHtml($html);
+        $content = $this->fetchContent($url);
 
-        if ($text === '') {
+        if (trim($content) === '') {
             throw new RuntimeException('Sayfadan okunabilir içerik çıkarılamadı.');
         }
 
-        $extracted = $this->extractWithLlm($text);
+        $extracted = $this->extractWithLlm($content);
 
         return $this->normalize($extracted);
+    }
+
+    /**
+     * İçeriği temiz Markdown olarak alır. Önce okuyucu servisi (gerçek tarayıcı
+     * render + ana içerik + başlık/liste yapısı korunur); başarısızsa düz fetch'e düşer.
+     */
+    private function fetchContent(string $url): string
+    {
+        $readerBase = trim((string) config('ai.import_reader_url', ''));
+
+        if ($readerBase !== '') {
+            try {
+                $request = Http::timeout(35)->withHeaders([
+                    'Accept' => 'text/markdown, text/plain, */*',
+                    'X-Return-Format' => 'markdown',
+                ]);
+
+                if ($key = config('ai.import_reader_key')) {
+                    $request = $request->withToken($key);
+                }
+
+                $response = $request->get(rtrim($readerBase, '/').'/'.$url);
+
+                if ($response->ok()) {
+                    $markdown = trim($response->body());
+                    // Anlamlı içerik geldiyse okuyucu sonucunu kullan
+                    if (mb_strlen($markdown) >= 200) {
+                        return mb_substr($markdown, 0, self::MAX_TEXT_CHARS);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::info('[TourImport] okuyucu servisi atlandı, düz fetch deneniyor', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // Fallback: doğrudan fetch + HTML temizleme
+        return $this->cleanHtml($this->fetchDirect($url));
     }
 
     /**
@@ -78,10 +115,15 @@ class TourUrlImporter
         }
     }
 
-    private function fetch(string $url): string
+    private function fetchDirect(string $url): string
     {
         $response = Http::timeout(15)
-            ->withHeaders(['User-Agent' => 'TurxturBot/1.0 (+tur içe aktarma)'])
+            ->withHeaders([
+                // Gerçekçi tarayıcı başlıkları — basit bot engellerini azaltır
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language' => 'tr-TR,tr;q=0.9,en;q=0.8',
+            ])
             ->get($url);
 
         if (! $response->ok()) {
@@ -138,11 +180,15 @@ class TourUrlImporter
         - destination (string|null): gidilen yer/şehir
         - duration_days (number|null): tur kaç gün
         - currency (string|null): para birimi, yalnızca şunlardan biri: {$allowed}
-        - price (number|null): kişi başı fiyat (sayı, para birimi sembolü olmadan)
+        - price (number|null): kişi başı GÜNCEL fiyat, yalnızca sayı (ör. "1.500 TL" → 1500)
         - description (string|null): kısa tur açıklaması
         - included (string|null): fiyata DAHİL olan hizmetler, her madde ayrı satır
         - excluded (string|null): fiyata dahil OLMAYAN hizmetler, her madde ayrı satır
         - departure_dates (array): kalkış tarihleri, YYYY-MM-DD formatında string dizisi; yoksa boş dizi
+
+        ÖNEMLİ — fiyat: Sayfada birden fazla fiyat olabilir. GÜNCEL/indirimli kişi başı fiyatı al.
+        Üstü çizili/eski liste fiyatını, kapora/ön ödemeyi ve sayfadaki BAŞKA turların
+        ("benzer turlar", "önerilen turlar", "diğer turlar") fiyatlarını ASLA alma.
 
         ÖNEMLİ — dahil/hariç hizmetler: Sayfada "Fiyata Dahil Olanlar", "Dahil Olan Hizmetler",
         "Ücrete Dahildir", "Paket İçeriği" gibi başlıklar altındaki TÜM maddeleri 'included' içine;
@@ -164,7 +210,8 @@ class TourUrlImporter
                 ['role' => 'user', 'content' => $this->wrapInput($pageText)],
             ],
             'response_format' => ['type' => 'json_object'],
-            'max_tokens' => 1200,
+            'temperature' => 0.1, // tutarlı/deterministik çıkarım
+            'max_tokens' => 1500,
         ]);
 
         $content = $response->choices[0]->message->content ?? '{}';

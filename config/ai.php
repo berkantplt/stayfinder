@@ -34,4 +34,11 @@ return [
     // Tur URL'sinden içe aktarma — karışık HTML metninden çoklu alan çıkarımı;
     // doğruluk için gpt-4o.
     'import_model' => env('AI_IMPORT_MODEL', 'gpt-4o'),
+
+    // Tur URL içe aktarma — okuyucu servisi: sayfayı gerçek tarayıcıyla render edip
+    // temiz Markdown döndürür (JS-render + gürültü temizliği → daha doğru çıkarım).
+    // Boş bırakılırsa okuyucu atlanır, doğrudan fetch kullanılır.
+    // Jina Reader ücretsiz tier ile key gerektirmez; key limiti artırır.
+    'import_reader_url' => env('AI_IMPORT_READER_URL', 'https://r.jina.ai/'),
+    'import_reader_key' => env('JINA_API_KEY'),
 ];
