@@ -42,6 +42,14 @@
         <a href="{{ route('admin.categories.index') }}" class="sidebar-link {{ request()->routeIs('admin.categories*') ? 'active' : '' }}">
             <span class="sidebar-icon">📁</span> Kategori Yönetimi
         </a>
+        <div class="sidebar-submenu">
+            <a href="{{ route('admin.categories.index') }}" class="sidebar-sublink {{ request()->routeIs('admin.categories.index') ? 'active' : '' }}">
+                <span class="sidebar-bullet"></span> Tüm Kategoriler
+            </a>
+            <a href="{{ route('admin.categories.parents') }}" class="sidebar-sublink {{ request()->routeIs('admin.categories.parents') ? 'active' : '' }}">
+                <span class="sidebar-bullet"></span> Üst Kategori Yönetimi
+            </a>
+        </div>
         <a href="{{ route('admin.category-licenses.index') }}" class="sidebar-link {{ $categoryLicensingActive ? 'active' : '' }}">
             <span class="sidebar-icon">🧾</span> Kategori Yetkilendirme
         </a>

@@ -13,6 +13,17 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::with('parent', 'children')->orderBy('sort_order')->get();
+        $parentCategories = Category::parents()->orderBy('name')->get();
+        $categoryLicensingReady = CategoryLicensing::schemaReady();
+
+        return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady'));
+    }
+
+    /**
+     * Ayrı "Üst Kategori Yönetimi" sayfası — sadece ana (parent) kategoriler.
+     */
+    public function parents()
+    {
         $parentCategories = Category::parents()
             ->withCount('children')
             ->orderBy('sort_order')
@@ -20,7 +31,7 @@ class CategoryController extends Controller
             ->get();
         $categoryLicensingReady = CategoryLicensing::schemaReady();
 
-        return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady'));
+        return view('admin.categories.parents', compact('parentCategories', 'categoryLicensingReady'));
     }
 
     public function store(Request $request)
@@ -76,7 +87,7 @@ class CategoryController extends Controller
 
         Category::create($validated);
 
-        return redirect()->route('admin.categories.index')->with('success', 'Üst kategori oluşturuldu.');
+        return redirect()->route('admin.categories.parents')->with('success', 'Üst kategori oluşturuldu.');
     }
 
     public function update(Request $request, Category $category)

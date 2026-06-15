@@ -295,6 +295,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/destinasyonlar/{destination}/toggle', [AdminController::class, 'toggleDestination'])->name('destinations.toggle');
 
     // Category Management
+    Route::get('/kategoriler/ust-kategoriler', [CategoryController::class, 'parents'])->name('categories.parents');
     Route::post('/kategoriler/ust-kategori', [CategoryController::class, 'storeParent'])->name('categories.parents.store');
     Route::resource('/kategoriler', CategoryController::class)
         ->names('categories')

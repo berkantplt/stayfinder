@@ -73,7 +73,7 @@ class AdminCategoryManagementTest extends TestCase
                 'sort_order' => 3,
                 'parent_id' => $other->id, // bilinçli olarak yok sayılmalı
             ])
-            ->assertRedirect(route('admin.categories.index'));
+            ->assertRedirect(route('admin.categories.parents'));
 
         $this->assertDatabaseHas('categories', [
             'name' => 'Yurt Dışı Turlar',
@@ -84,7 +84,7 @@ class AdminCategoryManagementTest extends TestCase
         ]);
     }
 
-    public function test_parent_management_section_lists_parent_categories_with_child_count(): void
+    public function test_parents_page_lists_parent_categories_with_child_count(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -96,10 +96,28 @@ class AdminCategoryManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.categories.index'))
+            ->get(route('admin.categories.parents'))
             ->assertOk()
             ->assertSee('Üst Kategori Yönetimi')
             ->assertSee('Ana Grup')
             ->assertSee('1 alt kategori');
+    }
+
+    public function test_parents_page_does_not_list_child_categories(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $parent = Category::create([
+            'name' => 'Ana Kategori', 'slug' => 'ana-kategori', 'monthly_price' => 1000, 'sort_order' => 1, 'is_active' => true,
+        ]);
+        Category::create([
+            'name' => 'Alt Kategori Xyz', 'slug' => 'alt-kategori-xyz', 'parent_id' => $parent->id, 'monthly_price' => 1000, 'sort_order' => 1, 'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.categories.parents'))
+            ->assertOk()
+            ->assertSee('Ana Kategori')
+            ->assertDontSee('Alt Kategori Xyz');
     }
 }
