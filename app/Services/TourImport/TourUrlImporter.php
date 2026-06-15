@@ -107,16 +107,19 @@ class TourUrlImporter
         }
 
         try {
-            $response = Http::timeout(70)->withToken($key)->post($endpoint, [
+            $response = Http::timeout(90)->withToken($key)->post($endpoint, [
                 'url' => $url,
                 'formats' => ['markdown'],
                 'onlyMainContent' => false,
-                'waitFor' => 4000,
+                // Tarih listesi gibi içerikler sayfa açıldıktan sonra API'den geliyor;
+                // önce bekle, kaydır, tekrar bekle — geç yüklenen menüler dolsun.
+                'waitFor' => 8000,
                 'actions' => [
+                    ['type' => 'wait', 'milliseconds' => 3000],
                     ['type' => 'scroll', 'direction' => 'down'],
-                    ['type' => 'wait', 'milliseconds' => 1500],
+                    ['type' => 'wait', 'milliseconds' => 2500],
                     ['type' => 'scroll', 'direction' => 'down'],
-                    ['type' => 'wait', 'milliseconds' => 1000],
+                    ['type' => 'wait', 'milliseconds' => 2000],
                 ],
             ]);
 
