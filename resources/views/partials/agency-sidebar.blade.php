@@ -39,6 +39,9 @@
         <a href="{{ route('agency.coupons.index') }}" class="sidebar-link {{ request()->routeIs('agency.coupons*') ? 'active' : '' }}">
             <span class="sidebar-icon">🎟️</span> Kuponlar
         </a>
+        <a href="{{ route('agency.category-requests.index') }}" class="sidebar-link {{ request()->routeIs('agency.category-requests*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🗳️</span> Kategori Talebi
+        </a>
         <a href="{{ route('agency.stats') }}" class="sidebar-link {{ request()->routeIs('agency.stats') ? 'active' : '' }}">
             <span class="sidebar-icon">📈</span> İstatistikler
         </a>

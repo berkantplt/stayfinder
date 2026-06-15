@@ -21,6 +21,7 @@
 
     @php($categoryLicensingActive = request()->routeIs('admin.category-licenses*'))
     @php($pendingAgencyApplicationsCount = \App\Models\Agency::pendingApproval()->count())
+    @php($pendingCategoryRequestsCount = \App\Models\CategoryRequest::pending()->count())
 
     <div style="display:flex;flex-direction:column;">
         <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -50,6 +51,13 @@
                 <span class="sidebar-bullet"></span> Alt Kategori Yönetimi
             </a>
         </div>
+        <a href="{{ route('admin.category-requests.index') }}" class="sidebar-link {{ request()->routeIs('admin.category-requests*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🗳️</span>
+            <span style="flex:1;">Kategori Talepleri</span>
+            @if($pendingCategoryRequestsCount > 0)
+                <span style="min-width:22px;height:22px;border-radius:999px;background:#f97316;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;padding:0 7px;">{{ $pendingCategoryRequestsCount }}</span>
+            @endif
+        </a>
         <a href="{{ route('admin.category-licenses.index') }}" class="sidebar-link {{ $categoryLicensingActive ? 'active' : '' }}">
             <span class="sidebar-icon">🧾</span> Kategori Yetkilendirme
         </a>

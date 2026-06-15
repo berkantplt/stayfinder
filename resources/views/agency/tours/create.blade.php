@@ -208,6 +208,9 @@
                                 @endforeach
                             @endforeach
                         </select>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">
+                            Uygun kategori bulamadın mı? <a href="{{ route('agency.category-requests.index') }}" style="color:var(--accent);font-weight:600;">Admine kategori talebi oluştur</a>.
+                        </div>
                     </div>
                     <div class="form-row form-row-3">
                         <div class="form-group"><label>Destinasyon *</label><input type="text" name="destination" value="{{ old('destination') }}" required placeholder="Ör: Antalya"></div>

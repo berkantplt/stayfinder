@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Agency\CampaignController;
 use App\Http\Controllers\Agency\CategoryLicenseController;
 use App\Http\Controllers\Agency\CategoryLicenseController as AgencyCategoryLicenseController;
+use App\Http\Controllers\Agency\CategoryRequestController;
 use App\Http\Controllers\Agency\DashboardController as AgencyDashboardController;
 use App\Http\Controllers\Agency\StatsController;
 use App\Http\Controllers\Agency\TourController as AgencyTourController;
@@ -257,6 +258,10 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         // Stats
         Route::get('/istatistik', [StatsController::class, 'index'])->name('stats');
 
+        // Kategori talepleri (acenta admine yeni kategori önerir)
+        Route::get('/kategori-talepleri', [CategoryRequestController::class, 'index'])->name('category-requests.index');
+        Route::post('/kategori-talepleri', [CategoryRequestController::class, 'store'])->name('category-requests.store');
+
         // Campaigns
         Route::get('/kampanyalar', [CampaignController::class, 'index'])->name('campaigns.index');
         Route::post('/kampanyalar', [CampaignController::class, 'store'])->name('campaigns.store');
@@ -293,6 +298,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/destinasyonlar', [AdminController::class, 'destinations'])->name('destinations');
     Route::put('/destinasyonlar/{destination}', [AdminController::class, 'updateDestination'])->name('destinations.update');
     Route::post('/destinasyonlar/{destination}/toggle', [AdminController::class, 'toggleDestination'])->name('destinations.toggle');
+
+    // Kategori talepleri (admin onayı)
+    Route::get('/kategori-talepleri', [App\Http\Controllers\Admin\CategoryRequestController::class, 'index'])->name('category-requests.index');
+    Route::post('/kategori-talepleri/{categoryRequest}/onayla', [App\Http\Controllers\Admin\CategoryRequestController::class, 'approve'])->name('category-requests.approve');
+    Route::post('/kategori-talepleri/{categoryRequest}/reddet', [App\Http\Controllers\Admin\CategoryRequestController::class, 'reject'])->name('category-requests.reject');
 
     // Category Management
     Route::get('/kategoriler/ust-kategoriler', [CategoryController::class, 'parents'])->name('categories.parents');
