@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Agency;
 use App\Models\AgencyCategoryOrder;
+use App\Models\AgencyCategoryOrderItem;
 use App\Models\AgencyCategorySubscription;
 use App\Models\Category;
 use App\Models\Tour;
@@ -214,6 +215,160 @@ class AgencyCategoryLicensingTest extends TestCase
         $this->get(route('tours.show', $tour))->assertNotFound();
     }
 
+    public function test_early_renewal_extends_subscription_from_current_expiry_without_burning_remaining_days(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        // 10 gün kalmış aktif abonelik (hatırlatması gönderilmiş olsun)
+        $subscription = AgencyCategorySubscription::create([
+            'agency_id' => $agency->id,
+            'category_id' => $category->id,
+            'monthly_price' => 2000,
+            'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+            'started_at' => today()->subDays(20),
+            'expires_at' => today()->addDays(10),
+            'renewal_reminder_sent_at' => now()->subDay(),
+        ]);
+
+        $order = $this->makePendingIyzicoOrder($agency, $category, 'renewal-token-1');
+        $this->mockIyzicoForCallbackSuccess($order, 'iyzico-payment-renewal');
+
+        $this->post(route('agency.category-licenses.iyzico.callback', $order), ['token' => 'renewal-token-1'])
+            ->assertRedirect(route('agency.category-licenses.payment.result', $order));
+
+        $subscription->refresh();
+
+        // Kalan 10 gün korunur: mevcut bitişten +1 ay
+        $this->assertSame(
+            today()->addDays(10)->addMonth()->toDateString(),
+            $subscription->expires_at->toDateString()
+        );
+        // started_at sıfırlanmaz
+        $this->assertSame(today()->subDays(20)->toDateString(), $subscription->started_at->toDateString());
+        $this->assertSame($order->id, $subscription->last_order_id);
+        $this->assertSame(AgencyCategorySubscription::STATUS_ACTIVE, $subscription->status);
+        // Yeni dönem başladı → hatırlatma bayrağı sıfırlanır
+        $this->assertNull($subscription->renewal_reminder_sent_at);
+    }
+
+    public function test_renewal_after_lapse_restarts_subscription_from_today(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        // Süresi 5 gün önce dolmuş abonelik (status hâlâ 'active' kalmış olabilir)
+        $subscription = AgencyCategorySubscription::create([
+            'agency_id' => $agency->id,
+            'category_id' => $category->id,
+            'monthly_price' => 2000,
+            'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+            'started_at' => today()->subDays(35),
+            'expires_at' => today()->subDays(5),
+        ]);
+
+        $order = $this->makePendingIyzicoOrder($agency, $category, 'renewal-token-2');
+        $this->mockIyzicoForCallbackSuccess($order, 'iyzico-payment-lapsed');
+
+        $this->post(route('agency.category-licenses.iyzico.callback', $order), ['token' => 'renewal-token-2'])
+            ->assertRedirect();
+
+        $subscription->refresh();
+
+        // Geçmişte dolmuş: bugünden +1 ay, started_at bugüne sıfırlanır
+        $this->assertSame(today()->addMonth()->toDateString(), $subscription->expires_at->toDateString());
+        $this->assertSame(today()->toDateString(), $subscription->started_at->toDateString());
+    }
+
+    public function test_renewal_of_expired_status_subscription_restarts_from_today(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $subscription = AgencyCategorySubscription::create([
+            'agency_id' => $agency->id,
+            'category_id' => $category->id,
+            'monthly_price' => 2000,
+            'status' => AgencyCategorySubscription::STATUS_EXPIRED,
+            'started_at' => today()->subMonths(3),
+            'expires_at' => today()->addDays(10), // ileri tarihli ama status expired → uzatma değil
+        ]);
+
+        $order = $this->makePendingIyzicoOrder($agency, $category, 'renewal-token-3');
+        $this->mockIyzicoForCallbackSuccess($order, 'iyzico-payment-expired');
+
+        $this->post(route('agency.category-licenses.iyzico.callback', $order), ['token' => 'renewal-token-3'])
+            ->assertRedirect();
+
+        $subscription->refresh();
+
+        $this->assertSame(AgencyCategorySubscription::STATUS_ACTIVE, $subscription->status);
+        $this->assertSame(today()->addMonth()->toDateString(), $subscription->expires_at->toDateString());
+        $this->assertSame(today()->toDateString(), $subscription->started_at->toDateString());
+    }
+
+    public function test_callback_with_mismatched_basket_amount_marks_order_failed(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $order = $this->makePendingIyzicoOrder($agency, $category, 'amount-token-1');
+        // Sipariş 2000 TL ama iyzico sepet tutarı 500 TL dönüyor
+        $this->mockIyzicoForCallbackSuccess($order, 'iyzico-payment-tamper', price: 500.0, paidPrice: 500.0);
+
+        $this->post(route('agency.category-licenses.iyzico.callback', $order), ['token' => 'amount-token-1'])
+            ->assertRedirect();
+
+        $order->refresh();
+
+        $this->assertSame(AgencyCategoryOrder::STATUS_FAILED, $order->status);
+        $this->assertStringContainsString('Tutar uyuşmazlığı', $order->failure_reason);
+        $this->assertDatabaseMissing('agency_category_subscriptions', [
+            'agency_id' => $agency->id,
+            'category_id' => $category->id,
+        ]);
+    }
+
+    public function test_callback_accepts_higher_paid_price_from_installment_fee(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $order = $this->makePendingIyzicoOrder($agency, $category, 'amount-token-2');
+        // Sepet tutarı eşleşiyor; taksit komisyonu nedeniyle paidPrice daha yüksek — meşru
+        $this->mockIyzicoForCallbackSuccess($order, 'iyzico-payment-installment', price: 2000.0, paidPrice: 2120.50);
+
+        $this->post(route('agency.category-licenses.iyzico.callback', $order), ['token' => 'amount-token-2'])
+            ->assertRedirect();
+
+        $this->assertSame(AgencyCategoryOrder::STATUS_PAID, $order->fresh()->status);
+        $this->assertDatabaseHas('agency_category_subscriptions', [
+            'agency_id' => $agency->id,
+            'category_id' => $category->id,
+            'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+        ]);
+    }
+
+    private function makePendingIyzicoOrder(Agency $agency, Category $category, string $token): AgencyCategoryOrder
+    {
+        $order = AgencyCategoryOrder::create([
+            'agency_id' => $agency->id,
+            'order_number' => 'KYM-TEST-'.strtoupper(substr(md5($token), 0, 6)),
+            'billing_cycle' => 'monthly',
+            'subtotal' => $category->monthly_price,
+            'currency' => 'TRY',
+            'status' => AgencyCategoryOrder::STATUS_PENDING,
+            'payment_provider' => AgencyCategoryOrder::PROVIDER_IYZICO,
+            'provider_token' => $token,
+            'purchased_at' => now(),
+        ]);
+
+        AgencyCategoryOrderItem::create([
+            'order_id' => $order->id,
+            'category_id' => $category->id,
+            'category_name' => $category->name,
+            'unit_price' => $category->monthly_price,
+            'billing_cycle' => 'monthly',
+        ]);
+
+        return $order;
+    }
+
     private function makeAgencyAndCategory(): array
     {
         $agency = Agency::create([
@@ -245,7 +400,7 @@ class AgencyCategoryLicensingTest extends TestCase
         $init = \Mockery::mock(CheckoutFormInitialize::class);
         $init->shouldReceive('getToken')->andReturn($token);
         $init->shouldReceive('getCheckoutFormContent')->andReturn('<script>console.log("iyzico-mock");</script>');
-        $init->shouldReceive('getPaymentPageUrl')->andReturn('https://sandbox-cpp.iyzipay.com/' . $token);
+        $init->shouldReceive('getPaymentPageUrl')->andReturn('https://sandbox-cpp.iyzipay.com/'.$token);
 
         $this->mock(IyzicoService::class, function (MockInterface $mock) use ($init) {
             $mock->shouldReceive('isConfigured')->andReturn(true);
@@ -253,13 +408,22 @@ class AgencyCategoryLicensingTest extends TestCase
         });
     }
 
-    private function mockIyzicoForCallbackSuccess(AgencyCategoryOrder $order, string $paymentId): void
-    {
+    private function mockIyzicoForCallbackSuccess(
+        AgencyCategoryOrder $order,
+        string $paymentId,
+        ?float $price = null,
+        ?float $paidPrice = null
+    ): void {
+        $price ??= (float) $order->subtotal;
+        $paidPrice ??= $price;
+
         $form = \Mockery::mock(CheckoutForm::class);
         $form->shouldReceive('getStatus')->andReturn(Status::SUCCESS);
         $form->shouldReceive('getPaymentStatus')->andReturn('SUCCESS');
         $form->shouldReceive('getPaymentId')->andReturn($paymentId);
         $form->shouldReceive('getErrorMessage')->andReturn(null);
+        $form->shouldReceive('getPrice')->andReturn(number_format($price, 2, '.', ''));
+        $form->shouldReceive('getPaidPrice')->andReturn(number_format($paidPrice, 2, '.', ''));
 
         $this->mock(IyzicoService::class, function (MockInterface $mock) use ($form) {
             $mock->shouldReceive('isConfigured')->andReturn(true);

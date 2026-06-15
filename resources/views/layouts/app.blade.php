@@ -292,7 +292,11 @@
                 <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar') ? 'nav-active' : '' }}">Turlar</a>
                 <a href="{{ route('blog.index') }}" class="{{ request()->is('blog*') ? 'nav-active' : '' }}">Blog</a>
                 @auth
-                    @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
+                    @php
+                        // SQL COUNT (satırları belleğe yüklemeden) + görülmemiş duyuru sayısı
+                        $unreadCount = auth()->user()->unreadNotifications()->count()
+                            + \App\Models\Announcement::unseenBy(auth()->user())->count();
+                    @endphp
                     <a href="{{ route('notifications.index') }}" class="nav-notification-icon {{ request()->routeIs('notifications.index') ? 'active' : '' }}" style="position:relative; margin-right:15px; font-size:20px; text-decoration:none;">
                         🔔
                         @if($unreadCount > 0)
@@ -336,7 +340,11 @@
             <a href="{{ route('tours.index') }}">🧭 Turlar</a>
             <a href="{{ route('blog.index') }}">✍️ Blog</a>
             @auth
-                @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
+                @php
+                    // Desktop nav yukarıda hesapladıysa yeniden sorgulama
+                    $unreadCount ??= auth()->user()->unreadNotifications()->count()
+                        + \App\Models\Announcement::unseenBy(auth()->user())->count();
+                @endphp
                 <a href="{{ route('notifications.index') }}">🔔 Bildirimler @if($unreadCount > 0) <span style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px; margin-left:5px;">{{ $unreadCount }}</span> @endif</a>
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.dashboard') }}">⚙️ Admin Panel</a>

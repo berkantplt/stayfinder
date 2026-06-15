@@ -31,6 +31,10 @@
             <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:16px;font-weight:700;border-radius:12px;box-shadow:0 4px 12px rgba(13, 116, 144, 0.3);">Giriş Yap</button>
         </form>
 
+        <div style="text-align:center;margin-top:16px;font-size:14px;">
+            <a href="{{ route('password.request') }}" style="color:var(--accent);font-weight:600;">Şifremi unuttum</a>
+        </div>
+
         <div style="text-align:center;margin-top:28px;font-size:14px;color:#475569;">
             Hesabınız yok mu? <a href="{{ route('register') }}" style="color:var(--accent);font-weight:700;">Kayıt Ol</a>
         </div>

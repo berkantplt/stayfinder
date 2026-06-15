@@ -92,7 +92,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Yeni Şifre</label>
-                        <input type="password" name="password" placeholder="Min. 6 karakter">
+                        <input type="password" name="password" placeholder="Min. 8 karakter">
                     </div>
                     <div class="form-group">
                         <label>Şifre Tekrar</label>

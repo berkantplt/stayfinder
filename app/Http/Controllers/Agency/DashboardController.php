@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Agency;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tour;
 use App\Models\TourClick;
-use App\Models\TourView;
 
 class DashboardController extends Controller
 {
@@ -24,19 +24,19 @@ class DashboardController extends Controller
         $agency = auth()->user()->agency;
         $agency->load('activeTours');
 
-        $totalClicks = TourClick::where('agency_id', $agency->id)->count();
+        // Yaşam-boyu toplamlar sayaçtan (ham tour_clicks 180 gün retention'la budanıyor);
+        // pencereli istatistikler (gün/hafta/ay) ham tablodan — retention'ın çok altında.
+        $totalClicks = (int) Tour::where('agency_id', $agency->id)->sum('clicks_count');
         $todayClicks = TourClick::where('agency_id', $agency->id)
             ->where('clicked_at', '>=', now()->startOfDay())->count();
-        $weekClicks  = TourClick::where('agency_id', $agency->id)
+        $weekClicks = TourClick::where('agency_id', $agency->id)
             ->where('clicked_at', '>=', now()->subDays(7))->count();
         $monthClicks = TourClick::where('agency_id', $agency->id)
             ->where('clicked_at', '>=', now()->subDays(30))->count();
 
-        // Per-tour click stats
-        $tourClicks = TourClick::where('agency_id', $agency->id)
-            ->selectRaw('tour_id, COUNT(*) as clicks')
-            ->groupBy('tour_id')
-            ->pluck('clicks', 'tour_id');
+        // Per-tour yaşam-boyu tıklama (sayaçtan)
+        $tourClicks = Tour::where('agency_id', $agency->id)
+            ->pluck('clicks_count', 'id');
 
         // Daily clicks for last 30 days (chart data)
         $dailyClicks = TourClick::where('agency_id', $agency->id)
@@ -48,11 +48,11 @@ class DashboardController extends Controller
 
         // Fill missing dates with 0
         $chartLabels = [];
-        $chartData   = [];
+        $chartData = [];
         for ($i = 29; $i >= 0; $i--) {
             $d = now()->subDays($i)->format('Y-m-d');
             $chartLabels[] = now()->subDays($i)->format('d M');
-            $chartData[]   = $dailyClicks[$d] ?? 0;
+            $chartData[] = $dailyClicks[$d] ?? 0;
         }
 
         // Hourly distribution
@@ -64,10 +64,10 @@ class DashboardController extends Controller
             ->pluck('total', 'hour');
 
         $hourLabels = [];
-        $hourData   = [];
+        $hourData = [];
         for ($h = 0; $h < 24; $h++) {
-            $hourLabels[] = str_pad($h, 2, '0', STR_PAD_LEFT) . ':00';
-            $hourData[]   = $hourlyClicks[$h] ?? 0;
+            $hourLabels[] = str_pad($h, 2, '0', STR_PAD_LEFT).':00';
+            $hourData[] = $hourlyClicks[$h] ?? 0;
         }
 
         return view('agency.dashboard', compact(

@@ -7,10 +7,12 @@ use App\Models\Agency;
 use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Tour;
+use App\Models\TourClick;
+use App\Models\TourView;
 use App\Models\User;
 use App\Support\CategoryLicensing;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
@@ -18,21 +20,22 @@ class AdminController extends Controller
     public function dashboard()
     {
         $stats = [
-            'agencies'    => Agency::count(),
-            'tours'       => Tour::count(),
+            'agencies' => Agency::count(),
+            'tours' => Tour::count(),
             'activeTours' => Tour::active()->count(),
-            'clicks'      => \App\Models\TourClick::count(),
-            'views'       => \App\Models\TourView::count(),
+            // Yaşam-boyu toplamlar sayaçtan — ham tablolar 180 gün retention'la budanıyor
+            'clicks' => (int) Tour::sum('clicks_count'),
+            'views' => (int) Tour::sum('views_count'),
         ];
 
         $agencies = Agency::withCount('tours')->orderByDesc('tours_count')->get();
 
         // Daily clicks + views for 30 days
-        $dailyClicks = \App\Models\TourClick::where('clicked_at', '>=', now()->subDays(30))
+        $dailyClicks = TourClick::where('clicked_at', '>=', now()->subDays(30))
             ->selectRaw('DATE(clicked_at) as date, COUNT(*) as total')
             ->groupBy('date')->orderBy('date')->pluck('total', 'date');
 
-        $dailyViews = \App\Models\TourView::where('viewed_at', '>=', now()->subDays(30))
+        $dailyViews = TourView::where('viewed_at', '>=', now()->subDays(30))
             ->selectRaw('DATE(viewed_at) as date, COUNT(*) as total')
             ->groupBy('date')->orderBy('date')->pluck('total', 'date');
 
@@ -40,8 +43,8 @@ class AdminController extends Controller
         for ($i = 29; $i >= 0; $i--) {
             $d = now()->subDays($i)->format('Y-m-d');
             $chartLabels[] = now()->subDays($i)->format('d M');
-            $clickData[]   = $dailyClicks[$d] ?? 0;
-            $viewData[]    = $dailyViews[$d] ?? 0;
+            $clickData[] = $dailyClicks[$d] ?? 0;
+            $viewData[] = $dailyViews[$d] ?? 0;
         }
 
         // Top destinations by tour count
@@ -72,10 +75,10 @@ class AdminController extends Controller
 
         if ($request->filled('q')) {
             $searchTerm = $request->q;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('name', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('phone', 'like', '%' . $searchTerm . '%');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%'.$searchTerm.'%')
+                    ->orWhere('email', 'like', '%'.$searchTerm.'%')
+                    ->orWhere('phone', 'like', '%'.$searchTerm.'%');
             });
         }
 
@@ -98,6 +101,7 @@ class AdminController extends Controller
         }
 
         $agencies = $query->orderBy('name')->paginate(15)->withQueryString();
+
         return view('admin.agencies', compact('agencies'));
     }
 
@@ -170,10 +174,10 @@ class AdminController extends Controller
 
             $usedCategories = Category::query()
                 ->with('parent')
-                ->whereHas('tours', fn($query) => $query->where('agency_id', $agency->id))
+                ->whereHas('tours', fn ($query) => $query->where('agency_id', $agency->id))
                 ->withCount([
-                    'tours as tours_count' => fn($query) => $query->where('agency_id', $agency->id),
-                    'tours as active_tours_count' => fn($query) => $query->where('agency_id', $agency->id)->where('is_active', true),
+                    'tours as tours_count' => fn ($query) => $query->where('agency_id', $agency->id),
+                    'tours as active_tours_count' => fn ($query) => $query->where('agency_id', $agency->id)->where('is_active', true),
                 ])
                 ->orderByDesc('active_tours_count')
                 ->orderByDesc('tours_count')
@@ -213,8 +217,8 @@ class AdminController extends Controller
                 ->get();
 
             $monthlyCategoryValue = $agency->legacy_category_access
-                ? round($usedCategories->sum(fn(Category $category) => (float) $category->monthly_price), 2)
-                : round($activeSubscriptions->sum(fn($subscription) => (float) $subscription->monthly_price), 2);
+                ? round($usedCategories->sum(fn (Category $category) => (float) $category->monthly_price), 2)
+                : round($activeSubscriptions->sum(fn ($subscription) => (float) $subscription->monthly_price), 2);
 
             $lifetimeOrderValue = round($agency->categoryOrders()->sum('subtotal'), 2);
         } else {
@@ -256,9 +260,9 @@ class AdminController extends Controller
     public function storeAgency(Request $request)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'phone'       => 'nullable|string',
-            'email'       => 'nullable|email',
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
             'website_url' => 'nullable|url',
             'description' => 'nullable|string',
         ]);
@@ -270,10 +274,10 @@ class AdminController extends Controller
         ]));
 
         User::create([
-            'name'      => $agency->name . ' Yönetici',
-            'email'     => 'admin@' . strtolower(str_replace(' ', '', $agency->name)) . '.com',
-            'password'  => Hash::make('password'),
-            'role'      => 'agency',
+            'name' => $agency->name.' Yönetici',
+            'email' => 'admin@'.strtolower(str_replace(' ', '', $agency->name)).'.com',
+            'password' => Hash::make('password'),
+            'role' => 'agency',
             'agency_id' => $agency->id,
         ]);
 
@@ -297,7 +301,7 @@ class AdminController extends Controller
 
         return redirect()
             ->route('admin.agency-applications')
-            ->with('success', $agency->name . ' başvurusu onaylandı.');
+            ->with('success', $agency->name.' başvurusu onaylandı.');
     }
 
     public function rejectAgencyApplication(Request $request, Agency $agency)
@@ -317,15 +321,24 @@ class AdminController extends Controller
 
         return redirect()
             ->route('admin.agency-applications')
-            ->with('success', $agency->name . ' başvurusu reddedildi.');
+            ->with('success', $agency->name.' başvurusu reddedildi.');
     }
 
     public function toggleAgency(Agency $agency)
     {
-        $agency->update(['is_active' => !$agency->is_active]);
+        // Tutarsız state koruması: onaylanmamış (pending/rejected) acenta toggle
+        // ile aktifleştirilemez — aktifleştirme yolu başvuru onayıdır.
+        if (! $agency->is_active && ! $agency->isApproved()) {
+            $statusLabel = $agency->isRejected() ? 'reddedilmiş' : 'onay bekleyen';
+
+            return redirect()->route('admin.agencies')
+                ->withErrors($agency->name.' '.$statusLabel.' durumda — aktifleştirmek için önce başvuruyu onaylayın.');
+        }
+
+        $agency->update(['is_active' => ! $agency->is_active]);
 
         return redirect()->route('admin.agencies')
-            ->with('success', $agency->name . ' ' . ($agency->is_active ? 'aktifleştirildi' : 'pasifleştirildi') . '.');
+            ->with('success', $agency->name.' '.($agency->is_active ? 'aktifleştirildi' : 'pasifleştirildi').'.');
     }
 
     public function tours(Request $request)
@@ -337,7 +350,7 @@ class AdminController extends Controller
             $search = $request->q;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('destination', 'like', "%{$search}%");
+                    ->orWhere('destination', 'like', "%{$search}%");
             });
         }
 
@@ -361,13 +374,13 @@ class AdminController extends Controller
         if ($request->filled('date_start')) {
             $query->where(function ($q) use ($request) {
                 $q->where('departure_date', '>=', $request->date_start)
-                  ->orWhereHas('dates', fn($dq) => $dq->where('departure_date', '>=', $request->date_start));
+                    ->orWhereHas('dates', fn ($dq) => $dq->where('departure_date', '>=', $request->date_start));
             });
         }
         if ($request->filled('date_end')) {
             $query->where(function ($q) use ($request) {
                 $q->where('departure_date', '<=', $request->date_end)
-                  ->orWhereHas('dates', fn($dq) => $dq->where('departure_date', '<=', $request->date_end));
+                    ->orWhereHas('dates', fn ($dq) => $dq->where('departure_date', '<=', $request->date_end));
             });
         }
 
@@ -382,10 +395,10 @@ class AdminController extends Controller
         // 7. Sıralama (sort)
         $sort = $request->input('sort', 'newest');
         match ($sort) {
-            'price_asc'  => $query->orderBy('price'),
+            'price_asc' => $query->orderBy('price'),
             'price_desc' => $query->orderByDesc('price'),
-            'date'       => $query->orderBy('departure_date'),
-            default      => $query->orderByDesc('created_at'),
+            'date' => $query->orderBy('departure_date'),
+            default => $query->orderByDesc('created_at'),
         };
 
         $tours = $query->paginate(15)->withQueryString();
@@ -402,27 +415,28 @@ class AdminController extends Controller
     public function destinations()
     {
         $destinations = Destination::orderBy('sort_order')->get();
+
         return view('admin.destinations', compact('destinations'));
     }
 
     public function updateDestination(Request $request, Destination $destination)
     {
         $validated = $request->validate([
-            'image'      => 'nullable|url',
+            'image' => 'nullable|url',
             'sort_order' => 'nullable|integer',
         ]);
 
         $destination->update($validated);
 
         return redirect()->route('admin.destinations')
-            ->with('success', $destination->name . ' güncellendi.');
+            ->with('success', $destination->name.' güncellendi.');
     }
 
     public function toggleDestination(Destination $destination)
     {
-        $destination->update(['is_active' => !$destination->is_active]);
+        $destination->update(['is_active' => ! $destination->is_active]);
 
         return redirect()->route('admin.destinations')
-            ->with('success', $destination->name . ' ' . ($destination->is_active ? 'aktifleştirildi' : 'pasifleştirildi') . '.');
+            ->with('success', $destination->name.' '.($destination->is_active ? 'aktifleştirildi' : 'pasifleştirildi').'.');
     }
 }

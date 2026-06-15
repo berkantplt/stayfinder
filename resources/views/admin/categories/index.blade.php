@@ -25,6 +25,83 @@
                 </div>
             @endunless
 
+            {{-- Üst Kategori Yönetimi (ayrı alan) --}}
+            <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;margin-bottom:24px;max-width:94%;margin-left:auto;margin-right:auto;border-left:4px solid var(--accent);">
+                <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">🗂️ Üst Kategori Yönetimi</h3>
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+                    Üst (ana) kategoriler, alt kategorileri gruplamak için kullanılır. Buradan eklenen kategoriler her zaman ana kategori olur; alt kategori atamak için aşağıdaki genel formu kullanın.
+                </p>
+
+                <form method="POST" action="{{ route('admin.categories.parents.store') }}">
+                    @csrf
+                    <div style="display:grid;grid-template-columns:repeat({{ $categoryLicensingReady ? 5 : 4 }}, 1fr);gap:12px;align-items:end;">
+                        <div class="form-group" style="margin:0;">
+                            <label>Üst Kategori Adı *</label>
+                            <input type="text" name="name" required placeholder="Yurt Dışı Turlar">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>İkon (Emoji)</label>
+                            <input type="text" name="icon" placeholder="🌍">
+                        </div>
+                        @if($categoryLicensingReady)
+                            <div class="form-group" style="margin:0;">
+                                <label>Aylık Ücret (TL)</label>
+                                <input type="number" name="monthly_price" value="2000" min="0" step="0.01" required>
+                            </div>
+                        @endif
+                        <div class="form-group" style="margin:0;">
+                            <label>Sıralama</label>
+                            <input type="number" name="sort_order" value="0">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="height:44px;">+ Üst Kategori Ekle</button>
+                    </div>
+                </form>
+
+                {{-- Mevcut üst kategoriler --}}
+                <div style="margin-top:20px;border-top:1px solid var(--border-light);padding-top:16px;">
+                    <div style="font-size:13px;font-weight:700;color:var(--text-sec);margin-bottom:10px;">Mevcut Üst Kategoriler ({{ $parentCategories->count() }})</div>
+                    @if($parentCategories->isEmpty())
+                        <div style="color:var(--text-muted);font-style:italic;font-size:13px;">Henüz üst kategori yok.</div>
+                    @else
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                            @foreach($parentCategories as $parent)
+                                <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border-light);border-radius:10px;padding:8px 12px;background:var(--bg);">
+                                    <span style="font-size:18px;">{{ $parent->icon }}</span>
+                                    <div>
+                                        <div style="font-weight:600;font-size:14px;{{ $parent->is_active ? '' : 'color:var(--text-muted);text-decoration:line-through;' }}">{{ $parent->name }}</div>
+                                        <div style="font-size:11px;color:var(--text-muted);">{{ $parent->children_count }} alt kategori · sıra {{ $parent->sort_order }}</div>
+                                    </div>
+                                    <div style="display:flex;gap:4px;margin-left:6px;">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline btn-sm"
+                                            data-name="{{ $parent->name }}"
+                                            data-icon="{{ $parent->icon }}"
+                                            @if($categoryLicensingReady)
+                                            data-monthly-price="{{ number_format((float) $parent->monthly_price, 2, '.', '') }}"
+                                            @endif
+                                            data-sort-order="{{ $parent->sort_order }}"
+                                            data-parent-id="{{ $parent->parent_id }}"
+                                            data-update-url="{{ route('admin.categories.update', $parent) }}"
+                                            onclick="editCategory(this)"
+                                            title="Düzenle"
+                                        >✏️</button>
+                                        <form method="POST" action="{{ route('admin.categories.toggle', $parent) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline btn-sm" title="{{ $parent->is_active ? 'Pasifleştir' : 'Aktifleştir' }}">{{ $parent->is_active ? '🟢' : '⚪️' }}</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.categories.destroy', $parent) }}" onsubmit="return confirm('Üst kategori silinsin mi? (Alt kategorisi veya turu varsa silinemez)');">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Sil">🗑️</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             {{-- Create Category Form --}}
             <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;margin-bottom:24px;max-width:94%;margin-left:auto;margin-right:auto;">
                 <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">+ Yeni Kategori Ekle</h3>

@@ -14,6 +14,34 @@
             @endif
         </div>
 
+        @if($announcements->isNotEmpty())
+        <h2 style="font-size:16px; font-weight:700; margin-bottom:12px; color:var(--text-sec);">📣 Duyurular</h2>
+        <div class="card" style="padding:0; overflow:hidden; margin-bottom:28px;">
+            @foreach($announcements as $announcement)
+            @php
+                $announcementUrl = $announcement->tour_id && $announcement->tour
+                    ? route('tours.show', $announcement->tour_id)
+                    : route('tours.index');
+                $isNew = $announcement->created_at->gt($announcementSeenAt);
+            @endphp
+            <div style="padding:20px; border-bottom:1px solid #f1f5f9; display:flex; gap:16px; align-items:flex-start; background: {{ $isNew ? '#f8fafc' : '#fff' }};">
+                <div style="font-size:24px; background:#fff; width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+                    {{ $announcement->icon ?? '📣' }}
+                </div>
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <h3 style="font-size:16px; font-weight:700; margin-bottom:4px;">{{ $announcement->title }}</h3>
+                        <span style="font-size:12px; color:var(--text-muted);">{{ $announcement->created_at->diffForHumans() }}</span>
+                    </div>
+                    <p style="font-size:14px; color:var(--text-sec); margin-bottom:12px;">{{ $announcement->message }}</p>
+                    <a href="{{ $announcementUrl }}" class="btn btn-primary btn-sm" style="padding:4px 12px; font-size:12px;">İncele</a>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
+        <h2 style="font-size:16px; font-weight:700; margin-bottom:12px; color:var(--text-sec);">🔔 Bildirimlerim</h2>
         <div class="card" style="padding:0; overflow:hidden;">
             @forelse($notifications as $notification)
             @php

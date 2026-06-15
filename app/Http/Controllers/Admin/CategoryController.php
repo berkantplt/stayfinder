@@ -13,7 +13,11 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::with('parent', 'children')->orderBy('sort_order')->get();
-        $parentCategories = Category::parents()->orderBy('name')->get();
+        $parentCategories = Category::parents()
+            ->withCount('children')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
         $categoryLicensingReady = CategoryLicensing::schemaReady();
 
         return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady'));
@@ -22,11 +26,11 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'name'        => 'required|string|max:100',
-            'icon'        => 'nullable|string|max:20',
+            'name' => 'required|string|max:100',
+            'icon' => 'nullable|string|max:20',
             'description' => 'nullable|string',
-            'parent_id'   => 'nullable|exists:categories,id',
-            'sort_order'  => 'nullable|integer',
+            'parent_id' => 'nullable|exists:categories,id',
+            'sort_order' => 'nullable|integer',
         ];
 
         if (CategoryLicensing::schemaReady()) {
@@ -45,14 +49,44 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')->with('success', 'Kategori oluşturuldu.');
     }
 
+    /**
+     * Üst (ana) kategori oluşturur — parent_id her zaman null. "Üst Kategori
+     * Yönetimi" panelindeki ayrı form bunu kullanır; alt kategori seçtirmez.
+     */
+    public function storeParent(Request $request)
+    {
+        $rules = [
+            'name' => 'required|string|max:100',
+            'icon' => 'nullable|string|max:20',
+            'description' => 'nullable|string',
+            'sort_order' => 'nullable|integer',
+        ];
+
+        if (CategoryLicensing::schemaReady()) {
+            $rules['monthly_price'] = 'required|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules);
+
+        $validated['slug'] = Str::slug($validated['name']);
+        $validated['parent_id'] = null;
+        if (CategoryLicensing::schemaReady()) {
+            $validated['monthly_price'] = round((float) $validated['monthly_price'], 2);
+        }
+
+        Category::create($validated);
+
+        return redirect()->route('admin.categories.index')->with('success', 'Üst kategori oluşturuldu.');
+    }
+
     public function update(Request $request, Category $category)
     {
         $rules = [
-            'name'        => 'required|string|max:100',
-            'icon'        => 'nullable|string|max:20',
+            'name' => 'required|string|max:100',
+            'icon' => 'nullable|string|max:20',
             'description' => 'nullable|string',
-            'parent_id'   => 'nullable|exists:categories,id',
-            'sort_order'  => 'nullable|integer',
+            'parent_id' => 'nullable|exists:categories,id',
+            'sort_order' => 'nullable|integer',
         ];
 
         if (CategoryLicensing::schemaReady()) {
@@ -85,7 +119,7 @@ class CategoryController extends Controller
 
     public function toggle(Category $category)
     {
-        $category->update(['is_active' => !$category->is_active]);
+        $category->update(['is_active' => ! $category->is_active]);
 
         return redirect()->route('admin.categories.index')->with('success', 'Kategori durumu güncellendi.');
     }

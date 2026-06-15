@@ -12,14 +12,19 @@ class AgencyCategoryOrder extends Model
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_PAID = 'paid';
+
     public const STATUS_FAILED = 'failed';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     public const PROVIDER_IYZICO = 'iyzico';
+
     public const PROVIDER_MANUAL = 'manual';
 
     public const BUYER_INDIVIDUAL = 'individual';
+
     public const BUYER_CORPORATE = 'corporate';
 
     protected $fillable = [
@@ -43,7 +48,8 @@ class AgencyCategoryOrder extends Model
         'subtotal' => 'decimal:2',
         'purchased_at' => 'datetime',
         'paid_at' => 'datetime',
-        'buyer_snapshot' => 'array',
+        // TC kimlik dahil kişisel veri — at-rest şifreli (APP_KEY'e bağlı)
+        'buyer_snapshot' => 'encrypted:array',
     ];
 
     public function agency(): BelongsTo

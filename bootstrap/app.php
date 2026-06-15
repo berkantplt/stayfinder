@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureAgencyApproved;
+use App\Http\Middleware\RoleMiddleware;
 use App\Providers\PartnerServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
@@ -18,8 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'agency.approved' => \App\Http\Middleware\EnsureAgencyApproved::class,
+            'role' => RoleMiddleware::class,
+            'agency.approved' => EnsureAgencyApproved::class,
         ]);
 
         // Trust all proxies (required for Cloudflare tunnel / ngrok)
@@ -63,8 +65,39 @@ return Application::configure(basePath: dirname(__DIR__))
         */
         RateLimiter::for('ai_search', function (Request $request) {
             return $request->user()
-                ? Limit::perMinute(30)->by('ai:user:' . $request->user()->id)
-                : Limit::perMinute(10)->by('ai:ip:' . $request->ip());
+                ? Limit::perMinute(30)->by('ai:user:'.$request->user()->id)
+                : Limit::perMinute(10)->by('ai:ip:'.$request->ip());
+        });
+
+        /*
+        |----------------------------------------------------------------------
+        | Rate Limiter: login
+        |----------------------------------------------------------------------
+        |
+        | Brute-force koruması. Hesap başına: aynı e-posta+IP ikilisi dakikada
+        | 5 deneme (tek hesabı hedefleyen saldırı). IP başına: dakikada 20
+        | (e-posta rotasyonuyla password spraying'i de sınırlar).
+        |
+        */
+        RateLimiter::for('login', function (Request $request) {
+            $email = mb_strtolower(trim((string) $request->input('email')));
+
+            return [
+                Limit::perMinute(5)->by('login:email:'.sha1($email.'|'.$request->ip())),
+                Limit::perMinute(20)->by('login:ip:'.$request->ip()),
+            ];
+        });
+
+        /*
+        |----------------------------------------------------------------------
+        | Rate Limiter: register
+        |----------------------------------------------------------------------
+        |
+        | Toplu sahte hesap kaydını sınırlar: IP başına dakikada 6 deneme.
+        |
+        */
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(6)->by('register:ip:'.$request->ip());
         });
     })
     ->create();

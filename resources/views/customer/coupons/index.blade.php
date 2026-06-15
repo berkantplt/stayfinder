@@ -9,12 +9,18 @@
             <h1 style="font-size:24px;font-weight:800;margin:0;">Kuponlarım</h1>
         </div>
         <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px;">
-            Acentaların ve StayFinder'ın tanımladığı, şu an kullanılabilir kuponlar burada.
-            Acenta kaldırırsa, süresi biterse veya kullanım hakkı dolarsa listeden düşer.
+            Acentaların ve StayFinder'ın tanımladığı kuponlar burada. "Kuponu Al" ile kodu açın,
+            rezervasyon sırasında acenta sitesinde kullanın. Aldığınız kuponlar limit dolsa bile burada kalır.
         </p>
 
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        @if($errors->any())
+            <div class="alert alert-error">
+                @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
+            </div>
         @endif
 
         @if($coupons->count())
@@ -26,6 +32,7 @@
                         $accentBg = $isPercent ? '#ecfdf5' : '#eef2ff';
                         $borderColor = $isPercent ? '#a7f3d0' : '#c7d2fe';
                         $remaining = $coupon->remaining_uses; // null = sınırsız
+                        $isClaimed = in_array($coupon->id, $claimedCouponIds);
                     @endphp
 
                     <div class="coupon-card" style="background:#fff;border:2px dashed {{ $borderColor }};border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;">
@@ -43,12 +50,22 @@
                             <div style="font-size:28px;">{{ $isPercent ? '🏷️' : '💸' }}</div>
                         </div>
 
-                        {{-- Kod + kopyala --}}
+                        {{-- Kod: alınana kadar maskeli --}}
                         <div style="padding:14px 18px;border-top:1px dashed {{ $borderColor }};border-bottom:1px dashed {{ $borderColor }};display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fafafa;">
-                            <div style="font-family:monospace;font-size:16px;font-weight:800;color:#0f172a;letter-spacing:1px;flex:1;overflow-x:auto;">{{ $coupon->code }}</div>
-                            <button type="button" onclick="window.copyCouponCode(this, '{{ $coupon->code }}')" style="background:{{ $accentColor }};color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
-                                📋 Kopyala
-                            </button>
+                            @if($isClaimed)
+                                <div style="font-family:monospace;font-size:16px;font-weight:800;color:#0f172a;letter-spacing:1px;flex:1;overflow-x:auto;">{{ $coupon->code }}</div>
+                                <button type="button" onclick="window.copyCouponCode(this, '{{ $coupon->code }}')" style="background:{{ $accentColor }};color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                                    📋 Kopyala
+                                </button>
+                            @else
+                                <div style="font-family:monospace;font-size:16px;font-weight:800;color:#94a3b8;letter-spacing:3px;flex:1;">●●●●●●●●</div>
+                                <form method="POST" action="{{ route('customer.coupons.claim', $coupon) }}" style="margin:0;">
+                                    @csrf
+                                    <button type="submit" style="background:{{ $accentColor }};color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                                        🎟️ Kuponu Al
+                                    </button>
+                                </form>
+                            @endif
                         </div>
 
                         {{-- Bilgi listesi --}}

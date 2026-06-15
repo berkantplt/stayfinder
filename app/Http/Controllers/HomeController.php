@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Destination;
-use App\Models\Tour;
 use App\Models\Agency;
-
 use App\Models\Banner;
+use App\Models\Category;
+use App\Models\Destination;
+use App\Models\FeaturedCity;
+use App\Models\Tour;
 
 class HomeController extends Controller
 {
@@ -14,11 +15,11 @@ class HomeController extends Controller
     {
         $query = Tour::with(['agency', 'category'])
             ->active()
-            ->whereHas('agency', fn($q) => $q->active());
+            ->whereHas('agency', fn ($q) => $q->active());
 
         // Filtering
         if (request('category')) {
-            $cat = \App\Models\Category::where('slug', request('category'))->first();
+            $cat = Category::where('slug', request('category'))->first();
             if ($cat) {
                 $catIds = collect([$cat->id])->merge($cat->children()->pluck('id'));
                 $query->whereIn('category_id', $catIds);
@@ -31,17 +32,15 @@ class HomeController extends Controller
 
         // Acenta arama (kısmi eşleşme — kullanıcı "Jolly" yazabilir "Jolly Tur" bulunur)
         if ($agencyQuery = trim((string) request('agency'))) {
-            $query->whereHas('agency', fn($aQ) => $aQ->where('name', 'like', '%' . $agencyQuery . '%'));
+            $query->whereHas('agency', fn ($aQ) => $aQ->where('name', 'like', '%'.$agencyQuery.'%'));
         }
 
         // Sorting
         $sort = request('sort', 'price_asc');
         if ($sort === 'price_desc') {
-            $query->orderByDesc('price');
-        } elseif ($sort === 'price_asc') {
-            $query->orderBy('price');
+            $query->orderByDesc('price_try');
         } else {
-            $query->orderBy('price');
+            $query->orderBy('price_try');
         }
 
         $popularTours = $query->limit(8)->get();
@@ -58,10 +57,11 @@ class HomeController extends Controller
             ->map(function ($dest) {
                 $stats = Tour::active()->where('destination', $dest->name);
                 $dest->tour_count = $stats->count();
-                $dest->min_price  = $stats->min('price');
+                $dest->min_price = $stats->min('price_try'); // TL-normalize en düşük fiyat
+
                 return $dest;
             })
-            ->filter(fn($d) => $d->tour_count > 0);
+            ->filter(fn ($d) => $d->tour_count > 0);
 
         // All active destinations for filter dropdown
         $allDestinations = Tour::active()
@@ -76,45 +76,45 @@ class HomeController extends Controller
             ->get(['id', 'name', 'slug']);
 
         // All active categories (parent → children tree)
-        $categories = \App\Models\Category::active()
+        $categories = Category::active()
             ->parents()
-            ->with(['children' => fn($q) => $q->active()->orderBy('sort_order')])
+            ->with(['children' => fn ($q) => $q->active()->orderBy('sort_order')])
             ->orderBy('sort_order')
             ->get();
 
         $agencyCount = Agency::active()->count();
-        $tourCount   = Tour::active()->count();
+        $tourCount = Tour::active()->count();
 
         // Banners
         $banners = Banner::active()->orderBy('sort_order')->get();
 
         // Recently viewed (from session)
-        $recentIds      = session()->get('recently_viewed', []);
+        $recentIds = session()->get('recently_viewed', []);
         $recentlyViewed = collect();
-        if (!empty($recentIds)) {
+        if (! empty($recentIds)) {
             $recentlyViewed = Tour::with('agency')
                 ->active()
                 ->whereIn('id', $recentIds)
                 ->get()
-                ->sortBy(fn($t) => array_search($t->id, $recentIds))
+                ->sortBy(fn ($t) => array_search($t->id, $recentIds))
                 ->values();
         }
 
         // Fetch Featured Cities from Database
-        $featuredCities = \App\Models\FeaturedCity::with('images')
+        $featuredCities = FeaturedCity::with('images')
             ->active()
             ->orderBy('sort_order')
             ->get()
-            ->map(function($city) {
+            ->map(function ($city) {
                 return [
                     'name' => $city->name,
                     'country' => $city->country,
-                    'images' => $city->images->map(fn($img) => asset('storage/' . $img->image_path))->toArray(),
-                    'count' => Tour::active()->where('destination', $city->name)->count()
+                    'images' => $city->images->map(fn ($img) => asset('storage/'.$img->image_path))->toArray(),
+                    'count' => Tour::active()->where('destination', $city->name)->count(),
                 ];
             })
             // Show cities that have images, even if they have 0 tours currently
-            ->filter(fn($city) => count($city['images']) > 0)
+            ->filter(fn ($city) => count($city['images']) > 0)
             ->values();
 
         // Fallback for demo if DB is empty

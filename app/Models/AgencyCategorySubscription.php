@@ -11,7 +11,9 @@ class AgencyCategorySubscription extends Model
     use HasFactory;
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_EXPIRED = 'expired';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -22,12 +24,14 @@ class AgencyCategorySubscription extends Model
         'status',
         'started_at',
         'expires_at',
+        'renewal_reminder_sent_at',
     ];
 
     protected $casts = [
         'monthly_price' => 'decimal:2',
         'started_at' => 'date',
         'expires_at' => 'date',
+        'renewal_reminder_sent_at' => 'datetime',
     ];
 
     public function agency(): BelongsTo

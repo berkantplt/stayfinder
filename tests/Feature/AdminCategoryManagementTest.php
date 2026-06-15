@@ -51,4 +51,55 @@ class AdminCategoryManagementTest extends TestCase
             'id' => $category->id,
         ]);
     }
+
+    public function test_store_parent_creates_top_level_category_with_null_parent(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        // parent_id gönderilse bile yok sayılır — daima üst kategori olur
+        $other = Category::create([
+            'name' => 'Var Olan',
+            'slug' => 'var-olan',
+            'monthly_price' => 1000,
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.categories.parents.store'), [
+                'name' => 'Yurt Dışı Turlar',
+                'icon' => '🌍',
+                'monthly_price' => 2500,
+                'sort_order' => 3,
+                'parent_id' => $other->id, // bilinçli olarak yok sayılmalı
+            ])
+            ->assertRedirect(route('admin.categories.index'));
+
+        $this->assertDatabaseHas('categories', [
+            'name' => 'Yurt Dışı Turlar',
+            'slug' => 'yurt-disi-turlar',
+            'parent_id' => null,
+            'monthly_price' => '2500.00',
+            'sort_order' => 3,
+        ]);
+    }
+
+    public function test_parent_management_section_lists_parent_categories_with_child_count(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $parent = Category::create([
+            'name' => 'Ana Grup', 'slug' => 'ana-grup', 'monthly_price' => 1000, 'sort_order' => 1, 'is_active' => true,
+        ]);
+        Category::create([
+            'name' => 'Alt Tur', 'slug' => 'alt-tur', 'parent_id' => $parent->id, 'monthly_price' => 1000, 'sort_order' => 1, 'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertSee('Üst Kategori Yönetimi')
+            ->assertSee('Ana Grup')
+            ->assertSee('1 alt kategori');
+    }
 }

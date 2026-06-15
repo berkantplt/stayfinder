@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Agency;
 use App\Models\Tour;
 use App\Models\User;
-use App\Notifications\NewTourNotification;
 use App\Notifications\PriceDropNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -16,7 +15,7 @@ class TourNotificationRouteTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_tour_notifications_store_public_tour_route_with_tour_id(): void
+    public function test_price_drop_notification_stores_public_tour_route_with_tour_id(): void
     {
         Queue::fake();
         Notification::fake();
@@ -45,14 +44,9 @@ class TourNotificationRouteTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->assertSame(
-            route('tours.show', $tour),
-            (new NewTourNotification($tour))->toArray($user)['url']
-        );
+        $payload = (new PriceDropNotification($tour))->toArray($user);
 
-        $this->assertSame(
-            route('tours.show', $tour),
-            (new PriceDropNotification($tour))->toArray($user)['url']
-        );
+        $this->assertSame(route('tours.show', $tour), $payload['url']);
+        $this->assertSame($tour->id, $payload['tour_id']);
     }
 }

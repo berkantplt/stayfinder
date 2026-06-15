@@ -11,10 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 use Illuminate\Support\Str;
 
-use App\Notifications\NewTourNotification;
-use App\Notifications\PriceDropNotification;
-use App\Models\User;
-
 #[ObservedBy(TourObserver::class)]
 class Tour extends Model
 {
@@ -33,55 +29,51 @@ class Tour extends Model
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
         'price', 'currency', 'duration_days', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'tour_url', 'is_active',
-        'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa'
+        'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa',
     ];
 
     protected $casts = [
-        'price'             => 'decimal:2',
-        'duration_days'     => 'integer',
-        'departure_date'    => 'date',
-        'return_date'       => 'date',
-        'is_active'         => 'boolean',
-        'embedding'         => 'array',
-        'is_international'  => 'boolean',
-        'requires_visa'     => 'boolean',
+        'price' => 'decimal:2',
+        'price_try' => 'decimal:2',
+        'duration_days' => 'integer',
+        'departure_date' => 'date',
+        'return_date' => 'date',
+        'is_active' => 'boolean',
+        'embedding' => 'array',
+        'is_international' => 'boolean',
+        'requires_visa' => 'boolean',
     ];
 
     protected static function booted(): void
     {
         static::creating(function (Tour $tour) {
             if (empty($tour->slug)) {
-                $tour->slug = Str::slug($tour->title) . '-' . Str::random(5);
+                $tour->slug = Str::slug($tour->title).'-'.Str::random(5);
             }
         });
 
-        // Auto-record price history & send new tour notification
+        // TL-normalize fiyat: tüm filtre/sıralama/agregasyonlar price_try kullanır
+        static::saving(function (Tour $tour) {
+            if ($tour->isDirty('price') || $tour->isDirty('currency') || $tour->price_try === null) {
+                $tour->price_try = CurrencyRate::toTry((float) $tour->price, $tour->currency);
+            }
+        });
+
+        // Auto-record price history. Bildirimler TourObserver'da: yeni tur →
+        // announcements tablosuna tek satır, fiyat düşüşü → sadece favorileyenlere.
         static::created(function (Tour $tour) {
             $tour->priceHistories()->create([
-                'price'       => $tour->price,
+                'price' => $tour->price,
                 'recorded_at' => now()->toDateString(),
             ]);
-
-            // Notify all users about new tour
-            $users = User::all();
-            \Illuminate\Support\Facades\Notification::send($users, new NewTourNotification($tour));
         });
 
         static::updating(function (Tour $tour) {
             if ($tour->isDirty('price')) {
-                $oldPrice = $tour->getOriginal('price');
-                $newPrice = $tour->price;
-
                 $tour->priceHistories()->create([
-                    'price'       => $newPrice,
+                    'price' => $tour->price,
                     'recorded_at' => now()->toDateString(),
                 ]);
-
-                // If price dropped, notify all users
-                if ($newPrice < $oldPrice) {
-                    $users = User::all();
-                    \Illuminate\Support\Facades\Notification::send($users, new PriceDropNotification($tour));
-                }
             }
         });
     }
@@ -108,7 +100,7 @@ class Tour extends Model
 
     public function reviews()
     {
-        return $this->hasMany(\App\Models\Review::class)->latest();
+        return $this->hasMany(Review::class)->latest();
     }
 
     public function campaigns()
@@ -119,6 +111,11 @@ class Tour extends Model
     public function priceHistories()
     {
         return $this->hasMany(PriceHistory::class)->orderBy('recorded_at');
+    }
+
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
     }
 
     public function getActiveCampaignAttribute()
@@ -138,27 +135,32 @@ class Tour extends Model
     // Scopes
     public function scopeActive($query)
     {
-        if (!CategoryLicensing::schemaReady()) {
-            return $query->where('is_active', true);
+        // isPubliclyVisible() ile parite: pasif acentanın turları hiçbir
+        // listede görünmemeli (lisans şemasından bağımsız kural)
+        $query
+            ->where('is_active', true)
+            ->whereHas('agency', fn ($agencyQuery) => $agencyQuery->where('is_active', true));
+
+        if (! CategoryLicensing::schemaReady()) {
+            return $query;
         }
 
         return $query
-            ->where('is_active', true)
             ->where(function ($accessQuery) {
                 $accessQuery
                     ->where(function ($legacyQuery) {
                         $legacyQuery
-                            ->whereHas('agency', fn($agencyQuery) => $agencyQuery->where('legacy_category_access', true))
+                            ->whereHas('agency', fn ($agencyQuery) => $agencyQuery->where('legacy_category_access', true))
                             ->where(function ($categoryQuery) {
                                 $categoryQuery
                                     ->whereNull('category_id')
-                                    ->orWhereHas('category', fn($activeCategoryQuery) => $activeCategoryQuery->active());
+                                    ->orWhereHas('category', fn ($activeCategoryQuery) => $activeCategoryQuery->active());
                             });
                     })
                     ->orWhere(function ($licensedQuery) {
                         $licensedQuery
                             ->whereNotNull('category_id')
-                            ->whereHas('category', fn($categoryQuery) => $categoryQuery->active())
+                            ->whereHas('category', fn ($categoryQuery) => $categoryQuery->active())
                             ->whereExists(function (BaseBuilder $subscriptionQuery) {
                                 $subscriptionQuery
                                     ->selectRaw('1')
@@ -182,16 +184,24 @@ class Tour extends Model
         return $query->where('departure_date', '>=', now()->toDateString());
     }
 
+    /**
+     * Min/max TL cinsindendir — karşılaştırma kur-normalize price_try ile yapılır.
+     */
     public function scopePriceBetween($query, $min, $max)
     {
-        if ($min) $query->where('price', '>=', $min);
-        if ($max) $query->where('price', '<=', $max);
+        if ($min) {
+            $query->where('price_try', '>=', $min);
+        }
+        if ($max) {
+            $query->where('price_try', '<=', $max);
+        }
+
         return $query;
     }
 
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->price, 0, ',', '.') . ' ' . $this->currency_symbol;
+        return number_format($this->price, 0, ',', '.').' '.$this->currency_symbol;
     }
 
     public function getCurrencySymbolAttribute(): string
@@ -207,6 +217,7 @@ class Tour extends Model
     public static function currencySymbol(?string $code): string
     {
         $normalized = strtoupper(trim((string) $code));
+
         return self::SUPPORTED_CURRENCIES[$normalized]['symbol'] ?? '₺';
     }
 
@@ -214,19 +225,19 @@ class Tour extends Model
     {
         $this->loadMissing('agency', 'category');
 
-        if (!$this->is_active || !$this->agency?->is_active) {
+        if (! $this->is_active || ! $this->agency?->is_active) {
             return false;
         }
 
-        if (!CategoryLicensing::schemaReady()) {
-            return !$this->category_id || (bool) $this->category?->is_active;
+        if (! CategoryLicensing::schemaReady()) {
+            return ! $this->category_id || (bool) $this->category?->is_active;
         }
 
         if ($this->agency->legacy_category_access) {
-            return !$this->category_id || (bool) $this->category?->is_active;
+            return ! $this->category_id || (bool) $this->category?->is_active;
         }
 
-        if (!$this->category_id || !$this->category?->is_active) {
+        if (! $this->category_id || ! $this->category?->is_active) {
             return false;
         }
 

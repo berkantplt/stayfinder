@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AiSearchLog;
-use App\Models\Tour;
 use App\Models\Agency;
+use App\Models\AiSearchLog;
 use App\Models\Category;
+use App\Models\Tour;
+use App\Models\TourView;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TourController extends Controller
 {
@@ -14,14 +16,14 @@ class TourController extends Controller
     {
         $query = Tour::with('agency', 'category', 'dates')
             ->active()
-            ->whereHas('agency', fn($q) => $q->active());
+            ->whereHas('agency', fn ($q) => $q->active());
 
         // Filters
         if ($request->filled('q')) {
             $search = $request->q;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('destination', 'like', "%{$search}%");
+                    ->orWhere('destination', 'like', "%{$search}%");
             });
         }
 
@@ -29,11 +31,12 @@ class TourController extends Controller
             $query->where('destination', $request->destination);
         }
 
+        // Filtre değerleri TL — kur-normalize price_try ile karşılaştırılır
         if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+            $query->where('price_try', '>=', $request->min_price);
         }
         if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
+            $query->where('price_try', '<=', $request->max_price);
         }
 
         if ($request->filled('agency_id')) {
@@ -58,7 +61,7 @@ class TourController extends Controller
         if ($request->filled('date_start')) {
             $query->where(function ($q) use ($request) {
                 $q->where('departure_date', '>=', $request->date_start)
-                  ->orWhereHas('dates', fn($dq) => $dq->where('departure_date', '>=', $request->date_start));
+                    ->orWhereHas('dates', fn ($dq) => $dq->where('departure_date', '>=', $request->date_start));
             });
         }
 
@@ -66,24 +69,24 @@ class TourController extends Controller
             $query->where(function ($q) use ($request) {
                 // If a tour overlaps or starts before this date
                 $q->where('departure_date', '<=', $request->date_end)
-                  ->orWhereHas('dates', fn($dq) => $dq->where('departure_date', '<=', $request->date_end));
+                    ->orWhereHas('dates', fn ($dq) => $dq->where('departure_date', '<=', $request->date_end));
             });
         }
 
         // Sort
         $sort = $request->input('sort', 'price_asc');
-        
+
         if (in_array($sort, ['popular', 'reviews'])) {
             $query->withCount(['clicks', 'views', 'reviews']);
         }
 
         match ($sort) {
-            'price_desc'  => $query->orderByDesc('price'),
-            'date'        => $query->orderBy('departure_date'),
-            'newest'      => $query->orderByDesc('created_at'),
-            'popular'     => $query->orderByRaw('(clicks_count + views_count) DESC')->orderByDesc('reviews_count'),
-            'reviews'     => $query->orderByDesc('reviews_count')->orderByDesc('id'),
-            default       => $query->orderBy('price'),
+            'price_desc' => $query->orderByDesc('price_try'),
+            'date' => $query->orderBy('departure_date'),
+            'newest' => $query->orderByDesc('created_at'),
+            'popular' => $query->orderByRaw('(clicks_count + views_count) DESC')->orderByDesc('reviews_count'),
+            'reviews' => $query->orderByDesc('reviews_count')->orderByDesc('id'),
+            default => $query->orderBy('price_try'),
         };
 
         $tours = $query->paginate(12)->withQueryString();
@@ -105,21 +108,24 @@ class TourController extends Controller
 
         // Record view
         $sessionId = session()->getId();
-        $recentKey = 'tour_view_' . $tour->id . '_' . $sessionId;
+        $recentKey = 'tour_view_'.$tour->id.'_'.$sessionId;
 
-        if (!cache()->has($recentKey)) {
-            \App\Models\TourView::create([
-                'tour_id'    => $tour->id,
+        if (! cache()->has($recentKey)) {
+            TourView::create([
+                'tour_id' => $tour->id,
                 'session_id' => $sessionId,
-                'user_id'    => auth()->id(),
-                'viewed_at'  => now(),
+                'user_id' => auth()->id(),
+                'viewed_at' => now(),
             ]);
+            // Yaşam-boyu sayaç: ham tour_views satırları retention ile silinse de toplam
+            // korunur. Query builder: model event'leri ve updated_at tetiklenmesin.
+            DB::table('tours')->where('id', $tour->id)->increment('views_count');
             cache()->put($recentKey, true, now()->addHour());
         }
 
         // Track in session for recently viewed display
         $recentlyViewed = session()->get('recently_viewed', []);
-        $recentlyViewed = array_filter($recentlyViewed, fn($id) => $id !== $tour->id);
+        $recentlyViewed = array_filter($recentlyViewed, fn ($id) => $id !== $tour->id);
         array_unshift($recentlyViewed, $tour->id);
         session()->put('recently_viewed', array_slice($recentlyViewed, 0, 6));
 
@@ -128,8 +134,8 @@ class TourController extends Controller
             ->active()
             ->where('title', $tour->title)
             ->where('id', '!=', $tour->id)
-            ->whereHas('agency', fn($q) => $q->active())
-            ->orderBy('price')
+            ->whereHas('agency', fn ($q) => $q->active())
+            ->orderBy('price_try')
             ->get();
 
         // Similar tours
@@ -138,7 +144,7 @@ class TourController extends Controller
             ->where('destination', $tour->destination)
             ->where('id', '!=', $tour->id)
             ->whereNotIn('id', $otherOffers->pluck('id'))
-            ->orderBy('price')
+            ->orderBy('price_try')
             ->limit(4)
             ->get();
 
@@ -154,8 +160,8 @@ class TourController extends Controller
             ->orderBy('recorded_at')
             ->get();
 
-        $priceLabels = $priceHistory->pluck('recorded_at')->map(fn($d) => $d->format('d M'))->values();
-        $priceData   = $priceHistory->pluck('price')->values();
+        $priceLabels = $priceHistory->pluck('recorded_at')->map(fn ($d) => $d->format('d M'))->values();
+        $priceData = $priceHistory->pluck('price')->values();
 
         return view('tours.show', compact(
             'tour', 'otherOffers', 'similarTours', 'reviews', 'avgRating', 'userReview',
@@ -165,12 +171,12 @@ class TourController extends Controller
 
     private function captureAiSelection(Request $request, Tour $tour): void
     {
-        if (!$request->filled('ai_log_id')) {
+        if (! $request->filled('ai_log_id')) {
             return;
         }
 
         $log = AiSearchLog::find((int) $request->query('ai_log_id'));
-        if (!$log) {
+        if (! $log) {
             return;
         }
 
@@ -187,7 +193,7 @@ class TourController extends Controller
         $resultIds = is_array($log->result_tour_ids)
             ? array_map('intval', $log->result_tour_ids)
             : [];
-        if (!empty($resultIds) && !in_array((int) $tour->id, $resultIds, true)) {
+        if (! empty($resultIds) && ! in_array((int) $tour->id, $resultIds, true)) {
             return;
         }
 
@@ -206,14 +212,14 @@ class TourController extends Controller
     public function compare(Request $request)
     {
         $ids = $request->input('ids', []);
-        
-        if (empty($ids) || !is_array($ids)) {
+
+        if (empty($ids) || ! is_array($ids)) {
             return redirect()->route('tours.index')->with('error', 'Karşılaştırılacak tur bulunamadı.');
         }
 
-        // Limit to 3 tours for visual consistency 
+        // Limit to 3 tours for visual consistency
         $tours = Tour::whereIn('id', array_slice($ids, 0, 3))
-            ->with(['agency', 'category', 'dates' => function($q) {
+            ->with(['agency', 'category', 'dates' => function ($q) {
                 $q->orderBy('departure_date');
             }])
             ->active()

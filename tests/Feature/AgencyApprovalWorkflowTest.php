@@ -81,4 +81,78 @@ class AgencyApprovalWorkflowTest extends TestCase
             ->get(route('agency.category-licenses.index'))
             ->assertOk();
     }
+
+    public function test_rejected_agency_cannot_be_activated_via_toggle(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin',
+            'email' => 'admin2@example.com',
+            'password' => Hash::make('secret123'),
+            'role' => 'admin',
+        ]);
+
+        $agency = Agency::create([
+            'name' => 'Reddedilen Acenta',
+            'email' => 'red@example.com',
+            'is_active' => false,
+            'approval_status' => Agency::STATUS_REJECTED,
+            'legacy_category_access' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.agencies.toggle', $agency))
+            ->assertRedirect(route('admin.agencies'))
+            ->assertSessionHasErrors();
+
+        $this->assertFalse($agency->fresh()->is_active);
+    }
+
+    public function test_pending_agency_cannot_be_activated_via_toggle(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin',
+            'email' => 'admin3@example.com',
+            'password' => Hash::make('secret123'),
+            'role' => 'admin',
+        ]);
+
+        $agency = Agency::create([
+            'name' => 'Bekleyen Toggle Acenta',
+            'email' => 'bekleyen-toggle@example.com',
+            'is_active' => false,
+            'approval_status' => Agency::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.agencies.toggle', $agency))
+            ->assertSessionHasErrors();
+
+        $this->assertFalse($agency->fresh()->is_active);
+    }
+
+    public function test_approved_agency_can_be_toggled_both_ways(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin',
+            'email' => 'admin4@example.com',
+            'password' => Hash::make('secret123'),
+            'role' => 'admin',
+        ]);
+
+        $agency = Agency::create([
+            'name' => 'Onaylı Acenta',
+            'email' => 'onayli@example.com',
+            'is_active' => true,
+            'approval_status' => Agency::STATUS_APPROVED,
+            'approved_at' => now(),
+        ]);
+
+        // Pasifleştirme her zaman serbest
+        $this->actingAs($admin)->post(route('admin.agencies.toggle', $agency));
+        $this->assertFalse($agency->fresh()->is_active);
+
+        // Onaylı acenta tekrar aktifleştirilebilir
+        $this->actingAs($admin)->post(route('admin.agencies.toggle', $agency));
+        $this->assertTrue($agency->fresh()->is_active);
+    }
 }

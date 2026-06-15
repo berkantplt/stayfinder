@@ -5,9 +5,12 @@ namespace App\Observers;
 use App\Console\Commands\SyncKnowledgeBase;
 use App\Jobs\GenerateDestinationProfileJob;
 use App\Jobs\GenerateTourEmbeddingJob;
+use App\Models\Announcement;
 use App\Models\DestinationProfile;
 use App\Models\Tour;
+use App\Notifications\PriceDropNotification;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class TourObserver
 {
@@ -22,6 +25,7 @@ class TourObserver
 
         $this->dispatchDestinationEnrichmentIfNeeded((string) $tour->destination);
         $this->syncKnowledgeChunkFor($tour);
+        $this->announceNewTour($tour);
     }
 
     /**
@@ -62,6 +66,48 @@ class TourObserver
                 break;
             }
         }
+
+        $this->notifyFavoritersOnPriceDrop($tour);
+    }
+
+    /**
+     * Yeni tur: kullanıcı başına notifications satırı yazmak yerine olay başına
+     * tek announcement kaydı (fan-out on read). Pasif turlar duyurulmaz.
+     */
+    private function announceNewTour(Tour $tour): void
+    {
+        if (! $tour->is_active) {
+            return;
+        }
+
+        Announcement::create([
+            'type' => Announcement::TYPE_NEW_TOUR,
+            'tour_id' => $tour->id,
+            'title' => 'Yeni Tur Eklendi!',
+            'message' => "Yeni bir macera seni bekliyor: {$tour->title}. Hemen incele!",
+            'icon' => '✨',
+        ]);
+    }
+
+    /**
+     * Fiyat düşüşü bildirimi sadece o turu favorileyenlere gider. Hacim küçük
+     * olduğu için senkron gönderim güvenli (queue worker bağımlılığı yok).
+     */
+    private function notifyFavoritersOnPriceDrop(Tour $tour): void
+    {
+        if (! $tour->wasChanged('price')) {
+            return;
+        }
+
+        if ((float) $tour->price >= (float) $tour->getOriginal('price')) {
+            return;
+        }
+
+        $favoriters = $tour->favoritedBy()->get();
+
+        if ($favoriters->isNotEmpty()) {
+            Notification::send($favoriters, new PriceDropNotification($tour));
+        }
     }
 
     /**
@@ -80,19 +126,19 @@ class TourObserver
      */
     private function syncKnowledgeChunkFor(Tour $tour): void
     {
-        if (!$tour->is_active) {
+        if (! $tour->is_active) {
             return; // Pasif turlar RAG'a girmesin
         }
 
         $tour->loadMissing('agency', 'category');
 
-        $content = "Tur: {$tour->title}\n" .
-            "Destinasyon: {$tour->destination}\n" .
-            "Fiyat: {$tour->price} {$tour->currency}\n" .
-            "Süre: {$tour->duration_days} Gün\n" .
-            "Acente: {$tour->agency?->name}\n" .
-            "Kategori: {$tour->category?->name}\n" .
-            "Açıklama: " . strip_tags((string) $tour->description);
+        $content = "Tur: {$tour->title}\n".
+            "Destinasyon: {$tour->destination}\n".
+            "Fiyat: {$tour->price} {$tour->currency}\n".
+            "Süre: {$tour->duration_days} Gün\n".
+            "Acente: {$tour->agency?->name}\n".
+            "Kategori: {$tour->category?->name}\n".
+            'Açıklama: '.strip_tags((string) $tour->description);
 
         SyncKnowledgeBase::syncSingle('tour', $tour->id, $tour->title, $content);
     }
@@ -121,7 +167,7 @@ class TourObserver
             $normalized = DestinationProfile::normalize($part);
             $profile = DestinationProfile::where('normalized_city', $normalized)->first();
 
-            if ($profile && !$profile->needsEnrichment()) {
+            if ($profile && ! $profile->needsEnrichment()) {
                 continue;
             }
 
@@ -129,7 +175,7 @@ class TourObserver
 
             // Placeholder yoksa oluştur (sonsuz dispatch'i önlemek için DestinationProfileService
             // pattern'ı buraya da uyarlandı)
-            if (!$profile) {
+            if (! $profile) {
                 DestinationProfile::create([
                     'city' => $part,
                     'normalized_city' => $normalized,

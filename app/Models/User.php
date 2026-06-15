@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -24,9 +25,18 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'birth_date'        => 'date',
+            'password' => 'hashed',
+            'birth_date' => 'date',
+            'announcements_seen_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Laravel'in İngilizce default maili yerine Türkçe sıfırlama maili.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     public function agency(): BelongsTo

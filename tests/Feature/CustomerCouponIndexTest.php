@@ -18,7 +18,7 @@ class CustomerCouponIndexTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_auth_user_sees_available_coupons(): void
+    public function test_auth_user_sees_available_coupons_with_masked_code(): void
     {
         $user = User::factory()->create(['role' => 'visitor']);
         $agency = $this->makeAgency();
@@ -30,10 +30,12 @@ class CustomerCouponIndexTest extends TestCase
             'expires_at' => now()->addDays(30),
         ]);
 
+        // Kupon kartı görünür ama kod, "Kuponu Al" denene kadar maskeli
         $this->actingAs($user)
             ->get(route('customer.coupons.index'))
             ->assertOk()
-            ->assertSee('YAZ2026')
+            ->assertDontSee('YAZ2026')
+            ->assertSee('Kuponu Al')
             ->assertSee('%20')
             ->assertSee($agency->name);
     }
@@ -110,7 +112,8 @@ class CustomerCouponIndexTest extends TestCase
         $this->actingAs($user)
             ->get(route('customer.coupons.index'))
             ->assertOk()
-            ->assertSee('GLOBAL10')
+            ->assertSee('Kuponu Al')        // kart listede (kod maskeli)
+            ->assertDontSee('GLOBAL10')
             ->assertSee('StayFinder'); // agency yoksa fallback
     }
 
@@ -156,9 +159,9 @@ class CustomerCouponIndexTest extends TestCase
     private function makeAgency(): Agency
     {
         return Agency::create([
-            'name' => 'Coupon Agency ' . uniqid(),
-            'slug' => 'coupon-' . uniqid(),
-            'email' => uniqid() . '@x.com',
+            'name' => 'Coupon Agency '.uniqid(),
+            'slug' => 'coupon-'.uniqid(),
+            'email' => uniqid().'@x.com',
             'is_active' => true,
             'legacy_category_access' => true,
         ]);
@@ -168,7 +171,7 @@ class CustomerCouponIndexTest extends TestCase
     {
         return Coupon::create(array_merge([
             'agency_id' => $agency->id,
-            'code' => 'TEST' . uniqid(),
+            'code' => 'TEST'.uniqid(),
             'discount_type' => 'percent',
             'discount_value' => 10,
             'is_active' => true,

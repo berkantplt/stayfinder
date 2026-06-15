@@ -11,8 +11,10 @@ use App\Models\Category;
 use App\Services\Payment\IyzicoService;
 use App\Support\CategoryLicensing;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Iyzipay\Model\CheckoutForm;
 use Iyzipay\Model\Status;
 use Throwable;
 
@@ -79,7 +81,7 @@ class CategoryLicenseController extends Controller
             ->limit(8)
             ->get();
 
-        $cartTotal = $cartItems->sum(fn(Category $category) => (float) $category->monthly_price);
+        $cartTotal = $cartItems->sum(fn (Category $category) => (float) $category->monthly_price);
 
         return view('agency.category-licenses.index', compact(
             'agency',
@@ -110,7 +112,7 @@ class CategoryLicenseController extends Controller
         $category = Category::active()->findOrFail((int) $validated['category_id']);
 
         if ($agency->hasCategoryAccess($category)) {
-            return back()->withErrors($category->name . ' kategorisi zaten aktif yetkileriniz arasında.');
+            return back()->withErrors($category->name.' kategorisi zaten aktif yetkileriniz arasında.');
         }
 
         $cartCategoryIds = $this->cartCategoryIds()
@@ -121,7 +123,7 @@ class CategoryLicenseController extends Controller
 
         session([self::CART_SESSION_KEY => $cartCategoryIds]);
 
-        return back()->with('success', $category->name . ' sepetinize eklendi.');
+        return back()->with('success', $category->name.' sepetinize eklendi.');
     }
 
     public function removeFromCart(Category $category)
@@ -131,13 +133,13 @@ class CategoryLicenseController extends Controller
         }
 
         $cartCategoryIds = $this->cartCategoryIds()
-            ->reject(fn($id) => $id === $category->id)
+            ->reject(fn ($id) => $id === $category->id)
             ->values()
             ->all();
 
         session([self::CART_SESSION_KEY => $cartCategoryIds]);
 
-        return back()->with('success', $category->name . ' sepetten çıkarıldı.');
+        return back()->with('success', $category->name.' sepetten çıkarıldı.');
     }
 
     public function checkoutForm(Request $request)
@@ -162,7 +164,7 @@ class CategoryLicenseController extends Controller
                 ->withErrors('Ödeme için sepetinize en az 1 kategori eklemelisiniz.');
         }
 
-        $cartTotal = $cartCategories->sum(fn(Category $category) => (float) $category->monthly_price);
+        $cartTotal = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price);
 
         return view('agency.category-licenses.checkout', [
             'agency' => $agency,
@@ -192,7 +194,7 @@ class CategoryLicenseController extends Controller
                 ->withErrors('Sepetinizde satın alınabilir kategori bulunamadı.');
         }
 
-        if (!$this->iyzico->isConfigured()) {
+        if (! $this->iyzico->isConfigured()) {
             return back()->withErrors('Ödeme altyapısı henüz yapılandırılmamış. Lütfen yönetici ile iletişime geçin.');
         }
 
@@ -200,7 +202,7 @@ class CategoryLicenseController extends Controller
 
         try {
             $order = DB::transaction(function () use ($agency, $cartCategories, $buyer) {
-                $subtotal = $cartCategories->sum(fn(Category $category) => (float) $category->monthly_price);
+                $subtotal = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price);
 
                 $order = AgencyCategoryOrder::create([
                     'agency_id' => $agency->id,
@@ -228,7 +230,7 @@ class CategoryLicenseController extends Controller
                 return $order;
             });
 
-            $basketItems = $cartCategories->map(fn(Category $category) => [
+            $basketItems = $cartCategories->map(fn (Category $category) => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'category' => optional($category->parent)->name ?? 'Kategori Yetkisi',
@@ -269,13 +271,13 @@ class CategoryLicenseController extends Controller
 
             return back()
                 ->withInput()
-                ->withErrors('Ödeme başlatılamadı: ' . $e->getMessage());
+                ->withErrors('Ödeme başlatılamadı: '.$e->getMessage());
         }
     }
 
     public function iyzicoCallback(Request $request, AgencyCategoryOrder $order)
     {
-        if (!CategoryLicensing::schemaReady()) {
+        if (! CategoryLicensing::schemaReady()) {
             abort(503, 'Kategori yetkilendirme altyapısı hazır değil.');
         }
 
@@ -297,12 +299,26 @@ class CategoryLicenseController extends Controller
             $checkout = $this->iyzico->retrieveCheckoutForm($token, (string) $order->id);
 
             if ($checkout->getStatus() === Status::SUCCESS && $checkout->getPaymentStatus() === 'SUCCESS') {
-                $this->finalizePaidOrder($order, $checkout->getPaymentId());
+                if ($mismatch = $this->detectAmountMismatch($order, $checkout)) {
+                    Log::error('iyzico callback amount mismatch', [
+                        'order_id' => $order->id,
+                        'expected' => (string) $order->subtotal,
+                        'price' => (string) $checkout->getPrice(),
+                        'paid_price' => (string) $checkout->getPaidPrice(),
+                    ]);
+
+                    $order->update([
+                        'status' => AgencyCategoryOrder::STATUS_FAILED,
+                        'failure_reason' => $mismatch,
+                    ]);
+                } else {
+                    $this->finalizePaidOrder($order, $checkout->getPaymentId());
+                }
             } else {
                 $order->update([
                     'status' => AgencyCategoryOrder::STATUS_FAILED,
                     'failure_reason' => $checkout->getErrorMessage()
-                        ?: ('Ödeme tamamlanamadı: ' . ($checkout->getPaymentStatus() ?: 'bilinmeyen durum')),
+                        ?: ('Ödeme tamamlanamadı: '.($checkout->getPaymentStatus() ?: 'bilinmeyen durum')),
                 ]);
             }
         } catch (Throwable $e) {
@@ -313,7 +329,7 @@ class CategoryLicenseController extends Controller
 
             $order->update([
                 'status' => AgencyCategoryOrder::STATUS_FAILED,
-                'failure_reason' => 'Doğrulama hatası: ' . $e->getMessage(),
+                'failure_reason' => 'Doğrulama hatası: '.$e->getMessage(),
             ]);
         }
 
@@ -331,6 +347,36 @@ class CategoryLicenseController extends Controller
         return view('agency.category-licenses.result', compact('order'));
     }
 
+    /**
+     * Ödenen tutar ile sipariş tutarı tutarlı mı? Sepet tutarı (price) birebir
+     * eşleşmeli; paidPrice taksit komisyonuyla YÜKSEK olabilir ama beklenenden
+     * DÜŞÜK olamaz. Uyuşmazlıkta hata mesajı döner (sipariş failed işaretlenir).
+     */
+    private function detectAmountMismatch(AgencyCategoryOrder $order, CheckoutForm $checkout): ?string
+    {
+        $expected = (float) $order->subtotal;
+        $basketPrice = (float) $checkout->getPrice();
+        $paidPrice = (float) $checkout->getPaidPrice();
+
+        if (abs($basketPrice - $expected) > 0.01) {
+            return sprintf(
+                'Tutar uyuşmazlığı: sipariş %.2f TL, iyzico sepet tutarı %.2f TL. Ödeme manuel incelenmeli.',
+                $expected,
+                $basketPrice
+            );
+        }
+
+        if ($paidPrice + 0.01 < $expected) {
+            return sprintf(
+                'Eksik ödeme: sipariş %.2f TL, ödenen %.2f TL. Ödeme manuel incelenmeli.',
+                $expected,
+                $paidPrice
+            );
+        }
+
+        return null;
+    }
+
     private function finalizePaidOrder(AgencyCategoryOrder $order, ?string $paymentId): void
     {
         DB::transaction(function () use ($order, $paymentId) {
@@ -344,23 +390,44 @@ class CategoryLicenseController extends Controller
             $items = $order->items()->with('category')->get();
 
             foreach ($items as $item) {
-                if (!$item->category_id) {
+                if (! $item->category_id) {
                     continue;
                 }
 
-                AgencyCategorySubscription::updateOrCreate(
-                    [
+                // Eşzamanlı çift callback'e karşı satır kilidi (transaction içindeyiz)
+                $subscription = AgencyCategorySubscription::query()
+                    ->where('agency_id', $order->agency_id)
+                    ->where('category_id', $item->category_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                // Süresi geçmemiş aktif abonelik: kalan günler yanmasın — mevcut
+                // bitişten +1 ay uzat, started_at korunur. Aksi halde bugünden başlat.
+                $extends = $subscription
+                    && $subscription->status === AgencyCategorySubscription::STATUS_ACTIVE
+                    && $subscription->expires_at
+                    && $subscription->expires_at->greaterThanOrEqualTo(today());
+
+                $values = [
+                    'last_order_id' => $order->id,
+                    'monthly_price' => $item->unit_price,
+                    'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+                    'started_at' => $extends ? $subscription->started_at : today(),
+                    'expires_at' => $extends
+                        ? $subscription->expires_at->copy()->addMonth()
+                        : today()->addMonth(),
+                    // Yeni dönem = yeni hatırlatma hakkı
+                    'renewal_reminder_sent_at' => null,
+                ];
+
+                if ($subscription) {
+                    $subscription->update($values);
+                } else {
+                    AgencyCategorySubscription::create($values + [
                         'agency_id' => $order->agency_id,
                         'category_id' => $item->category_id,
-                    ],
-                    [
-                        'last_order_id' => $order->id,
-                        'monthly_price' => $item->unit_price,
-                        'status' => AgencyCategorySubscription::STATUS_ACTIVE,
-                        'started_at' => today(),
-                        'expires_at' => today()->addMonth(),
-                    ]
-                );
+                    ]);
+                }
             }
 
             session()->forget(self::CART_SESSION_KEY);
@@ -370,7 +437,7 @@ class CategoryLicenseController extends Controller
     private function validateBuyer(Request $request): array
     {
         $rules = [
-            'buyer_type' => 'required|in:' . implode(',', [
+            'buyer_type' => 'required|in:'.implode(',', [
                 AgencyCategoryOrder::BUYER_INDIVIDUAL,
                 AgencyCategoryOrder::BUYER_CORPORATE,
             ]),
@@ -409,7 +476,7 @@ class CategoryLicenseController extends Controller
             'company_title' => isset($validated['company_title']) ? trim($validated['company_title']) : null,
             'tax_number' => isset($validated['tax_number']) ? trim($validated['tax_number']) : null,
             'tax_office' => isset($validated['tax_office']) ? trim($validated['tax_office']) : null,
-        ], fn($value) => $value !== null && $value !== '');
+        ], fn ($value) => $value !== null && $value !== '');
     }
 
     private function currentAgency(): Agency
@@ -424,13 +491,13 @@ class CategoryLicenseController extends Controller
     private function cartCategoryIds()
     {
         return collect(session(self::CART_SESSION_KEY, []))
-            ->map(fn($id) => (int) $id)
+            ->map(fn ($id) => (int) $id)
             ->unique()
             ->values();
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Category>
+     * @return Collection<int, Category>
      */
     private function resolveCartCategoriesFor(Agency $agency)
     {
@@ -444,13 +511,13 @@ class CategoryLicenseController extends Controller
             ->whereIn('id', $cartIds->all())
             ->orderBy('name')
             ->get()
-            ->reject(fn(Category $category) => $agency->hasCategoryAccess($category))
+            ->reject(fn (Category $category) => $agency->hasCategoryAccess($category))
             ->values();
     }
 
     private function redirectIfSchemaMissing(bool $back = false)
     {
-        if (!CategoryLicensing::schemaReady()) {
+        if (! CategoryLicensing::schemaReady()) {
             return $back
                 ? back()->withErrors('Kategori yetkilendirme altyapısı henüz veritabanına uygulanmamış.')
                 : redirect()
@@ -464,7 +531,7 @@ class CategoryLicenseController extends Controller
     private function generateOrderNumber(): string
     {
         do {
-            $orderNumber = 'KYM-' . now()->format('Ymd') . '-' . strtoupper(substr((string) md5(uniqid((string) mt_rand(), true)), 0, 6));
+            $orderNumber = 'KYM-'.now()->format('Ymd').'-'.strtoupper(substr((string) md5(uniqid((string) mt_rand(), true)), 0, 6));
         } while (AgencyCategoryOrder::where('order_number', $orderNumber)->exists());
 
         return $orderNumber;
