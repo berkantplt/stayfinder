@@ -91,25 +91,93 @@ class AdminCategoryManagementTest extends TestCase
         ]);
     }
 
-    public function test_creating_top_level_category_via_general_form_has_no_price(): void
+    public function test_store_creates_child_category_bound_to_parent_with_price(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
-        // Genel formda üst kategori (parent_id boş) eklenince fiyat istenmez, 0 olur
+        $parent = Category::create([
+            'name' => 'Yurt İçi', 'slug' => 'yurt-ici', 'monthly_price' => 0, 'sort_order' => 1, 'is_active' => true,
+        ]);
+
         $this->actingAs($admin)
             ->post(route('admin.categories.store'), [
-                'name' => 'Gruplama Kategorisi',
-                'icon' => '📦',
+                'name' => 'Kültür Turları',
+                'icon' => '🏛️',
+                'parent_id' => $parent->id,
+                'monthly_price' => 2500,
                 'sort_order' => 1,
-                // parent_id ve monthly_price gönderilmiyor
             ])
             ->assertRedirect(route('admin.categories.index'));
 
         $this->assertDatabaseHas('categories', [
-            'name' => 'Gruplama Kategorisi',
-            'parent_id' => null,
-            'monthly_price' => '0.00',
+            'name' => 'Kültür Turları',
+            'parent_id' => $parent->id,
+            'monthly_price' => '2500.00',
         ]);
+    }
+
+    public function test_store_rejects_child_category_without_parent(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.categories.store'), [
+                'name' => 'Parentsız',
+                'icon' => '📦',
+                'monthly_price' => 2000,
+                'sort_order' => 1,
+                // parent_id yok → reddedilmeli
+            ])
+            ->assertSessionHasErrors('parent_id');
+
+        $this->assertDatabaseMissing('categories', ['name' => 'Parentsız']);
+    }
+
+    public function test_store_rejects_non_top_level_parent(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $parent = Category::create([
+            'name' => 'Üst', 'slug' => 'ust', 'monthly_price' => 0, 'sort_order' => 1, 'is_active' => true,
+        ]);
+        $child = Category::create([
+            'name' => 'Alt', 'slug' => 'alt', 'parent_id' => $parent->id, 'monthly_price' => 1000, 'sort_order' => 1, 'is_active' => true,
+        ]);
+
+        // Bir alt kategoriyi üst olarak seçmek (3. seviye) reddedilmeli
+        $this->actingAs($admin)
+            ->post(route('admin.categories.store'), [
+                'name' => 'Torun',
+                'parent_id' => $child->id,
+                'monthly_price' => 1000,
+                'sort_order' => 1,
+            ])
+            ->assertSessionHasErrors('parent_id');
+
+        $this->assertDatabaseMissing('categories', ['name' => 'Torun']);
+    }
+
+    public function test_alt_kategori_page_lists_only_children(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $parent = Category::create([
+            'name' => 'Ust Grup Abc', 'slug' => 'ust-grup-abc', 'monthly_price' => 0, 'sort_order' => 1, 'is_active' => true,
+        ]);
+        Category::create([
+            'name' => 'Alt Urun Def', 'slug' => 'alt-urun-def', 'parent_id' => $parent->id, 'monthly_price' => 1500, 'sort_order' => 1, 'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertSee('Alt Kategori Yönetimi');
+
+        // Tabloya yalnızca alt kategoriler gelir (hepsinin parent_id'si dolu)
+        $listed = $response->viewData('categories');
+        $this->assertTrue($listed->every(fn ($c) => $c->parent_id !== null));
+        $this->assertTrue($listed->contains('name', 'Alt Urun Def'));
+        $this->assertFalse($listed->contains('name', 'Ust Grup Abc'));
     }
 
     public function test_parents_page_lists_parent_categories_with_child_count(): void

@@ -7,13 +7,22 @@ use App\Models\Category;
 use App\Support\CategoryLicensing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
+    /**
+     * "Alt Kategori Yönetimi" sayfası — yalnızca bir üst kategoriye bağlı,
+     * fiyatlı alt kategoriler. Üst kategoriler ayrı sayfada (parents).
+     */
     public function index()
     {
-        $categories = Category::with('parent', 'children')->orderBy('sort_order')->get();
-        $parentCategories = Category::parents()->orderBy('name')->get();
+        $categories = Category::with('parent')
+            ->whereNotNull('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        $parentCategories = Category::parents()->orderBy('sort_order')->orderBy('name')->get();
         $categoryLicensingReady = CategoryLicensing::schemaReady();
 
         return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady'));
@@ -34,31 +43,34 @@ class CategoryController extends Controller
         return view('admin.categories.parents', compact('parentCategories', 'categoryLicensingReady'));
     }
 
+    /**
+     * Alt kategori oluşturur — bir üst kategoriye bağlı (parent_id zorunlu, üst
+     * kategori top-level olmalı) ve fiyatlı. Üst kategori ekleme storeParent ile.
+     */
     public function store(Request $request)
     {
-        // Fiyat yalnızca alt kategorilerde; üst (parent_id boş) kategoriler fiyatsız gruptur.
-        $isChild = $request->filled('parent_id');
-
         $rules = [
             'name' => 'required|string|max:100',
             'icon' => 'nullable|string|max:20',
             'description' => 'nullable|string',
-            'parent_id' => 'nullable|exists:categories,id',
+            'parent_id' => ['required', Rule::exists('categories', 'id')->whereNull('parent_id')],
             'sort_order' => 'nullable|integer',
         ];
 
-        if (CategoryLicensing::schemaReady() && $isChild) {
+        if (CategoryLicensing::schemaReady()) {
             $rules['monthly_price'] = 'required|numeric|min:0';
         }
 
         $validated = $request->validate($rules);
 
         $validated['slug'] = Str::slug($validated['name']);
-        $validated['monthly_price'] = $isChild ? round((float) $request->input('monthly_price', 0), 2) : 0;
+        $validated['monthly_price'] = CategoryLicensing::schemaReady()
+            ? round((float) $validated['monthly_price'], 2)
+            : 0;
 
         Category::create($validated);
 
-        return redirect()->route('admin.categories.index')->with('success', 'Kategori oluşturuldu.');
+        return redirect()->route('admin.categories.index')->with('success', 'Alt kategori oluşturuldu.');
     }
 
     /**
@@ -92,7 +104,8 @@ class CategoryController extends Controller
             'name' => 'required|string|max:100',
             'icon' => 'nullable|string|max:20',
             'description' => 'nullable|string',
-            'parent_id' => 'nullable|exists:categories,id',
+            // Bağlanılan üst kategori top-level olmalı (3. seviye iç içe geçmeyi engelle)
+            'parent_id' => ['nullable', Rule::exists('categories', 'id')->whereNull('parent_id')],
             'sort_order' => 'nullable|integer',
         ];
 
