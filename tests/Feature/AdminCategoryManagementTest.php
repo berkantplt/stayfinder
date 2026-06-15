@@ -205,6 +205,26 @@ class AdminCategoryManagementTest extends TestCase
         );
     }
 
+    public function test_next_sort_per_parent_is_last_child_plus_one(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $dolu = Category::create(['name' => 'Dolu Grup', 'slug' => 'dolu-grup', 'monthly_price' => 0, 'sort_order' => 1, 'is_active' => true]);
+        $bos = Category::create(['name' => 'Boş Grup', 'slug' => 'bos-grup', 'monthly_price' => 0, 'sort_order' => 2, 'is_active' => true]);
+
+        Category::create(['name' => 'A1', 'slug' => 'a1', 'parent_id' => $dolu->id, 'monthly_price' => 2000, 'sort_order' => 3, 'is_active' => true]);
+        Category::create(['name' => 'A2', 'slug' => 'a2', 'parent_id' => $dolu->id, 'monthly_price' => 2000, 'sort_order' => 7, 'is_active' => true]);
+
+        $map = $this->actingAs($admin)
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->viewData('nextSortByParent');
+
+        // Dolu grupta en yüksek sıra 7 → sonraki 8; boş grup haritada yok (JS varsayılanı 1)
+        $this->assertSame(8, $map[$dolu->id]);
+        $this->assertArrayNotHasKey($bos->id, $map->all());
+    }
+
     public function test_parents_page_lists_parent_categories_with_child_count(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

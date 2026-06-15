@@ -51,7 +51,7 @@
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label>Üst Kategori *</label>
-                            <select name="parent_id" required>
+                            <select name="parent_id" id="createParentSelect" required onchange="autoFillSort()">
                                 <option value="">Seçiniz…</option>
                                 @foreach($parentCategories as $parent)
                                     <option value="{{ $parent->id }}">{{ $parent->icon }} {{ $parent->name }}</option>
@@ -66,7 +66,7 @@
                         @endif
                         <div class="form-group" style="margin:0;">
                             <label>Sıralama</label>
-                            <input type="number" name="sort_order" value="0">
+                            <input type="number" name="sort_order" id="createSort" value="0">
                         </div>
                         <button type="submit" class="btn btn-primary" style="height:44px;" {{ $parentCategories->isEmpty() ? 'disabled' : '' }}>Ekle</button>
                     </div>
@@ -164,6 +164,15 @@
 </div>
 
 <script>
+// Üst kategori seçilince Sıralama'yı otomatik doldur: o gruptaki son sıra + 1
+const nextSortByParent = @json($nextSortByParent);
+function autoFillSort() {
+    var sel = document.getElementById('createParentSelect');
+    var sort = document.getElementById('createSort');
+    if (!sel || !sort || !sel.value) return;
+    sort.value = nextSortByParent[sel.value] ?? 1;
+}
+
 function editCategory(button) {
     document.getElementById('editForm').action = button.dataset.updateUrl;
     document.getElementById('editName').value = button.dataset.name || '';

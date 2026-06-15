@@ -31,7 +31,16 @@ class CategoryController extends Controller
         $parentCategories = Category::parents()->orderBy('sort_order')->orderBy('name')->get();
         $categoryLicensingReady = CategoryLicensing::schemaReady();
 
-        return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady'));
+        // Üst kategori başına "sonraki sıra no" = mevcut en yüksek alt kategori sırası + 1
+        // (alt kategorisi olmayan üst kategoriler haritada yer almaz → JS varsayılanı 1)
+        $nextSortByParent = Category::query()
+            ->whereNotNull('parent_id')
+            ->selectRaw('parent_id, MAX(sort_order) as max_sort')
+            ->groupBy('parent_id')
+            ->pluck('max_sort', 'parent_id')
+            ->map(fn ($max) => (int) $max + 1);
+
+        return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady', 'nextSortByParent'));
     }
 
     /**
