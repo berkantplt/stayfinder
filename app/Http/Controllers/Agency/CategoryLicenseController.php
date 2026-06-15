@@ -45,6 +45,7 @@ class CategoryLicenseController extends Controller
             : $categories
                 ->whereNotIn('id', $licensedCategoryIds)
                 ->whereNotIn('id', $cartCategoryIds->all())
+                ->filter(fn (Category $category) => $category->parent_id !== null) // üst kategoriler satılmaz
                 ->values();
 
         $cartItems = $categories
@@ -110,6 +111,10 @@ class CategoryLicenseController extends Controller
         ]);
 
         $category = Category::active()->findOrFail((int) $validated['category_id']);
+
+        if ($category->parent_id === null) {
+            return back()->withErrors('Üst kategoriler satın alınamaz. Lütfen bir alt kategori seçin.');
+        }
 
         if ($agency->hasCategoryAccess($category)) {
             return back()->withErrors($category->name.' kategorisi zaten aktif yetkileriniz arasında.');
@@ -509,6 +514,7 @@ class CategoryLicenseController extends Controller
 
         return Category::active()
             ->whereIn('id', $cartIds->all())
+            ->whereNotNull('parent_id') // üst kategoriler satılmaz
             ->orderBy('name')
             ->get()
             ->reject(fn (Category $category) => $agency->hasCategoryAccess($category))

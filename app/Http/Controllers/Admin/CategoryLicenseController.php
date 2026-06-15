@@ -38,7 +38,8 @@ class CategoryLicenseController extends Controller
         $data = $this->buildSharedData();
 
         return view('admin.category-licenses.pricing', [
-            'categories' => $data['categories'],
+            // Fiyat yalnızca alt kategorilerde belirlenir; üst kategoriler fiyatsız gruptur
+            'categories' => $data['categories']->whereNotNull('parent_id')->values(),
             'stats' => $data['stats'],
         ]);
     }
@@ -73,12 +74,12 @@ class CategoryLicenseController extends Controller
 
         $orderStats = [
             'total_orders' => $allOrders->count(),
-            'total_revenue' => round($allOrders->sum(fn($order) => (float) $order->subtotal), 2),
-            'last_30_days_orders' => $allOrders->filter(fn($order) => $order->purchased_at && $order->purchased_at->greaterThanOrEqualTo($lastThirtyDays))->count(),
+            'total_revenue' => round($allOrders->sum(fn ($order) => (float) $order->subtotal), 2),
+            'last_30_days_orders' => $allOrders->filter(fn ($order) => $order->purchased_at && $order->purchased_at->greaterThanOrEqualTo($lastThirtyDays))->count(),
             'last_30_days_revenue' => round(
                 $allOrders
-                    ->filter(fn($order) => $order->purchased_at && $order->purchased_at->greaterThanOrEqualTo($lastThirtyDays))
-                    ->sum(fn($order) => (float) $order->subtotal),
+                    ->filter(fn ($order) => $order->purchased_at && $order->purchased_at->greaterThanOrEqualTo($lastThirtyDays))
+                    ->sum(fn ($order) => (float) $order->subtotal),
                 2
             ),
         ];
@@ -92,6 +93,12 @@ class CategoryLicenseController extends Controller
             return $redirect;
         }
 
+        if ($category->parent_id === null) {
+            return redirect()
+                ->route('admin.category-licenses.pricing')
+                ->withErrors('Üst kategoriler fiyatlandırılmaz. Fiyat yalnızca alt kategorilerde belirlenir.');
+        }
+
         $validated = $request->validate([
             'monthly_price' => 'required|numeric|min:0',
         ]);
@@ -102,12 +109,12 @@ class CategoryLicenseController extends Controller
 
         return redirect()
             ->route('admin.category-licenses.pricing')
-            ->with('success', $category->name . ' için aylık kategori ücreti güncellendi.');
+            ->with('success', $category->name.' için aylık kategori ücreti güncellendi.');
     }
 
     private function redirectIfSchemaMissing(bool $back = false)
     {
-        if (!CategoryLicensing::schemaReady()) {
+        if (! CategoryLicensing::schemaReady()) {
             return $back
                 ? back()->withErrors('Kategori yetkilendirme altyapısı henüz veritabanına uygulanmamış.')
                 : redirect()
@@ -129,14 +136,14 @@ class CategoryLicenseController extends Controller
             ->selectRaw('agency_id, COUNT(DISTINCT category_id) as used_categories_count')
             ->where('is_active', true)
             ->whereNotNull('category_id')
-            ->whereHas('agency', fn($query) => $query->where('legacy_category_access', true))
+            ->whereHas('agency', fn ($query) => $query->where('legacy_category_access', true))
             ->groupBy('agency_id')
             ->get()
             ->keyBy('agency_id');
 
         $legacyAgencies = Agency::where('legacy_category_access', true)
             ->withCount([
-                'tours as active_tours_count' => fn($query) => $query->where('is_active', true),
+                'tours as active_tours_count' => fn ($query) => $query->where('is_active', true),
             ])
             ->orderBy('name')
             ->get()
@@ -154,7 +161,7 @@ class CategoryLicenseController extends Controller
             ->selectRaw('category_id, COUNT(DISTINCT agency_id) as agency_count, COUNT(*) as active_tours_count')
             ->where('is_active', true)
             ->whereNotNull('category_id')
-            ->whereHas('agency', fn($query) => $query->where('legacy_category_access', true))
+            ->whereHas('agency', fn ($query) => $query->where('legacy_category_access', true))
             ->groupBy('category_id')
             ->get()
             ->keyBy('category_id');
@@ -168,12 +175,12 @@ class CategoryLicenseController extends Controller
 
         $subscriptionRevenueByCategory = $activeSubscriptions
             ->groupBy('category_id')
-            ->map(fn($subscriptions) => round($subscriptions->sum(fn($subscription) => (float) $subscription->monthly_price), 2));
+            ->map(fn ($subscriptions) => round($subscriptions->sum(fn ($subscription) => (float) $subscription->monthly_price), 2));
 
         $categories = Category::with('parent')
             ->withCount([
-                'agencyCategorySubscriptions as active_subscriptions_count' => fn($query) => $query->active(),
-                'tours as active_tours_count' => fn($query) => $query->where('is_active', true),
+                'agencyCategorySubscriptions as active_subscriptions_count' => fn ($query) => $query->active(),
+                'tours as active_tours_count' => fn ($query) => $query->where('is_active', true),
             ])
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -205,7 +212,7 @@ class CategoryLicenseController extends Controller
             ->take(10)
             ->values();
 
-        $actualMonthlyRevenue = round($activeSubscriptions->sum(fn($subscription) => (float) $subscription->monthly_price), 2);
+        $actualMonthlyRevenue = round($activeSubscriptions->sum(fn ($subscription) => (float) $subscription->monthly_price), 2);
         $legacyDemandValue = round($categories->sum('legacy_monthly_value'), 2);
 
         $stats = [
@@ -217,7 +224,7 @@ class CategoryLicenseController extends Controller
             'legacy_active_tours' => (int) $legacyAgencies->sum('active_tours_count'),
             'total_orders' => AgencyCategoryOrder::count(),
             'category_count' => $categories->count(),
-            'average_monthly_price' => round((float) $categories->avg(fn(Category $category) => (float) $category->monthly_price), 2),
+            'average_monthly_price' => round((float) $categories->avg(fn (Category $category) => (float) $category->monthly_price), 2),
         ];
 
         return [
@@ -243,8 +250,8 @@ class CategoryLicenseController extends Controller
             ->where('created_at', '>=', $periodStart)
             ->get(['created_at']);
 
-        $ordersByMonth = $recentOrders->groupBy(fn(AgencyCategoryOrder $order) => $order->purchased_at?->format('Y-m'));
-        $orderItemsByMonth = $recentOrderItems->groupBy(fn(AgencyCategoryOrderItem $item) => $item->created_at?->format('Y-m'));
+        $ordersByMonth = $recentOrders->groupBy(fn (AgencyCategoryOrder $order) => $order->purchased_at?->format('Y-m'));
+        $orderItemsByMonth = $recentOrderItems->groupBy(fn (AgencyCategoryOrderItem $item) => $item->created_at?->format('Y-m'));
 
         $labels = [];
         $revenueData = [];
@@ -256,7 +263,7 @@ class CategoryLicenseController extends Controller
             $monthKey = $date->format('Y-m');
             $labels[] = $date->format('m/Y');
             $revenueData[] = round(
-                (float) ($ordersByMonth->get($monthKey)?->sum(fn(AgencyCategoryOrder $order) => (float) $order->subtotal) ?? 0),
+                (float) ($ordersByMonth->get($monthKey)?->sum(fn (AgencyCategoryOrder $order) => (float) $order->subtotal) ?? 0),
                 2
             );
             $ordersData[] = $ordersByMonth->get($monthKey)?->count() ?? 0;

@@ -17,10 +17,16 @@ class AdminCategoryManagementTest extends TestCase
             'role' => 'admin',
         ]);
 
+        // Fiyat alt kategorilerde olur → düzenleme testi bir alt kategori üzerinden
+        $parent = Category::create([
+            'name' => 'Grup', 'slug' => 'grup', 'monthly_price' => 0, 'sort_order' => 1, 'is_active' => true,
+        ]);
+
         $category = Category::create([
             'name' => 'Eski Kategori',
             'slug' => 'eski-kategori',
             'icon' => '🧭',
+            'parent_id' => $parent->id,
             'monthly_price' => 1000,
             'sort_order' => 1,
             'is_active' => true,
@@ -30,6 +36,7 @@ class AdminCategoryManagementTest extends TestCase
             ->put(route('admin.categories.update', $category), [
                 'name' => 'Yeni Kategori',
                 'icon' => '🏛️',
+                'parent_id' => $parent->id,
                 'monthly_price' => 1500,
                 'sort_order' => 2,
             ])
@@ -69,18 +76,39 @@ class AdminCategoryManagementTest extends TestCase
             ->post(route('admin.categories.parents.store'), [
                 'name' => 'Yurt Dışı Turlar',
                 'icon' => '🌍',
-                'monthly_price' => 2500,
                 'sort_order' => 3,
                 'parent_id' => $other->id, // bilinçli olarak yok sayılmalı
             ])
             ->assertRedirect(route('admin.categories.parents'));
 
+        // Üst kategori daima parent_id=null ve FİYATSIZ (0) olur
         $this->assertDatabaseHas('categories', [
             'name' => 'Yurt Dışı Turlar',
             'slug' => 'yurt-disi-turlar',
             'parent_id' => null,
-            'monthly_price' => '2500.00',
+            'monthly_price' => '0.00',
             'sort_order' => 3,
+        ]);
+    }
+
+    public function test_creating_top_level_category_via_general_form_has_no_price(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        // Genel formda üst kategori (parent_id boş) eklenince fiyat istenmez, 0 olur
+        $this->actingAs($admin)
+            ->post(route('admin.categories.store'), [
+                'name' => 'Gruplama Kategorisi',
+                'icon' => '📦',
+                'sort_order' => 1,
+                // parent_id ve monthly_price gönderilmiyor
+            ])
+            ->assertRedirect(route('admin.categories.index'));
+
+        $this->assertDatabaseHas('categories', [
+            'name' => 'Gruplama Kategorisi',
+            'parent_id' => null,
+            'monthly_price' => '0.00',
         ]);
     }
 

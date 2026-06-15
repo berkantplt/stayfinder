@@ -344,6 +344,20 @@ class AgencyCategoryLicensingTest extends TestCase
         ]);
     }
 
+    public function test_agency_cannot_add_parent_category_to_cart(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $parent = Category::whereNull('parent_id')->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('agency.category-licenses.cart.add'), ['category_id' => $parent->id])
+            ->assertSessionHasErrors();
+
+        // Üst kategori sepete eklenmedi
+        $this->assertSame([], session('agency_category_license_cart', []));
+    }
+
     private function makePendingIyzicoOrder(Agency $agency, Category $category, string $token): AgencyCategoryOrder
     {
         $order = AgencyCategoryOrder::create([
@@ -384,9 +398,19 @@ class AgencyCategoryLicensingTest extends TestCase
             'agency_id' => $agency->id,
         ]);
 
+        // Satın alınabilir kategori bir ALT kategori olmalı (üst kategoriler satılmaz)
+        $parent = Category::create([
+            'name' => 'Tur Grupları',
+            'slug' => 'tur-gruplari',
+            'monthly_price' => 0,
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
         $category = Category::create([
             'name' => 'Kültür Turları',
             'slug' => 'kultur-turlari',
+            'parent_id' => $parent->id,
             'monthly_price' => 2000,
             'sort_order' => 1,
             'is_active' => true,

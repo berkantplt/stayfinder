@@ -41,7 +41,7 @@
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label>Üst Kategori</label>
-                            <select name="parent_id">
+                            <select name="parent_id" id="createParent" onchange="toggleCreatePrice()">
                                 <option value="">Yok (Ana Kategori)</option>
                                 @foreach($parentCategories as $parent)
                                     <option value="{{ $parent->id }}">{{ $parent->name }}</option>
@@ -49,9 +49,9 @@
                             </select>
                         </div>
                         @if($categoryLicensingReady)
-                            <div class="form-group" style="margin:0;">
+                            <div class="form-group" id="createPriceGroup" style="margin:0;">
                                 <label>Aylık Ücret (TL)</label>
-                                <input type="number" name="monthly_price" value="2000" min="0" step="0.01" required>
+                                <input type="number" name="monthly_price" id="createPrice" value="2000" min="0" step="0.01">
                             </div>
                         @endif
                         <div class="form-group" style="margin:0;">
@@ -138,18 +138,19 @@
             <div class="form-row">
                 <div class="form-group"><label>İkon (Emoji)</label><input type="text" name="icon" id="editIcon"></div>
                 @if($categoryLicensingReady)
-                    <div class="form-group"><label>Aylık Ücret (TL)</label><input type="number" name="monthly_price" id="editMonthlyPrice" min="0" step="0.01" required></div>
+                    <div class="form-group" id="editPriceGroup"><label>Aylık Ücret (TL)</label><input type="number" name="monthly_price" id="editMonthlyPrice" min="0" step="0.01"></div>
                 @endif
                 <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort"></div>
             </div>
             <div class="form-group">
                 <label>Üst Kategori</label>
-                <select name="parent_id" id="editParent">
+                <select name="parent_id" id="editParent" onchange="toggleEditPrice()">
                     <option value="">Yok (Ana Kategori)</option>
                     @foreach($parentCategories as $parent)
                         <option value="{{ $parent->id }}">{{ $parent->name }}</option>
                     @endforeach
                 </select>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Üst kategori (Yok) seçilirse fiyatsız grup olur; alt kategori için bir üst kategori seçin ve fiyat girin.</div>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">
                 <button type="button" class="btn btn-outline" onclick="closeEditModal()">İptal</button>
@@ -160,6 +161,25 @@
 </div>
 
 <script>
+// Fiyat alanı yalnızca alt kategoride görünür (üst kategori = fiyatsız grup)
+function toggleCreatePrice() {
+    var sel = document.getElementById('createParent');
+    var grp = document.getElementById('createPriceGroup');
+    var inp = document.getElementById('createPrice');
+    if (!sel || !grp) return;
+    var isChild = sel.value !== '';
+    grp.style.display = isChild ? '' : 'none';
+    if (inp) inp.required = isChild;
+}
+function toggleEditPrice() {
+    var sel = document.getElementById('editParent');
+    var grp = document.getElementById('editPriceGroup');
+    var inp = document.getElementById('editMonthlyPrice');
+    if (!sel || !grp) return;
+    var isChild = sel.value !== '';
+    grp.style.display = isChild ? '' : 'none';
+    if (inp) inp.required = isChild;
+}
 function editCategory(button) {
     document.getElementById('editForm').action = button.dataset.updateUrl;
     document.getElementById('editName').value = button.dataset.name || '';
@@ -169,10 +189,13 @@ function editCategory(button) {
     @endif
     document.getElementById('editSort').value = button.dataset.sortOrder || 0;
     document.getElementById('editParent').value = button.dataset.parentId || '';
+    toggleEditPrice();
     document.getElementById('editModal').style.display = 'flex';
 }
 function closeEditModal() {
     document.getElementById('editModal').style.display = 'none';
 }
+// İlk yüklemede create formundaki fiyat alanını duruma göre ayarla
+document.addEventListener('DOMContentLoaded', toggleCreatePrice);
 </script>
 @endsection

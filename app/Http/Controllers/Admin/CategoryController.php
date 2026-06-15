@@ -36,6 +36,9 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
+        // Fiyat yalnızca alt kategorilerde; üst (parent_id boş) kategoriler fiyatsız gruptur.
+        $isChild = $request->filled('parent_id');
+
         $rules = [
             'name' => 'required|string|max:100',
             'icon' => 'nullable|string|max:20',
@@ -44,16 +47,14 @@ class CategoryController extends Controller
             'sort_order' => 'nullable|integer',
         ];
 
-        if (CategoryLicensing::schemaReady()) {
+        if (CategoryLicensing::schemaReady() && $isChild) {
             $rules['monthly_price'] = 'required|numeric|min:0';
         }
 
         $validated = $request->validate($rules);
 
         $validated['slug'] = Str::slug($validated['name']);
-        if (CategoryLicensing::schemaReady()) {
-            $validated['monthly_price'] = round((float) $validated['monthly_price'], 2);
-        }
+        $validated['monthly_price'] = $isChild ? round((float) $request->input('monthly_price', 0), 2) : 0;
 
         Category::create($validated);
 
@@ -66,24 +67,16 @@ class CategoryController extends Controller
      */
     public function storeParent(Request $request)
     {
-        $rules = [
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'icon' => 'nullable|string|max:20',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
-        ];
-
-        if (CategoryLicensing::schemaReady()) {
-            $rules['monthly_price'] = 'required|numeric|min:0';
-        }
-
-        $validated = $request->validate($rules);
+        ]);
 
         $validated['slug'] = Str::slug($validated['name']);
         $validated['parent_id'] = null;
-        if (CategoryLicensing::schemaReady()) {
-            $validated['monthly_price'] = round((float) $validated['monthly_price'], 2);
-        }
+        $validated['monthly_price'] = 0; // üst kategoriler fiyatsız (sadece gruplama)
 
         Category::create($validated);
 
@@ -92,6 +85,9 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
+        // Fiyat yalnızca alt kategorilerde; üst (parent_id boş) kategoriler fiyatsız gruptur.
+        $isChild = $request->filled('parent_id');
+
         $rules = [
             'name' => 'required|string|max:100',
             'icon' => 'nullable|string|max:20',
@@ -100,16 +96,14 @@ class CategoryController extends Controller
             'sort_order' => 'nullable|integer',
         ];
 
-        if (CategoryLicensing::schemaReady()) {
+        if (CategoryLicensing::schemaReady() && $isChild) {
             $rules['monthly_price'] = 'required|numeric|min:0';
         }
 
         $validated = $request->validate($rules);
 
         $validated['slug'] = Str::slug($validated['name']);
-        if (CategoryLicensing::schemaReady()) {
-            $validated['monthly_price'] = round((float) $validated['monthly_price'], 2);
-        }
+        $validated['monthly_price'] = $isChild ? round((float) $request->input('monthly_price', 0), 2) : 0;
 
         $category->update($validated);
 
