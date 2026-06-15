@@ -99,5 +99,18 @@ return Application::configure(basePath: dirname(__DIR__))
         RateLimiter::for('register', function (Request $request) {
             return Limit::perMinute(6)->by('register:ip:'.$request->ip());
         });
+
+        /*
+        |----------------------------------------------------------------------
+        | Rate Limiter: tour_import
+        |----------------------------------------------------------------------
+        |
+        | URL'den tur içe aktarma her istekte dış fetch + 1 gpt-4o çağrısı yapar
+        | (maliyet + suistimal riski). Acenta başına dakikada 10 istek.
+        |
+        */
+        RateLimiter::for('tour_import', function (Request $request) {
+            return Limit::perMinute(10)->by('tour_import:'.($request->user()?->id ?: $request->ip()));
+        });
     })
     ->create();

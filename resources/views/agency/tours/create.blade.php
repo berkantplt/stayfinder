@@ -196,6 +196,20 @@
                 @if($canCreateTours)
                 <form method="POST" action="{{ route('agency.tours.store') }}" enctype="multipart/form-data">
                     @csrf
+
+                    {{-- URL'den İçe Aktar --}}
+                    <div id="importPanel" style="border:1px dashed var(--accent);border-radius:12px;padding:16px;margin-bottom:24px;background:#f8fafc;">
+                        <div style="font-weight:700;margin-bottom:4px;">🔗 URL'den İçe Aktar</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+                            Kendi sitenizdeki tur sayfasının linkini yapıştırın; başlık, destinasyon, açıklama, süre, fiyat ve tarihleri otomatik dolduralım. Kategoriyi ve görseli siz seçersiniz, kaydetmeden önce kontrol edin.
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <input type="url" id="importUrl" placeholder="https://acenta.com/tur-sayfasi" style="flex:1;min-width:240px;margin:0;">
+                            <button type="button" id="importBtn" class="btn btn-primary" onclick="importFromUrl()">Bilgileri Getir</button>
+                        </div>
+                        <div id="importStatus" style="font-size:13px;margin-top:10px;display:none;"></div>
+                    </div>
+
                     <div class="form-group"><label>Tur Adı *</label><input type="text" name="title" value="{{ old('title') }}" required></div>
                     <div class="form-group">
                         <label>Kategori Yetkisi *</label>
@@ -331,6 +345,82 @@
                     p.style.display = 'block';
                 };
                 if (i.files[0]) r.readAsDataURL(i.files[0]);
+            }
+
+            // --- URL'den İçe Aktar ---
+            function showImportStatus(msg, type) {
+                var s = document.getElementById('importStatus');
+                if (!s) return;
+                s.style.display = 'block';
+                s.textContent = msg;
+                s.style.color = type === 'error' ? '#b91c1c' : (type === 'success' ? '#15803d' : '#475569');
+            }
+
+            function setVal(selector, value) {
+                var el = document.querySelector(selector);
+                if (el && value !== null && value !== undefined && value !== '') el.value = value;
+            }
+
+            function applyImported(data, sourceUrl) {
+                data = data || {};
+                setVal('input[name="title"]', data.title);
+                setVal('input[name="destination"]', data.destination);
+                if (data.duration_days) setVal('#durationDaysInput', data.duration_days);
+                setVal('textarea[name="description"]', data.description);
+                setVal('textarea[name="included"]', data.included);
+                setVal('textarea[name="excluded"]', data.excluded);
+                setVal('input[name="tour_url"]', sourceUrl);
+
+                if (data.currency) {
+                    var sel = document.getElementById('currencySelect');
+                    if (sel && [].some.call(sel.options, function(o){ return o.value === data.currency; })) {
+                        sel.value = data.currency;
+                    }
+                }
+
+                var price = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
+                var dates = Array.isArray(data.departure_dates) ? data.departure_dates : [];
+                if (price !== '' || dates.length) {
+                    pricingOptions = [createPricingOption({ price: price, departure_dates: dates })];
+                    calendarViewByOptionId = {};
+                    renderPricingOptions();
+                }
+
+                var cat = document.querySelector('select[name="category_id"]');
+                if (cat) {
+                    cat.style.outline = '2px solid var(--accent)';
+                    cat.focus();
+                    setTimeout(function(){ cat.style.outline = ''; }, 4000);
+                }
+            }
+
+            function importFromUrl() {
+                var url = (document.getElementById('importUrl').value || '').trim();
+                var btn = document.getElementById('importBtn');
+                if (!url) { showImportStatus('Lütfen bir URL girin.', 'error'); return; }
+
+                var oldLabel = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = 'Getiriliyor…';
+                showImportStatus('Sayfa okunuyor, lütfen bekleyin…', 'info');
+
+                var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                fetch('{{ route('agency.tours.import') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                })
+                .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+                .then(function(res){
+                    if (!res.body || !res.body.ok) {
+                        throw new Error((res.body && res.body.message) || 'İçe aktarma başarısız.');
+                    }
+                    applyImported(res.body.data, url);
+                    showImportStatus('Bilgiler dolduruldu. Lütfen kategori seçin, kontrol edip kaydedin.', 'success');
+                })
+                .catch(function(e){ showImportStatus(e.message || 'İçe aktarma başarısız.', 'error'); })
+                .finally(function(){ btn.disabled = false; btn.textContent = oldLabel; });
             }
 
             function toYmd(dateObj) {

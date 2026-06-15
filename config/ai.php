@@ -30,4 +30,8 @@ return [
 
     // Destinasyon zenginleştirme job'ı — yüksek hacim, mini yeterli.
     'destination_enrichment_model' => env('AI_DEST_MODEL', 'gpt-4o-mini'),
+
+    // Tur URL'sinden içe aktarma — karışık HTML metninden çoklu alan çıkarımı;
+    // doğruluk için gpt-4o.
+    'import_model' => env('AI_IMPORT_MODEL', 'gpt-4o'),
 ];

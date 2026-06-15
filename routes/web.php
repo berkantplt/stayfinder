@@ -16,6 +16,7 @@ use App\Http\Controllers\Agency\DashboardController as AgencyDashboardController
 use App\Http\Controllers\Agency\StatsController;
 use App\Http\Controllers\Agency\TourController as AgencyTourController;
 use App\Http\Controllers\Agency\TourDateController;
+use App\Http\Controllers\Agency\TourImportController;
 use App\Http\Controllers\AgencyController;
 use App\Http\Controllers\AiSearchController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -240,6 +241,9 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         Route::get('/kategori-yetkilendirme/odeme/{order}/sonuc', [AgencyCategoryLicenseController::class, 'paymentResult'])->name('category-licenses.payment.result');
         Route::get('/turlar', [AgencyTourController::class, 'index'])->name('tours.index');
         Route::get('/turlar/ekle', [AgencyTourController::class, 'create'])->name('tours.create');
+        Route::post('/turlar/ice-aktar', [TourImportController::class, 'fromUrl'])
+            ->middleware('throttle:tour_import')
+            ->name('tours.import');
         Route::post('/turlar', [AgencyTourController::class, 'store'])->name('tours.store');
         Route::get('/turlar/{tour}', [AgencyTourController::class, 'show'])->name('tours.show');
         Route::get('/turlar/{tour}/duzenle', [AgencyTourController::class, 'edit'])->name('tours.edit');
