@@ -21,10 +21,11 @@ class TourImportController extends Controller
     {
         $validated = $request->validate([
             'url' => 'required|url|max:2000',
+            'deep' => 'sometimes|boolean',
         ]);
 
         try {
-            $data = $this->importer->import($validated['url']);
+            $data = $this->importer->import($validated['url'], $request->boolean('deep'));
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\RuntimeException $e) {

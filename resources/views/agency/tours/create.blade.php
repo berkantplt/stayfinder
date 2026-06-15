@@ -205,8 +205,10 @@
                         </div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             <input type="url" id="importUrl" placeholder="https://acenta.com/tur-sayfasi" style="flex:1;min-width:240px;margin:0;">
-                            <button type="button" id="importBtn" class="btn btn-primary" onclick="importFromUrl()">Bilgileri Getir</button>
+                            <button type="button" id="importBtn" class="btn btn-primary" onclick="importFromUrl(false)">Bilgileri Getir</button>
+                            <button type="button" id="importDeepBtn" class="btn btn-outline" onclick="importFromUrl(true)" title="Açılır tarih menüleri gibi dinamik içerikleri de tarar (daha yavaş)">🔍 Derin Tarama</button>
                         </div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Tarihler veya bilgiler eksik geldiyse "Derin Tarama"yı dene (sayfayı gerçek tarayıcıda açar, ~20 sn sürebilir).</div>
                         <div id="importStatus" style="font-size:13px;margin-top:10px;display:none;"></div>
                     </div>
 
@@ -394,22 +396,24 @@
                 }
             }
 
-            function importFromUrl() {
+            function importFromUrl(deep) {
                 var url = (document.getElementById('importUrl').value || '').trim();
-                var btn = document.getElementById('importBtn');
+                var btn = document.getElementById(deep ? 'importDeepBtn' : 'importBtn');
                 if (!url) { showImportStatus('Lütfen bir URL girin.', 'error'); return; }
 
                 var oldLabel = btn.textContent;
                 btn.disabled = true;
-                btn.textContent = 'Getiriliyor…';
-                showImportStatus('Sayfa okunuyor, lütfen bekleyin…', 'info');
+                btn.textContent = deep ? 'Derin taranıyor…' : 'Getiriliyor…';
+                showImportStatus(deep
+                    ? 'Sayfa gerçek tarayıcıda açılıyor, tüm tarihler taranıyor (~20 sn)…'
+                    : 'Sayfa okunuyor, lütfen bekleyin…', 'info');
 
                 var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
                 fetch('{{ route('agency.tours.import') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify({ url: url })
+                    body: JSON.stringify({ url: url, deep: deep ? 1 : 0 })
                 })
                 .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
                 .then(function(res){

@@ -41,4 +41,10 @@ return [
     // Jina Reader ücretsiz tier ile key gerektirmez; key limiti artırır.
     'import_reader_url' => env('AI_IMPORT_READER_URL', 'https://r.jina.ai/'),
     'import_reader_key' => env('JINA_API_KEY'),
+
+    // "Derin tarama": Firecrawl gerçek tarayıcıda render + scroll/wait yapar; açılır
+    // menülerdeki (tarih seçici vb.) içeriği de yükleyip temiz markdown döndürür.
+    // Key yoksa derin tarama atlanır, normal yola düşülür.
+    'import_firecrawl_url' => env('FIRECRAWL_API_URL', 'https://api.firecrawl.dev/v1/scrape'),
+    'import_firecrawl_key' => env('FIRECRAWL_API_KEY'),
 ];

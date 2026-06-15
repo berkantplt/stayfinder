@@ -106,6 +106,53 @@ class TourUrlImportTest extends TestCase
         Http::assertSent(fn ($r) => str_contains($r->url(), 'r.jina.ai'));
     }
 
+    public function test_deep_mode_uses_firecrawl_and_extracts_all_dates(): void
+    {
+        config([
+            'ai.import_firecrawl_url' => 'https://api.firecrawl.dev/v1/scrape',
+            'ai.import_firecrawl_key' => 'fc-test-key',
+        ]);
+
+        $markdown = "# New York Turu\n\n## Turun Tarihi\n- 25 Eylül 2030\n- 17 Ekim 2030\n- 24 Ekim 2030\n- 7 Kasım 2030\n\n"
+            .str_repeat('Tur detayları ve açıklama metni. ', 20);
+
+        Http::fake([
+            'https://api.firecrawl.dev/*' => Http::response(['success' => true, 'data' => ['markdown' => $markdown]], 200),
+            '*' => Http::response('FALLBACK KULLANILMAMALI', 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $this->fakeOpenAi([
+            'title' => 'New York Turu',
+            'departure_dates' => ['2030-09-25', '2030-10-17', '2030-10-24', '2030-11-07'],
+        ]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/new-york', 'deep' => 1])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(['2030-09-25', '2030-10-17', '2030-10-24', '2030-11-07'], $data['departure_dates']);
+        Http::assertSent(fn ($r) => str_contains($r->url(), 'api.firecrawl.dev'));
+    }
+
+    public function test_turkish_month_dates_are_parsed_to_iso(): void
+    {
+        Http::fake(['*' => Http::response('<html><body>İçerik metni burada.</body></html>', 200, ['Content-Type' => 'text/html'])]);
+
+        // Model ISO yerine Türkçe tarih döndürürse de doğru parse edilmeli
+        $this->fakeOpenAi([
+            'title' => 'Tur',
+            'departure_dates' => ['17 Ekim 2030', '7 Kasım 2030'],
+        ]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/x'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(['2030-10-17', '2030-11-07'], $data['departure_dates']);
+    }
+
     public function test_unrecognized_currency_and_invalid_values_are_normalized(): void
     {
         Http::fake(['*' => Http::response('<html><body>İçerik</body></html>', 200, ['Content-Type' => 'text/html'])]);

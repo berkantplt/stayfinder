@@ -25,12 +25,22 @@ class TourUrlImporter
      *
      * @throws RuntimeException
      */
-    public function import(string $url): array
+    public function import(string $url, bool $deep = false): array
     {
         $url = trim($url);
         $this->assertSafeUrl($url);
 
-        $content = $this->fetchContent($url);
+        $content = '';
+
+        // Derin tarama: gerçek tarayıcıda render + scroll (açılır tarih menüleri vb.)
+        if ($deep && config('ai.import_firecrawl_key')) {
+            $content = $this->fetchViaFirecrawl($url);
+        }
+
+        // Normal yol (veya derin tarama başarısızsa fallback)
+        if (trim($content) === '') {
+            $content = $this->fetchContent($url);
+        }
 
         if (trim($content) === '') {
             throw new RuntimeException('Sayfadan okunabilir içerik çıkarılamadı.');
@@ -80,6 +90,49 @@ class TourUrlImporter
 
         // Fallback: doğrudan fetch + HTML temizleme
         return $this->cleanHtml($this->fetchDirect($url));
+    }
+
+    /**
+     * Derin tarama: Firecrawl sayfayı gerçek tarayıcıda açar, scroll/wait ile
+     * dinamik içeriği (açılır tarih menüleri vb.) yükler ve markdown döndürür.
+     * Başarısızsa boş döner → çağıran normal yola düşer.
+     */
+    private function fetchViaFirecrawl(string $url): string
+    {
+        $endpoint = (string) config('ai.import_firecrawl_url');
+        $key = (string) config('ai.import_firecrawl_key');
+
+        if ($endpoint === '' || $key === '') {
+            return '';
+        }
+
+        try {
+            $response = Http::timeout(70)->withToken($key)->post($endpoint, [
+                'url' => $url,
+                'formats' => ['markdown'],
+                'onlyMainContent' => false,
+                'waitFor' => 4000,
+                'actions' => [
+                    ['type' => 'scroll', 'direction' => 'down'],
+                    ['type' => 'wait', 'milliseconds' => 1500],
+                    ['type' => 'scroll', 'direction' => 'down'],
+                    ['type' => 'wait', 'milliseconds' => 1000],
+                ],
+            ]);
+
+            if ($response->ok()) {
+                $markdown = trim((string) $response->json('data.markdown'));
+                if (mb_strlen($markdown) >= 200) {
+                    return mb_substr($markdown, 0, self::SCAN_CHARS);
+                }
+            }
+
+            Log::info('[TourImport] firecrawl beklenen içeriği döndürmedi', ['status' => $response->status()]);
+        } catch (\Throwable $e) {
+            Log::info('[TourImport] firecrawl atlandı', ['message' => $e->getMessage()]);
+        }
+
+        return '';
     }
 
     /**
@@ -188,6 +241,7 @@ class TourUrlImporter
         $keywords = [
             'fiyata dahil', 'dahil olan', 'dahil olmayan', 'dahil değil', 'hariç',
             'açıklama', 'program', 'tur detay', 'tur prog', 'genel bilgi', 'gezi not', 'vize',
+            'turun tarih', 'tur tarih', 'hareket tarih', 'kalkış tarih', 'tarih', 'sefer',
         ];
         foreach ($keywords as $kw) {
             $pos = mb_strpos($low, $kw);
@@ -243,11 +297,16 @@ class TourUrlImporter
         - description (string|null): kısa tur açıklaması
         - included (string|null): fiyata DAHİL olan hizmetler, her madde ayrı satır
         - excluded (string|null): fiyata dahil OLMAYAN hizmetler, her madde ayrı satır
-        - departure_dates (array): kalkış tarihleri, YYYY-MM-DD formatında string dizisi; yoksa boş dizi
+        - departure_dates (array): TÜM kalkış/tur tarihleri, YYYY-MM-DD formatında string dizisi; yoksa boş dizi
 
         ÖNEMLİ — fiyat: Sayfada birden fazla fiyat olabilir. GÜNCEL/indirimli kişi başı fiyatı al.
         Üstü çizili/eski liste fiyatını, kapora/ön ödemeyi ve sayfadaki BAŞKA turların
         ("benzer turlar", "önerilen turlar", "diğer turlar") fiyatlarını ASLA alma.
+
+        ÖNEMLİ — tarihler: Sayfadaki TÜM kalkış/tur tarihlerini çıkar — özellikle
+        "Turun Tarihi", "Hareket Tarihleri", "Kalkış Tarihleri" seçici/listesindeki HER seçeneği.
+        Türkçe ay adlarını (Ocak, Şubat, ... Aralık) YYYY-MM-DD'ye çevir (ör. "17 Ekim 2026" → "2026-10-17").
+        Birden çok tarih varsa hepsini diziye koy; eksik bırakma.
 
         ÖNEMLİ — dahil/hariç hizmetler: Sayfada "Fiyata Dahil Olanlar", "Dahil Olan Hizmetler",
         "Ücrete Dahildir", "Paket İçeriği" gibi başlıklar altındaki TÜM maddeleri 'included' içine;
@@ -358,6 +417,9 @@ class TourUrlImporter
             return null;
         }
 
+        // Model ISO döndürmediyse Türkçe tarihi ("17 Ekim 2026") ISO'ya çevir
+        $value = $this->turkishDateToIso($value) ?? $value;
+
         try {
             $date = Carbon::parse($value);
         } catch (\Throwable) {
@@ -369,5 +431,24 @@ class TourUrlImporter
         }
 
         return $date->toDateString();
+    }
+
+    private function turkishDateToIso(string $value): ?string
+    {
+        $months = [
+            'ocak' => '01', 'şubat' => '02', 'subat' => '02', 'mart' => '03', 'nisan' => '04',
+            'mayıs' => '05', 'mayis' => '05', 'haziran' => '06', 'temmuz' => '07',
+            'ağustos' => '08', 'agustos' => '08', 'eylül' => '09', 'eylul' => '09',
+            'ekim' => '10', 'kasım' => '11', 'kasim' => '11', 'aralık' => '12', 'aralik' => '12',
+        ];
+
+        if (preg_match('/^(\d{1,2})\s+(\p{L}+)\s+(\d{4})$/u', $value, $m)) {
+            $month = $months[mb_strtolower($m[2])] ?? null;
+            if ($month !== null) {
+                return sprintf('%04d-%s-%02d', (int) $m[3], $month, (int) $m[1]);
+            }
+        }
+
+        return null;
     }
 }
