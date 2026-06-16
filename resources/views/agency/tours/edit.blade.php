@@ -369,6 +369,12 @@
 
             // --- Paket / oda-tipi fiyat matrisi yardımcıları ---
             function escapeAttr(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
+            // type=number alanlarında "e/E/+/-" üstel/işaret karakterlerini engelle (hayalet "e" sorunu)
+            function blockExponentKeys(inp) {
+                inp.addEventListener('keydown', function (ev) {
+                    if (['e', 'E', '+', '-'].indexOf(ev.key) !== -1) { ev.preventDefault(); }
+                });
+            }
             function emptyPackage() {
                 var prices = {};
                 Object.keys(roomTypes).forEach(function (t) { prices[t] = { old: '', new: '' }; });
@@ -420,8 +426,8 @@
                         + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' + rows + '</div>';
                     box.querySelector('.pkg-hotel').oninput = function () { option.packages[j].hotel = this.value; syncPricingOptionInputs(); };
                     box.querySelector('.pkg-remove').onclick = function () { removePackage(option.id, j); };
-                    box.querySelectorAll('.pkg-old').forEach(function (inp) { inp.oninput = function () { option.packages[j].prices[this.dataset.t].old = this.value; syncPricingOptionInputs(); }; });
-                    box.querySelectorAll('.pkg-new').forEach(function (inp) { inp.oninput = function () { option.packages[j].prices[this.dataset.t].new = this.value; syncPricingOptionInputs(); }; });
+                    box.querySelectorAll('.pkg-old').forEach(function (inp) { blockExponentKeys(inp); inp.oninput = function () { option.packages[j].prices[this.dataset.t].old = this.value; syncPricingOptionInputs(); }; });
+                    box.querySelectorAll('.pkg-new').forEach(function (inp) { blockExponentKeys(inp); inp.oninput = function () { option.packages[j].prices[this.dataset.t].new = this.value; syncPricingOptionInputs(); }; });
                     wrap.appendChild(box);
                 });
             }
