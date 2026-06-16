@@ -62,6 +62,13 @@ class TourUrlImportTest extends TestCase
             'description' => 'Muhteşem bir Latin Amerika rotası.',
             'included' => "Uçak\nOtel",
             'excluded' => 'Vize ücreti',
+            'itinerary' => "1. Gün: Lima\n2. Gün: Cusco",
+            'departure_points' => "21:00 Yenibosna\n21:30 Mecidiyeköy",
+            'hotel_info' => '5★ Suhan Hotel',
+            'extras' => 'Balon turu',
+            'cancellation_policy' => 'İptal edilemez',
+            'guide_info' => 'Profesyonel rehber',
+            'frequency' => 'Her Cuma',
             'departure_dates' => ['2030-09-01', '2000-01-01'], // ikincisi geçmiş → elenmeli
         ]);
 
@@ -78,6 +85,14 @@ class TourUrlImportTest extends TestCase
         $this->assertEquals(1500, $data['price']);
         $this->assertStringContainsString('Uçak', $data['included']);
         $this->assertSame(['2030-09-01'], $data['departure_dates']); // geçmiş tarih elendi
+        // Yeni detay alanları
+        $this->assertStringContainsString('Cusco', $data['itinerary']);
+        $this->assertStringContainsString('Yenibosna', $data['departure_points']);
+        $this->assertSame('5★ Suhan Hotel', $data['hotel_info']);
+        $this->assertSame('Balon turu', $data['extras']);
+        $this->assertSame('İptal edilemez', $data['cancellation_policy']);
+        $this->assertSame('Profesyonel rehber', $data['guide_info']);
+        $this->assertSame('Her Cuma', $data['frequency']);
     }
 
     public function test_reader_markdown_is_used_when_available(): void

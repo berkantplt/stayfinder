@@ -69,6 +69,13 @@ class TourController extends Controller
             'excluded' => 'nullable|string',
             'image' => 'nullable|image|max:5120',
             'tour_url' => 'nullable|url',
+            'departure_points' => 'nullable|string',
+            'itinerary' => 'nullable|string',
+            'hotel_info' => 'nullable|string',
+            'extras' => 'nullable|string',
+            'cancellation_policy' => 'nullable|string',
+            'guide_info' => 'nullable|string',
+            'frequency' => 'nullable|string|max:255',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
 
@@ -127,6 +134,13 @@ class TourController extends Controller
             'image' => 'nullable|image|max:5120',
             'tour_url' => 'nullable|url',
             'is_active' => 'boolean',
+            'departure_points' => 'nullable|string',
+            'itinerary' => 'nullable|string',
+            'hotel_info' => 'nullable|string',
+            'extras' => 'nullable|string',
+            'cancellation_policy' => 'nullable|string',
+            'guide_info' => 'nullable|string',
+            'frequency' => 'nullable|string|max:255',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
 

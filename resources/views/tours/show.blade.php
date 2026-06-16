@@ -158,6 +158,29 @@
                         </ul>
                     </div>
                 @endif
+
+                @php
+                    $detailSections = [
+                        ['📋', 'Tur Programı', $tour->itinerary],
+                        ['🚌', 'Kalkış / Biniş Noktaları', $tour->departure_points],
+                        ['🏨', 'Konaklama', $tour->hotel_info],
+                        ['➕', 'Ekstra Tur ve Aktiviteler', $tour->extras],
+                        ['👤', 'Rehber', $tour->guide_info],
+                        ['↩️', 'İptal / İade Koşulları', $tour->cancellation_policy],
+                    ];
+                @endphp
+                @foreach($detailSections as [$icon, $heading, $body])
+                    @if(trim((string) $body) !== '')
+                        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+                            <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">{{ $icon }} {{ $heading }}</h3>
+                            <div style="color:var(--text-sec);line-height:1.8;font-size:14px;white-space:pre-line;">{{ trim($body) }}</div>
+                        </div>
+                    @endif
+                @endforeach
+
+                @if($tour->frequency)
+                    <div style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">🔁 {{ $tour->frequency }}</div>
+                @endif
             </div>
 
             {{-- Right: Pricing & Agency --}}

@@ -308,6 +308,13 @@
                     <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description') }}</textarea></div>
                     <div class="form-group"><label>Dahil Olanlar (her satıra bir madde)</label><textarea name="included">{{ old('included') }}</textarea></div>
                     <div class="form-group"><label>Dahil Olmayanlar</label><textarea name="excluded">{{ old('excluded') }}</textarea></div>
+                    <div class="form-group"><label>Tur Programı (gün gün)</label><textarea name="itinerary" rows="4">{{ old('itinerary') }}</textarea></div>
+                    <div class="form-group"><label>Kalkış / Biniş Noktaları</label><textarea name="departure_points" rows="3" placeholder="21:00 Yenibosna&#10;21:30 Mecidiyeköy">{{ old('departure_points') }}</textarea></div>
+                    <div class="form-group"><label>Konaklama / Otel Bilgisi</label><textarea name="hotel_info" rows="2" placeholder="5★ Suhan Cappadocia Hotel & Spa">{{ old('hotel_info') }}</textarea></div>
+                    <div class="form-group"><label>Ekstra Tur ve Aktiviteler</label><textarea name="extras" rows="2">{{ old('extras') }}</textarea></div>
+                    <div class="form-group"><label>İptal / İade Koşulları</label><textarea name="cancellation_policy" rows="2">{{ old('cancellation_policy') }}</textarea></div>
+                    <div class="form-group"><label>Rehber Bilgisi / Notları</label><textarea name="guide_info" rows="2">{{ old('guide_info') }}</textarea></div>
+                    <div class="form-group"><label>Hareket Sıklığı</label><input type="text" name="frequency" value="{{ old('frequency') }}" placeholder="Örn: Her Cuma kesin hareketli"></div>
                     <div class="form-group">
                         <label>Tur Resmi</label>
                         <input type="file" name="image" accept="image/*" onchange="previewImg(this)" style="padding:8px;">
@@ -371,6 +378,13 @@
                 setVal('textarea[name="description"]', data.description);
                 setVal('textarea[name="included"]', data.included);
                 setVal('textarea[name="excluded"]', data.excluded);
+                setVal('textarea[name="itinerary"]', data.itinerary);
+                setVal('textarea[name="departure_points"]', data.departure_points);
+                setVal('textarea[name="hotel_info"]', data.hotel_info);
+                setVal('textarea[name="extras"]', data.extras);
+                setVal('textarea[name="cancellation_policy"]', data.cancellation_policy);
+                setVal('textarea[name="guide_info"]', data.guide_info);
+                setVal('input[name="frequency"]', data.frequency);
                 setVal('input[name="tour_url"]', sourceUrl);
 
                 if (data.currency) {

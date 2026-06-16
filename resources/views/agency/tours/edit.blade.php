@@ -315,6 +315,13 @@
                     <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description', $tour->description) }}</textarea></div>
                     <div class="form-group"><label>Dahil Olanlar</label><textarea name="included">{{ old('included', $tour->included) }}</textarea></div>
                     <div class="form-group"><label>Dahil Olmayanlar</label><textarea name="excluded">{{ old('excluded', $tour->excluded) }}</textarea></div>
+                    <div class="form-group"><label>Tur Programı (gün gün)</label><textarea name="itinerary" rows="4">{{ old('itinerary', $tour->itinerary) }}</textarea></div>
+                    <div class="form-group"><label>Kalkış / Biniş Noktaları</label><textarea name="departure_points" rows="3">{{ old('departure_points', $tour->departure_points) }}</textarea></div>
+                    <div class="form-group"><label>Konaklama / Otel Bilgisi</label><textarea name="hotel_info" rows="2">{{ old('hotel_info', $tour->hotel_info) }}</textarea></div>
+                    <div class="form-group"><label>Ekstra Tur ve Aktiviteler</label><textarea name="extras" rows="2">{{ old('extras', $tour->extras) }}</textarea></div>
+                    <div class="form-group"><label>İptal / İade Koşulları</label><textarea name="cancellation_policy" rows="2">{{ old('cancellation_policy', $tour->cancellation_policy) }}</textarea></div>
+                    <div class="form-group"><label>Rehber Bilgisi / Notları</label><textarea name="guide_info" rows="2">{{ old('guide_info', $tour->guide_info) }}</textarea></div>
+                    <div class="form-group"><label>Hareket Sıklığı</label><input type="text" name="frequency" value="{{ old('frequency', $tour->frequency) }}" placeholder="Örn: Her Cuma kesin hareketli"></div>
                     <div class="form-group">
                         <label>Tur Resmi</label>
                         @if($tour->image)

@@ -30,6 +30,8 @@ class Tour extends Model
         'price', 'currency', 'duration_days', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'tour_url', 'is_active',
         'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa',
+        'departure_points', 'itinerary', 'hotel_info', 'extras',
+        'cancellation_policy', 'guide_info', 'frequency',
     ];
 
     protected $casts = [

@@ -351,6 +351,13 @@ class TourUrlImporter
         - included (string|null): fiyata DAHİL olan hizmetler, her madde ayrı satır
         - excluded (string|null): fiyata dahil OLMAYAN hizmetler, her madde ayrı satır
         - departure_dates (array): TÜM kalkış/tur tarihleri, YYYY-MM-DD formatında string dizisi; yoksa boş dizi
+        - itinerary (string|null): gün gün tur programı/güzergah, satır satır
+        - departure_points (string|null): kalkış/biniş noktaları ve saatleri, her satıra bir nokta (ör. "21:00 Yenibosna")
+        - hotel_info (string|null): konaklanacak otel adı ve özellikleri (yıldız vb.)
+        - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır
+        - cancellation_policy (string|null): iptal ve iade koşulları
+        - guide_info (string|null): rehber bilgisi veya rehber notları
+        - frequency (string|null): hareket sıklığı (ör. "Her Cuma kesin hareketli")
 
         ÖNEMLİ — fiyat: Sayfada birden fazla fiyat olabilir. GÜNCEL/indirimli kişi başı fiyatı al.
         Üstü çizili/eski liste fiyatını, kapora/ön ödemeyi ve sayfadaki BAŞKA turların
@@ -440,6 +447,13 @@ class TourUrlImporter
             'description' => $this->lines($raw['description'] ?? null, 5000),
             'included' => $this->lines($raw['included'] ?? null, 5000),
             'excluded' => $this->lines($raw['excluded'] ?? null, 5000),
+            'itinerary' => $this->lines($raw['itinerary'] ?? null, 8000),
+            'departure_points' => $this->lines($raw['departure_points'] ?? null, 3000),
+            'hotel_info' => $this->lines($raw['hotel_info'] ?? null, 2000),
+            'extras' => $this->lines($raw['extras'] ?? null, 3000),
+            'cancellation_policy' => $this->lines($raw['cancellation_policy'] ?? null, 3000),
+            'guide_info' => $this->lines($raw['guide_info'] ?? null, 3000),
+            'frequency' => $this->clean($raw['frequency'] ?? null, 255),
             'departure_dates' => $dates,
         ];
     }
