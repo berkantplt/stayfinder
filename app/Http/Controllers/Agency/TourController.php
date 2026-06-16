@@ -70,7 +70,9 @@ class TourController extends Controller
             'image' => 'nullable|image|max:5120',
             'tour_url' => 'nullable|url',
             'departure_points' => 'nullable|string',
-            'itinerary' => 'nullable|string',
+            'itinerary' => 'nullable|array',
+            'itinerary.*.title' => 'nullable|string|max:255',
+            'itinerary.*.content' => 'nullable|string',
             'hotel_info' => 'nullable|string',
             'extras' => 'nullable|string',
             'cancellation_policy' => 'nullable|string',
@@ -98,6 +100,7 @@ class TourController extends Controller
         $validated['departure_date'] = $primaryDate['departure_date'];
         $validated['return_date'] = $primaryDate['return_date'];
         $validated['tour_url'] = $this->cleanTourUrl($validated['tour_url'] ?? null);
+        $validated['itinerary'] = $this->normalizeItinerary($request->input('itinerary'));
 
         $tour = Tour::create($validated);
         $this->syncTourDates($tour, $dates);
@@ -135,7 +138,9 @@ class TourController extends Controller
             'tour_url' => 'nullable|url',
             'is_active' => 'boolean',
             'departure_points' => 'nullable|string',
-            'itinerary' => 'nullable|string',
+            'itinerary' => 'nullable|array',
+            'itinerary.*.title' => 'nullable|string|max:255',
+            'itinerary.*.content' => 'nullable|string',
             'hotel_info' => 'nullable|string',
             'extras' => 'nullable|string',
             'cancellation_policy' => 'nullable|string',
@@ -166,11 +171,37 @@ class TourController extends Controller
         $validated['departure_date'] = $primaryDate['departure_date'];
         $validated['return_date'] = $primaryDate['return_date'];
         $validated['tour_url'] = $this->cleanTourUrl($validated['tour_url'] ?? null);
+        $validated['itinerary'] = $this->normalizeItinerary($request->input('itinerary'));
         $tour->update($validated);
         $this->syncTourDates($tour, $dates);
 
         return redirect()->route('agency.tours.index')
             ->with('success', 'Tur güncellendi.');
+    }
+
+    /**
+     * Gün gün programı temizler: boş günleri atar, [{title, content}] döner.
+     */
+    private function normalizeItinerary($input): ?array
+    {
+        if (! is_array($input)) {
+            return null;
+        }
+
+        $days = [];
+        foreach ($input as $day) {
+            if (! is_array($day)) {
+                continue;
+            }
+            $title = trim((string) ($day['title'] ?? ''));
+            $content = trim((string) ($day['content'] ?? ''));
+            if ($title === '' && $content === '') {
+                continue;
+            }
+            $days[] = ['title' => $title, 'content' => $content];
+        }
+
+        return $days !== [] ? $days : null;
     }
 
     /**

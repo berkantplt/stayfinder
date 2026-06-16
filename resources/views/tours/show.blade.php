@@ -159,9 +159,22 @@
                     </div>
                 @endif
 
+                @if(is_array($tour->itinerary) && count($tour->itinerary))
+                    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+                        <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">📋 Tur Programı</h3>
+                        @foreach($tour->itinerary as $i => $day)
+                            <div style="margin-bottom:14px;padding-bottom:14px;{{ ! $loop->last ? 'border-bottom:1px dashed var(--border);' : '' }}">
+                                <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">{{ $i + 1 }}. Gün{{ ! empty($day['title']) ? ': '.$day['title'] : '' }}</div>
+                                @if(! empty($day['content']))
+                                    <div style="color:var(--text-sec);line-height:1.8;font-size:14px;white-space:pre-line;">{{ $day['content'] }}</div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 @php
                     $detailSections = [
-                        ['📋', 'Tur Programı', $tour->itinerary],
                         ['🚌', 'Kalkış / Biniş Noktaları', $tour->departure_points],
                         ['🏨', 'Konaklama', $tour->hotel_info],
                         ['➕', 'Ekstra Tur ve Aktiviteler', $tour->extras],

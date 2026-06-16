@@ -62,7 +62,10 @@ class TourUrlImportTest extends TestCase
             'description' => 'Muhteşem bir Latin Amerika rotası.',
             'included' => "Uçak\nOtel",
             'excluded' => 'Vize ücreti',
-            'itinerary' => "1. Gün: Lima\n2. Gün: Cusco",
+            'itinerary' => [
+                ['title' => '1. Gün Lima', 'content' => 'Lima şehir turu detayları.'],
+                ['title' => '2. Gün Cusco', 'content' => 'Cusco ve çevresi gezisi.'],
+            ],
             'departure_points' => "21:00 Yenibosna\n21:30 Mecidiyeköy",
             'hotel_info' => '5★ Suhan Hotel',
             'extras' => 'Balon turu',
@@ -85,8 +88,10 @@ class TourUrlImportTest extends TestCase
         $this->assertEquals(1500, $data['price']);
         $this->assertStringContainsString('Uçak', $data['included']);
         $this->assertSame(['2030-09-01'], $data['departure_dates']); // geçmiş tarih elendi
-        // Yeni detay alanları
-        $this->assertStringContainsString('Cusco', $data['itinerary']);
+        // Yeni detay alanları — itinerary gün gün dizi
+        $this->assertCount(2, $data['itinerary']);
+        $this->assertSame('2. Gün Cusco', $data['itinerary'][1]['title']);
+        $this->assertStringContainsString('Cusco', $data['itinerary'][1]['content']);
         $this->assertStringContainsString('Yenibosna', $data['departure_points']);
         $this->assertSame('5★ Suhan Hotel', $data['hotel_info']);
         $this->assertSame('Balon turu', $data['extras']);

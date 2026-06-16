@@ -315,7 +315,11 @@
                     <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description', $tour->description) }}</textarea></div>
                     <div class="form-group"><label>Dahil Olanlar</label><textarea name="included">{{ old('included', $tour->included) }}</textarea></div>
                     <div class="form-group"><label>Dahil Olmayanlar</label><textarea name="excluded">{{ old('excluded', $tour->excluded) }}</textarea></div>
-                    <div class="form-group"><label>Tur Programı (gün gün)</label><textarea name="itinerary" rows="4">{{ old('itinerary', $tour->itinerary) }}</textarea></div>
+                    <div class="form-group">
+                        <label>Tur Programı (gün gün)</label>
+                        <div id="itineraryContainer" style="display:flex;flex-direction:column;gap:12px;"></div>
+                        <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addItineraryDay()">+ Gün Ekle</button>
+                    </div>
                     <div class="form-group"><label>Kalkış / Biniş Noktaları</label><textarea name="departure_points" rows="3">{{ old('departure_points', $tour->departure_points) }}</textarea></div>
                     <div class="form-group"><label>Konaklama / Otel Bilgisi</label><textarea name="hotel_info" rows="2">{{ old('hotel_info', $tour->hotel_info) }}</textarea></div>
                     <div class="form-group"><label>Ekstra Tur ve Aktiviteler</label><textarea name="extras" rows="2">{{ old('extras', $tour->extras) }}</textarea></div>
@@ -350,6 +354,52 @@
             const monthNamesTr = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
             let pricingOptions = [];
             let calendarViewByOptionId = {};
+
+            // --- Gün gün program builder ---
+            let itineraryDays = [];
+            function renderItinerary() {
+                var c = document.getElementById('itineraryContainer');
+                if (!c) return;
+                c.innerHTML = '';
+                itineraryDays.forEach(function (day, i) {
+                    var card = document.createElement('div');
+                    card.style.cssText = 'border:1px solid var(--border-light);border-radius:10px;padding:12px;background:#fafafa;';
+                    var head = document.createElement('div');
+                    head.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
+                    head.innerHTML = '<strong>' + (i + 1) + '. Gün</strong>';
+                    var rm = document.createElement('button');
+                    rm.type = 'button'; rm.className = 'btn btn-danger btn-sm'; rm.textContent = 'Kaldır';
+                    rm.onclick = function () { removeItineraryDay(i); };
+                    head.appendChild(rm);
+                    var ti = document.createElement('input');
+                    ti.type = 'text'; ti.placeholder = 'Başlık (örn: Tuz Gölü – Ihlara – Avanos)';
+                    ti.name = 'itinerary[' + i + '][title]'; ti.value = day.title || '';
+                    ti.style.cssText = 'width:100%;margin-bottom:8px;';
+                    ti.oninput = function () { itineraryDays[i].title = this.value; };
+                    var ta = document.createElement('textarea');
+                    ta.placeholder = 'O günün detaylı açıklaması'; ta.rows = 4;
+                    ta.name = 'itinerary[' + i + '][content]'; ta.value = day.content || '';
+                    ta.style.cssText = 'width:100%;';
+                    ta.oninput = function () { itineraryDays[i].content = this.value; };
+                    card.appendChild(head); card.appendChild(ti); card.appendChild(ta);
+                    c.appendChild(card);
+                });
+            }
+            function addItineraryDay(title, content) {
+                itineraryDays.push({ title: title || '', content: content || '' });
+                renderItinerary();
+            }
+            function removeItineraryDay(i) {
+                itineraryDays.splice(i, 1);
+                if (itineraryDays.length === 0) itineraryDays.push({ title: '', content: '' });
+                renderItinerary();
+            }
+            function setItinerary(days) {
+                itineraryDays = (Array.isArray(days) && days.length)
+                    ? days.map(function (d) { return { title: (d && d.title) || '', content: (d && d.content) || '' }; })
+                    : [{ title: '', content: '' }];
+                renderItinerary();
+            }
 
             function previewImg(i){
                 var r = new FileReader();
@@ -737,6 +787,8 @@
 
                 ensureAtLeastOneOption();
                 renderPricingOptions();
+
+                setItinerary(@json(old('itinerary', $tour->itinerary ?? [])));
 
                 document.getElementById('durationDaysInput').addEventListener('input', function() {
                     renderPricingOptions();

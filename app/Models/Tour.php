@@ -44,6 +44,7 @@ class Tour extends Model
         'embedding' => 'array',
         'is_international' => 'boolean',
         'requires_visa' => 'boolean',
+        'itinerary' => 'array', // [{title, content}, ...] — gün gün program
     ];
 
     protected static function booted(): void

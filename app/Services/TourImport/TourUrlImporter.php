@@ -15,7 +15,7 @@ class TourUrlImporter
 
     private const SCAN_CHARS = 120000;       // odaklamadan önce taranan metin tavanı
 
-    private const MAX_TEXT_CHARS = 20000;    // LLM'e gönderilen (odaklanmış) metin sınırı
+    private const MAX_TEXT_CHARS = 28000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
@@ -295,11 +295,13 @@ class TourUrlImporter
             'fiyata dahil', 'dahil olan', 'dahil olmayan', 'dahil değil', 'hariç',
             'açıklama', 'program', 'tur detay', 'tur prog', 'genel bilgi', 'gezi not', 'vize',
             'turun tarih', 'tur tarih', 'hareket tarih', 'kalkış tarih', 'tarih', 'sefer',
+            'gün', 'güzergah', 'hareket nokta',
         ];
         foreach ($keywords as $kw) {
             $pos = mb_strpos($low, $kw);
             if ($pos !== false) {
-                $ranges[] = [max(0, $pos - 200), $pos + 3300];
+                // Program/güzergah metni uzun olabildiği için geniş pencere
+                $ranges[] = [max(0, $pos - 300), $pos + 7700];
             }
         }
 
@@ -351,7 +353,10 @@ class TourUrlImporter
         - included (string|null): fiyata DAHİL olan hizmetler, her madde ayrı satır
         - excluded (string|null): fiyata dahil OLMAYAN hizmetler, her madde ayrı satır
         - departure_dates (array): TÜM kalkış/tur tarihleri, YYYY-MM-DD formatında string dizisi; yoksa boş dizi
-        - itinerary (string|null): gün gün tur programı/güzergah, satır satır
+        - itinerary (array): turun GÜN GÜN programı. Her gün için bir nesne:
+          {"title": o günün güzergah/özet başlığı (ör. "1. Gün: Tuz Gölü – Ihlara – Avanos"),
+           "content": o güne ait TÜM detaylı açıklama metni}. İçeriği ASLA kısaltma/özetleme,
+          sayfadaki tam paragrafı aynen al. Tek gün varsa tek elemanlı dizi; program yoksa boş dizi.
         - departure_points (string|null): kalkış/biniş noktaları ve saatleri, her satıra bir nokta (ör. "21:00 Yenibosna")
         - hotel_info (string|null): konaklanacak otel adı ve özellikleri (yıldız vb.)
         - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır
@@ -389,7 +394,7 @@ class TourUrlImporter
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.1, // tutarlı/deterministik çıkarım
-            'max_tokens' => 1500,
+            'max_tokens' => 4000, // gün gün program içerikleri uzun olabilir
         ]);
 
         $content = $response->choices[0]->message->content ?? '{}';
@@ -447,7 +452,7 @@ class TourUrlImporter
             'description' => $this->lines($raw['description'] ?? null, 5000),
             'included' => $this->lines($raw['included'] ?? null, 5000),
             'excluded' => $this->lines($raw['excluded'] ?? null, 5000),
-            'itinerary' => $this->lines($raw['itinerary'] ?? null, 8000),
+            'itinerary' => $this->normalizeItineraryDays($raw['itinerary'] ?? null),
             'departure_points' => $this->lines($raw['departure_points'] ?? null, 3000),
             'hotel_info' => $this->lines($raw['hotel_info'] ?? null, 2000),
             'extras' => $this->lines($raw['extras'] ?? null, 3000),
@@ -456,6 +461,36 @@ class TourUrlImporter
             'frequency' => $this->clean($raw['frequency'] ?? null, 255),
             'departure_dates' => $dates,
         ];
+    }
+
+    /**
+     * LLM'den gelen gün gün programı [{title, content}] dizisine normalize eder.
+     *
+     * @return array<int, array{title: string, content: string}>
+     */
+    private function normalizeItineraryDays(mixed $raw): array
+    {
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $days = [];
+        foreach ($raw as $day) {
+            if (is_string($day)) {
+                $day = ['title' => '', 'content' => $day];
+            }
+            if (! is_array($day)) {
+                continue;
+            }
+            $title = $this->clean($day['title'] ?? null, 255) ?? '';
+            $content = $this->lines($day['content'] ?? null, 8000) ?? '';
+            if ($title === '' && $content === '') {
+                continue;
+            }
+            $days[] = ['title' => $title, 'content' => $content];
+        }
+
+        return $days;
     }
 
     private function clean(mixed $value, int $max): ?string
