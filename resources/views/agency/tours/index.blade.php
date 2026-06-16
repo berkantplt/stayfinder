@@ -46,20 +46,22 @@
                             <td style="padding-left:0;"><a href="{{ route('agency.tours.show', $tour) }}" style="font-weight:600;color:#0f172a;">{{ $tour->title }}</a></td>
                             <td>{{ $tour->category?->name ?? '—' }}</td>
                             <td>{{ $tour->destination }}</td>
-                            <td>{{ $tour->formatted_price }}</td>
-                            <td>{{ $tour->departure_date?->format('d.m.Y') ?? '—' }}</td>
+                            <td style="white-space:nowrap;">{{ $tour->formatted_price }}</td>
+                            <td style="white-space:nowrap;">{{ $tour->departure_date?->format('d.m.Y') ?? '—' }}</td>
                             <td>
                                 <span class="badge" style="background:{{ $tour->is_active ? '#d1fae5;color:#065f46' : '#fef2f2;color:#991b1b' }};border:none;padding:6px 12px;border-radius:20px;font-weight:600;">
                                     {{ $tour->is_active ? 'Aktif' : 'Pasif' }}
                                 </span>
                             </td>
-                            <td style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                                <a href="{{ route('agency.tours.show', $tour) }}" class="btn btn-outline btn-sm">👁️</a>
-                                <a href="{{ route('agency.tours.edit', $tour) }}" class="btn btn-outline btn-sm">Düzenle</a>
-                                <form method="POST" action="{{ route('agency.tours.destroy', $tour) }}" onsubmit="return confirm('Bu turu silmek istediğinize emin misiniz?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm">Sil</button>
-                                </form>
+                            <td style="white-space:nowrap;">
+                                <div style="display:inline-flex;gap:8px;align-items:center;">
+                                    <a href="{{ route('agency.tours.show', $tour) }}" class="btn btn-outline btn-sm" title="Görüntüle">👁️</a>
+                                    <a href="{{ route('agency.tours.edit', $tour) }}" class="btn btn-outline btn-sm">Düzenle</a>
+                                    <form method="POST" action="{{ route('agency.tours.destroy', $tour) }}" onsubmit="return confirm('Bu turu silmek istediğinize emin misiniz?')" style="margin:0;">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty
