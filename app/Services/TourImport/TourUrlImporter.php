@@ -113,33 +113,62 @@ class TourUrlImporter
             return '';
         }
 
+        // Sayfadaki tüm seçenek/tarih öğelerini (gizli/menü içindekiler dahil) DOM'dan
+        // toplayıp body'ye yazan JS — böylece render markdown'ında görünür, harvest yakalar.
+        $revealScript = <<<'JS'
         try {
-            $response = Http::timeout(90)->withToken($key)->post($endpoint, [
-                'url' => $url,
-                'formats' => ['markdown'],
-                'onlyMainContent' => false,
-                // Tarih listesi gibi içerikler sayfa açıldıktan sonra API'den geliyor;
-                // önce bekle, kaydır, tekrar bekle — geç yüklenen menüler dolsun.
-                'waitFor' => 8000,
-                'actions' => [
-                    ['type' => 'wait', 'milliseconds' => 3000],
-                    ['type' => 'scroll', 'direction' => 'down'],
-                    ['type' => 'wait', 'milliseconds' => 2500],
-                    ['type' => 'scroll', 'direction' => 'down'],
-                    ['type' => 'wait', 'milliseconds' => 2000],
-                ],
-            ]);
+          var t = [];
+          document.querySelectorAll('option,[role="option"],li,[class*="tarih" i],[class*="date" i]').forEach(function (o) {
+            var s = (o.innerText || o.textContent || '').trim();
+            if (s && s.length < 60) t.push(s);
+          });
+          if (t.length) {
+            var d = document.createElement('div');
+            d.innerText = 'TARIH_ADAYLARI: ' + t.join(' | ');
+            document.body.appendChild(d);
+          }
+        } catch (e) {}
+        JS;
 
-            if ($response->ok()) {
-                $markdown = trim((string) $response->json('data.markdown'));
-                if (mb_strlen($markdown) >= 200) {
-                    return mb_substr($markdown, 0, self::SCAN_CHARS);
+        $base = [
+            'url' => $url,
+            'formats' => ['markdown'],
+            'onlyMainContent' => false,
+            'waitFor' => 8000,
+        ];
+
+        // 1. deneme: JS ile DOM'daki tüm tarih/seçenekleri yüzeye çıkar (en kapsamlı).
+        // 2. deneme: Firecrawl JS aksiyonunu desteklemezse sade bekle+kaydır (regresyon yok).
+        $attempts = [
+            [
+                ['type' => 'wait', 'milliseconds' => 3000],
+                ['type' => 'scroll', 'direction' => 'down'],
+                ['type' => 'wait', 'milliseconds' => 2000],
+                ['type' => 'executeJavascript', 'script' => $revealScript],
+                ['type' => 'wait', 'milliseconds' => 1000],
+            ],
+            [
+                ['type' => 'wait', 'milliseconds' => 3000],
+                ['type' => 'scroll', 'direction' => 'down'],
+                ['type' => 'wait', 'milliseconds' => 2500],
+            ],
+        ];
+
+        foreach ($attempts as $actions) {
+            try {
+                $response = Http::timeout(90)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+
+                if ($response->ok()) {
+                    $markdown = trim((string) $response->json('data.markdown'));
+                    if (mb_strlen($markdown) >= 200) {
+                        return mb_substr($markdown, 0, self::SCAN_CHARS);
+                    }
                 }
-            }
 
-            Log::info('[TourImport] firecrawl beklenen içeriği döndürmedi', ['status' => $response->status()]);
-        } catch (\Throwable $e) {
-            Log::info('[TourImport] firecrawl atlandı', ['message' => $e->getMessage()]);
+                Log::info('[TourImport] firecrawl denemesi başarısız', ['status' => $response->status()]);
+            } catch (\Throwable $e) {
+                Log::info('[TourImport] firecrawl denemesi hata', ['message' => $e->getMessage()]);
+            }
         }
 
         return '';
