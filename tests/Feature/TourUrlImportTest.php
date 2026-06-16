@@ -135,6 +135,23 @@ class TourUrlImportTest extends TestCase
         Http::assertSent(fn ($r) => str_contains($r->url(), 'api.firecrawl.dev'));
     }
 
+    public function test_dates_are_harvested_from_content_even_if_llm_returns_fewer(): void
+    {
+        $html = '<html><body>Turun Tarihi: 25 Eylül 2030, 17 Ekim 2030, 24 Ekim 2030. '
+            .str_repeat('dolgu metni ', 40).'</body></html>';
+        Http::fake(['*' => Http::response($html, 200, ['Content-Type' => 'text/html'])]);
+
+        // LLM sadece 1 tarih dönse bile, içerikteki diğerleri deterministik yakalanır
+        $this->fakeOpenAi(['title' => 'Tur', 'departure_dates' => ['2030-10-17']]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/x'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(['2030-09-25', '2030-10-17', '2030-10-24'], $data['departure_dates']);
+    }
+
     public function test_turkish_month_dates_are_parsed_to_iso(): void
     {
         Http::fake(['*' => Http::response('<html><body>İçerik metni burada.</body></html>', 200, ['Content-Type' => 'text/html'])]);

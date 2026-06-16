@@ -48,11 +48,18 @@ class TourUrlImporter
 
         // Uzun sayfalarda ilgili bölümleri (fiyat, açıklama, dahil/hariç) bulup
         // pencereleyerek LLM'e gönder — kör kesme bu bölümleri kaçırıyordu.
-        $content = $this->focusContent($content);
+        $extracted = $this->extractWithLlm($this->focusContent($content));
 
-        $extracted = $this->extractWithLlm($content);
+        $result = $this->normalize($extracted);
 
-        return $this->normalize($extracted);
+        // Deterministik tarih yakalama: içerikteki TÜM Türkçe tarihleri regex ile
+        // topla ve LLM'in bulduklarıyla birleştir (LLM bazılarını atlasa bile gelsin).
+        $result['departure_dates'] = $this->mergeDates(
+            $result['departure_dates'],
+            $this->harvestDates($content)
+        );
+
+        return $result;
     }
 
     /**
@@ -434,6 +441,41 @@ class TourUrlImporter
         }
 
         return $date->toDateString();
+    }
+
+    /**
+     * İçerikteki tüm Türkçe tarihleri ("17 Ekim 2026" vb.) mekanik olarak toplar
+     * ve gelecekteki olanları YYYY-MM-DD döndürür. LLM'in atladıklarını yakalar.
+     *
+     * @return array<int, string>
+     */
+    private function harvestDates(string $content): array
+    {
+        $months = 'Ocak|Şubat|Subat|Mart|Nisan|Mayıs|Mayis|Haziran|Temmuz|Ağustos|Agustos|Eylül|Eylul|Ekim|Kasım|Kasim|Aralık|Aralik';
+        $found = [];
+
+        if (preg_match_all('/\b\d{1,2}\s+(?:'.$months.')\s+20\d{2}\b/u', $content, $matches)) {
+            foreach ($matches[0] as $raw) {
+                if ($date = $this->parseFutureDate($raw)) {
+                    $found[] = $date;
+                }
+            }
+        }
+
+        return array_values(array_unique($found));
+    }
+
+    /**
+     * @param  array<int, string>  $a
+     * @param  array<int, string>  $b
+     * @return array<int, string>
+     */
+    private function mergeDates(array $a, array $b): array
+    {
+        $all = array_values(array_unique(array_merge($a, $b)));
+        sort($all);
+
+        return $all;
     }
 
     private function turkishDateToIso(string $value): ?string
