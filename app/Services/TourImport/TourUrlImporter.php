@@ -15,7 +15,7 @@ class TourUrlImporter
 
     private const SCAN_CHARS = 120000;       // odaklamadan önce taranan metin tavanı
 
-    private const MAX_TEXT_CHARS = 28000;    // LLM'e gönderilen (odaklanmış) metin sınırı
+    private const MAX_TEXT_CHARS = 46000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
@@ -289,48 +289,65 @@ class TourUrlImporter
         }
 
         $low = mb_strtolower($text);
-        $ranges = [[0, 8000]]; // baş: başlık, fiyat, giriş
+        $budget = self::MAX_TEXT_CHARS;
+        $pieces = [];
 
+        // 1) Fiyat matrisi bölgesi — EN YÜKSEK öncelik, bütün olarak. Tarihe göre
+        // tekrarlanan "Paket Adı / oda tipi / fiyat" tabloları sayfanın ortasında/
+        // altında olup, başka pencerelerle birleşip kesilince kayboluyordu. Bu yüzden
+        // önce ve kesintisiz ekleniyor (ilk fiyat çapasından son "Rezervasyon Yap"a).
+        $priceStart = null;
+        foreach (['paket ad', 'kişi baş', 'kisi bas', 'hareket tarih'] as $anchor) {
+            $pos = mb_strpos($low, $anchor);
+            if ($pos !== false) {
+                $priceStart = $priceStart === null ? $pos : min($priceStart, $pos);
+            }
+        }
+        $priceEnd = null;
+        if ($priceStart !== null) {
+            $priceStart = max(0, $priceStart - 200);
+            $priceEnd = mb_strrpos($low, 'rezervasyon yap');
+            if ($priceEnd === false || $priceEnd < $priceStart) {
+                $priceEnd = mb_strlen($low);
+            }
+            // Tüm tarih tabloları için cömert tavan (ör. 40 tarih × 2 paket)
+            $priceEnd = min($priceEnd + 200, $priceStart + 36000);
+            $region = mb_substr($text, $priceStart, min($priceEnd - $priceStart, $budget));
+            $pieces[] = $region;
+            $budget -= mb_strlen($region);
+        }
+
+        // 2) Baş kısım (başlık, intro, özet fiyat) — kalan bütçeden
+        if ($budget > 0) {
+            $head = mb_substr($text, 0, min(8000, $budget));
+            $pieces[] = $head;
+            $budget -= mb_strlen($head);
+        }
+
+        // 3) Dahil/hariç/program/açıklama pencereleri — kalan bütçeden (ilk eşleşme)
         $keywords = [
             'fiyata dahil', 'dahil olan', 'dahil olmayan', 'dahil değil', 'hariç',
             'açıklama', 'program', 'tur detay', 'tur prog', 'genel bilgi', 'gezi not', 'vize',
-            'turun tarih', 'tur tarih', 'hareket tarih', 'kalkış tarih', 'tarih', 'sefer',
             'gün', 'güzergah', 'hareket nokta',
         ];
         foreach ($keywords as $kw) {
-            $pos = mb_strpos($low, $kw);
-            if ($pos !== false) {
-                // Program/güzergah metni uzun olabildiği için geniş pencere
-                $ranges[] = [max(0, $pos - 300), $pos + 7700];
-            }
-        }
-
-        usort($ranges, fn ($a, $b) => $a[0] <=> $b[0]);
-
-        $merged = [];
-        foreach ($ranges as $range) {
-            $last = count($merged) - 1;
-            if ($merged !== [] && $range[0] <= $merged[$last][1]) {
-                $merged[$last][1] = max($merged[$last][1], $range[1]);
-            } else {
-                $merged[] = $range;
-            }
-        }
-
-        $out = '';
-        foreach ($merged as [$start, $end]) {
-            if (mb_strlen($out) >= self::MAX_TEXT_CHARS) {
+            if ($budget <= 0) {
                 break;
             }
-            $piece = mb_substr($text, $start, $end - $start);
-            $remaining = self::MAX_TEXT_CHARS - mb_strlen($out);
-            if (mb_strlen($piece) > $remaining) {
-                $piece = mb_substr($piece, 0, $remaining);
+            $pos = mb_strpos($low, $kw);
+            if ($pos === false) {
+                continue;
             }
-            $out .= ($out === '' ? '' : "\n…\n").$piece;
+            // Fiyat bölgesi içindeyse zaten eklendi, atla
+            if ($priceEnd !== null && $pos >= $priceStart && $pos <= $priceEnd) {
+                continue;
+            }
+            $win = mb_substr($text, max(0, $pos - 300), min(7700, $budget));
+            $pieces[] = $win;
+            $budget -= mb_strlen($win);
         }
 
-        return $out;
+        return implode("\n…\n", $pieces);
     }
 
     /**
@@ -376,6 +393,17 @@ class TourUrlImporter
           tarihleri tek blokta topla; FARKLI fiyatlı tarihler AYRI blokta olsun. Tablodaki
           her satırı ilgili oda/yaş anahtarına eşle; emin olmadığın tipte null bırak.
           Fiyat matrisi yoksa boş dizi döndür.
+
+          ÖNEMLİ — fiyat tablosu okuma: Sayfada her tur tarihi için ("Tur Hareket Tarihi:
+          DD-MM-YYYY" başlığı altında) bir tablo olur. Tablo başlığı sütunları sıralar
+          (Paket Adı, İki Kişilik Oda Kişi Başı, Tek Kişilik Oda, İlave Yatak, çocuk yaşları);
+          ardından her PAKET için bir satır gelir: önce otel/paket adı, sonra HER sütun için
+          ARDIŞIK İKİ fiyat — birincisi ESKİ (üstü çizili) fiyat, ikincisi İNDİRİMLİ fiyattır.
+          Örnek: "5* Suhan ... 11.498,00 5.749,00 13.998,00 6.999,00 ..." → İki Kişilik için
+          old=11498 new=5749, Tek Kişilik için old=13998 new=6999 ... şeklinde eşle.
+          Fiyatları olduğu gibi al, ASLA 2 ile çarpma/bölme yapma (kişi başı fiyatı kişi başıdır).
+          Aynı tarihte birden fazla paket (otel) varsa HEPSİNİ packages dizisine ekle.
+          "Kabul Edilemez" / "-" gibi değerleri null bırak. Tarihleri DD-MM-YYYY → YYYY-MM-DD'ye çevir.
         - departure_points (string|null): kalkış/biniş noktaları ve saatleri, her satıra bir nokta (ör. "21:00 Yenibosna")
         - hotel_info (string|null): konaklanacak otel adı ve özellikleri (yıldız vb.)
         - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır
@@ -413,7 +441,7 @@ class TourUrlImporter
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.1, // tutarlı/deterministik çıkarım
-            'max_tokens' => 4000, // gün gün program içerikleri uzun olabilir
+            'max_tokens' => 8000, // gün gün program + çok tarihli fiyat matrisi uzun olabilir
         ]);
 
         $content = $response->choices[0]->message->content ?? '{}';
@@ -674,8 +702,11 @@ class TourUrlImporter
             return null;
         }
 
-        // Model ISO döndürmediyse Türkçe tarihi ("17 Ekim 2026") ISO'ya çevir
-        $value = $this->turkishDateToIso($value) ?? $value;
+        // Model ISO döndürmediyse Türkçe ("17 Ekim 2026") veya sayısal
+        // ("19-06-2026" / "19.06.2026") tarihi ISO'ya çevir
+        $value = $this->turkishDateToIso($value)
+            ?? $this->numericDmyToIso($value)
+            ?? $value;
 
         try {
             $date = Carbon::parse($value);
@@ -709,6 +740,15 @@ class TourUrlImporter
             }
         }
 
+        // Sayısal DD-MM-YYYY / DD.MM.YYYY / DD/MM/YYYY (ör. "19-06-2026")
+        if (preg_match_all('#\b\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2}\b#', $content, $matches)) {
+            foreach ($matches[0] as $raw) {
+                if ($date = $this->parseFutureDate($raw)) {
+                    $found[] = $date;
+                }
+            }
+        }
+
         return array_values(array_unique($found));
     }
 
@@ -723,6 +763,24 @@ class TourUrlImporter
         sort($all);
 
         return $all;
+    }
+
+    /**
+     * "19-06-2026" / "19.06.2026" / "19/06/2026" → "2026-06-19". Gün-ay-yıl varsayar
+     * (TR formatı); ay 12'den büyükse geçersiz sayar.
+     */
+    private function numericDmyToIso(string $value): ?string
+    {
+        if (preg_match('#^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$#', trim($value), $m)) {
+            $day = (int) $m[1];
+            $month = (int) $m[2];
+            $year = (int) $m[3];
+            if ($month >= 1 && $month <= 12 && $day >= 1 && $day <= 31) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+
+        return null;
     }
 
     private function turkishDateToIso(string $value): ?string

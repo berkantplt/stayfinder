@@ -258,11 +258,50 @@ class TourUrlImportTest extends TestCase
 
         $out = $method->invoke($importer, $text);
 
-        $this->assertLessThanOrEqual(20000, mb_strlen($out));
+        $this->assertLessThanOrEqual(46000, mb_strlen($out));
         $this->assertStringContainsString('Dahil Olan Hizmetler', $out);
         $this->assertStringContainsString('Uçak bileti', $out);
         $this->assertStringContainsString('Dahil Olmayan Hizmetler', $out);
         $this->assertStringContainsString('Vize bedeli', $out);
+    }
+
+    public function test_focus_content_prioritizes_price_table_region(): void
+    {
+        $importer = new TourUrlImporter;
+        $method = new \ReflectionMethod($importer, 'focusContent');
+        $method->setAccessible(true);
+
+        // Fiyat tablosu sayfanın SONUNDA; baştaki gürültü onu kör kesmede atardı.
+        $noise = str_repeat('Alakasız menü ve içerik metni. ', 2000);
+        $table = "Tur Hareket Tarihi: 19-06-2026 Cuma\n"
+            ."Paket Adı İki Kişilik Oda Kişi Başı Tek Kişilik Oda İlave Yatak\n"
+            ."5* Suhan Cappadocia Hotel & Spa 11.498,00 5.749,00 13.998,00 6.999,00\n"
+            ."Rezervasyon Yap\n";
+        $text = "Başlık Kapadokya Turu\n".$noise.$table.$noise;
+
+        $out = $method->invoke($importer, $text);
+
+        // Sayfanın sonundaki fiyat tablosu, baştaki gürültüye rağmen dahil edilir
+        $this->assertStringContainsString('Paket Adı', $out);
+        $this->assertStringContainsString('5* Suhan Cappadocia Hotel & Spa', $out);
+        $this->assertStringContainsString('11.498,00', $out);
+    }
+
+    public function test_numeric_dmy_dates_are_harvested_and_parsed(): void
+    {
+        $html = '<html><body>Tur Hareket Tarihi: 19-06-2030 Cuma, 26.06.2030, 03/07/2030. '
+            .str_repeat('dolgu metni ', 40).'</body></html>';
+        Http::fake(['*' => Http::response($html, 200, ['Content-Type' => 'text/html'])]);
+
+        // LLM hiç tarih dönmese bile sayısal DD-MM-YYYY tarihleri yakalanır
+        $this->fakeOpenAi(['title' => 'Tur', 'departure_dates' => []]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/x'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(['2030-06-19', '2030-06-26', '2030-07-03'], $data['departure_dates']);
     }
 
     public function test_pricing_blocks_are_extracted_and_normalized(): void
