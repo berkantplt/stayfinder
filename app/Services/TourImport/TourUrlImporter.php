@@ -113,6 +113,18 @@ class TourUrlImporter
             return '';
         }
 
+        // Tarih menüsünü/dropdown'ı gerçek kullanıcı gibi açmaya çalışan JS — tıklamayla
+        // yüklenen (lazy) tarih seçenekleri DOM'a girsin diye.
+        $clickScript = <<<'JS'
+        try {
+          var els = [].slice.call(document.querySelectorAll('button,[role="button"],[role="combobox"],[class*="select" i],[class*="dropdown" i],[class*="tarih" i],[class*="date" i],[class*="datepicker" i]'));
+          els.filter(function (e) {
+            var t = (e.innerText || e.textContent || '').trim();
+            return t.length < 40 && /tarih|seç|date|takvim/i.test(t);
+          }).slice(0, 10).forEach(function (e) { try { e.click(); } catch (_) {} });
+        } catch (e) {}
+        JS;
+
         // Sayfadaki tüm seçenek/tarih öğelerini (gizli/menü içindekiler dahil) DOM'dan
         // toplayıp body'ye yazan JS — böylece render markdown'ında görünür, harvest yakalar.
         $revealScript = <<<'JS'
@@ -143,8 +155,10 @@ class TourUrlImporter
             [
                 ['type' => 'wait', 'milliseconds' => 3000],
                 ['type' => 'scroll', 'direction' => 'down'],
-                ['type' => 'wait', 'milliseconds' => 2000],
-                ['type' => 'executeJavascript', 'script' => $revealScript],
+                ['type' => 'wait', 'milliseconds' => 1500],
+                ['type' => 'executeJavascript', 'script' => $clickScript], // menüyü aç
+                ['type' => 'wait', 'milliseconds' => 2500],                 // seçenekler yüklensin
+                ['type' => 'executeJavascript', 'script' => $revealScript], // hepsini topla
                 ['type' => 'wait', 'milliseconds' => 1000],
             ],
             [
