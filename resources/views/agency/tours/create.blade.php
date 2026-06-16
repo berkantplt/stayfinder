@@ -149,6 +149,57 @@
         color: #94a3b8;
     }
 
+    .date-entry {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .date-entry-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        background: var(--accent-bg);
+        user-select: none;
+    }
+
+    .date-entry-head:hover {
+        filter: brightness(0.98);
+    }
+
+    .date-entry-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .date-entry-caret {
+        transition: transform 0.15s ease;
+        color: var(--text-muted);
+    }
+
+    .date-entry.open .date-entry-caret {
+        transform: rotate(90deg);
+    }
+
+    .date-entry-body {
+        padding: 14px;
+        border-top: 1px solid var(--border);
+    }
+
+    .date-entry-summary {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+
     .form-row.form-row-3 {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -244,7 +295,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Fiyat Bazlı Tarih Blokları *</label>
+                        <label>Tur Tarihleri ve Fiyatları *</label>
                         @php
                             $rawPricingOptions = old('pricing_options', []);
                             if (!is_array($rawPricingOptions)) {
@@ -281,9 +332,15 @@
                                     ))));
                                     sort($dates);
 
+                                    $packages = $option['packages'] ?? [];
+                                    if (!is_array($packages)) {
+                                        $packages = [];
+                                    }
+
                                     return [
                                         'price' => trim((string) ($option['price'] ?? '')),
                                         'departure_dates' => $dates,
+                                        'packages' => array_values($packages),
                                     ];
                                 })
                                 ->filter(fn($option) => $option['price'] !== '' || count($option['departure_dates']) > 0)
@@ -296,13 +353,27 @@
                         @endphp
 
                         <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
-                            Önce fiyatı yaz, sonra o fiyata ait günleri takvimden seç. Yeni fiyat için alttan yeni blok ekle.
+                            Takvimden tur tarihlerini seç. Her tarihe tıklayınca altında o tarihin paket/oda fiyatlarını gir.
                         </div>
 
-                        <div id="pricingOptionsContainer" style="display:flex;flex-direction:column;gap:12px;"></div>
-                        <div id="pricingOptionsHidden"></div>
+                        <div class="date-picker-wrap" style="margin-bottom:14px;max-width:340px;">
+                            <input type="text" id="masterDatePicker" class="departure-picker-input" placeholder="📅 Takvimden tarih ekle" readonly>
+                            <div class="multi-calendar-panel" id="masterCalendarPanel">
+                                <div class="multi-calendar-header">
+                                    <button type="button" class="cal-nav-btn" id="masterCalPrev">‹</button>
+                                    <div class="cal-title" id="masterCalTitle"></div>
+                                    <button type="button" class="cal-nav-btn" id="masterCalNext">›</button>
+                                </div>
+                                <div class="multi-calendar-weekdays">
+                                    <span>P</span><span>S</span><span>Ç</span><span>P</span><span>C</span><span>C</span><span>P</span>
+                                </div>
+                                <div class="multi-calendar-grid" id="masterCalGrid"></div>
+                            </div>
+                        </div>
 
-                        <button type="button" class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="addPricingOption()">+ Yeni Fiyat Bloğu</button>
+                        <div id="pricingOptionsContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+                        <div id="noDatesHint" style="font-size:13px;color:var(--text-muted);padding:8px 0;">Henüz tarih seçilmedi.</div>
+                        <div id="pricingOptionsHidden"></div>
                     </div>
 
                     <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description') }}</textarea></div>
@@ -349,7 +420,6 @@
             const monthNamesTr = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
             const roomTypes = @json(\App\Models\Tour::ROOM_TYPES);
             let pricingOptions = [];
-            let calendarViewByOptionId = {};
 
             // --- Paket / oda-tipi fiyat matrisi yardımcıları ---
             function escapeAttr(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
@@ -369,7 +439,8 @@
                 return raw.map(function (p) {
                     var prices = {};
                     Object.keys(roomTypes).forEach(function (t) {
-                        var v = (p && p.prices && p.prices[t]) || {};
+                        // İçe aktarma: p.prices[t] (nested); eski form girdisi: p[t] (flat)
+                        var v = (p && p.prices && p.prices[t]) || (p && p[t]) || {};
                         prices[t] = {
                             old: (v.old !== null && v.old !== undefined) ? String(v.old) : '',
                             new: (v.new !== null && v.new !== undefined) ? String(v.new) : ''
@@ -510,25 +581,24 @@
                     }
                 }
 
-                // Fiyat blokları: paket matrisi varsa bloklardan kur; yoksa tek fiyat + tarihler
+                // Her tarih kendi satırı: paket matrisi varsa bloğun tarihlerini tek tek aç;
+                // yoksa düz tarih listesini (varsa tek fiyatla) tarih satırlarına dök.
+                var entries = [];
                 if (Array.isArray(data.pricing_blocks) && data.pricing_blocks.length) {
-                    pricingOptions = data.pricing_blocks.map(function(block) {
-                        return createPricingOption({
-                            price: '',
-                            departure_dates: Array.isArray(block.dates) ? block.dates : [],
-                            packages: Array.isArray(block.packages) ? block.packages : []
+                    data.pricing_blocks.forEach(function(block) {
+                        var pkgs = Array.isArray(block.packages) ? block.packages : [];
+                        (Array.isArray(block.dates) ? block.dates : []).forEach(function(d) {
+                            entries.push({ date: d, price: '', packages: pkgs });
                         });
                     });
-                    calendarViewByOptionId = {};
-                    renderPricingOptions();
                 } else {
                     var price = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
-                    var dates = Array.isArray(data.departure_dates) ? data.departure_dates : [];
-                    if (price !== '' || dates.length) {
-                        pricingOptions = [createPricingOption({ price: price, departure_dates: dates })];
-                        calendarViewByOptionId = {};
-                        renderPricingOptions();
-                    }
+                    (Array.isArray(data.departure_dates) ? data.departure_dates : []).forEach(function(d) {
+                        entries.push({ date: d, price: price, packages: [] });
+                    });
+                }
+                if (entries.length) {
+                    setDateEntries(entries);
                 }
 
                 var cat = document.querySelector('select[name="category_id"]');
@@ -612,218 +682,165 @@
                 return currencySymbols[code] || '₺';
             }
 
-            function createPricingOption(option) {
-                return {
-                    id: Date.now() + Math.floor(Math.random() * 100000),
-                    price: String((option && option.price) || ''),
-                    departure_dates: uniqueSortedDates((option && option.departure_dates) || []),
-                    packages: normalizePackagesJs((option && option.packages) || []),
-                };
-            }
+            // ---- Tarih bazlı fiyat satırları (her tarih kendi paket/oda matrisi) ----
+            // Dahili durum: pricingOptions[i] = { id, date:'YYYY-MM-DD', price, packages, open }
+            // Backend sözleşmesi korunur: her satır tek-tarihli bir pricing_option olarak gönderilir.
+            let masterCalView = null;
 
-            function ensureAtLeastOneOption() {
-                if (pricingOptions.length === 0) {
-                    pricingOptions.push(createPricingOption({ price: '', departure_dates: [] }));
-                }
+            function createDateEntry(entry) {
+                return {
+                    id: Date.now() + Math.floor(Math.random() * 1000000) + pricingOptions.length,
+                    date: String((entry && entry.date) || ''),
+                    price: String((entry && entry.price) || ''),
+                    packages: normalizePackagesJs((entry && entry.packages) || []),
+                    open: !!(entry && entry.open),
+                };
             }
 
             function getOptionById(optionId) {
-                return pricingOptions.find(function(option) {
-                    return option.id === optionId;
-                });
+                return pricingOptions.find(function(o) { return o.id === optionId; });
             }
 
-            function isDateSelectedInOtherOption(currentOptionId, ymd) {
-                return pricingOptions.some(function(option) {
-                    return option.id !== currentOptionId && option.departure_dates.includes(ymd);
-                });
+            function sortEntries() {
+                pricingOptions.sort(function(a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
             }
 
-            function addPricingOption() {
-                pricingOptions.push(createPricingOption({ price: '', departure_dates: [] }));
+            function selectedDatesSet() {
+                var s = {};
+                pricingOptions.forEach(function(o) { if (o.date) s[o.date] = true; });
+                return s;
+            }
+
+            function setDateEntries(entries) {
+                pricingOptions = [];
+                var seen = {};
+                (entries || []).forEach(function(e) {
+                    if (!e || !e.date || seen[e.date]) return;
+                    seen[e.date] = true;
+                    pricingOptions.push(createDateEntry(e));
+                });
+                sortEntries();
                 renderPricingOptions();
+                renderMasterCalendar();
             }
 
-            function removePricingOption(optionId) {
-                pricingOptions = pricingOptions.filter(function(option) {
-                    return option.id !== optionId;
-                });
-                delete calendarViewByOptionId[optionId];
-                ensureAtLeastOneOption();
+            function toggleDate(ymd) {
+                var exists = pricingOptions.some(function(o) { return o.date === ymd; });
+                if (exists) {
+                    pricingOptions = pricingOptions.filter(function(o) { return o.date !== ymd; });
+                } else {
+                    pricingOptions.push(createDateEntry({ date: ymd, price: '', packages: [], open: true }));
+                }
+                sortEntries();
                 renderPricingOptions();
+                renderMasterCalendar();
+            }
+
+            function removeDateEntry(optionId) {
+                pricingOptions = pricingOptions.filter(function(o) { return o.id !== optionId; });
+                renderPricingOptions();
+                renderMasterCalendar();
             }
 
             function updateOptionPrice(optionId, value) {
-                const option = getOptionById(optionId);
-                if (!option) return;
-                option.price = value;
+                var o = getOptionById(optionId);
+                if (!o) return;
+                o.price = value;
                 syncPricingOptionInputs();
             }
 
-            function removeOptionDate(optionId, ymd) {
-                const option = getOptionById(optionId);
-                if (!option) return;
-
-                option.departure_dates = option.departure_dates.filter(function(date) {
-                    return date !== ymd;
-                });
-                syncPricingOptionInputs();
+            function toggleEntryOpen(optionId) {
+                var o = getOptionById(optionId);
+                if (!o) return;
+                o.open = !o.open;
                 renderPricingOptions();
             }
 
+            // ---- Tek (master) takvim ----
+            function getMasterCalView() {
+                if (masterCalView) return masterCalView;
+                var first = pricingOptions.length ? pricingOptions[0].date : null;
+                var base = parseYmd(first) || parseYmd(minSelectableDate) || new Date();
+                masterCalView = { year: base.getFullYear(), month: base.getMonth() };
+                return masterCalView;
+            }
+
+            function changeMasterMonth(diff) {
+                var v = getMasterCalView();
+                var y = v.year, m = v.month + diff;
+                while (m < 0) { m += 12; y -= 1; }
+                while (m > 11) { m -= 12; y += 1; }
+                masterCalView = { year: y, month: m };
+                renderMasterCalendar();
+            }
+
             function closeAllCalendars() {
-                document.querySelectorAll('.multi-calendar-panel.open').forEach(function(panel) {
-                    panel.classList.remove('open');
-                });
+                document.querySelectorAll('.multi-calendar-panel.open').forEach(function(p) { p.classList.remove('open'); });
             }
 
-            function getInitialCalendarView(option) {
-                if (calendarViewByOptionId[option.id]) {
-                    return calendarViewByOptionId[option.id];
-                }
+            function renderMasterCalendar() {
+                var titleEl = document.getElementById('masterCalTitle');
+                var gridEl = document.getElementById('masterCalGrid');
+                var picker = document.getElementById('masterDatePicker');
+                if (!gridEl || !titleEl) return;
 
-                const firstSelected = option.departure_dates[0];
-                const minDate = parseYmd(minSelectableDate);
-                const baseDate = parseYmd(firstSelected) || minDate || new Date();
-                return {
-                    year: baseDate.getFullYear(),
-                    month: baseDate.getMonth(),
-                };
-            }
-
-            function updatePickerLabel(option, pickerInput) {
-                const count = option.departure_dates.length;
-
-                if (count === 0) {
-                    pickerInput.value = '';
-                    return;
-                }
-
-                if (count <= 2) {
-                    pickerInput.value = option.departure_dates.map(formatTr).join(', ');
-                    return;
-                }
-
-                pickerInput.value = count + ' tarih seçildi';
-            }
-
-            function renderCalendar(option, card) {
-                const panel = card.querySelector('.multi-calendar-panel');
-                const titleEl = panel.querySelector('.cal-title');
-                const gridEl = panel.querySelector('.multi-calendar-grid');
-                const pickerInput = card.querySelector('.departure-picker-input');
-                const view = getInitialCalendarView(option);
-                calendarViewByOptionId[option.id] = view;
-
+                var view = getMasterCalView();
                 titleEl.textContent = monthNamesTr[view.month] + ' ' + view.year;
+
+                var count = pricingOptions.length;
+                if (picker) picker.value = count ? (count + ' tarih seçili') : '';
+
                 gridEl.innerHTML = '';
-                updatePickerLabel(option, pickerInput);
+                var selected = selectedDatesSet();
+                var firstDayIndex = new Date(view.year, view.month, 1).getDay();
+                var daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
 
-                const firstDayIndex = new Date(view.year, view.month, 1).getDay();
-                const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
-
-                for (let i = 0; i < firstDayIndex; i += 1) {
-                    const blankCell = document.createElement('div');
-                    blankCell.className = 'cal-day-placeholder';
-                    gridEl.appendChild(blankCell);
+                for (var i = 0; i < firstDayIndex; i += 1) {
+                    var blank = document.createElement('div');
+                    blank.className = 'cal-day-placeholder';
+                    gridEl.appendChild(blank);
                 }
 
-                for (let day = 1; day <= daysInMonth; day += 1) {
-                    const dayDate = new Date(view.year, view.month, day);
-                    const ymd = toYmd(dayDate);
-                    const dayBtn = document.createElement('button');
-                    dayBtn.type = 'button';
-                    dayBtn.className = 'cal-day';
-                    dayBtn.textContent = String(day);
-                    const selectedInCurrent = option.departure_dates.includes(ymd);
-                    const selectedInOther = isDateSelectedInOtherOption(option.id, ymd);
-
-                    if (selectedInCurrent) {
-                        dayBtn.classList.add('selected');
-                    } else if (selectedInOther) {
-                        dayBtn.classList.add('taken');
-                        dayBtn.title = 'Bu tarih başka fiyat bloğunda seçili';
-                    }
-
-                    if (minSelectableDate && ymd < minSelectableDate) {
-                        dayBtn.classList.add('disabled');
-                        dayBtn.disabled = true;
-                    } else if (selectedInOther && !selectedInCurrent) {
-                        dayBtn.disabled = true;
-                    } else {
-                        dayBtn.addEventListener('click', function() {
-                            const currentOption = getOptionById(option.id);
-                            if (!currentOption) return;
-
-                            if (currentOption.departure_dates.includes(ymd)) {
-                                currentOption.departure_dates = currentOption.departure_dates.filter(function(date) {
-                                    return date !== ymd;
-                                });
-                            } else {
-                                currentOption.departure_dates = currentOption.departure_dates.concat([ymd]);
-                            }
-
-                            currentOption.departure_dates = uniqueSortedDates(currentOption.departure_dates);
-                            const previewEl = card.querySelector('.option-preview');
-                            renderOptionPreview(currentOption, previewEl);
-                            syncPricingOptionInputs();
-                            renderCalendar(currentOption, card);
-                        });
-                    }
-
-                    gridEl.appendChild(dayBtn);
+                for (var day = 1; day <= daysInMonth; day += 1) {
+                    (function(day) {
+                        var ymd = toYmd(new Date(view.year, view.month, day));
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'cal-day';
+                        btn.textContent = String(day);
+                        if (selected[ymd]) btn.classList.add('selected');
+                        if (minSelectableDate && ymd < minSelectableDate) {
+                            btn.classList.add('disabled');
+                            btn.disabled = true;
+                        } else {
+                            btn.addEventListener('click', function(ev) {
+                                ev.stopPropagation();
+                                toggleDate(ymd);
+                            });
+                        }
+                        gridEl.appendChild(btn);
+                    })(day);
                 }
-            }
-
-            function renderOptionPreview(option, previewEl) {
-                const durationInput = document.getElementById('durationDaysInput');
-                const durationDays = parseInt(durationInput.value || '1', 10);
-
-                previewEl.innerHTML = '';
-                option.departure_dates = uniqueSortedDates(option.departure_dates);
-
-                option.departure_dates.forEach(function(ymd) {
-                    const returnYmd = calculateReturnDate(ymd, durationDays);
-
-                    const pill = document.createElement('div');
-                    pill.className = 'departure-preview-item';
-
-                    const text = document.createElement('span');
-                    text.textContent = formatTr(ymd) + ' -> ' + formatTr(returnYmd);
-                    pill.appendChild(text);
-
-                    const removeBtn = document.createElement('button');
-                    removeBtn.type = 'button';
-                    removeBtn.className = 'btn btn-outline btn-sm';
-                    removeBtn.style.padding = '2px 8px';
-                    removeBtn.textContent = 'x';
-                    removeBtn.addEventListener('click', function() {
-                        removeOptionDate(option.id, ymd);
-                    });
-                    pill.appendChild(removeBtn);
-
-                    previewEl.appendChild(pill);
-                });
             }
 
             function syncPricingOptionInputs() {
-                const hiddenContainer = document.getElementById('pricingOptionsHidden');
-                hiddenContainer.innerHTML = '';
+                var hidden = document.getElementById('pricingOptionsHidden');
+                hidden.innerHTML = '';
 
                 pricingOptions.forEach(function(option, index) {
-                    const priceInput = document.createElement('input');
+                    var priceInput = document.createElement('input');
                     priceInput.type = 'hidden';
                     priceInput.name = 'pricing_options[' + index + '][price]';
                     priceInput.value = option.price;
-                    hiddenContainer.appendChild(priceInput);
+                    hidden.appendChild(priceInput);
 
-                    uniqueSortedDates(option.departure_dates).forEach(function(ymd) {
-                        const dateInput = document.createElement('input');
+                    if (option.date) {
+                        var dateInput = document.createElement('input');
                         dateInput.type = 'hidden';
                         dateInput.name = 'pricing_options[' + index + '][departure_dates][]';
-                        dateInput.value = ymd;
-                        hiddenContainer.appendChild(dateInput);
-                    });
+                        dateInput.value = option.date;
+                        hidden.appendChild(dateInput);
+                    }
 
                     (option.packages || []).forEach(function(pkg, j) {
                         var hasData = (pkg.hotel && pkg.hotel.trim() !== '')
@@ -833,7 +850,7 @@
                         h.type = 'hidden';
                         h.name = 'pricing_options[' + index + '][packages][' + j + '][hotel]';
                         h.value = pkg.hotel || '';
-                        hiddenContainer.appendChild(h);
+                        hidden.appendChild(h);
                         Object.keys(roomTypes).forEach(function(t) {
                             ['old', 'new'].forEach(function(sub) {
                                 var v = pkg.prices[t][sub];
@@ -842,128 +859,78 @@
                                 inp.type = 'hidden';
                                 inp.name = 'pricing_options[' + index + '][packages][' + j + '][' + t + '][' + sub + ']';
                                 inp.value = v;
-                                hiddenContainer.appendChild(inp);
+                                hidden.appendChild(inp);
                             });
                         });
                     });
                 });
             }
 
-            function changeCalendarMonth(option, card, diff) {
-                const current = getInitialCalendarView(option);
-                let year = current.year;
-                let month = current.month + diff;
-
-                while (month < 0) {
-                    month += 12;
-                    year -= 1;
-                }
-                while (month > 11) {
-                    month -= 12;
-                    year += 1;
-                }
-
-                calendarViewByOptionId[option.id] = { year: year, month: month };
-                renderCalendar(option, card);
-            }
-
             function renderPricingOptions() {
-                const container = document.getElementById('pricingOptionsContainer');
-
+                var container = document.getElementById('pricingOptionsContainer');
+                var hint = document.getElementById('noDatesHint');
+                if (!container) return;
                 container.innerHTML = '';
 
-                pricingOptions.forEach(function(option, index) {
-                    const card = document.createElement('div');
-                    card.className = 'pricing-option-card';
-                    card.dataset.optionId = String(option.id);
+                sortEntries();
+                if (hint) hint.style.display = pricingOptions.length ? 'none' : 'block';
 
-                    const canRemove = pricingOptions.length > 1;
-                    card.innerHTML = `
-                        <div class="pricing-option-head">
-                            <div style="font-size:13px;font-weight:700;">Fiyat Bloğu #${index + 1}</div>
-                            ${canRemove ? '<button type="button" class="btn btn-outline btn-sm remove-option-btn">Bloğu Sil</button>' : ''}
+                var durationInput = document.getElementById('durationDaysInput');
+                var durationDays = parseInt((durationInput && durationInput.value) || '1', 10);
+
+                pricingOptions.forEach(function(option) {
+                    var entry = document.createElement('div');
+                    entry.className = 'date-entry' + (option.open ? ' open' : '');
+                    entry.dataset.optionId = String(option.id);
+
+                    var ret = option.date ? calculateReturnDate(option.date, durationDays) : '';
+                    var dateLabel = option.date ? formatTr(option.date) : '—';
+                    var retLabel = ret ? (' → ' + formatTr(ret)) : '';
+
+                    var pkgCount = (option.packages || []).filter(function(p){
+                        return (p.hotel && p.hotel.trim() !== '') || Object.keys(roomTypes).some(function(t){ return p.prices[t].old || p.prices[t].new; });
+                    }).length;
+                    var summary = pkgCount ? (pkgCount + ' paket') : (option.price ? (option.price + ' ' + getSelectedCurrencySymbol()) : 'fiyat girilmedi');
+
+                    entry.innerHTML = `
+                        <div class="date-entry-head">
+                            <span class="date-entry-title"><span class="date-entry-caret">▸</span>${dateLabel}${retLabel}</span>
+                            <span style="display:flex;align-items:center;gap:10px;">
+                                <span class="date-entry-summary">${summary}</span>
+                                <button type="button" class="btn btn-outline btn-sm remove-date-btn">Sil</button>
+                            </span>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label>Fiyat (${getSelectedCurrencySymbol()})</label>
-                                <input type="number" class="option-price-input" min="0" step="0.01" value="${option.price}" placeholder="Paket yoksa tek fiyat">
+                        <div class="date-entry-body" style="${option.open ? '' : 'display:none;'}">
+                            <div class="form-group" style="margin-bottom:10px;max-width:240px;">
+                                <label>Fiyat (${getSelectedCurrencySymbol()}) — paket yoksa</label>
+                                <input type="number" class="option-price-input" min="0" step="0.01" value="${escapeAttr(option.price)}" placeholder="Tek fiyat">
                             </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label>Gidiş Tarihleri *</label>
-                                <div class="date-picker-wrap">
-                                    <input type="text" class="departure-picker-input" placeholder="Takvimden bu fiyata ait günleri seç" readonly>
-                                    <div class="multi-calendar-panel">
-                                        <div class="multi-calendar-header">
-                                            <button type="button" class="cal-nav-btn cal-prev">‹</button>
-                                            <div class="cal-title"></div>
-                                            <button type="button" class="cal-nav-btn cal-next">›</button>
-                                        </div>
-                                        <div class="multi-calendar-weekdays">
-                                            <span>P</span><span>S</span><span>Ç</span><span>P</span><span>C</span><span>C</span><span>P</span>
-                                        </div>
-                                        <div class="multi-calendar-grid"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="departure-preview-wrap option-preview"></div>
-                        <div style="margin-top:12px;border-top:1px dashed var(--border-light);padding-top:10px;">
-                            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Paket / Oda Fiyatları (opsiyonel — farklı otel/oda tipleri için)</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Paket / Oda Fiyatları (otel + oda/yaş tipi, eski + indirimli)</div>
                             <div class="option-packages"></div>
                             <button type="button" class="btn btn-outline btn-sm add-package-btn" style="margin-top:8px;">+ Paket / Otel Ekle</button>
                         </div>
                     `;
 
-                    container.appendChild(card);
+                    container.appendChild(entry);
 
-                    renderPackages(option, card);
-                    const addPkgBtn = card.querySelector('.add-package-btn');
-                    if (addPkgBtn) {
-                        addPkgBtn.addEventListener('click', function() { addPackage(option.id); });
-                    }
-
-                    const removeButton = card.querySelector('.remove-option-btn');
-                    if (removeButton) {
-                        removeButton.addEventListener('click', function() {
-                            removePricingOption(option.id);
-                        });
-                    }
-
-                    const priceInput = card.querySelector('.option-price-input');
-                    priceInput.addEventListener('input', function() {
-                        updateOptionPrice(option.id, this.value);
+                    var head = entry.querySelector('.date-entry-head');
+                    head.addEventListener('click', function(ev) {
+                        if (ev.target.closest('.remove-date-btn')) return;
+                        toggleEntryOpen(option.id);
                     });
 
-                    const pickerInput = card.querySelector('.departure-picker-input');
-                    const calendarPanel = card.querySelector('.multi-calendar-panel');
-                    const prevBtn = card.querySelector('.cal-prev');
-                    const nextBtn = card.querySelector('.cal-next');
-
-                    pickerInput.addEventListener('click', function(event) {
-                        event.stopPropagation();
-                        const isOpen = calendarPanel.classList.contains('open');
-                        closeAllCalendars();
-                        if (!isOpen) {
-                            calendarPanel.classList.add('open');
-                            renderCalendar(option, card);
-                        }
+                    entry.querySelector('.remove-date-btn').addEventListener('click', function(ev) {
+                        ev.stopPropagation();
+                        removeDateEntry(option.id);
                     });
 
-                    calendarPanel.addEventListener('click', function(event) {
-                        event.stopPropagation();
-                    });
+                    var priceInput = entry.querySelector('.option-price-input');
+                    blockExponentKeys(priceInput);
+                    priceInput.addEventListener('input', function() { updateOptionPrice(option.id, this.value); });
 
-                    prevBtn.addEventListener('click', function() {
-                        changeCalendarMonth(option, card, -1);
-                    });
-
-                    nextBtn.addEventListener('click', function() {
-                        changeCalendarMonth(option, card, 1);
-                    });
-
-                    const previewEl = card.querySelector('.option-preview');
-                    renderOptionPreview(option, previewEl);
-                    updatePickerLabel(option, pickerInput);
+                    renderPackages(option, entry);
+                    var addPkgBtn = entry.querySelector('.add-package-btn');
+                    if (addPkgBtn) addPkgBtn.addEventListener('click', function() { addPackage(option.id); });
                 });
 
                 syncPricingOptionInputs();
@@ -972,24 +939,36 @@
             document.addEventListener('click', closeAllCalendars);
 
             document.addEventListener('DOMContentLoaded', function() {
-                pricingOptions = (initialPricingOptions || []).map(function(option) {
-                    return createPricingOption(option);
+                // Başlangıç: eski (validasyon hatası) girdileri tarih satırlarına genişlet
+                var initial = [];
+                (initialPricingOptions || []).forEach(function(option) {
+                    var dates = (option && option.departure_dates) || [];
+                    var pkgs = (option && option.packages) || [];
+                    var price = (option && option.price) || '';
+                    (Array.isArray(dates) ? dates : []).forEach(function(d) {
+                        initial.push({ date: d, price: price, packages: pkgs });
+                    });
                 });
+                setDateEntries(initial);
 
-                ensureAtLeastOneOption();
-                renderPricingOptions();
+                var picker = document.getElementById('masterDatePicker');
+                var panel = document.getElementById('masterCalendarPanel');
+                picker.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    var isOpen = panel.classList.contains('open');
+                    closeAllCalendars();
+                    if (!isOpen) { panel.classList.add('open'); renderMasterCalendar(); }
+                });
+                panel.addEventListener('click', function(ev) { ev.stopPropagation(); });
+                document.getElementById('masterCalPrev').addEventListener('click', function() { changeMasterMonth(-1); });
+                document.getElementById('masterCalNext').addEventListener('click', function() { changeMasterMonth(1); });
+                renderMasterCalendar();
 
                 setItinerary(@json(old('itinerary', [])));
 
-                document.getElementById('durationDaysInput').addEventListener('input', function() {
-                    renderPricingOptions();
-                });
-                const currencySelect = document.getElementById('currencySelect');
-                if (currencySelect) {
-                    currencySelect.addEventListener('change', function() {
-                        renderPricingOptions();
-                    });
-                }
+                document.getElementById('durationDaysInput').addEventListener('input', renderPricingOptions);
+                var currencySelect = document.getElementById('currencySelect');
+                if (currencySelect) currencySelect.addEventListener('change', renderPricingOptions);
             });
             </script>
             @endif

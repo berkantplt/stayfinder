@@ -162,7 +162,8 @@
                                 <summary style="cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
                                     <span style="color:var(--accent);">📅</span>
                                     @foreach($blockDates as $bd)
-                                        <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d M Y') }}</span>
+                                        @php $bdReturn = $bd->copy()->addDays(max(1, (int) $tour->duration_days) - 1); @endphp
+                                        <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d M Y') }} → {{ $bdReturn->format('d M Y') }}</span>
                                     @endforeach
                                     <span style="color:var(--text-muted);font-size:12px;font-weight:500;margin-left:auto;">fiyatları gör ▾</span>
                                 </summary>
