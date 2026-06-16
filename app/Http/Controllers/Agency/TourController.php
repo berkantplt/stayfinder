@@ -81,8 +81,9 @@ class TourController extends Controller
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
 
+        $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
         $dates = $this->prepareValidatedDatePrices(
-            (array) $request->input('pricing_options', []),
+            $pricingOptions,
             (array) $request->input('departure_dates', []),
             $request->input('price'),
             (int) $validated['duration_days']
@@ -101,6 +102,7 @@ class TourController extends Controller
         $validated['return_date'] = $primaryDate['return_date'];
         $validated['tour_url'] = $this->cleanTourUrl($validated['tour_url'] ?? null);
         $validated['itinerary'] = $this->normalizeItinerary($request->input('itinerary'));
+        $validated['pricing_blocks'] = $this->buildPricingBlocks($pricingOptions);
 
         $tour = Tour::create($validated);
         $this->syncTourDates($tour, $dates);
@@ -149,8 +151,9 @@ class TourController extends Controller
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
 
+        $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
         $dates = $this->prepareValidatedDatePrices(
-            (array) $request->input('pricing_options', []),
+            $pricingOptions,
             (array) $request->input('departure_dates', []),
             $request->input('price'),
             (int) $validated['duration_days']
@@ -172,11 +175,146 @@ class TourController extends Controller
         $validated['return_date'] = $primaryDate['return_date'];
         $validated['tour_url'] = $this->cleanTourUrl($validated['tour_url'] ?? null);
         $validated['itinerary'] = $this->normalizeItinerary($request->input('itinerary'));
+        $validated['pricing_blocks'] = $this->buildPricingBlocks($pricingOptions);
         $tour->update($validated);
         $this->syncTourDates($tour, $dates);
 
         return redirect()->route('agency.tours.index')
             ->with('success', 'Tur güncellendi.');
+    }
+
+    /**
+     * pricing_options'ı, paket matrisi olan bloklara türetilmiş "başlangıç fiyatı"
+     * enjekte ederek döner — böylece prepareValidatedDatePrices (fiyat zorunlu)
+     * paket-bazlı bloklarda da çalışır ve tour_dates fiyatları tutarlı olur.
+     */
+    private function pricingOptionsWithDerivedPrices(Request $request): array
+    {
+        $options = (array) $request->input('pricing_options', []);
+
+        foreach ($options as $i => $option) {
+            if (! is_array($option) || empty($option['packages'])) {
+                continue;
+            }
+            $derived = $this->minAdultPrice($this->normalizePackages($option['packages']));
+            $hasManual = isset($option['price']) && trim((string) $option['price']) !== '';
+            if ($derived !== null && ! $hasManual) {
+                $options[$i]['price'] = $derived;
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * Fiyat bloklarını saklanacak yapıya çevirir: [{dates:[Y-m-d], packages:[{hotel, prices:{type:{old,new}}}]}].
+     */
+    private function buildPricingBlocks(array $options): ?array
+    {
+        $blocks = [];
+
+        foreach ($options as $option) {
+            if (! is_array($option)) {
+                continue;
+            }
+
+            $packages = $this->normalizePackages($option['packages'] ?? []);
+
+            $dates = [];
+            foreach ((array) ($option['departure_dates'] ?? []) as $d) {
+                $d = trim((string) $d);
+                if ($d === '') {
+                    continue;
+                }
+                try {
+                    $dates[] = Carbon::parse($d)->toDateString();
+                } catch (\Throwable) {
+                    // geçersiz tarih atlanır
+                }
+            }
+            $dates = array_values(array_unique($dates));
+            sort($dates);
+
+            // Paket matrisi olmayan blok saklanmaz: tarihler zaten tour_dates'te,
+            // tek fiyatlı turlarda pricing_blocks null kalır (gürültü olmaz).
+            if ($packages === [] || $dates === []) {
+                continue;
+            }
+
+            $blocks[] = ['dates' => $dates, 'packages' => $packages];
+        }
+
+        return $blocks !== [] ? $blocks : null;
+    }
+
+    /**
+     * @return array<int, array{hotel: string, prices: array<string, array{old: float|null, new: float|null}>}>
+     */
+    private function normalizePackages($raw): array
+    {
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($raw as $pkg) {
+            if (! is_array($pkg)) {
+                continue;
+            }
+            $hotel = trim((string) ($pkg['hotel'] ?? ''));
+            $prices = [];
+            foreach (array_keys(Tour::ROOM_TYPES) as $type) {
+                $old = $this->priceVal($pkg[$type]['old'] ?? null);
+                $new = $this->priceVal($pkg[$type]['new'] ?? null);
+                if ($old !== null || $new !== null) {
+                    $prices[$type] = ['old' => $old, 'new' => $new];
+                }
+            }
+            if ($hotel === '' && $prices === []) {
+                continue;
+            }
+            $result[] = ['hotel' => $hotel, 'prices' => $prices];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Paketlerdeki en düşük yetişkin (çocuk hariç) indirimli fiyat — "başlangıç fiyatı".
+     */
+    private function minAdultPrice(array $packages): ?float
+    {
+        $prices = [];
+        foreach ($packages as $pkg) {
+            foreach (Tour::ADULT_ROOM_TYPES as $type) {
+                $new = $pkg['prices'][$type]['new'] ?? null;
+                if ($new !== null) {
+                    $prices[] = $new;
+                }
+            }
+        }
+        // Yetişkin fiyatı yoksa herhangi bir new fiyatına düş
+        if ($prices === []) {
+            foreach ($packages as $pkg) {
+                foreach ($pkg['prices'] as $p) {
+                    if (($p['new'] ?? null) !== null) {
+                        $prices[] = $p['new'];
+                    }
+                }
+            }
+        }
+
+        return $prices !== [] ? min($prices) : null;
+    }
+
+    private function priceVal($value): ?float
+    {
+        if ($value === null || $value === '' || ! is_numeric($value)) {
+            return null;
+        }
+        $num = round((float) $value, 2);
+
+        return $num >= 0 ? $num : null;
     }
 
     /**

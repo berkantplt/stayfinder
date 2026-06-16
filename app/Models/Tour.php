@@ -25,13 +25,32 @@ class Tour extends Model
         'SAR' => ['label' => 'Suudi Riyali', 'symbol' => 'SAR'],
     ];
 
+    // Fiyat matrisindeki oda/yaş tipleri (anahtar => görünen etiket). Her biri
+    // opsiyonel; her tip için eski (old) + indirimli (new) fiyat tutulabilir.
+    public const ROOM_TYPES = [
+        'double_pp' => 'İki Kişilik Oda Kişi Başı',
+        'single' => 'Tek Kişilik Oda',
+        'extra_bed' => 'İlave Yatak',
+        'child_0_2' => '0-1,99 Yaş',
+        'child_3_5' => '3-5,99 Yaş',
+        'child_7_11' => '7-11,99 Yaş',
+    ];
+
+    // "Başlangıç fiyatı" için kullanılacak yetişkin oda tipleri (çocuk hariç).
+    public const ADULT_ROOM_TYPES = ['double_pp', 'single', 'extra_bed'];
+
+    public static function roomTypes(): array
+    {
+        return self::ROOM_TYPES;
+    }
+
     protected $fillable = [
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
         'price', 'currency', 'duration_days', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'tour_url', 'is_active',
         'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa',
         'departure_points', 'itinerary', 'hotel_info', 'extras',
-        'cancellation_policy', 'guide_info', 'frequency',
+        'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
     ];
 
     protected $casts = [
@@ -45,6 +64,7 @@ class Tour extends Model
         'is_international' => 'boolean',
         'requires_visa' => 'boolean',
         'itinerary' => 'array', // [{title, content}, ...] — gün gün program
+        'pricing_blocks' => 'array', // [{dates:[], packages:[{hotel, prices:{type:{old,new}}}]}]
     ];
 
     protected static function booted(): void

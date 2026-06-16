@@ -347,8 +347,68 @@
             const minSelectableDate = '{{ now()->toDateString() }}';
             const currencySymbols = @json(collect($currencyOptions)->map(fn($meta) => (string) ($meta['symbol'] ?? '₺'))->toArray());
             const monthNamesTr = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+            const roomTypes = @json(\App\Models\Tour::ROOM_TYPES);
             let pricingOptions = [];
             let calendarViewByOptionId = {};
+
+            // --- Paket / oda-tipi fiyat matrisi yardımcıları ---
+            function escapeAttr(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
+            function emptyPackage() {
+                var prices = {};
+                Object.keys(roomTypes).forEach(function (t) { prices[t] = { old: '', new: '' }; });
+                return { hotel: '', prices: prices };
+            }
+            function normalizePackagesJs(raw) {
+                if (!Array.isArray(raw)) return [];
+                return raw.map(function (p) {
+                    var prices = {};
+                    Object.keys(roomTypes).forEach(function (t) {
+                        var v = (p && p.prices && p.prices[t]) || {};
+                        prices[t] = {
+                            old: (v.old !== null && v.old !== undefined) ? String(v.old) : '',
+                            new: (v.new !== null && v.new !== undefined) ? String(v.new) : ''
+                        };
+                    });
+                    return { hotel: (p && p.hotel) || '', prices: prices };
+                });
+            }
+            function addPackage(optionId) {
+                var o = getOptionById(optionId); if (!o) return;
+                if (!o.packages) o.packages = [];
+                o.packages.push(emptyPackage());
+                renderPricingOptions();
+            }
+            function removePackage(optionId, j) {
+                var o = getOptionById(optionId); if (!o || !o.packages) return;
+                o.packages.splice(j, 1);
+                renderPricingOptions();
+            }
+            function renderPackages(option, card) {
+                var wrap = card.querySelector('.option-packages');
+                if (!wrap) return;
+                wrap.innerHTML = '';
+                (option.packages || []).forEach(function (pkg, j) {
+                    var box = document.createElement('div');
+                    box.style.cssText = 'border:1px solid var(--border-light);border-radius:8px;padding:10px;margin-top:8px;background:#fff;';
+                    var rows = '';
+                    Object.keys(roomTypes).forEach(function (t) {
+                        rows += '<div style="font-size:12px;">'
+                            + '<div style="color:var(--text-muted);margin-bottom:2px;">' + roomTypes[t] + '</div>'
+                            + '<input type="number" class="pkg-old" data-t="' + t + '" placeholder="Eski" min="0" step="0.01" value="' + escapeAttr(pkg.prices[t].old) + '" style="width:100%;margin-bottom:4px;">'
+                            + '<input type="number" class="pkg-new" data-t="' + t + '" placeholder="İndirimli" min="0" step="0.01" value="' + escapeAttr(pkg.prices[t].new) + '" style="width:100%;">'
+                            + '</div>';
+                    });
+                    box.innerHTML = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'
+                        + '<input type="text" class="pkg-hotel" placeholder="Otel / Paket Adı (örn: 5★ Suhan Cappadocia)" value="' + escapeAttr(pkg.hotel) + '" style="flex:1;">'
+                        + '<button type="button" class="btn btn-danger btn-sm pkg-remove">Kaldır</button></div>'
+                        + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' + rows + '</div>';
+                    box.querySelector('.pkg-hotel').oninput = function () { option.packages[j].hotel = this.value; syncPricingOptionInputs(); };
+                    box.querySelector('.pkg-remove').onclick = function () { removePackage(option.id, j); };
+                    box.querySelectorAll('.pkg-old').forEach(function (inp) { inp.oninput = function () { option.packages[j].prices[this.dataset.t].old = this.value; syncPricingOptionInputs(); }; });
+                    box.querySelectorAll('.pkg-new').forEach(function (inp) { inp.oninput = function () { option.packages[j].prices[this.dataset.t].new = this.value; syncPricingOptionInputs(); }; });
+                    wrap.appendChild(box);
+                });
+            }
 
             // --- Gün gün program builder ---
             let itineraryDays = [];
@@ -444,12 +504,25 @@
                     }
                 }
 
-                var price = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
-                var dates = Array.isArray(data.departure_dates) ? data.departure_dates : [];
-                if (price !== '' || dates.length) {
-                    pricingOptions = [createPricingOption({ price: price, departure_dates: dates })];
+                // Fiyat blokları: paket matrisi varsa bloklardan kur; yoksa tek fiyat + tarihler
+                if (Array.isArray(data.pricing_blocks) && data.pricing_blocks.length) {
+                    pricingOptions = data.pricing_blocks.map(function(block) {
+                        return createPricingOption({
+                            price: '',
+                            departure_dates: Array.isArray(block.dates) ? block.dates : [],
+                            packages: Array.isArray(block.packages) ? block.packages : []
+                        });
+                    });
                     calendarViewByOptionId = {};
                     renderPricingOptions();
+                } else {
+                    var price = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
+                    var dates = Array.isArray(data.departure_dates) ? data.departure_dates : [];
+                    if (price !== '' || dates.length) {
+                        pricingOptions = [createPricingOption({ price: price, departure_dates: dates })];
+                        calendarViewByOptionId = {};
+                        renderPricingOptions();
+                    }
                 }
 
                 var cat = document.querySelector('select[name="category_id"]');
@@ -538,6 +611,7 @@
                     id: Date.now() + Math.floor(Math.random() * 100000),
                     price: String((option && option.price) || ''),
                     departure_dates: uniqueSortedDates((option && option.departure_dates) || []),
+                    packages: normalizePackagesJs((option && option.packages) || []),
                 };
             }
 
@@ -744,6 +818,28 @@
                         dateInput.value = ymd;
                         hiddenContainer.appendChild(dateInput);
                     });
+
+                    (option.packages || []).forEach(function(pkg, j) {
+                        var hasData = (pkg.hotel && pkg.hotel.trim() !== '')
+                            || Object.keys(roomTypes).some(function(t){ return pkg.prices[t].old || pkg.prices[t].new; });
+                        if (!hasData) return;
+                        var h = document.createElement('input');
+                        h.type = 'hidden';
+                        h.name = 'pricing_options[' + index + '][packages][' + j + '][hotel]';
+                        h.value = pkg.hotel || '';
+                        hiddenContainer.appendChild(h);
+                        Object.keys(roomTypes).forEach(function(t) {
+                            ['old', 'new'].forEach(function(sub) {
+                                var v = pkg.prices[t][sub];
+                                if (v === '' || v === null || v === undefined) return;
+                                var inp = document.createElement('input');
+                                inp.type = 'hidden';
+                                inp.name = 'pricing_options[' + index + '][packages][' + j + '][' + t + '][' + sub + ']';
+                                inp.value = v;
+                                hiddenContainer.appendChild(inp);
+                            });
+                        });
+                    });
                 });
             }
 
@@ -783,8 +879,8 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group" style="margin-bottom:0;">
-                                <label>Fiyat (${getSelectedCurrencySymbol()}) *</label>
-                                <input type="number" class="option-price-input" min="0" step="0.01" value="${option.price}">
+                                <label>Fiyat (${getSelectedCurrencySymbol()})</label>
+                                <input type="number" class="option-price-input" min="0" step="0.01" value="${option.price}" placeholder="Paket yoksa tek fiyat">
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label>Gidiş Tarihleri *</label>
@@ -805,9 +901,20 @@
                             </div>
                         </div>
                         <div class="departure-preview-wrap option-preview"></div>
+                        <div style="margin-top:12px;border-top:1px dashed var(--border-light);padding-top:10px;">
+                            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Paket / Oda Fiyatları (opsiyonel — farklı otel/oda tipleri için)</div>
+                            <div class="option-packages"></div>
+                            <button type="button" class="btn btn-outline btn-sm add-package-btn" style="margin-top:8px;">+ Paket / Otel Ekle</button>
+                        </div>
                     `;
 
                     container.appendChild(card);
+
+                    renderPackages(option, card);
+                    const addPkgBtn = card.querySelector('.add-package-btn');
+                    if (addPkgBtn) {
+                        addPkgBtn.addEventListener('click', function() { addPackage(option.id); });
+                    }
 
                     const removeButton = card.querySelector('.remove-option-btn');
                     if (removeButton) {

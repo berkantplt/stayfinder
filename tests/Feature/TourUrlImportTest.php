@@ -265,6 +265,61 @@ class TourUrlImportTest extends TestCase
         $this->assertStringContainsString('Vize bedeli', $out);
     }
 
+    public function test_pricing_blocks_are_extracted_and_normalized(): void
+    {
+        Http::fake(['*' => Http::response('<html><body>Bodrum turu fiyat tablosu içerik metni burada.</body></html>', 200, ['Content-Type' => 'text/html'])]);
+
+        $this->fakeOpenAi([
+            'title' => 'Bodrum Turu',
+            'departure_dates' => [],
+            'pricing_blocks' => [
+                [
+                    'dates' => ['2030-07-15', '2030-07-22'],
+                    'packages' => [
+                        [
+                            'hotel' => '5★ Suhan Bodrum',
+                            'prices' => [
+                                'double_pp' => ['old' => '12.500', 'new' => '9.900'],
+                                'single' => ['old' => null, 'new' => 14000],
+                                'child_3_5' => ['old' => null, 'new' => 0],
+                                'child_7_11' => ['old' => null, 'new' => 4500],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    // Bayram fiyatı — farklı blok
+                    'dates' => ['2030-06-10'],
+                    'packages' => [
+                        ['hotel' => '5★ Suhan Bodrum', 'prices' => ['double_pp' => ['old' => null, 'new' => 15900]]],
+                    ],
+                ],
+                // tarihsiz blok → elenmeli
+                ['dates' => [], 'packages' => [['hotel' => 'X', 'prices' => ['single' => ['old' => null, 'new' => 100]]]]],
+            ],
+        ]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/bodrum'])
+            ->assertOk()
+            ->json('data');
+
+        $blocks = $data['pricing_blocks'];
+        $this->assertCount(2, $blocks); // tarihsiz blok elendi
+
+        // İlk blok: tarihler sıralı + tireli/binlikli fiyat float'a çevrildi
+        $this->assertSame(['2030-07-15', '2030-07-22'], $blocks[0]['dates']);
+        $this->assertSame('5★ Suhan Bodrum', $blocks[0]['packages'][0]['hotel']);
+        $this->assertEquals(9900, $blocks[0]['packages'][0]['prices']['double_pp']['new']);
+        $this->assertEquals(12500, $blocks[0]['packages'][0]['prices']['double_pp']['old']);
+        $this->assertEquals(0, $blocks[0]['packages'][0]['prices']['child_3_5']['new']);
+
+        // Blok tarihleri departure_dates ile birleşti (takvimde seçili gelsin)
+        $this->assertContains('2030-06-10', $data['departure_dates']);
+        $this->assertContains('2030-07-15', $data['departure_dates']);
+        $this->assertContains('2030-07-22', $data['departure_dates']);
+    }
+
     public function test_guest_cannot_import(): void
     {
         $this->post(route('agency.tours.import'), ['url' => 'https://1.1.1.1/x'])

@@ -133,6 +133,83 @@
                 </div>
                 @endif
 
+                {{-- Fiyat tablosu: tarihe tıklanınca paket/oda-tipi fiyat matrisi açılır --}}
+                @if(is_array($tour->pricing_blocks) && count($tour->pricing_blocks))
+                    @php $roomTypeLabels = \App\Models\Tour::ROOM_TYPES; $priceCurrency = $tour->currency_symbol; @endphp
+                    <div style="margin-bottom:24px;">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">💰 Tarih ve Paket Fiyatları</div>
+                        @foreach($tour->pricing_blocks as $block)
+                            @php
+                                $blockDates = collect($block['dates'] ?? [])
+                                    ->map(fn ($d) => \Illuminate\Support\Carbon::parse($d))
+                                    ->sort()
+                                    ->values();
+                                $packages = array_values(array_filter((array) ($block['packages'] ?? []), 'is_array'));
+                                // Bu blokta veri girilmiş oda/yaş tiplerini ROOM_TYPES sırasında topla
+                                $activeTypes = [];
+                                foreach (array_keys($roomTypeLabels) as $type) {
+                                    foreach ($packages as $pkg) {
+                                        $cell = $pkg['prices'][$type] ?? null;
+                                        if (is_array($cell) && (($cell['old'] ?? null) !== null || ($cell['new'] ?? null) !== null)) {
+                                            $activeTypes[] = $type;
+                                            break;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            @if($blockDates->count() && count($packages))
+                            <details style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;">
+                                <summary style="cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                                    <span style="color:var(--accent);">📅</span>
+                                    @foreach($blockDates as $bd)
+                                        <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d M Y') }}</span>
+                                    @endforeach
+                                    <span style="color:var(--text-muted);font-size:12px;font-weight:500;margin-left:auto;">fiyatları gör ▾</span>
+                                </summary>
+                                <div style="overflow-x:auto;border-top:1px solid var(--border);">
+                                    <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:520px;">
+                                        <thead>
+                                            <tr style="background:var(--accent-bg);">
+                                                <th style="text-align:left;padding:10px 12px;font-weight:700;">Paket / Otel</th>
+                                                @foreach($activeTypes as $type)
+                                                    <th style="text-align:right;padding:10px 12px;font-weight:700;white-space:nowrap;">{{ $roomTypeLabels[$type] }}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($packages as $pkg)
+                                                <tr style="border-top:1px solid var(--border);">
+                                                    <td style="padding:10px 12px;font-weight:600;">{{ ($pkg['hotel'] ?? '') !== '' ? $pkg['hotel'] : 'Standart Paket' }}</td>
+                                                    @foreach($activeTypes as $type)
+                                                        @php
+                                                            $cell = $pkg['prices'][$type] ?? [];
+                                                            $old = is_array($cell) ? ($cell['old'] ?? null) : null;
+                                                            $new = is_array($cell) ? ($cell['new'] ?? null) : null;
+                                                        @endphp
+                                                        <td style="padding:10px 12px;text-align:right;white-space:nowrap;">
+                                                            @if($old !== null && $new !== null && (float) $old > (float) $new)
+                                                                <s style="color:#94a3b8;font-size:12px;">{{ number_format((float) $old, 0, ',', '.') }}</s>
+                                                                <span style="font-weight:700;color:#166534;margin-left:4px;">{{ number_format((float) $new, 0, ',', '.') }} {{ $priceCurrency }}</span>
+                                                            @elseif($new !== null)
+                                                                <span style="font-weight:700;">{{ number_format((float) $new, 0, ',', '.') }} {{ $priceCurrency }}</span>
+                                                            @elseif($old !== null)
+                                                                <span style="font-weight:700;">{{ number_format((float) $old, 0, ',', '.') }} {{ $priceCurrency }}</span>
+                                                            @else
+                                                                <span style="color:var(--text-muted);">—</span>
+                                                            @endif
+                                                        </td>
+                                                    @endforeach
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </details>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+
                 @if($tour->description)
                     <p style="color:var(--text-sec);line-height:1.8;margin-bottom:24px;font-size:15px;">{{ $tour->description }}</p>
                 @endif

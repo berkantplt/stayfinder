@@ -357,6 +357,25 @@ class TourUrlImporter
           {"title": o günün güzergah/özet başlığı (ör. "1. Gün: Tuz Gölü – Ihlara – Avanos"),
            "content": o güne ait TÜM detaylı açıklama metni}. İçeriği ASLA kısaltma/özetleme,
           sayfadaki tam paragrafı aynen al. Tek gün varsa tek elemanlı dizi; program yoksa boş dizi.
+        - pricing_blocks (array): Tarihe/pakete göre fiyat matrisi. Sayfada bir tarihe
+          tıklandığında açılan "Paket Adı / İki Kişilik Oda Kişi Başı / Tek Kişilik Oda /
+          İlave Yatak / çocuk yaş" fiyat tablosu budur. Her blok bir nesne:
+          {"dates": ["YYYY-MM-DD", ...] bu fiyatların geçerli olduğu tarihler,
+           "packages": [{"hotel": otel/paket adı (yoksa ""),
+             "prices": {
+               "double_pp": {"old": sayı|null, "new": sayı|null},
+               "single":    {"old": sayı|null, "new": sayı|null},
+               "extra_bed": {"old": sayı|null, "new": sayı|null},
+               "child_0_2": {"old": sayı|null, "new": sayı|null},
+               "child_3_5": {"old": sayı|null, "new": sayı|null},
+               "child_7_11":{"old": sayı|null, "new": sayı|null}
+             }}]}.
+          Oda/yaş tipleri: double_pp=İki Kişilik Oda Kişi Başı, single=Tek Kişilik Oda,
+          extra_bed=İlave Yatak, child_0_2=0-1,99 Yaş, child_3_5=3-5,99 Yaş, child_7_11=7-11,99 Yaş.
+          old=üstü çizili/liste fiyatı (yoksa null), new=güncel/indirimli fiyat. AYNI fiyatlı
+          tarihleri tek blokta topla; FARKLI fiyatlı tarihler AYRI blokta olsun. Tablodaki
+          her satırı ilgili oda/yaş anahtarına eşle; emin olmadığın tipte null bırak.
+          Fiyat matrisi yoksa boş dizi döndür.
         - departure_points (string|null): kalkış/biniş noktaları ve saatleri, her satıra bir nokta (ör. "21:00 Yenibosna")
         - hotel_info (string|null): konaklanacak otel adı ve özellikleri (yıldız vb.)
         - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır
@@ -443,6 +462,17 @@ class TourUrlImporter
         $dates = array_values(array_unique($dates));
         sort($dates);
 
+        $pricingBlocks = $this->normalizePricingBlocks($raw['pricing_blocks'] ?? null);
+
+        // Bloklardaki tarihler de takvimde seçili gelsin diye departure_dates ile birleştir.
+        foreach ($pricingBlocks as $block) {
+            foreach ($block['dates'] as $blockDate) {
+                $dates[] = $blockDate;
+            }
+        }
+        $dates = array_values(array_unique($dates));
+        sort($dates);
+
         return [
             'title' => $this->clean($raw['title'] ?? null, 255),
             'destination' => $this->clean($raw['destination'] ?? null, 100),
@@ -460,7 +490,132 @@ class TourUrlImporter
             'guide_info' => $this->lines($raw['guide_info'] ?? null, 3000),
             'frequency' => $this->clean($raw['frequency'] ?? null, 255),
             'departure_dates' => $dates,
+            'pricing_blocks' => $pricingBlocks,
         ];
+    }
+
+    /**
+     * LLM'den gelen fiyat matrisini güvenli yapıya normalize eder:
+     * [{dates:[Y-m-d], packages:[{hotel, prices:{type:{old,new}}}]}]. Tarihi veya
+     * fiyatı olmayan bloklar/paketler elenir; tanınmayan oda tipleri yok sayılır.
+     *
+     * @return array<int, array{dates: array<int, string>, packages: array<int, array{hotel: string, prices: array<string, array{old: ?float, new: ?float}>}>}>
+     */
+    private function normalizePricingBlocks(mixed $raw): array
+    {
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $roomTypes = array_keys(Tour::ROOM_TYPES);
+        $blocks = [];
+
+        foreach ($raw as $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+
+            $dates = [];
+            foreach ((array) ($block['dates'] ?? []) as $candidate) {
+                if ($ymd = $this->parseFutureDate((string) $candidate)) {
+                    $dates[] = $ymd;
+                }
+            }
+            $dates = array_values(array_unique($dates));
+            sort($dates);
+
+            $packages = [];
+            foreach ((array) ($block['packages'] ?? []) as $pkg) {
+                if (! is_array($pkg)) {
+                    continue;
+                }
+
+                $prices = [];
+                $hasPrice = false;
+                $rawPrices = is_array($pkg['prices'] ?? null) ? $pkg['prices'] : [];
+                foreach ($roomTypes as $type) {
+                    $cell = is_array($rawPrices[$type] ?? null) ? $rawPrices[$type] : [];
+                    $old = $this->priceFloat($cell['old'] ?? null);
+                    $new = $this->priceFloat($cell['new'] ?? null);
+                    if ($old !== null || $new !== null) {
+                        $hasPrice = true;
+                    }
+                    $prices[$type] = ['old' => $old, 'new' => $new];
+                }
+
+                $hotel = $this->clean($pkg['hotel'] ?? null, 255) ?? '';
+                if (! $hasPrice && $hotel === '') {
+                    continue;
+                }
+
+                $packages[] = ['hotel' => $hotel, 'prices' => $prices];
+            }
+
+            // Tarihsiz veya paketsiz blok forma anlamlı veri taşımaz.
+            if ($dates === [] || $packages === []) {
+                continue;
+            }
+
+            $blocks[] = ['dates' => $dates, 'packages' => $packages];
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * "12.500" / "9.900,00" / "1,500.00 TL" gibi karışık biçimleri float'a çevirir.
+     * Türkçe sitelerde "." genelde binlik ayraçtır; sondaki 1-2 hane ondalıktır.
+     */
+    private function priceFloat(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            $float = round((float) $value, 2);
+
+            return $float < 0 ? null : $float;
+        }
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $s = preg_replace('/[^\d,.\-]/', '', $value) ?? '';
+        if ($s === '' || $s === '-') {
+            return null;
+        }
+
+        $hasComma = str_contains($s, ',');
+        $hasDot = str_contains($s, '.');
+
+        if ($hasComma && $hasDot) {
+            // Son görünen ayraç ondalıktır; diğeri binlik → silinir
+            if (strrpos($s, ',') > strrpos($s, '.')) {
+                $s = str_replace(',', '.', str_replace('.', '', $s));
+            } else {
+                $s = str_replace(',', '', $s);
+            }
+        } elseif ($hasComma) {
+            // Tek "," + 1-2 hane → ondalık; aksi halde binlik ayraç
+            $s = (substr_count($s, ',') === 1 && preg_match('/,\d{1,2}$/', $s))
+                ? str_replace(',', '.', $s)
+                : str_replace(',', '', $s);
+        } elseif ($hasDot) {
+            // Tek "." + 1-2 hane → ondalık (bırak); aksi (3 hane/çoklu) → binlik (sil)
+            if (! (substr_count($s, '.') === 1 && preg_match('/\.\d{1,2}$/', $s))) {
+                $s = str_replace('.', '', $s);
+            }
+        }
+
+        if (! is_numeric($s)) {
+            return null;
+        }
+
+        $float = round((float) $s, 2);
+
+        return $float < 0 ? null : $float;
     }
 
     /**
