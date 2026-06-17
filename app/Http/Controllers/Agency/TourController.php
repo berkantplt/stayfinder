@@ -248,7 +248,7 @@ class TourController extends Controller
     }
 
     /**
-     * @return array<int, array{hotel: string, prices: array<string, array{old: float|null, new: float|null}>}>
+     * @return array<int, array{hotel: string, prices: array<string, array{old: float|null, new: float|null, note: string|null}>}>
      */
     private function normalizePackages($raw): array
     {
@@ -266,8 +266,15 @@ class TourController extends Controller
             foreach (array_keys(Tour::ROOM_TYPES) as $type) {
                 $old = $this->priceVal($pkg[$type]['old'] ?? null);
                 $new = $this->priceVal($pkg[$type]['new'] ?? null);
-                if ($old !== null || $new !== null) {
-                    $prices[$type] = ['old' => $old, 'new' => $new];
+                // Fiyat yoksa acenta sebep yazabilir (ör. "Kabul edilmiyor")
+                $note = trim((string) ($pkg[$type]['note'] ?? ''));
+                $note = mb_substr($note, 0, 60);
+                if ($old !== null || $new !== null || $note !== '') {
+                    $prices[$type] = [
+                        'old' => $old,
+                        'new' => $new,
+                        'note' => $note !== '' ? $note : null,
+                    ];
                 }
             }
             if ($hotel === '' && $prices === []) {

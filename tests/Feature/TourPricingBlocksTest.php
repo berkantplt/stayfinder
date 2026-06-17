@@ -97,6 +97,49 @@ class TourPricingBlocksTest extends TestCase
         );
     }
 
+    public function test_store_keeps_note_when_room_type_has_no_price(): void
+    {
+        $depart = today()->addDays(25)->toDateString();
+
+        $payload = [
+            'category_id' => $this->category->id,
+            'title' => 'Bebek Kabul Etmeyen Tur',
+            'destination' => 'Kapadokya',
+            'duration_days' => 2,
+            'currency' => 'TRY',
+            'pricing_options' => [
+                [
+                    'departure_dates' => [$depart],
+                    'packages' => [
+                        [
+                            'hotel' => '5★ Otel',
+                            'double_pp' => ['old' => '', 'new' => '8000'],
+                            // 0-1,99 yaş için fiyat yok, sebep girilmiş
+                            'child_0_2' => ['old' => '', 'new' => '', 'note' => 'Kabul edilmiyor'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->actingAs($this->agencyUser)
+            ->post(route('agency.tours.store'), $payload)
+            ->assertRedirect(route('agency.tours.index'));
+
+        $tour = Tour::firstWhere('title', 'Bebek Kabul Etmeyen Tur');
+        $pkg = $tour->pricing_blocks[0]['packages'][0];
+
+        $this->assertEquals(8000, $pkg['prices']['double_pp']['new']);
+        $this->assertNull($pkg['prices']['child_0_2']['new']);
+        $this->assertNull($pkg['prices']['child_0_2']['old']);
+        $this->assertSame('Kabul edilmiyor', $pkg['prices']['child_0_2']['note']);
+
+        // Detay sayfasında not görünür, fiyat sütununda "Kabul edilmiyor" yazar
+        $this->get(route('tours.show', $tour))
+            ->assertOk()
+            ->assertSee('Kabul edilmiyor');
+    }
+
     public function test_store_without_packages_keeps_single_price_and_null_blocks(): void
     {
         $depart = today()->addDays(15)->toDateString();

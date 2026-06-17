@@ -150,7 +150,7 @@
                                 foreach (array_keys($roomTypeLabels) as $type) {
                                     foreach ($packages as $pkg) {
                                         $cell = $pkg['prices'][$type] ?? null;
-                                        if (is_array($cell) && (($cell['old'] ?? null) !== null || ($cell['new'] ?? null) !== null)) {
+                                        if (is_array($cell) && (($cell['old'] ?? null) !== null || ($cell['new'] ?? null) !== null || trim((string) ($cell['note'] ?? '')) !== '')) {
                                             $activeTypes[] = $type;
                                             break;
                                         }
@@ -186,6 +186,7 @@
                                                             $cell = $pkg['prices'][$type] ?? [];
                                                             $old = is_array($cell) ? ($cell['old'] ?? null) : null;
                                                             $new = is_array($cell) ? ($cell['new'] ?? null) : null;
+                                                            $note = is_array($cell) ? trim((string) ($cell['note'] ?? '')) : '';
                                                         @endphp
                                                         <td style="padding:10px 12px;text-align:right;white-space:nowrap;">
                                                             @if($old !== null && $new !== null && (float) $old > (float) $new)
@@ -195,6 +196,8 @@
                                                                 <span style="font-weight:700;">{{ number_format((float) $new, 0, ',', '.') }} {{ $priceCurrency }}</span>
                                                             @elseif($old !== null)
                                                                 <span style="font-weight:700;">{{ number_format((float) $old, 0, ',', '.') }} {{ $priceCurrency }}</span>
+                                                            @elseif($note !== '')
+                                                                <span style="color:var(--text-muted);font-size:12px;font-weight:600;">{{ $note }}</span>
                                                             @else
                                                                 <span style="color:var(--text-muted);">—</span>
                                                             @endif

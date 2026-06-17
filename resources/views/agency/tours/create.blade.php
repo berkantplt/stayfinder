@@ -431,7 +431,7 @@
             }
             function emptyPackage() {
                 var prices = {};
-                Object.keys(roomTypes).forEach(function (t) { prices[t] = { old: '', new: '' }; });
+                Object.keys(roomTypes).forEach(function (t) { prices[t] = { old: '', new: '', note: '' }; });
                 return { hotel: '', prices: prices };
             }
             function normalizePackagesJs(raw) {
@@ -443,7 +443,8 @@
                         var v = (p && p.prices && p.prices[t]) || (p && p[t]) || {};
                         prices[t] = {
                             old: (v.old !== null && v.old !== undefined) ? String(v.old) : '',
-                            new: (v.new !== null && v.new !== undefined) ? String(v.new) : ''
+                            new: (v.new !== null && v.new !== undefined) ? String(v.new) : '',
+                            note: (v.note !== null && v.note !== undefined) ? String(v.note) : ''
                         };
                     });
                     return { hotel: (p && p.hotel) || '', prices: prices };
@@ -472,7 +473,8 @@
                         rows += '<div style="font-size:12px;">'
                             + '<div style="color:var(--text-muted);margin-bottom:2px;">' + roomTypes[t] + '</div>'
                             + '<input type="number" class="pkg-old" data-t="' + t + '" placeholder="Eski" min="0" step="0.01" value="' + escapeAttr(pkg.prices[t].old) + '" style="width:100%;margin-bottom:4px;">'
-                            + '<input type="number" class="pkg-new" data-t="' + t + '" placeholder="İndirimli" min="0" step="0.01" value="' + escapeAttr(pkg.prices[t].new) + '" style="width:100%;">'
+                            + '<input type="number" class="pkg-new" data-t="' + t + '" placeholder="İndirimli" min="0" step="0.01" value="' + escapeAttr(pkg.prices[t].new) + '" style="width:100%;margin-bottom:4px;">'
+                            + '<input type="text" class="pkg-note" data-t="' + t + '" placeholder="Fiyat yoksa açıklama (ör. Kabul edilmiyor)" value="' + escapeAttr(pkg.prices[t].note) + '" style="width:100%;font-size:11px;">'
                             + '</div>';
                     });
                     box.innerHTML = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'
@@ -483,6 +485,7 @@
                     box.querySelector('.pkg-remove').onclick = function () { removePackage(option.id, j); };
                     box.querySelectorAll('.pkg-old').forEach(function (inp) { blockExponentKeys(inp); inp.oninput = function () { option.packages[j].prices[this.dataset.t].old = this.value; syncPricingOptionInputs(); }; });
                     box.querySelectorAll('.pkg-new').forEach(function (inp) { blockExponentKeys(inp); inp.oninput = function () { option.packages[j].prices[this.dataset.t].new = this.value; syncPricingOptionInputs(); }; });
+                    box.querySelectorAll('.pkg-note').forEach(function (inp) { inp.oninput = function () { option.packages[j].prices[this.dataset.t].note = this.value; syncPricingOptionInputs(); }; });
                     wrap.appendChild(box);
                 });
             }
@@ -844,7 +847,7 @@
 
                     (option.packages || []).forEach(function(pkg, j) {
                         var hasData = (pkg.hotel && pkg.hotel.trim() !== '')
-                            || Object.keys(roomTypes).some(function(t){ return pkg.prices[t].old || pkg.prices[t].new; });
+                            || Object.keys(roomTypes).some(function(t){ return pkg.prices[t].old || pkg.prices[t].new || (pkg.prices[t].note && pkg.prices[t].note.trim() !== ''); });
                         if (!hasData) return;
                         var h = document.createElement('input');
                         h.type = 'hidden';
@@ -852,7 +855,7 @@
                         h.value = pkg.hotel || '';
                         hidden.appendChild(h);
                         Object.keys(roomTypes).forEach(function(t) {
-                            ['old', 'new'].forEach(function(sub) {
+                            ['old', 'new', 'note'].forEach(function(sub) {
                                 var v = pkg.prices[t][sub];
                                 if (v === '' || v === null || v === undefined) return;
                                 var inp = document.createElement('input');
