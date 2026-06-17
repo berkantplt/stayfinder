@@ -63,16 +63,31 @@ class TourUrlImporter
     }
 
     /**
-     * İçeriği temiz Markdown olarak alır. Önce okuyucu servisi (gerçek tarayıcı
-     * render + ana içerik + başlık/liste yapısı korunur); başarısızsa düz fetch'e düşer.
+     * İçeriği temiz metin olarak alır. ÖNCE hızlı doğrudan fetch denenir (çoğu
+     * acenta sayfası sunucu-render; saniyeler sürer). İçerik zayıfsa (JS ile
+     * render edilen sayfa) okuyucu servisine (Jina) düşülür. Bu sıra, Jina'nın
+     * ~30 sn'lik render beklemesini gereksiz yere yapmayıp toplam süreyi (ve
+     * sunucu proxy 504'lerini) önler.
      */
     private function fetchContent(string $url): string
     {
-        $readerBase = trim((string) config('ai.import_reader_url', ''));
+        $direct = '';
+        try {
+            $direct = $this->cleanHtml($this->fetchDirect($url));
+        } catch (\Throwable $e) {
+            Log::info('[TourImport] doğrudan fetch başarısız, okuyucu denenecek', ['message' => $e->getMessage()]);
+        }
 
+        // Yeterli içerik geldiyse okuyucunun yavaş render'ını bekleme
+        if (mb_strlen($direct) >= 2000) {
+            return $direct;
+        }
+
+        // İçerik zayıf (muhtemelen JS-render): okuyucu servisini dene
+        $readerBase = trim((string) config('ai.import_reader_url', ''));
         if ($readerBase !== '') {
             try {
-                $request = Http::timeout(35)->withHeaders([
+                $request = Http::timeout(20)->withHeaders([
                     'Accept' => 'text/markdown, text/plain, */*',
                     'X-Return-Format' => 'markdown',
                 ]);
@@ -85,18 +100,16 @@ class TourUrlImporter
 
                 if ($response->ok()) {
                     $markdown = trim($response->body());
-                    // Anlamlı içerik geldiyse okuyucu sonucunu kullan
                     if (mb_strlen($markdown) >= 200) {
                         return mb_substr($markdown, 0, self::SCAN_CHARS);
                     }
                 }
             } catch (\Throwable $e) {
-                Log::info('[TourImport] okuyucu servisi atlandı, düz fetch deneniyor', ['message' => $e->getMessage()]);
+                Log::info('[TourImport] okuyucu servisi atlandı', ['message' => $e->getMessage()]);
             }
         }
 
-        // Fallback: doğrudan fetch + HTML temizleme
-        return $this->cleanHtml($this->fetchDirect($url));
+        return $direct;
     }
 
     /**
