@@ -15,7 +15,7 @@ class TourUrlImporter
 
     private const SCAN_CHARS = 120000;       // odaklamadan önce taranan metin tavanı
 
-    private const MAX_TEXT_CHARS = 46000;    // LLM'e gönderilen (odaklanmış) metin sınırı
+    private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
@@ -289,13 +289,26 @@ class TourUrlImporter
         }
 
         $low = mb_strtolower($text);
+        $len = mb_strlen($text);
         $budget = self::MAX_TEXT_CHARS;
         $pieces = [];
+        $used = []; // eklenen [start,end] aralıkları — kabaca tekrar önleme
+
+        $take = function (int $start, int $end) use (&$pieces, &$budget, &$used, $text, $len) {
+            $start = max(0, $start);
+            $end = min($len, $end);
+            if ($end <= $start || $budget <= 0) {
+                return;
+            }
+            $piece = mb_substr($text, $start, min($end - $start, $budget));
+            $pieces[] = $piece;
+            $budget -= mb_strlen($piece);
+            $used[] = [$start, $end];
+        };
 
         // 1) Fiyat matrisi bölgesi — EN YÜKSEK öncelik, bütün olarak. Tarihe göre
         // tekrarlanan "Paket Adı / oda tipi / fiyat" tabloları sayfanın ortasında/
-        // altında olup, başka pencerelerle birleşip kesilince kayboluyordu. Bu yüzden
-        // önce ve kesintisiz ekleniyor (ilk fiyat çapasından son "Rezervasyon Yap"a).
+        // altındadır (ilk fiyat çapasından son "Rezervasyon Yap"a).
         $priceStart = null;
         foreach (['paket ad', 'kişi baş', 'kisi bas', 'hareket tarih'] as $anchor) {
             $pos = mb_strpos($low, $anchor);
@@ -306,45 +319,51 @@ class TourUrlImporter
         $priceEnd = null;
         if ($priceStart !== null) {
             $priceStart = max(0, $priceStart - 200);
-            $priceEnd = mb_strrpos($low, 'rezervasyon yap');
-            if ($priceEnd === false || $priceEnd < $priceStart) {
-                $priceEnd = mb_strlen($low);
-            }
-            // Tüm tarih tabloları için cömert tavan (ör. 40 tarih × 2 paket)
-            $priceEnd = min($priceEnd + 200, $priceStart + 36000);
-            $region = mb_substr($text, $priceStart, min($priceEnd - $priceStart, $budget));
-            $pieces[] = $region;
-            $budget -= mb_strlen($region);
+            $rez = mb_strrpos($low, 'rezervasyon yap');
+            $priceEnd = ($rez === false || $rez < $priceStart) ? $len : $rez + 200;
+            $priceEnd = min($priceEnd, $priceStart + 28000);
+            $take($priceStart, $priceEnd);
+            // Tablolardan SONRAKİ detaylı listeler: "Fiyata Dahil / Dahil Değil /
+            // Ekstra Aktiviteler / İptal-İade" genelde tam burada yer alır.
+            $take($priceEnd, $priceEnd + 14000);
         }
 
-        // 2) Baş kısım (başlık, intro, özet fiyat) — kalan bütçeden
-        if ($budget > 0) {
-            $head = mb_substr($text, 0, min(8000, $budget));
-            $pieces[] = $head;
-            $budget -= mb_strlen($head);
-        }
+        // 2) Baş kısım (başlık, intro, özet fiyat)
+        $take(0, 8000);
 
-        // 3) Dahil/hariç/program/açıklama pencereleri — kalan bütçeden (ilk eşleşme)
+        // 3) Bölüm anahtarları — hem ilk hem SON eşleşme (içerik bazen üstteki menü
+        // bazen tablo sonrası gerçek liste olur; ikisini de dene).
         $keywords = [
-            'fiyata dahil', 'dahil olan', 'dahil olmayan', 'dahil değil', 'hariç',
-            'açıklama', 'program', 'tur detay', 'tur prog', 'genel bilgi', 'gezi not', 'vize',
-            'gün', 'güzergah', 'hareket nokta',
+            'fiyata dahil', 'dahil olan', 'dahil olmayan', 'dahil değil', 'dahildir', 'ücrete dahil', 'hariç',
+            'iptal', 'iade', 'ekstra', 'aktivite', 'opsiyonel',
+            'açıklama', 'program', 'tur detay', 'genel bilgi', 'gezi not', 'vize',
+            'güzergah', 'hareket nokta', 'konaklama', 'rehber',
         ];
         foreach ($keywords as $kw) {
             if ($budget <= 0) {
                 break;
             }
-            $pos = mb_strpos($low, $kw);
-            if ($pos === false) {
-                continue;
+            foreach ([mb_strpos($low, $kw), mb_strrpos($low, $kw)] as $pos) {
+                if ($pos === false) {
+                    continue;
+                }
+                // Fiyat + tablo-sonrası bölgede zaten var
+                if ($priceEnd !== null && $pos >= $priceStart && $pos <= $priceEnd + 14000) {
+                    continue;
+                }
+                // Daha önce eklenen bir parçaya çok yakınsa atla (tekrarı önle)
+                $skip = false;
+                foreach ($used as [$s, $e]) {
+                    if ($pos >= $s - 200 && $pos <= $e) {
+                        $skip = true;
+                        break;
+                    }
+                }
+                if ($skip) {
+                    continue;
+                }
+                $take($pos - 300, $pos + 5000);
             }
-            // Fiyat bölgesi içindeyse zaten eklendi, atla
-            if ($priceEnd !== null && $pos >= $priceStart && $pos <= $priceEnd) {
-                continue;
-            }
-            $win = mb_substr($text, max(0, $pos - 300), min(7700, $budget));
-            $pieces[] = $win;
-            $budget -= mb_strlen($win);
         }
 
         return implode("\n…\n", $pieces);

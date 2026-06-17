@@ -45,5 +45,7 @@ return [
     | for a response. By default, the client will time out after 30 seconds.
     */
 
-    'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
+    // URL içe aktarma büyük sayfalarda (çok tarihli fiyat matrisi + tüm metin)
+    // 30 sn'yi aşabiliyor; varsayılan 60 sn (env ile override edilebilir).
+    'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 60),
 ];

@@ -258,7 +258,7 @@ class TourUrlImportTest extends TestCase
 
         $out = $method->invoke($importer, $text);
 
-        $this->assertLessThanOrEqual(46000, mb_strlen($out));
+        $this->assertLessThanOrEqual(52000, mb_strlen($out));
         $this->assertStringContainsString('Dahil Olan Hizmetler', $out);
         $this->assertStringContainsString('Uçak bileti', $out);
         $this->assertStringContainsString('Dahil Olmayan Hizmetler', $out);
@@ -285,6 +285,26 @@ class TourUrlImportTest extends TestCase
         $this->assertStringContainsString('Paket Adı', $out);
         $this->assertStringContainsString('5* Suhan Cappadocia Hotel & Spa', $out);
         $this->assertStringContainsString('11.498,00', $out);
+    }
+
+    public function test_focus_content_keeps_sections_after_price_table(): void
+    {
+        $importer = new TourUrlImporter;
+        $method = new \ReflectionMethod($importer, 'focusContent');
+        $method->setAccessible(true);
+
+        // Gerçek hayattaki düzen: dahil/dahil-değil/iptal listeleri fiyat tablosunun ARDINDAN gelir
+        $noise = str_repeat('Alakasız içerik metni satırı. ', 1500);
+        $table = "Paket Adı İki Kişilik Oda Kişi Başı\n5* Otel 10.998,00 5.499,00\nRezervasyon Yap\n";
+        $afterTable = "FİYATA DAHİL DEĞİLDİR\n- Müze giriş ücretleri\n- Öğle yemekleri\n"
+            ."İPTAL İADE KOŞULLARI\n- 72 saat öncesine kadar ücretsiz iptal\n";
+        $text = "Başlık Kapadokya Turu\n".$noise.$table.$afterTable.$noise;
+
+        $out = $method->invoke($importer, $text);
+
+        $this->assertStringContainsString('DAHİL DEĞİLDİR', $out);
+        $this->assertStringContainsString('Müze giriş ücretleri', $out);
+        $this->assertStringContainsString('İPTAL İADE', $out);
     }
 
     public function test_numeric_dmy_dates_are_harvested_and_parsed(): void
