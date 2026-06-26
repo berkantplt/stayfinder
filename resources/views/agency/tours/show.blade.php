@@ -104,9 +104,9 @@
                             {{-- Display row --}}
                             <div id="date-display-{{ $date->id }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
                                 <div style="flex:1;">
-                                    <span style="font-weight:600;font-size:14px;">📅 {{ $date->departure_date->format('d M Y') }}</span>
+                                    <span style="font-weight:600;font-size:14px;">📅 {{ $date->departure_date->format('d-m-Y') }}</span>
                                     <span style="color:var(--text-muted);margin:0 4px;">→</span>
-                                    <span style="font-weight:600;font-size:14px;">{{ $date->return_date->format('d M Y') }}</span>
+                                    <span style="font-weight:600;font-size:14px;">{{ $date->return_date->format('d-m-Y') }}</span>
                                     <span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;margin-left:6px;">{{ number_format((float) ($date->price ?? $tour->price), 0, ',', '.') }} {{ $tour->currency_symbol }}</span>
                                     @if($date->label)
                                         <span class="badge badge-accent" style="font-size:11px;margin-left:6px;">{{ $date->label }}</span>

@@ -38,7 +38,7 @@
         {{-- Category + Meta --}}
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
             <span class="badge badge-accent">{{ $post->category }}</span>
-            <span style="font-size:13px;color:var(--text-muted);">{{ $post->published_at?->format('d M Y') }}</span>
+            <span style="font-size:13px;color:var(--text-muted);">{{ $post->published_at?->format('d-m-Y') }}</span>
             <span style="font-size:13px;color:var(--text-muted);">· {{ $post->reading_time }} dk okuma</span>
         </div>
 
@@ -81,7 +81,7 @@
                 @endif
                 <div class="card-body">
                     <div class="card-title" style="font-size:14px;">{{ $rel->title }}</div>
-                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">{{ $rel->published_at?->format('d M Y') }}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">{{ $rel->published_at?->format('d-m-Y') }}</div>
                 </div>
             </a>
             @endforeach

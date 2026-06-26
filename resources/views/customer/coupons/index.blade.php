@@ -83,7 +83,7 @@
                             @if($coupon->expires_at)
                                 <div style="display:flex;align-items:center;gap:6px;">
                                     <span>⏰</span>
-                                    <span>Son kullanım: <strong>{{ $coupon->expires_at->format('d M Y') }}</strong></span>
+                                    <span>Son kullanım: <strong>{{ $coupon->expires_at->format('d-m-Y') }}</strong></span>
                                 </div>
                             @else
                                 <div style="display:flex;align-items:center;gap:6px;color:#94a3b8;">

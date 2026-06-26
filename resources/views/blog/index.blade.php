@@ -29,7 +29,7 @@
                     @if($first->excerpt)
                         <p style="color:var(--text-sec);font-size:14px;line-height:1.7;">{{ $first->excerpt }}</p>
                     @endif
-                    <div style="margin-top:16px;font-size:13px;color:var(--text-muted);">{{ $first->published_at?->format('d M Y') }}</div>
+                    <div style="margin-top:16px;font-size:13px;color:var(--text-muted);">{{ $first->published_at?->format('d-m-Y') }}</div>
                 </div>
             </div>
         </a>
@@ -49,7 +49,7 @@
                     @if($post->excerpt)
                         <div class="card-meta" style="margin-top:4px;line-height:1.5;">{{ Str::limit($post->excerpt, 80) }}</div>
                     @endif
-                    <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">{{ $post->published_at?->format('d M Y') }} · {{ $post->reading_time }} dk</div>
+                    <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">{{ $post->published_at?->format('d-m-Y') }} · {{ $post->reading_time }} dk</div>
                 </div>
             </a>
             @endforeach

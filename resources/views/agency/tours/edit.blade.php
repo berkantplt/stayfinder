@@ -588,7 +588,7 @@
 
             function formatTr(ymd) {
                 const parts = ymd.split('-');
-                return parts[2] + '.' + parts[1] + '.' + parts[0];
+                return parts[2] + '-' + parts[1] + '-' + parts[0];
             }
 
             function calculateReturnDate(ymd, durationDays) {

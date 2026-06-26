@@ -70,7 +70,7 @@
 
                     <div style="margin-top:32px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
                         <div style="font-size:12px;color:#94a3b8;">
-                            Oluşturulma: {{ $campaign->created_at?->format('d M Y H:i') }}
+                            Oluşturulma: {{ $campaign->created_at?->format('d-m-Y H:i') }}
                             @if($campaign->updated_at && $campaign->updated_at->ne($campaign->created_at))
                                 • Son güncelleme: {{ $campaign->updated_at->diffForHumans() }}
                             @endif

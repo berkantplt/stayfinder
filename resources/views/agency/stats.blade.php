@@ -59,7 +59,7 @@
                     @if($date->label)<span class="badge badge-accent" style="font-size:10px;margin-left:6px;">{{ $date->label }}</span>@endif
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-weight:600;font-size:13px;color:#0f172a;">📅 {{ $date->departure_date->format('d M Y') }} → {{ $date->return_date->format('d M Y') }}</div>
+                    <div style="font-weight:600;font-size:13px;color:#0f172a;">📅 {{ $date->departure_date->format('d-m-Y') }} → {{ $date->return_date->format('d-m-Y') }}</div>
                     <div style="font-size:11px;color:#94a3b8;">{{ $date->departure_date->diffForHumans() }}</div>
                 </div>
             </div>

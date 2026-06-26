@@ -115,9 +115,9 @@
                     <div style="display:flex;flex-wrap:wrap;gap:8px;">
                         @foreach($upcomingDates as $date)
                         <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;">
-                            <span style="font-weight:600;">{{ $date->departure_date->format('d M Y') }}</span>
+                            <span style="font-weight:600;">{{ $date->departure_date->format('d-m-Y') }}</span>
                             <span style="color:var(--text-muted);margin:0 3px;">→</span>
-                            <span style="font-weight:600;">{{ $date->return_date->format('d M Y') }}</span>
+                            <span style="font-weight:600;">{{ $date->return_date->format('d-m-Y') }}</span>
                             {!! $datePriceRenderer($date) !!}
                             @if($date->label)
                                 <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
@@ -132,9 +132,9 @@
                     <div style="display:flex;flex-wrap:wrap;gap:8px;">
                         @foreach($allDates as $date)
                         <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;{{ $date->departure_date->isPast() ? 'opacity:0.7;' : '' }}">
-                            <span style="font-weight:600;">{{ $date->departure_date->format('d M Y') }}</span>
+                            <span style="font-weight:600;">{{ $date->departure_date->format('d-m-Y') }}</span>
                             <span style="color:var(--text-muted);margin:0 3px;">→</span>
-                            <span style="font-weight:600;">{{ $date->return_date->format('d M Y') }}</span>
+                            <span style="font-weight:600;">{{ $date->return_date->format('d-m-Y') }}</span>
                             {!! $datePriceRenderer($date) !!}
                             @if($date->label)
                                 <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
@@ -145,7 +145,7 @@
                 </div>
                 @elseif($tour->departure_date)
                 <div style="margin-bottom:16px;">
-                    <span class="badge badge-accent">📅 {{ $tour->departure_date->format('d M Y') }} — {{ $tour->return_date?->format('d M Y') }}</span>
+                    <span class="badge badge-accent">📅 {{ $tour->departure_date->format('d-m-Y') }} — {{ $tour->return_date?->format('d-m-Y') }}</span>
                 </div>
                 @endif
 
@@ -179,7 +179,7 @@
                                     <span style="color:var(--accent);">📅</span>
                                     @foreach($blockDates as $bd)
                                         @php $bdReturn = $bd->copy()->addDays(max(1, (int) $tour->duration_days) - 1); @endphp
-                                        <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d M Y') }} → {{ $bdReturn->format('d M Y') }}</span>
+                                        <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d-m-Y') }} → {{ $bdReturn->format('d-m-Y') }}</span>
                                     @endforeach
                                     <span style="color:var(--text-muted);font-size:12px;font-weight:500;margin-left:auto;">fiyatları gör ▾</span>
                                 </summary>

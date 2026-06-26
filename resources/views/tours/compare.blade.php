@@ -61,10 +61,10 @@
                                 <div style="font-size:12px;color:#94a3b8;font-weight:600;text-transform:uppercase;margin-bottom:2px;">Kalkış Tarihleri</div>
                                 <div style="color:#0f172a;font-weight:500;">
                                     @if($tour->dates->count())
-                                        {{ $tour->dates->first()->departure_date->format('d M Y') }}
+                                        {{ $tour->dates->first()->departure_date->format('d-m-Y') }}
                                         @if($tour->dates->count() > 1) <span style="color:#64748b;font-size:13px;">(+{{ $tour->dates->count() - 1 }} tarih)</span> @endif
                                     @elseif($tour->departure_date)
-                                        {{ $tour->departure_date->format('d M Y') }}
+                                        {{ $tour->departure_date->format('d-m-Y') }}
                                     @else
                                         Belirtilmemiş
                                     @endif

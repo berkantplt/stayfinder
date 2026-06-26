@@ -44,7 +44,7 @@
                                 <span class="badge" style="background:#fef3c7;color:#92400e;">Taslak</span>
                             @endif
                         </td>
-                        <td style="font-size:13px;color:var(--text-muted);">{{ $post->published_at?->format('d M Y') ?? '—' }}</td>
+                        <td style="font-size:13px;color:var(--text-muted);">{{ $post->published_at?->format('d-m-Y') ?? '—' }}</td>
                         <td style="display:flex;gap:6px;">
                             <a href="{{ route('admin.blog.edit', $post) }}" class="btn btn-sm btn-outline">Düzenle</a>
                             <form method="POST" action="{{ route('admin.blog.destroy', $post) }}" onsubmit="return confirm('Yazı silinsin mi?')">

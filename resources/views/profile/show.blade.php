@@ -23,7 +23,7 @@
                     <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px;opacity:.8;">
                         @if($user->city) <span>📍 {{ $user->city }}</span> @endif
                         @if($user->phone) <span>📞 {{ $user->phone }}</span> @endif
-                        @if($user->birth_date) <span>🎂 {{ $user->birth_date->format('d M Y') }}</span> @endif
+                        @if($user->birth_date) <span>🎂 {{ $user->birth_date->format('d-m-Y') }}</span> @endif
                         <span>📅 Üye: {{ $user->created_at->format('M Y') }}</span>
                     </div>
                 </div>
