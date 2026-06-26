@@ -125,6 +125,10 @@
                             . '</span>';
                     };
                 @endphp
+                {{-- Tarih ızgarası yalnızca paket fiyat tablosu YOKKEN gösterilir;
+                     fiyat blokları varsa tarihler zaten aşağıdaki tabloda var (tekrar olmasın) --}}
+                @php $hasPricingBlocks = is_array($tour->pricing_blocks) && count($tour->pricing_blocks); @endphp
+                @if(! $hasPricingBlocks)
                 @if($upcomingDates->count())
                 <div style="margin-bottom:20px;">
                     <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">📅 Kalkış Tarihleri</div>
@@ -163,6 +167,7 @@
                 <div style="margin-bottom:16px;">
                     <span class="badge badge-accent">📅 {{ $tour->departure_date->format('d-m-Y') }} — {{ $tour->return_date?->format('d-m-Y') }}</span>
                 </div>
+                @endif
                 @endif
 
                 {{-- Fiyat tablosu: tarihe tıklanınca paket/oda-tipi fiyat matrisi açılır --}}
