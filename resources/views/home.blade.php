@@ -643,7 +643,8 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.type = 'button';
             btn.className = 'subcategory-tab';
             btn.dataset.category = child.slug;
-            btn.innerHTML = `<span class="subcategory-icon">${child.icon}</span> ${child.name}`;
+            const icon = child.icon ? `<span class="subcategory-icon">${child.icon}</span> ` : '';
+            btn.innerHTML = `${icon}${child.name}`;
             btn.addEventListener('click', () => selectSubcategory(btn, child.slug));
             subcategoryTabs.appendChild(btn);
         });
