@@ -13,6 +13,7 @@ class FeaturedCityController extends Controller
     public function index()
     {
         $cities = FeaturedCity::with('images')->orderBy('sort_order')->get();
+
         return view('admin.featured_cities.index', compact('cities'));
     }
 
@@ -21,6 +22,7 @@ class FeaturedCityController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'country' => 'required|string|max:255',
+            'link' => 'nullable|string|max:500',
             'sort_order' => 'nullable|integer',
         ]);
 
@@ -35,6 +37,7 @@ class FeaturedCityController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'country' => 'required|string|max:255',
+            'link' => 'nullable|string|max:500',
             'sort_order' => 'nullable|integer',
             'is_active' => 'boolean',
         ]);

@@ -39,6 +39,10 @@
                             <input type="number" name="sort_order" value="0" style="padding:14px;background:#f8fafc;">
                         </div>
                     </div>
+                    <div class="form-group" style="margin-top:20px;margin-bottom:0;">
+                        <label style="font-size:13px;color:#475569;">Turları Gör Bağlantısı <span style="color:#94a3b8;font-weight:400;">(boşsa şehir adıyla arama yapılır)</span></label>
+                        <input type="text" name="link" placeholder="Ör: /turlar?destination=Paris veya /turlar?q=Paris" value="{{ old('link') }}" style="padding:14px;background:#f8fafc;">
+                    </div>
                     <div style="margin-top:24px;display:flex;justify-content:flex-end;">
                         <button type="submit" class="btn btn-primary" style="padding:14px 32px;font-size:15px;">Şehir Ekle</button>
                     </div>
@@ -89,6 +93,10 @@
                                         <option value="0" {{ !$city->is_active ? 'selected' : '' }}>Pasif</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div class="form-group" style="margin-top:12px;margin-bottom:0;">
+                                <label style="font-size:12px;">Turları Gör Bağlantısı <span style="color:#94a3b8;">(boşsa şehir adıyla arama)</span></label>
+                                <input type="text" name="link" value="{{ $city->link }}" placeholder="/turlar?destination={{ $city->name }}" style="padding:10px;">
                             </div>
                             <div style="margin-top:15px;display:flex;justify-content:flex-end;gap:10px;">
                                 <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('edit-city-{{ $city->id }}').style.display='none'">İptal</button>

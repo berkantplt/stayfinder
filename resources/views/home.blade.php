@@ -759,7 +759,9 @@ function showStory() {
     document.getElementById('story-avatar').src = images[0];
     document.getElementById('story-city-name').textContent = city.name;
     document.getElementById('story-country-name').textContent = city.country;
-    document.getElementById('story-cta').href = `/turlar?q=${city.name}`;
+    document.getElementById('story-cta').href = (city.link && city.link.trim() !== '')
+        ? city.link
+        : `/turlar?q=${encodeURIComponent(city.name)}`;
     
     // Update progress bars
     const fills = document.querySelectorAll('.story-progress-fill');

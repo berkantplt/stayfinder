@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FeaturedCity extends Model
 {
-    protected $fillable = ['name', 'country', 'sort_order', 'is_active'];
+    protected $fillable = ['name', 'country', 'link', 'sort_order', 'is_active'];
 
     public function images()
     {

@@ -109,6 +109,7 @@ class HomeController extends Controller
                 return [
                     'name' => $city->name,
                     'country' => $city->country,
+                    'link' => $city->link,
                     'images' => $city->images->map(fn ($img) => asset('storage/'.$img->image_path))->toArray(),
                     'count' => Tour::active()->where('destination', $city->name)->count(),
                 ];
