@@ -400,11 +400,14 @@ class TourUrlImporter
         - currency (string|null): para birimi, yalnızca şunlardan biri: {$allowed}
         - price (number|null): kişi başı GÜNCEL fiyat, yalnızca sayı (ör. "1.500 TL" → 1500)
         - description (string|null): kısa tur açıklaması
-        - included (string|null): fiyata DAHİL olan hizmetler, her madde ayrı satır
-        - excluded (string|null): fiyata dahil OLMAYAN hizmetler, her madde ayrı satır
+        - included (string|null): fiyata DAHİL olan hizmetler, her madde ayrı satır; satır
+          başına "•/-/*" gibi madde işareti KOYMA, sadece metin
+        - excluded (string|null): fiyata dahil OLMAYAN hizmetler, her madde ayrı satır; satır
+          başına madde işareti KOYMA
         - departure_dates (array): TÜM kalkış/tur tarihleri, YYYY-MM-DD formatında string dizisi; yoksa boş dizi
         - itinerary (array): turun GÜN GÜN programı. Her gün için bir nesne:
-          {"title": o günün güzergah/özet başlığı (ör. "1. Gün: Tuz Gölü – Ihlara – Avanos"),
+          {"title": o günün güzergah/özet başlığı — SADECE güzergah, "1. Gün" / "2. Gün"
+           gibi gün numarası ön ekini BAŞA EKLEME (ör. "Tuz Gölü – Ihlara – Avanos"),
            "content": o güne ait TÜM detaylı açıklama metni}. İçeriği ASLA kısaltma/özetleme,
           sayfadaki tam paragrafı aynen al. Tek gün varsa tek elemanlı dizi; program yoksa boş dizi.
         - pricing_blocks (array): Tarihe/pakete göre fiyat matrisi. Sayfada bir tarihe
@@ -444,7 +447,9 @@ class TourUrlImporter
         - stop_cities (array): yol üstünde yolcu ALINAN diğer İLLER (81 ilden). Biniş noktası
           ilçeyse bağlı olduğu ili yaz (ör. "Gebze"/"İzmit" → "Kocaeli"; "Söğütözü" → "Ankara").
           Kalkış ilini buraya KOYMA. Sadece il adları; yoksa boş dizi.
-        - hotel_info (string|null): konaklanacak otel adı ve özellikleri (yıldız vb.)
+        - hotel_info (string|null): konaklama bilgisi — konaklanacak TÜM otel adlarını
+          (ör. "Suhan Cappadocia, Crowne Plaza, Emin Koçak Cappadocia vb.") ve varsa
+          özelliklerini (yıldız vb.) yaz. Sayfadaki "Konaklama:" satırını eksiksiz al.
         - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır
         - cancellation_policy (string|null): iptal ve iade koşulları
         - guide_info (string|null): rehber bilgisi veya rehber notları
@@ -718,6 +723,11 @@ class TourUrlImporter
                 continue;
             }
             $title = $this->clean($day['title'] ?? null, 255) ?? '';
+            // Başlıktaki "N. Gün:" / "Gün N -" ön ekini ayıkla — gösterimde sayfa
+            // kendisi "N. Gün:" ekliyor, aksi halde "2. Gün: 2. Gün: ..." oluyor.
+            $title = preg_replace('/^\s*\d+\s*\.?\s*g[üu]n\s*[:\-–—]?\s*/iu', '', $title) ?? $title;
+            $title = preg_replace('/^\s*g[üu]n\s*\d+\s*[:\-–—]?\s*/iu', '', $title) ?? $title;
+            $title = trim($title);
             $content = $this->lines($day['content'] ?? null, 8000) ?? '';
             if ($title === '' && $content === '') {
                 continue;

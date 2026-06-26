@@ -90,7 +90,8 @@ class TourUrlImportTest extends TestCase
         $this->assertSame(['2030-09-01'], $data['departure_dates']); // geçmiş tarih elendi
         // Yeni detay alanları — itinerary gün gün dizi
         $this->assertCount(2, $data['itinerary']);
-        $this->assertSame('2. Gün Cusco', $data['itinerary'][1]['title']);
+        // "N. Gün" ön eki başlıktan ayıklanır (sayfa kendisi ekliyor)
+        $this->assertSame('Cusco', $data['itinerary'][1]['title']);
         $this->assertStringContainsString('Cusco', $data['itinerary'][1]['content']);
         $this->assertStringContainsString('Yenibosna', $data['departure_points']);
         $this->assertSame('5★ Suhan Hotel', $data['hotel_info']);

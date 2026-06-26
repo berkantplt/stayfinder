@@ -239,7 +239,10 @@
                         <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">✅ Dahil Olanlar</h3>
                         <ul style="list-style:none;">
                             @foreach(explode("\n", $tour->included) as $item)
-                                <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ trim($item) }}</li>
+                                @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
+                                @if($line !== '')
+                                    <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
+                                @endif
                             @endforeach
                         </ul>
                     </div>
@@ -250,7 +253,10 @@
                         <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">❌ Dahil Olmayanlar</h3>
                         <ul style="list-style:none;">
                             @foreach(explode("\n", $tour->excluded) as $item)
-                                <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ trim($item) }}</li>
+                                @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
+                                @if($line !== '')
+                                    <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
+                                @endif
                             @endforeach
                         </ul>
                     </div>
@@ -260,8 +266,15 @@
                     <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
                         <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">📋 Tur Programı</h3>
                         @foreach($tour->itinerary as $i => $day)
+                            @php
+                                // Başlıkta zaten "N. Gün" / "Gün N" ön eki varsa temizle (sayfa kendi ekliyor)
+                                $dayTitle = trim($day['title'] ?? '');
+                                $dayTitle = preg_replace('/^\s*\d+\s*\.?\s*g[üu]n\s*[:\-–—]?\s*/iu', '', $dayTitle);
+                                $dayTitle = preg_replace('/^\s*g[üu]n\s*\d+\s*[:\-–—]?\s*/iu', '', $dayTitle);
+                                $dayTitle = trim($dayTitle);
+                            @endphp
                             <div style="margin-bottom:14px;padding-bottom:14px;{{ ! $loop->last ? 'border-bottom:1px dashed var(--border);' : '' }}">
-                                <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">{{ $i + 1 }}. Gün{{ ! empty($day['title']) ? ': '.$day['title'] : '' }}</div>
+                                <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">{{ $i + 1 }}. Gün{{ $dayTitle !== '' ? ': '.$dayTitle : '' }}</div>
                                 @if(! empty($day['content']))
                                     <div style="color:var(--text-sec);line-height:1.8;font-size:14px;white-space:pre-line;">{{ $day['content'] }}</div>
                                 @endif
