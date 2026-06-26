@@ -54,7 +54,23 @@
                     @endif
                     <span class="badge badge-accent">📍 {{ $tour->destination }}</span>
                     <span class="badge badge-accent">⏱ {{ $tour->duration_days }} gün</span>
+                    @if($tour->departure_city)
+                        <a href="{{ route('tours.index', ['departure_city' => $tour->departure_city]) }}" class="badge badge-accent" style="text-decoration:none;">🚌 Kalkış: {{ $tour->departure_city }}</a>
+                    @endif
                 </div>
+
+                @if($tour->departure_city || (is_array($tour->stop_cities) && count($tour->stop_cities)))
+                    <div style="margin-bottom:16px;font-size:14px;color:var(--text-sec);">
+                        <strong>🚌 Kalkış Şehri:</strong> {{ $tour->departure_city ?: '—' }}
+                        @if(is_array($tour->stop_cities) && count($tour->stop_cities))
+                            <span style="margin-left:12px;"><strong>Durak Şehirler:</strong>
+                                @foreach($tour->stop_cities as $stopCity)
+                                    <a href="{{ route('tours.index', ['departure_city' => $stopCity]) }}" style="color:var(--accent);text-decoration:none;">{{ $stopCity }}</a>{{ ! $loop->last ? ',' : '' }}
+                                @endforeach
+                            </span>
+                        @endif
+                    </div>
+                @endif
 
                 {{-- Tour Dates --}}
                 @php

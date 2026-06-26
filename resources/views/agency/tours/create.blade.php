@@ -294,6 +294,12 @@
                         </div>
                     </div>
 
+                    @include('agency.tours._city_fields', [
+                        'cityOptions' => \App\Support\TurkishCities::all(),
+                        'selectedDepartureCity' => old('departure_city', ''),
+                        'selectedStopCities' => old('stop_cities', []),
+                    ])
+
                     <div class="form-group">
                         <label>Tur Tarihleri ve Fiyatları *</label>
                         @php
@@ -576,6 +582,17 @@
                 setVal('textarea[name="guide_info"]', data.guide_info);
                 setVal('input[name="frequency"]', data.frequency);
                 setVal('input[name="tour_url"]', sourceUrl);
+
+                // Kalkış + durak şehirleri
+                if (data.departure_city) {
+                    var dcSel = document.getElementById('departureCitySelect');
+                    if (dcSel && [].some.call(dcSel.options, function(o){ return o.value === data.departure_city; })) {
+                        dcSel.value = data.departure_city;
+                    }
+                }
+                if (typeof window.setStopCities === 'function' && Array.isArray(data.stop_cities)) {
+                    window.setStopCities(data.stop_cities);
+                }
 
                 if (data.currency) {
                     var sel = document.getElementById('currencySelect');

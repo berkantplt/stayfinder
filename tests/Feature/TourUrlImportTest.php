@@ -379,6 +379,26 @@ class TourUrlImportTest extends TestCase
         $this->assertContains('2030-07-22', $data['departure_dates']);
     }
 
+    public function test_departure_and_stop_cities_are_normalized_to_provinces(): void
+    {
+        Http::fake(['*' => Http::response('<html><body>İstanbul çıkışlı Kapadokya turu içeriği.</body></html>', 200, ['Content-Type' => 'text/html'])]);
+
+        $this->fakeOpenAi([
+            'title' => 'Kapadokya Turu',
+            'departure_city' => 'istanbul',
+            'stop_cities' => ['Kocaeli', 'Bolu', 'ankara', 'İstanbul'], // kalkış ili tekrar → elenir
+            'departure_dates' => [],
+        ]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/kapadokya'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame('İstanbul', $data['departure_city']);
+        $this->assertSame(['Kocaeli', 'Bolu', 'Ankara'], $data['stop_cities']);
+    }
+
     public function test_guest_cannot_import(): void
     {
         $this->post(route('agency.tours.import'), ['url' => 'https://1.1.1.1/x'])

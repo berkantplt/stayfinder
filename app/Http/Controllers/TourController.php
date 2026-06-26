@@ -7,6 +7,7 @@ use App\Models\AiSearchLog;
 use App\Models\Category;
 use App\Models\Tour;
 use App\Models\TourView;
+use App\Support\TurkishCities;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -29,6 +30,12 @@ class TourController extends Controller
 
         if ($request->filled('destination')) {
             $query->where('destination', $request->destination);
+        }
+
+        // Kalkış şehrim: kalkış şehri VEYA duraklarından biri eşleşen turlar.
+        // Şehir bilgisi girilmemiş turlar bu filtrede gizlenir (scopeDepartsFrom).
+        if ($request->filled('departure_city')) {
+            $query->departsFrom($request->departure_city);
         }
 
         // Filtre değerleri TL — kur-normalize price_try ile karşılaştırılır
@@ -95,8 +102,9 @@ class TourController extends Controller
             ->distinct()->orderBy('destination')->pluck('destination');
         $agencies = Agency::active()->orderBy('name')->get();
         $categories = Category::active()->parents()->with('children')->orderBy('sort_order')->get();
+        $departureCities = TurkishCities::all();
 
-        return view('tours.index', compact('tours', 'destinations', 'agencies', 'categories'));
+        return view('tours.index', compact('tours', 'destinations', 'agencies', 'categories', 'departureCities'));
     }
 
     public function show(Request $request, Tour $tour)

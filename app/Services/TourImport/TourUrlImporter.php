@@ -3,6 +3,7 @@
 namespace App\Services\TourImport;
 
 use App\Models\Tour;
+use App\Support\TurkishCities;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -437,6 +438,12 @@ class TourUrlImporter
           Aynı tarihte birden fazla paket (otel) varsa HEPSİNİ packages dizisine ekle.
           "Kabul Edilemez" / "-" gibi değerleri null bırak. Tarihleri DD-MM-YYYY → YYYY-MM-DD'ye çevir.
         - departure_points (string|null): kalkış/biniş noktaları ve saatleri, her satıra bir nokta (ör. "21:00 Yenibosna")
+        - departure_city (string|null): turun KALKTIĞI il (Türkiye'nin 81 ilinden biri). Biniş
+          noktalarının ilki hangi ildeyse odur (ör. "Yenibosna/Mecidiyeköy/Kadıköy" → "İstanbul").
+          İlçe değil İL adı yaz. Bilmiyorsan null.
+        - stop_cities (array): yol üstünde yolcu ALINAN diğer İLLER (81 ilden). Biniş noktası
+          ilçeyse bağlı olduğu ili yaz (ör. "Gebze"/"İzmit" → "Kocaeli"; "Söğütözü" → "Ankara").
+          Kalkış ilini buraya KOYMA. Sadece il adları; yoksa boş dizi.
         - hotel_info (string|null): konaklanacak otel adı ve özellikleri (yıldız vb.)
         - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır
         - cancellation_policy (string|null): iptal ve iade koşulları
@@ -533,9 +540,22 @@ class TourUrlImporter
         $dates = array_values(array_unique($dates));
         sort($dates);
 
+        // Kalkış + durak şehirleri 81 ile eşle (serbest metin/ilçe → resmi il adı)
+        $departureCity = TurkishCities::canonical($raw['departure_city'] ?? null);
+        $stopCities = [];
+        foreach ((array) ($raw['stop_cities'] ?? []) as $stop) {
+            $canonical = TurkishCities::canonical((string) $stop);
+            if ($canonical !== null && $canonical !== $departureCity) {
+                $stopCities[$canonical] = true;
+            }
+        }
+        $stopCities = array_keys($stopCities);
+
         return [
             'title' => $this->clean($raw['title'] ?? null, 255),
             'destination' => $this->clean($raw['destination'] ?? null, 100),
+            'departure_city' => $departureCity,
+            'stop_cities' => $stopCities,
             'duration_days' => $duration,
             'currency' => $currency,
             'price' => $price,

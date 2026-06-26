@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Tour;
 use App\Models\TourClick;
 use App\Models\TourView;
+use App\Support\TurkishCities;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -62,6 +63,9 @@ class TourController extends Controller
             'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
             'destination' => 'required|string|max:100',
+            'departure_city' => ['required', 'string', Rule::in(TurkishCities::all())],
+            'stop_cities' => 'nullable|array',
+            'stop_cities.*' => ['string', Rule::in(TurkishCities::all())],
             'description' => 'nullable|string',
             'duration_days' => 'required|integer|min:1',
             'currency' => ['required', 'string', Rule::in(array_keys(Tour::supportedCurrencies()))],
@@ -78,6 +82,9 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
+        ], [
+            'departure_city.required' => 'Kalkış şehrini seçin.',
+            'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
 
@@ -95,6 +102,7 @@ class TourController extends Controller
             unset($validated['image']);
         }
 
+        $validated['stop_cities'] = $this->normalizeStopCities($validated['stop_cities'] ?? null, $validated['departure_city']);
         $validated['agency_id'] = $agency->id;
         $validated['price'] = $this->resolveBasePrice($dates);
         $primaryDate = $this->resolvePrimaryDate($dates);
@@ -131,6 +139,9 @@ class TourController extends Controller
             'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
             'destination' => 'required|string|max:100',
+            'departure_city' => ['required', 'string', Rule::in(TurkishCities::all())],
+            'stop_cities' => 'nullable|array',
+            'stop_cities.*' => ['string', Rule::in(TurkishCities::all())],
             'description' => 'nullable|string',
             'duration_days' => 'required|integer|min:1',
             'currency' => ['required', 'string', Rule::in(array_keys(Tour::supportedCurrencies()))],
@@ -148,8 +159,12 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
+        ], [
+            'departure_city.required' => 'Kalkış şehrini seçin.',
+            'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
+        $validated['stop_cities'] = $this->normalizeStopCities($validated['stop_cities'] ?? null, $validated['departure_city']);
 
         $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
         $dates = $this->prepareValidatedDatePrices(
@@ -322,6 +337,30 @@ class TourController extends Controller
         $num = round((float) $value, 2);
 
         return $num >= 0 ? $num : null;
+    }
+
+    /**
+     * Durak şehirleri temizler: geçersizleri/yinelenenleri atar, kalkış şehrini
+     * çıkarır (durak değil), boşsa null döner.
+     *
+     * @return array<int, string>|null
+     */
+    private function normalizeStopCities($input, string $departureCity): ?array
+    {
+        if (! is_array($input)) {
+            return null;
+        }
+
+        $cities = [];
+        foreach ($input as $city) {
+            $canonical = TurkishCities::canonical((string) $city);
+            if ($canonical !== null && $canonical !== $departureCity) {
+                $cities[$canonical] = true;
+            }
+        }
+        $cities = array_keys($cities);
+
+        return $cities !== [] ? $cities : null;
     }
 
     /**

@@ -51,6 +51,7 @@ class TourPricingBlocksTest extends TestCase
             'category_id' => $this->category->id,
             'title' => 'Bodrum Yaz Turu',
             'destination' => 'Bodrum',
+            'departure_city' => 'İstanbul',
             'duration_days' => 4,
             'currency' => 'TRY',
             'pricing_options' => [
@@ -105,6 +106,7 @@ class TourPricingBlocksTest extends TestCase
             'category_id' => $this->category->id,
             'title' => 'Bebek Kabul Etmeyen Tur',
             'destination' => 'Kapadokya',
+            'departure_city' => 'İstanbul',
             'duration_days' => 2,
             'currency' => 'TRY',
             'pricing_options' => [
@@ -148,6 +150,7 @@ class TourPricingBlocksTest extends TestCase
             'category_id' => $this->category->id,
             'title' => 'Kapadokya Turu',
             'destination' => 'Nevşehir',
+            'departure_city' => 'İstanbul',
             'duration_days' => 2,
             'currency' => 'TRY',
             'pricing_options' => [

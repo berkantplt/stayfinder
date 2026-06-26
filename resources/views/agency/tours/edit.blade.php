@@ -275,6 +275,12 @@
                         </div>
                     </div>
 
+                    @include('agency.tours._city_fields', [
+                        'cityOptions' => \App\Support\TurkishCities::all(),
+                        'selectedDepartureCity' => old('departure_city', $tour->departure_city ?? ''),
+                        'selectedStopCities' => old('stop_cities', $tour->stop_cities ?? []),
+                    ])
+
                     <div class="form-group">
                         <label>Tur Tarihleri ve Fiyatları *</label>
                         @php

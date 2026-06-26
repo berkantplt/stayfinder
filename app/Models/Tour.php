@@ -51,6 +51,7 @@ class Tour extends Model
         'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa',
         'departure_points', 'itinerary', 'hotel_info', 'extras',
         'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
+        'departure_city', 'stop_cities',
     ];
 
     protected $casts = [
@@ -65,6 +66,7 @@ class Tour extends Model
         'requires_visa' => 'boolean',
         'itinerary' => 'array', // [{title, content}, ...] — gün gün program
         'pricing_blocks' => 'array', // [{dates:[], packages:[{hotel, prices:{type:{old,new}}}]}]
+        'stop_cities' => 'array', // yol üstünde yolcu alınan iller
     ];
 
     protected static function booted(): void
@@ -200,6 +202,19 @@ class Tour extends Model
     public function scopeDestination($query, string $destination)
     {
         return $query->where('destination', 'like', "%{$destination}%");
+    }
+
+    /**
+     * Müşterinin şehrinden binebileceği turlar: kalkış şehri o il VEYA durak
+     * şehirleri arasında o il var. Kalkış şehri girilmemiş (eski) turlar bu
+     * filtrede gizlenir — şehir bilgisi olmayan tura "binilebilir" denemez.
+     */
+    public function scopeDepartsFrom($query, string $city)
+    {
+        return $query->where(function ($q) use ($city) {
+            $q->where('departure_city', $city)
+                ->orWhereJsonContains('stop_cities', $city);
+        });
     }
 
     public function scopeUpcoming($query)

@@ -491,6 +491,7 @@ class AgencyCategoryLicensingTest extends TestCase
             'category_id' => $categoryId,
             'title' => 'Yetkili Test Turu',
             'destination' => 'Kapadokya',
+            'departure_city' => 'İstanbul',
             'description' => 'Kategori yetkisi test turu.',
             'duration_days' => 3,
             'currency' => 'TRY',

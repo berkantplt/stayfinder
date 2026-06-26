@@ -60,6 +60,17 @@
                 </div>
 
                 <div class="filter-group">
+                    <label class="filter-label">Kalkış Şehrim</label>
+                    <select name="departure_city" class="filter-select">
+                        <option value="">Fark etmez</option>
+                        @foreach($departureCities as $city)
+                            <option value="{{ $city }}" {{ request('departure_city') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                        @endforeach
+                    </select>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:6px;">Bu şehirden kalkan veya yolcu alan turlar.</div>
+                </div>
+
+                <div class="filter-group">
                     <label class="filter-label">Acenta</label>
                     <select name="agency_id" class="filter-select">
                         <option value="">Tümü</option>
