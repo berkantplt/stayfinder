@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Agency\TourController;
+use App\Services\TourImage\TourImageService;
 use Tests\TestCase;
 
 class TourUrlCleaningTest extends TestCase
@@ -12,7 +13,7 @@ class TourUrlCleaningTest extends TestCase
         $method = new \ReflectionMethod(TourController::class, 'cleanTourUrl');
         $method->setAccessible(true);
 
-        return $method->invoke(new TourController, $url);
+        return $method->invoke(new TourController(new TourImageService), $url);
     }
 
     public function test_strips_tracking_params_keeps_path(): void
@@ -42,7 +43,7 @@ class TourUrlCleaningTest extends TestCase
         $method = new \ReflectionMethod(TourController::class, 'normalizeItinerary');
         $method->setAccessible(true);
 
-        return $method->invoke(new TourController, $input);
+        return $method->invoke(new TourController(new TourImageService), $input);
     }
 
     public function test_itinerary_drops_empty_days_and_keeps_filled(): void

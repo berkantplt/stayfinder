@@ -396,11 +396,7 @@
                     <div class="form-group"><label>İptal / İade Koşulları</label><textarea name="cancellation_policy" rows="2">{{ old('cancellation_policy') }}</textarea></div>
                     <div class="form-group"><label>Rehber Bilgisi / Notları</label><textarea name="guide_info" rows="2">{{ old('guide_info') }}</textarea></div>
                     <div class="form-group"><label>Hareket Sıklığı</label><input type="text" name="frequency" value="{{ old('frequency') }}" placeholder="Örn: Her Cuma kesin hareketli"></div>
-                    <div class="form-group">
-                        <label>Tur Resmi</label>
-                        <input type="file" name="image" accept="image/*" onchange="previewImg(this)" style="padding:8px;">
-                        <img id="imgPreview" style="display:none;max-height:120px;border-radius:8px;margin-top:8px;">
-                    </div>
+                    @include('agency.tours._gallery', ['initialImages' => old('gallery', [])])
                     <div class="form-group"><label>Tur Linki (Acentanın tur sayfası)</label><input type="url" name="tour_url" value="{{ old('tour_url') }}" placeholder="https://acenta.com/bu-tur"></div>
                     <div style="display:flex;gap:12px;">
                         <button type="submit" class="btn btn-primary">Turu Kaydet</button>
@@ -582,6 +578,11 @@
                 setVal('textarea[name="guide_info"]', data.guide_info);
                 setVal('input[name="frequency"]', data.frequency);
                 setVal('input[name="tour_url"]', sourceUrl);
+
+                // Görseller: URL'den çekilenleri galeriye ekle
+                if (typeof window.setGalleryImages === 'function' && Array.isArray(data.image_urls)) {
+                    window.setGalleryImages(data.image_urls);
+                }
 
                 // Kalkış + durak şehirleri
                 if (data.departure_city) {

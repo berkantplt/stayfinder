@@ -60,7 +60,156 @@ class TourUrlImporter
             $this->harvestDates($content)
         );
 
+        // Görselleri ham HTML'den sırayla yakala (og:image + JSON-LD + <img>).
+        $result['image_urls'] = $this->harvestImages($url);
+
         return $result;
+    }
+
+    /**
+     * Sayfadaki tur görsellerini sırayla yakalar: og:image/twitter:image, JSON-LD
+     * "image", ve <img> (src/data-src). Logo/ikon/sprite/pixel elenir, mutlak
+     * URL'ye çevrilir, yinelenenler atılır, en fazla 12 döner.
+     *
+     * @return array<int, string>
+     */
+    private function harvestImages(string $url): array
+    {
+        try {
+            $response = Http::timeout(15)->withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
+                'Accept' => 'text/html,application/xhtml+xml,*/*;q=0.8',
+            ])->get($url);
+
+            if (! $response->ok()) {
+                return [];
+            }
+            $ct = strtolower((string) $response->header('Content-Type'));
+            if ($ct !== '' && ! str_contains($ct, 'text/html')) {
+                return [];
+            }
+            $html = substr($response->body(), 0, 2000000);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $base = $this->baseUrl($url);
+
+        // Hero/öne çıkan görsel: og:image / twitter:image
+        $hero = null;
+        if (preg_match('/<meta[^>]+(?:property|name)=["\'](?:og:image(?::url)?|twitter:image)["\'][^>]+content=["\']([^"\']+)["\']/i', $html, $m)
+            || preg_match('/<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:og:image(?::url)?|twitter:image)["\']/i', $html, $m)) {
+            $hero = $this->absoluteUrl($m[1], $base);
+        }
+
+        // Tüm HTML'de görsel-URL taraması (data-src/src/href/srcset/content/JSON hepsini kapsar)
+        $candidates = [];
+        $seen = [];
+        $add = function (?string $candidate) use (&$candidates, &$seen, $base) {
+            $abs = $this->absoluteUrl((string) $candidate, $base);
+            if ($abs !== null && ! isset($seen[$abs]) && $this->looksLikeTourImage($abs)) {
+                $seen[$abs] = true;
+                $candidates[] = $abs;
+            }
+        };
+        // Mutlak/protokol-göreli görsel URL'leri
+        if (preg_match_all('#(?:https?:)?//[^\s"\'<>\\\\]+?\.(?:jpe?g|png|webp|gif|avif|bmp|tiff)#i', $html, $mm)) {
+            foreach ($mm[0] as $u) {
+                $add($u);
+            }
+        }
+        // Köke göreli (src/data-src/href içinde)
+        if (preg_match_all('#(?:data-src|data-original|data-lazy-src|src|href)=["\'](/[^"\']+?\.(?:jpe?g|png|webp|gif|avif|bmp|tiff))["\']#i', $html, $mm)) {
+            foreach ($mm[1] as $u) {
+                $add($u);
+            }
+        }
+
+        // Sıralama: hero ile AYNI klasördeki görseller (gerçek tur galerisi) önce;
+        // böylece menü/portal/promosyon görselleri arkaya düşer ve 12 sınırında elenir.
+        if ($hero !== null) {
+            $heroDir = $this->urlDir($hero);
+            usort($candidates, function ($a, $b) use ($heroDir, $hero) {
+                $sa = ($a === $hero ? 2 : ($this->urlDir($a) === $heroDir ? 1 : 0));
+                $sb = ($b === $hero ? 2 : ($this->urlDir($b) === $heroDir ? 1 : 0));
+
+                return $sb <=> $sa; // yüksek skor önce (stable değil ama grup içi sıra korunur yeterince)
+            });
+            if (! in_array($hero, $candidates, true) && $this->looksLikeTourImage($hero)) {
+                array_unshift($candidates, $hero);
+            }
+        }
+
+        return array_slice(array_values(array_unique($candidates)), 0, 12);
+    }
+
+    private function urlDir(string $url): string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        return rtrim(str_replace('\\', '/', dirname($path)), '/');
+    }
+
+    private function looksLikeTourImage(string $url): bool
+    {
+        $low = strtolower($url);
+        if (str_starts_with($low, 'data:')) {
+            return false;
+        }
+
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if ($ext === 'svg') {
+            return false; // genelde logo/ikon
+        }
+
+        // Logo/ikon/sosyal/pixel/reklam ele
+        foreach (['logo', 'icon', 'favicon', 'sprite', 'placeholder', 'blank', 'avatar',
+            'flag', 'pixel', '1x1', 'spacer', 'loading', 'whatsapp', 'facebook',
+            'instagram', 'twitter', 'youtube', '/ads/', 'advert', 'banner-'] as $bad) {
+            if (str_contains($low, $bad)) {
+                return false;
+            }
+        }
+
+        $imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp', 'tiff'];
+        if (in_array($ext, $imageExts, true)) {
+            return true;
+        }
+        // Uzantısız CDN görselleri: yol ipucu varsa kabul
+        foreach (['image', 'photo', '/img', '/media', '/upload', 'gallery', '/tour', 'resim', 'foto'] as $hint) {
+            if (str_contains($low, $hint)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function baseUrl(string $url): string
+    {
+        $p = parse_url($url);
+
+        return ($p['scheme'] ?? 'https').'://'.($p['host'] ?? '').(isset($p['port']) ? ':'.$p['port'] : '');
+    }
+
+    private function absoluteUrl(string $candidate, string $base): ?string
+    {
+        $candidate = trim(html_entity_decode($candidate, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($candidate === '' || str_starts_with($candidate, 'data:')) {
+            return null;
+        }
+        if (str_starts_with($candidate, 'http://') || str_starts_with($candidate, 'https://')) {
+            return $candidate;
+        }
+        if (str_starts_with($candidate, '//')) {
+            return 'https:'.$candidate;
+        }
+        if (str_starts_with($candidate, '/')) {
+            return $base.$candidate;
+        }
+
+        return $base.'/'.ltrim($candidate, '/');
     }
 
     /**

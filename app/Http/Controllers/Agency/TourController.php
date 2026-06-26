@@ -8,15 +8,36 @@ use App\Models\Category;
 use App\Models\Tour;
 use App\Models\TourClick;
 use App\Models\TourView;
+use App\Services\TourImage\TourImageService;
 use App\Support\TurkishCities;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class TourController extends Controller
 {
+    public function __construct(private readonly TourImageService $images) {}
+
+    /**
+     * Galeri için geçici görsel yükleme (AJAX): dosyayı kaydeder, /storage yolunu
+     * döner. Form bu yolu gallery[] gizli alanına ekler; kayıtta sıralı işlenir.
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|file|max:20480',
+        ]);
+
+        try {
+            $path = $this->images->storeUpload($request->file('image'));
+
+            return response()->json(['ok' => true, 'path' => $path]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
     public function index()
     {
         $agency = auth()->user()->agency;
@@ -71,7 +92,8 @@ class TourController extends Controller
             'currency' => ['required', 'string', Rule::in(array_keys(Tour::supportedCurrencies()))],
             'included' => 'nullable|string',
             'excluded' => 'nullable|string',
-            'image' => 'nullable|image|max:5120',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'string',
             'tour_url' => 'nullable|url',
             'departure_points' => 'nullable|string',
             'itinerary' => 'nullable|array',
@@ -96,11 +118,10 @@ class TourController extends Controller
             (int) $validated['duration_days']
         );
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = '/storage/'.$request->file('image')->store('tours', 'public');
-        } else {
-            unset($validated['image']);
-        }
+        unset($validated['gallery']);
+        $gallery = $this->processGallery((array) $request->input('gallery', []));
+        $validated['images'] = $gallery ?: null;
+        $validated['image'] = $gallery[0] ?? null;
 
         $validated['stop_cities'] = $this->normalizeStopCities($validated['stop_cities'] ?? null, $validated['departure_city']);
         $validated['agency_id'] = $agency->id;
@@ -147,7 +168,8 @@ class TourController extends Controller
             'currency' => ['required', 'string', Rule::in(array_keys(Tour::supportedCurrencies()))],
             'included' => 'nullable|string',
             'excluded' => 'nullable|string',
-            'image' => 'nullable|image|max:5120',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'string',
             'tour_url' => 'nullable|url',
             'is_active' => 'boolean',
             'departure_points' => 'nullable|string',
@@ -174,14 +196,14 @@ class TourController extends Controller
             (int) $validated['duration_days']
         );
 
-        if ($request->hasFile('image')) {
-            // Delete old uploaded image
-            if ($tour->image && str_starts_with($tour->image, '/storage/')) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $tour->image));
-            }
-            $validated['image'] = '/storage/'.$request->file('image')->store('tours', 'public');
-        } else {
-            unset($validated['image']);
+        unset($validated['gallery']);
+        $oldImages = $tour->images ?: ($tour->image ? [$tour->image] : []);
+        $gallery = $this->processGallery((array) $request->input('gallery', []));
+        $validated['images'] = $gallery ?: null;
+        $validated['image'] = $gallery[0] ?? null;
+        // Galeriden çıkarılan eski görselleri diskten sil
+        foreach (array_diff($oldImages, $gallery) as $removed) {
+            $this->images->delete($removed);
         }
 
         $validated['price'] = $this->resolveBasePrice($dates);
@@ -337,6 +359,33 @@ class TourController extends Controller
         $num = round((float) $value, 2);
 
         return $num >= 0 ? $num : null;
+    }
+
+    /**
+     * gallery[] (sıralı: yerel /storage yolları + uzak görsel URL'leri) → sıralı
+     * /storage yolları. Uzak URL'ler indirilir, yereller korunur; en fazla 12,
+     * yinelenenler atlanır. Patlayan tek görsel diğerlerini durdurmaz.
+     *
+     * @return array<int, string>
+     */
+    private function processGallery(array $items): array
+    {
+        $paths = [];
+        foreach ($items as $item) {
+            if (count($paths) >= 12) {
+                break;
+            }
+            $item = trim((string) $item);
+            if ($item === '') {
+                continue;
+            }
+            $stored = $this->images->downloadAndStore($item);
+            if ($stored !== null && ! in_array($stored, $paths, true)) {
+                $paths[] = $stored;
+            }
+        }
+
+        return $paths;
     }
 
     /**

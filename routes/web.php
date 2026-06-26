@@ -244,6 +244,9 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         Route::post('/turlar/ice-aktar', [TourImportController::class, 'fromUrl'])
             ->middleware('throttle:tour_import')
             ->name('tours.import');
+        Route::post('/turlar/gorsel-yukle', [AgencyTourController::class, 'uploadImage'])
+            ->middleware('throttle:60,1')
+            ->name('tours.image.upload');
         Route::post('/turlar', [AgencyTourController::class, 'store'])->name('tours.store');
         Route::get('/turlar/{tour}', [AgencyTourController::class, 'show'])->name('tours.show');
         Route::get('/turlar/{tour}/duzenle', [AgencyTourController::class, 'edit'])->name('tours.edit');

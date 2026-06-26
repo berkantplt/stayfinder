@@ -47,7 +47,7 @@ class Tour extends Model
     protected $fillable = [
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
         'price', 'currency', 'duration_days', 'departure_date',
-        'return_date', 'included', 'excluded', 'image', 'tour_url', 'is_active',
+        'return_date', 'included', 'excluded', 'image', 'images', 'tour_url', 'is_active',
         'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa',
         'departure_points', 'itinerary', 'hotel_info', 'extras',
         'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
@@ -67,6 +67,7 @@ class Tour extends Model
         'itinerary' => 'array', // [{title, content}, ...] — gün gün program
         'pricing_blocks' => 'array', // [{dates:[], packages:[{hotel, prices:{type:{old,new}}}]}]
         'stop_cities' => 'array', // yol üstünde yolcu alınan iller
+        'images' => 'array', // sıralı galeri (/storage yolları), images[0] = kapak
     ];
 
     protected static function booted(): void

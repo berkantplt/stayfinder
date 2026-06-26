@@ -403,14 +403,9 @@
                     <div class="form-group"><label>İptal / İade Koşulları</label><textarea name="cancellation_policy" rows="2">{{ old('cancellation_policy', $tour->cancellation_policy) }}</textarea></div>
                     <div class="form-group"><label>Rehber Bilgisi / Notları</label><textarea name="guide_info" rows="2">{{ old('guide_info', $tour->guide_info) }}</textarea></div>
                     <div class="form-group"><label>Hareket Sıklığı</label><input type="text" name="frequency" value="{{ old('frequency', $tour->frequency) }}" placeholder="Örn: Her Cuma kesin hareketli"></div>
-                    <div class="form-group">
-                        <label>Tur Resmi</label>
-                        @if($tour->image)
-                            <div style="margin-bottom:8px;"><img src="{{ $tour->image }}" style="max-height:100px;border-radius:8px;" id="currentImg"><span style="font-size:12px;color:var(--text-muted);margin-left:8px;">Mevcut resim</span></div>
-                        @endif
-                        <input type="file" name="image" accept="image/*" onchange="previewImg(this)" style="padding:8px;">
-                        <img id="imgPreview" style="display:none;max-height:120px;border-radius:8px;margin-top:8px;">
-                    </div>
+                    @include('agency.tours._gallery', [
+                        'initialImages' => old('gallery', $tour->images ?: ($tour->image ? [$tour->image] : [])),
+                    ])
                     <div class="form-group"><label>Tur Linki (Acentanın tur sayfası)</label><input type="url" name="tour_url" value="{{ old('tour_url', $tour->tour_url) }}" placeholder="https://acenta.com/bu-tur"></div>
                     <div class="form-group">
                         <label><input type="checkbox" name="is_active" value="1" {{ $tour->is_active ? 'checked' : '' }}> Aktif</label>

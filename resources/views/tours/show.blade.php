@@ -42,8 +42,23 @@
         <div class="detail-grid">
             {{-- Left: Tour Info --}}
             <div>
-                @if($tour->image)
-                    <img src="{{ $tour->image }}" alt="{{ $tour->title }}" style="width:100%;height:300px;object-fit:cover;border-radius:var(--radius-lg);margin-bottom:20px;">
+                @php
+                    $gallery = is_array($tour->images) && count($tour->images) ? $tour->images : ($tour->image ? [$tour->image] : []);
+                @endphp
+                @if(count($gallery))
+                    <div style="margin-bottom:20px;">
+                        <img id="galleryMain" src="{{ $gallery[0] }}" alt="{{ $tour->title }}" style="width:100%;height:340px;object-fit:cover;border-radius:var(--radius-lg);">
+                        @if(count($gallery) > 1)
+                            <div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:4px;">
+                                @foreach($gallery as $img)
+                                    <img src="{{ $img }}" alt="{{ $tour->title }}" loading="lazy"
+                                        onclick="document.getElementById('galleryMain').src=this.src;"
+                                        style="width:90px;height:64px;object-fit:cover;border-radius:8px;cursor:pointer;flex:0 0 auto;border:2px solid transparent;"
+                                        onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='transparent';">
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 @endif
 
                 <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-bottom:10px;line-height:1.3;">{{ $tour->title }}</h1>
