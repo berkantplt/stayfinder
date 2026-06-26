@@ -61,7 +61,8 @@
 
                 <div class="filter-group">
                     <label class="filter-label">Kalkış Şehrim</label>
-                    <select name="departure_city" class="filter-select">
+                    @include('partials.searchable-select')
+                    <select name="departure_city" class="filter-select" data-searchable>
                         <option value="">Fark etmez</option>
                         @foreach($departureCities as $city)
                             <option value="{{ $city }}" {{ request('departure_city') == $city ? 'selected' : '' }}>{{ $city }}</option>
@@ -211,7 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     form.addEventListener('input', function(e) {
-        if(e.target.name === 'q' || e.target.type === 'number' || e.target.type === 'date') return;
+        // İsimsiz alanlar (aranabilir select'in arama kutusu) otomatik-submit etmez
+        if(!e.target.name || e.target.name === 'q' || e.target.type === 'number' || e.target.type === 'date') return;
         submitForm();
     });
 

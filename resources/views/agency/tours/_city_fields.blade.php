@@ -2,10 +2,11 @@
     Kalkış şehri (zorunlu, 81 il) + durak şehirler (yol üstünde yolcu alınan iller).
     Beklenen değişkenler: $cityOptions (il listesi), $selectedDepartureCity, $selectedStopCities (array)
 --}}
+@include('partials.searchable-select')
 <div class="form-row" style="align-items:start;">
     <div class="form-group" style="margin-bottom:0;">
         <label>Kalkış Şehri * <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(otobüsün kalktığı il)</span></label>
-        <select name="departure_city" id="departureCitySelect" required>
+        <select name="departure_city" id="departureCitySelect" data-searchable required>
             <option value="">İl seçin</option>
             @foreach($cityOptions as $city)
                 <option value="{{ $city }}" {{ $selectedDepartureCity === $city ? 'selected' : '' }}>{{ $city }}</option>
@@ -14,7 +15,7 @@
     </div>
     <div class="form-group" style="margin-bottom:0;">
         <label>Durak Şehirler <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(yol üstünde yolcu alınan iller)</span></label>
-        <select id="stopCityPicker">
+        <select id="stopCityPicker" data-searchable data-ss-reset="1">
             <option value="">+ Durak şehir ekle</option>
             @foreach($cityOptions as $city)
                 <option value="{{ $city }}">{{ $city }}</option>
