@@ -18,6 +18,9 @@ class TourUrlImporter
 
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
+    /** İçerik çekilirken yakalanan ham HTML — görsel çıkarımı için yeniden istek atmayalım */
+    private ?string $lastHtml = null;
+
     /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
      * yapılandırılmış tur alanlarına çıkarır ve normalize edip döner.
@@ -30,6 +33,7 @@ class TourUrlImporter
     {
         $url = trim($url);
         $this->assertSafeUrl($url);
+        $this->lastHtml = null;
 
         $content = '';
 
@@ -75,22 +79,29 @@ class TourUrlImporter
      */
     private function harvestImages(string $url): array
     {
-        try {
-            $response = Http::timeout(15)->withHeaders([
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
-                'Accept' => 'text/html,application/xhtml+xml,*/*;q=0.8',
-            ])->get($url);
+        // Önce içerik çekiminde yakalanan ham HTML'i kullan (EKSTRA İSTEK YOK).
+        // Derin taramada Firecrawl'ın rawHtml'i, normal yolda fetchDirect'in body'si.
+        $html = $this->lastHtml ?? '';
 
-            if (! $response->ok()) {
+        // Hiç HTML yoksa (ör. yalnızca okuyucu servisi kullanıldıysa) son çare: tek hızlı çekim
+        if (trim($html) === '') {
+            try {
+                $response = Http::timeout(10)->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
+                    'Accept' => 'text/html,application/xhtml+xml,*/*;q=0.8',
+                ])->get($url);
+
+                if (! $response->ok()) {
+                    return [];
+                }
+                $ct = strtolower((string) $response->header('Content-Type'));
+                if ($ct !== '' && ! str_contains($ct, 'text/html')) {
+                    return [];
+                }
+                $html = substr($response->body(), 0, 2000000);
+            } catch (\Throwable) {
                 return [];
             }
-            $ct = strtolower((string) $response->header('Content-Type'));
-            if ($ct !== '' && ! str_contains($ct, 'text/html')) {
-                return [];
-            }
-            $html = substr($response->body(), 0, 2000000);
-        } catch (\Throwable) {
-            return [];
         }
 
         $base = $this->baseUrl($url);
@@ -307,7 +318,9 @@ class TourUrlImporter
 
         $base = [
             'url' => $url,
-            'formats' => ['markdown'],
+            // rawHtml de iste: görselleri (render edilmiş galeri dahil) ayrı istek
+            // atmadan bu HTML'den çıkaracağız — derin taramada süre/timeout kazancı.
+            'formats' => ['markdown', 'rawHtml'],
             'onlyMainContent' => false,
             'waitFor' => 8000,
         ];
@@ -333,18 +346,32 @@ class TourUrlImporter
 
         foreach ($attempts as $actions) {
             try {
-                $response = Http::timeout(90)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+                $response = Http::timeout(55)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
 
                 if ($response->ok()) {
                     $markdown = trim((string) $response->json('data.markdown'));
                     if (mb_strlen($markdown) >= 200) {
+                        // Render edilmiş ham HTML'i görsel çıkarımı için sakla
+                        $rawHtml = (string) $response->json('data.rawHtml');
+                        if (trim($rawHtml) !== '') {
+                            $this->lastHtml = $rawHtml;
+                        }
+
                         return mb_substr($markdown, 0, self::SCAN_CHARS);
                     }
                 }
 
-                Log::info('[TourImport] firecrawl denemesi başarısız', ['status' => $response->status()]);
+                // Hızlı, OK-olmayan yanıt (ör. JS aksiyonu desteklenmiyor) → sade
+                // denemeye geç. Body'yi logla ki gerçek Firecrawl hatası görülsün.
+                Log::info('[TourImport] firecrawl denemesi başarısız', [
+                    'status' => $response->status(),
+                    'body' => mb_substr((string) $response->body(), 0, 300),
+                ]);
             } catch (\Throwable $e) {
-                Log::info('[TourImport] firecrawl denemesi hata', ['message' => $e->getMessage()]);
+                // Zaman aşımı/bağlantı hatası: ikinci denemeyle istek bütçesini
+                // tüketme (proxy 504'ü önler) — doğrudan fallback'e düş.
+                Log::info('[TourImport] firecrawl zaman aşımı/hata, fallback', ['message' => $e->getMessage()]);
+                break;
             }
         }
 
@@ -410,7 +437,11 @@ class TourUrlImporter
             throw new RuntimeException('Adres bir web sayfası değil.');
         }
 
-        return substr($response->body(), 0, self::MAX_BODY_BYTES);
+        $body = $response->body();
+        // Görsel çıkarımı için ham HTML'i sakla (ayrı istek atmayalım); metin için kırp
+        $this->lastHtml = substr($body, 0, 2000000);
+
+        return substr($body, 0, self::MAX_BODY_BYTES);
     }
 
     private function cleanHtml(string $html): string
