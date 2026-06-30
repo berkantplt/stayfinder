@@ -63,7 +63,14 @@ class TourUrlImporter
 
         // 1) Genel alanlar (fiyat matrisi HARİÇ) — fiyat tablosu dışlanmış, küçük
         // odaklanmış metinden (daha hızlı; tarihler harvestDates + fiyat çağrısından gelir).
-        $extracted = $this->extractWithLlm($this->focusContent($text, false));
+        // LLM zaman aşımı/hatasında SERT 422 yerine eldeki veriyle (tarih/görsel/fiyat)
+        // dönmek için yakalanır.
+        try {
+            $extracted = $this->extractWithLlm($this->focusContent($text, false));
+        } catch (\Throwable $e) {
+            Log::warning('[TourImport] genel çıkarım hata, kısmi sonuç', ['message' => $e->getMessage()]);
+            $extracted = [];
+        }
         $result = $this->normalize($extracted);
 
         // 2) Fiyat matrisi — AYRI, odaklı çağrı. Sadece fiyat tablosu bölgesini
