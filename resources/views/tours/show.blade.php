@@ -195,7 +195,8 @@
                                 }
                             @endphp
                             @if($blockDates->count() && count($packages))
-                            <details style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;">
+                            {{-- name: aynı gruptaki details'lerden yalnız biri açık kalır (modern tarayıcı native) --}}
+                            <details class="pricing-acc" name="pricing-dates" style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;">
                                 <summary style="cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
                                     <span style="color:var(--accent);">📅</span>
                                     @foreach($blockDates as $bd)
@@ -249,6 +250,19 @@
                             @endif
                         @endforeach
                     </div>
+                    <script>
+                    // Tekli akordeon güvencesi: bir tarih paketi açılınca açık olan diğeri
+                    // kapanır. Modern tarayıcılar bunu <details name="..."> ile native yapar;
+                    // bu dinleyici desteklemeyen eski tarayıcılar için aynı davranışı sağlar.
+                    document.querySelectorAll('details.pricing-acc').forEach(function (d) {
+                        d.addEventListener('toggle', function () {
+                            if (!d.open) return;
+                            document.querySelectorAll('details.pricing-acc[open]').forEach(function (o) {
+                                if (o !== d) o.open = false;
+                            });
+                        });
+                    });
+                    </script>
                 @endif
 
                 @if($tour->description)
