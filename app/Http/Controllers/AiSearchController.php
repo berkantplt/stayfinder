@@ -460,16 +460,43 @@ class AiSearchController extends Controller
             // 2. Vektör Oluşturma (önbellekli — tekrar eden sorgular API'ye gitmez)
             $queryVector = app(\App\Services\AiSearch\QueryEmbeddingCache::class)->vector($cleanQuery);
 
-            // 3. Veritabanı Filtreleme
+            // 3.4. Negatif feedback memory: kullanıcı son 24 saatte reddettiği turları
+            // havuzdan çıkarır + reddedilen turların ortalama embedding'i ile cosine
+            // similarity yüksek olanlara penalty uygulanır.
+            $rejectedIds = $this->collectRejectedTourIds($request);
+            $rejectionAvgEmbedding = $this->computeRejectionAvgEmbedding($rejectedIds);
+
+            // 3. Veritabanı Filtreleme + 0-SONUÇ GEVŞETME MERDİVENİ:
+            // birebir sonuç yoksa körce "bulamadım" demek yerine kademeli gevşetilir
+            // (eşik altı en iyi 3 → destinasyonu bırak → bütçe tavanını bırak) ve
+            // nedeni relaxation_note ile kullanıcıya açıklanır.
+            $relaxDestination = false;
+            $relaxBudget = false;
+            $relaxationNote = null;
+            $results = collect();
+            $rankedTours = collect();
+            $candidateCount = 0;
+
+            for ($relaxPass = 0; $relaxPass < 3; $relaxPass++) {
+
             $toursQuery = Tour::whereNotNull('embedding')
                 ->active()
                 ->whereHas('agency', fn ($agencyQuery) => $agencyQuery->active());
+
+            // Geçmişte kalmış turlar aday olamaz: en az bir GELECEK kalkışı olan
+            // (veya hiç tarih girilmemiş) turlar havuzda kalır.
+            $toursQuery->where(function ($dateQuery) {
+                $today = now()->toDateString();
+                $dateQuery->whereDate('departure_date', '>=', $today)
+                    ->orWhereHas('dates', fn ($d) => $d->whereDate('departure_date', '>=', $today))
+                    ->orWhere(fn ($inner) => $inner->whereNull('departure_date')->whereDoesntHave('dates'));
+            });
 
             // "Beğenmedim, başka öner" akışı: önceki turda gösterilen turlar dışlanır
             if (! empty($excludeTourIds)) {
                 $toursQuery->whereNotIn('id', $excludeTourIds);
             }
-            if ($maxBudget && $maxBudget > 0) {
+            if (! $relaxBudget && $maxBudget && $maxBudget > 0) {
                 // Soft upper bound: budget üstünü tamamen dışlamadan aday havuzunu daralt.
                 // Kullanıcının bütçesi TL — kur-normalize price_try ile karşılaştır.
                 $toursQuery->where('price_try', '<=', $maxBudget * 1.8);
@@ -486,21 +513,15 @@ class AiSearchController extends Controller
             if ($maxDays && $maxDays > 0) {
                 $toursQuery->where('duration_days', '<=', $maxDays + 1);
             }
-            if ($preferredDestination !== null) {
+            if (! $relaxDestination && $preferredDestination !== null) {
                 $this->applyDestinationConstraint($toursQuery, $preferredDestination);
             }
             if (! empty($excludedDestinations)) {
                 $this->applyExcludedDestinationsConstraint($toursQuery, $excludedDestinations);
             }
-
-            // 3.4. Negatif feedback memory: kullanıcı son 24 saatte reddettiği turları
-            // havuzdan çıkarır + reddedilen turların ortalama embedding'i ile cosine
-            // similarity yüksek olanlara penalty uygulanır.
-            $rejectedIds = $this->collectRejectedTourIds($request);
             if (! empty($rejectedIds)) {
                 $toursQuery->whereNotIn('id', $rejectedIds);
             }
-            $rejectionAvgEmbedding = $this->computeRejectionAvgEmbedding($rejectedIds);
 
             // 3.5. Memory-efficient pre-filter: tüm aday embedding'leri yerine
             // cursor ile sadece id+embedding stream et, top-K cosine ID'lerini bul,
@@ -539,7 +560,7 @@ class AiSearchController extends Controller
                     $preferredDestination,
                     $excludedDestinations
                 );
-                $monthScore = $this->scoreMonth((string) $tour->departure_date, $preferredMonth);
+                $monthScore = $this->scoreMonthForTour($tour, $preferredMonth);
 
                 $tour->similarity = $semanticScore;
                 $tour->nature_score = $natureScore;
@@ -637,7 +658,7 @@ class AiSearchController extends Controller
                 }
             }
 
-            if ($preferredDestination !== null) {
+            if (! $relaxDestination && $preferredDestination !== null) {
                 $destinationMatched = $rankedTours
                     ->filter(fn ($tour) => $this->matchesRequestedDestination($tour, $preferredDestination))
                     ->values();
@@ -656,10 +677,47 @@ class AiSearchController extends Controller
                 ->filter(fn ($tour) => (float) $tour->compatibility_score >= self::COMPATIBILITY_THRESHOLD)
                 ->values();
 
+            if ($results->isNotEmpty()) {
+                break;
+            }
+
+            // Aday var ama hiçbiri eşiği geçemedi → en iyi 3'ü "yakın eşleşme" olarak göster
+            if ($rankedTours->isNotEmpty()) {
+                $results = $rankedTours->take(3)->values();
+                $relaxationNote = 'Kriterlerine birebir uyan tur bulamadım — en yakın seçenekleri gösteriyorum.';
+                break;
+            }
+
+            // Hiç aday yok: önce destinasyonu, sonra bütçe tavanını gevşet
+            if (! $relaxDestination && $preferredDestination !== null) {
+                $relaxDestination = true;
+                $relaxationNote = '"'.$preferredDestination.'" için uygun tur bulamadım — diğer kriterlerine uyan alternatifleri gösteriyorum.';
+
+                continue;
+            }
+            if (! $relaxBudget && $maxBudget && $maxBudget > 0) {
+                $relaxBudget = true;
+                $relaxationNote = 'Bu bütçeye uyan tur bulamadım — bütçenin üzerindeki seçenekleri de dahil ettim.';
+
+                continue;
+            }
+
+            $relaxationNote = null; // gevşetmeler de sonuç vermedi → gerçek 0 sonuç
+
+            break;
+
+            } // gevşetme merdiveni sonu
+
             // 5. RAG (Bilgi Bankası) Entegrasyonu
             $knowledgeService = new KnowledgeService;
             $relevantChunks = $knowledgeService->findRelevantChunks($query);
             $knowledgeContext = $knowledgeService->buildContext($relevantChunks);
+
+            // Gevşetme yapıldıysa yorum LLM'i bunu kullanıcıya açıklasın — sonuçlar
+            // neden kriterlerin birebir karşılığı değil, sebepsiz görünmesin.
+            if ($relaxationNote !== null) {
+                $knowledgeContext .= "\n\nARAMA NOTU: ".$relaxationNote.' Yorumunda bu durumu kullanıcıya kısaca ve kibarca belirt.';
+            }
 
             // 6. Akıllı, "Mekan Sahibi" Yorumu (RAG + Turlar)
             // Streaming endpoint $skipComment=true geçer, kendi streamComment'i çağırır
@@ -683,6 +741,11 @@ class AiSearchController extends Controller
                     'departure_date' => $tour->departure_date,
                     'image' => $tour->image,
                     'rank' => $index + 1,
+                    // Bütçe belirtildiyse ve tur üstündeyse işaretle — kullanıcıya
+                    // "bütçe üstü" bilgisi yapısal olarak iletilir (sessiz sürpriz olmasın)
+                    'over_budget' => ($maxBudget && $maxBudget > 0)
+                        ? ((float) ($tour->price_try ?? $tour->price) > $maxBudget)
+                        : false,
                     'similarity' => round((float) $tour->similarity, 6),
                     'compatibility_score' => round((float) $tour->compatibility_score, 6),
                     'nature_score' => round((float) ($tour->nature_score ?? 1.0), 6),
@@ -741,6 +804,7 @@ class AiSearchController extends Controller
                 'results' => $cleanResults,
                 'aiComment' => $aiComment,
                 'log_id' => $log->id,
+                'relaxation_note' => $relaxationNote,
                 'intent' => $analysis,
                 'applied_filters' => [
                     'max_budget' => $maxBudget,
@@ -874,8 +938,8 @@ class AiSearchController extends Controller
         arsort($similarities);
         $topIds = array_keys(array_slice($similarities, 0, $topK, true));
 
-        // Top-K full hydrate (eager load agency, tüm sütunlar)
-        $hydrated = Tour::with('agency')
+        // Top-K full hydrate (eager load agency + tarihler — ay skoru tüm kalkışlara bakar)
+        $hydrated = Tour::with(['agency', 'dates'])
             ->whereIn('id', $topIds)
             ->get()
             ->keyBy('id');
@@ -1891,6 +1955,43 @@ class AiSearchController extends Controller
             'crowd' => $profile['crowd'],
             'lively' => $profile['lively'],
         ];
+    }
+
+    /**
+     * Ay skoru — turun TÜM gelecekteki kalkış tarihlerine bakar: çok tarihli
+     * turlarda ana tarih eylül değil diye ekimdeki kalkış görmezden gelinmesin.
+     * En iyi eşleşen tarihin skoru döner.
+     */
+    private function scoreMonthForTour($tour, ?int $preferredMonth): float
+    {
+        if ($preferredMonth === null || $preferredMonth < 1 || $preferredMonth > 12) {
+            return 1.0;
+        }
+
+        $candidates = [];
+        if ($tour->relationLoaded('dates')) {
+            foreach ($tour->dates as $tourDate) {
+                if ($tourDate->departure_date && $tourDate->departure_date->greaterThanOrEqualTo(now()->startOfDay())) {
+                    $candidates[] = (string) $tourDate->departure_date;
+                }
+            }
+        }
+        if (empty($candidates) && $tour->departure_date) {
+            $candidates[] = (string) $tour->departure_date;
+        }
+        if (empty($candidates)) {
+            return $this->scoreMonth('', $preferredMonth);
+        }
+
+        $best = 0.0;
+        foreach ($candidates as $candidate) {
+            $best = max($best, $this->scoreMonth($candidate, $preferredMonth));
+            if ($best >= 1.0) {
+                break;
+            }
+        }
+
+        return $best;
     }
 
     private function scoreMonth(string $departureDate, ?int $preferredMonth): float

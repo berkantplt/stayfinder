@@ -266,6 +266,7 @@ class ConversationService
                     'results' => $searchResult['results'],
                     'applied_filters' => $searchResult['applied_filters'] ?? [],
                     'log_id' => $searchResult['log_id'] ?? null,
+                    'relaxation_note' => $searchResult['relaxation_note'] ?? null,
                 ],
             ];
         });
@@ -431,6 +432,7 @@ class ConversationService
             // log_id reject button'unun çalışması için tours event'ine ekleniyor
             $emit('tours', [
                 'log_id' => $turnState['searchResult']['log_id'] ?? null,
+                'relaxation_note' => $turnState['searchResult']['relaxation_note'] ?? null,
                 'items' => $this->mapToursToCards($turnState['searchResult']['results']),
             ]);
 
@@ -486,6 +488,7 @@ class ConversationService
                 'url' => route('tours.show', $get('id')),
                 'agency_name' => $tour?->agency?->name,
                 'compatibility_score' => $get('compatibility_score'),
+                'over_budget' => (bool) $get('over_budget'),
             ];
         })->values()->all();
     }
