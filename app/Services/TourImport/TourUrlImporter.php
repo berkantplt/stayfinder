@@ -79,6 +79,15 @@ class TourUrlImporter
         }
         $result = $this->normalize($extracted);
 
+        // Deterministik gece güvencesi: başlık/giriş "N Gece" diyorsa ve gün sayısı
+        // N ile aynı kalmışsa (LLM gece'yi gün sanmış), gün = N + 1'e düzelt.
+        if (preg_match('/\b(\d{1,2})\s*gece\b/iu', mb_substr($text, 0, 1500), $m)) {
+            $titleNights = (int) $m[1];
+            if (($result['duration_days'] ?? null) === $titleNights) {
+                $result['duration_days'] = $titleNights + 1;
+            }
+        }
+
         // 2) Fiyat matrisi — ÖNCE DETERMİNİSTİK (kodla) ayrıştırma. "899,00 €" sayfada
         // birebir string olduğundan sayıyı LLM'e okutmadan kodla çıkarınca hata payı ~0.
         // Tanınmayan/atipik (yatay) tablolarda boş döner → odaklı LLM çağrısına düşülür.
@@ -164,7 +173,7 @@ class TourUrlImporter
                 $warnings[] = 'Vize bilgileri çıkarılamadı ('.$this->friendlyLlmError($e).') — tekrar deneyin veya vize alanlarını elle doldurun.';
             }
             $result['visa_general'] = $this->lines($visa['visa_general'] ?? null, 5000);
-            $result['visa_documents'] = $this->lines($visa['visa_documents'] ?? null, 8000);
+            $result['visa_documents'] = $this->lines($visa['visa_documents'] ?? null, 12000); // 4 pasaport türü × meslek grupları
             $result['visa_fees'] = $this->lines($visa['visa_fees'] ?? null, 3000);
             $result['visa_notes'] = $this->lines($visa['visa_notes'] ?? null, 5000);
             if (! $visaFailed && $result['visa_general'] === null && $result['visa_documents'] === null
@@ -804,6 +813,9 @@ class TourUrlImporter
         - title (string|null): tur adı
         - destination (string|null): gidilen yer/şehir
         - duration_days (number|null): tur kaç gün
+        - duration_nights (number|null): konaklama GECE sayısı (ör. "7 Gece Otel Konaklamalı" → 7).
+          Türk tur sayfaları süreyi çoğunlukla gece olarak verir; sayfada gece sayısı geçiyorsa
+          MUTLAKA doldur (gün = gece + 1 hesabı bizde yapılır)
         - currency (string|null): para birimi, yalnızca şunlardan biri: {$allowed}
         - price (number|null): kişi başı GÜNCEL fiyat, yalnızca sayı (ör. "1.500 TL" → 1500)
         - description (string|null): kısa tur açıklaması
@@ -827,7 +839,10 @@ class TourUrlImporter
         - hotel_info (string|null): konaklama bilgisi — konaklanacak TÜM otel adlarını
           (ör. "Suhan Cappadocia, Crowne Plaza, Emin Koçak Cappadocia vb.") ve varsa
           özelliklerini (yıldız vb.) yaz. Sayfadaki "Konaklama:" satırını eksiksiz al.
-        - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır
+        - extras (string|null): ekstra/opsiyonel tur ve aktiviteler, satır satır. Paket ve
+          turların FİYATLARINI da ekle — varsa eski/indirimli ayrımıyla (ör.
+          "MAXI PAKET: 455€ yerine 385€ (çocuk 7-16 yaş: 225€)", "Orvieto Turu: 35€").
+          Fiyatı sayfada olmayan tur/paketi fiyatsız yaz; fiyat UYDURMA
         - cancellation_policy (string|null): iptal ve iade koşulları
         - guide_info (string|null): rehber bilgisi veya rehber notları
         - frequency (string|null): hareket sıklığı (ör. "Her Cuma kesin hareketli")
@@ -1060,6 +1075,7 @@ class TourUrlImporter
         $byAnchor = $collect([
             'vize ucret', 'basvuru merkezi', // ücret tablosu ("Başvuru Merkezi" sütun başlığı)
             'vize bilgileri', 'gerekli evrak', 'vize evrak', 'umuma mahsus',
+            'hususi pasaport', 'hizmet pasaport', 'diplomatik pasaport', // pasaport türü sekmeleri
             'vize basvuru', 'vize islemleri', 'konsolosluk', 'schengen',
         ]);
         $window = 8000;
@@ -1133,10 +1149,14 @@ class TourUrlImporter
         - visa_general (string|null): genel vize bilgileri — pasaport gereksinimleri
           (geçerlilik süresi, yıpranma vb.), vize başvuru süreci/süresi, vize türü/kategorisi
           (ör. Schengen). Her bilgi ayrı satır.
-        - visa_documents (string|null): vize için GEREKLİ EVRAKLAR. Önce herkese ortak
-          standart evraklar, ardından meslek/duruma göre gruplar (Çalışan, İşveren, Emekli,
-          Öğrenci, Çocuk vb.). Grup başlığını kendi satırına yaz, altına o grubun maddelerini
-          her madde AYRI SATIR olacak şekilde ekle; satır başına "•/-/*" gibi madde işareti KOYMA.
+        - visa_documents (string|null): vize için GEREKLİ EVRAKLAR. Sayfada PASAPORT TÜRÜNE
+          göre ayrı bölümler varsa (Umuma Mahsus/Bordo, Hususi/Yeşil, Hizmet/Gri,
+          Diplomatik/Kırmızı) HEPSİNİ aktar: her pasaport türünü kendi satırında başlık yap
+          (ör. "Umuma Mahsus Pasaport (Bordo)"), altına o türün evraklarını yaz. Meslek/duruma
+          göre grupların TAMAMINI al (Çalışan, Çiftçi, İşveren, Öğrenci, Emekli, Memur,
+          Çalışmayan, Çocuk vb.) — hiçbirini atlama. Grup başlığını kendi satırına yaz, altına
+          o grubun maddelerini her madde AYRI SATIR olacak şekilde ekle; satır başına
+          "•/-/*" gibi madde işareti KOYMA.
         - visa_fees (string|null): vize ücretleri. Tablo varsa her satırı
           "Başvuru Merkezi - Yaş Grubu: Tutar" biçiminde ayrı satıra dök
           (ör. "İstanbul - 12 yaş ve üzeri: 370 €"). Tek fiyat varsa onu yaz.
@@ -1159,7 +1179,7 @@ class TourUrlImporter
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.1,
-            'max_tokens' => 6000, // meslek gruplu evrak listeleri uzun olabilir
+            'max_tokens' => 8000, // 4 pasaport türü × meslek gruplu evrak listeleri uzun olabilir
         ]);
 
         return json_decode($response->choices[0]->message->content ?? '{}', true) ?: [];
@@ -1190,6 +1210,17 @@ class TourUrlImporter
             : null;
         if ($duration !== null && $duration < 1) {
             $duration = null;
+        }
+
+        // Gece sayısı öncelikli: Türk tur sayfaları süreyi çoğunlukla "7 gece" verir
+        // ve 7 gece otel = 8 günlük turdur. LLM gece'yi gün sanabildiğinden, gece
+        // bilgisi varken gün ondan türetilir (gün = gece + 1). Gün sayısı geceden
+        // BÜYÜKSE açık gün bilgisine güvenilir ("9 gün / 7 gece otel + uçak" gibi).
+        $nights = isset($raw['duration_nights']) && is_numeric($raw['duration_nights'])
+            ? (int) $raw['duration_nights']
+            : null;
+        if ($nights !== null && $nights >= 1 && ($duration === null || $duration <= $nights)) {
+            $duration = $nights + 1;
         }
 
         $price = isset($raw['price']) && is_numeric($raw['price']) ? round((float) $raw['price'], 2) : null;

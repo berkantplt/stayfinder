@@ -400,6 +400,65 @@ class TourUrlImportTest extends TestCase
         $this->assertSame(['Kocaeli', 'Bolu', 'Ankara'], $data['stop_cities']);
     }
 
+    public function test_duration_nights_converts_to_days(): void
+    {
+        Http::fake(['*' => Http::response('<html><body><h1>Klasik İtalya Turu</h1><p>Roma ve Floransa gezisi.</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
+
+        // Sayfa süreyi gece olarak veriyor: 7 gece otel = 8 günlük tur
+        $this->fakeOpenAi([
+            'title' => 'Klasik İtalya Turu',
+            'duration_nights' => 7,
+            'departure_dates' => [],
+        ]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/italya'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(8, $data['duration_days']);
+    }
+
+    public function test_explicit_day_count_larger_than_nights_is_kept(): void
+    {
+        Http::fake(['*' => Http::response('<html><body><h1>Uzakdoğu Turu</h1><p>Gezi programı.</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
+
+        // "9 gün / 7 gece otel + uçakta konaklama" gibi turlarda açık gün sayısı korunur
+        $this->fakeOpenAi([
+            'title' => 'Uzakdoğu Turu',
+            'duration_days' => 9,
+            'duration_nights' => 7,
+            'departure_dates' => [],
+        ]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/uzakdogu'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(9, $data['duration_days']);
+    }
+
+    public function test_title_nights_guard_fixes_confused_day_count(): void
+    {
+        Http::fake(['*' => Http::response('<html><body><h1>Klasik İtalya Turu 7 Gece Otel Konaklamalı</h1><p>Roma gezisi.</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
+
+        // LLM gece sayısını gün sanmış (nights alanını doldurmamış): başlıktaki
+        // "7 Gece" ile aynı kalan gün sayısı deterministik olarak 8'e düzeltilir
+        $this->fakeOpenAi([
+            'title' => 'Klasik İtalya Turu',
+            'duration_days' => 7,
+            'departure_dates' => [],
+        ]);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/italya'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(8, $data['duration_days']);
+    }
+
     public function test_guest_cannot_import(): void
     {
         $this->post(route('agency.tours.import'), ['url' => 'https://1.1.1.1/x'])
