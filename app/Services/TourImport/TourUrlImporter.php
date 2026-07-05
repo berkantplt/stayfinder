@@ -725,8 +725,9 @@ class TourUrlImporter
     {
         // Genel çağrıda fiyat matrisi ayrı işlendiği için, devasa tekrarlı tabloları
         // bu çağrıya sokmuyoruz → daha küçük girdi, daha hızlı. Yine de bütçe yüksek
-        // tutulur ki gün gün program/dahil-hariç gibi uzun metinler eksiksiz gelsin.
-        $budgetCap = $includePriceTable ? self::MAX_TEXT_CHARS : 42000;
+        // tutulur ki gün gün program (adanmış bölge, 30k'ya kadar) + dahil/hariç
+        // gibi uzun metinler eksiksiz gelsin.
+        $budgetCap = $includePriceTable ? self::MAX_TEXT_CHARS : 50000;
 
         if (mb_strlen($text) <= $budgetCap) {
             return $text;
@@ -769,6 +770,19 @@ class TourUrlImporter
             // Tablolardan SONRAKİ detaylı listeler: "Fiyata Dahil / Dahil Değil /
             // Ekstra Aktiviteler / İptal-İade" genelde tam burada yer alır.
             $take($priceEnd, $priceEnd + 14000);
+        }
+
+        // 1b) TUR PROGRAMI bölgesi — gün gün program uzun olur (gün başına 1-3k
+        // karakter) ve jenerik 'program' penceresi (+5000) çoğunu keser: "3 günü
+        // geliyor, kalan günler kaybolyor" hatasının sebebi buydu. Gün başlığı
+        // satırlarını ("1. Gün ...", "Gün 1", tek başına "Gün") deterministik bul;
+        // İLK günden SON günün içeriği sonuna kadar bölgeyi BÜTÜN al.
+        if (preg_match_all('/^\s*(?:\d{1,2}\s*\.?\s*g[üu]n\b|g[üu]n\s*\d{1,2}\b|g[üu]n\s*$)/imu', $text, $dayMatches, PREG_OFFSET_CAPTURE)
+            && count($dayMatches[0]) >= 2) {
+            // preg offset'leri BAYT cinsindendir; $take mb (karakter) konum bekler
+            $firstChar = mb_strlen(substr($text, 0, $dayMatches[0][0][1]));
+            $lastChar = mb_strlen(substr($text, 0, end($dayMatches[0])[1]));
+            $take($firstChar - 500, min($lastChar + 8000, $firstChar + 30000));
         }
 
         // 2) Baş kısım (başlık, intro, özet fiyat)
@@ -890,8 +904,15 @@ class TourUrlImporter
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.1, // tutarlı/deterministik çıkarım
-            'max_tokens' => 8000, // gün gün program + çok tarihli fiyat matrisi uzun olabilir
+            'max_tokens' => 12000, // 7+ günlük programın TAM metni + diğer alanlar 8k'yı aşabiliyor
         ]);
+
+        // Çıktı tavana çarptıysa JSON kesilir → json_decode boş döner ve alanlar
+        // sessizce kaybolur; teşhis için logla.
+        $finishReason = $response->choices[0]->finishReason ?? null;
+        if ($finishReason === 'length') {
+            Log::warning('[TourImport] genel çıkarım max_tokens tavanına çarptı — çıktı kesilmiş olabilir');
+        }
 
         $content = $response->choices[0]->message->content ?? '{}';
 
