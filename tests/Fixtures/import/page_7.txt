@@ -1,0 +1,2130 @@
+İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş
+window.dataLayer = window.dataLayer || [];
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5B8MMVX7');
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '442978066294627');
+fbq('track', 'PageView');
+Yurt İçi Turlar
+Yurt Dışı Turlar
+Cruise Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Kampanyalar
+Hızlı Erişim
+Rezervasyon Sorgula
+Blog
+Grup Talepleri
+Okul Turları
+Sosyal Medya
+Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Tüm Kültür Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Tüm Haftasonu Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Tüm Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Tüm İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Tüm Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Tüm Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Tüm Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Tüm Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Tüm İzmir Çıkışlı Yurt Dışı Turlar
+Cruise Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Tüm Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Tüm Nehir Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+Kampanyalar
+Üyelik
+Kampanyalardan haberdar olmak ve rezervasyonlarına hızlıca ulaşmak için hemen üye ol!
+Giriş Yap
+Üye Ol
+0850 303 1363
+Sizi arayalım
+Grup Talepleri
+Okul Turları
+Türkçe
+English
+Üye girişi
+Kayıt ol
+Yardım
+Satış Noktaları
+Yurt İçi Turlar
+Kültür Turları
+Haftasonu Turları
+Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Cruise Turları
+Gemi Turları
+Nehir Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Kampanyalar
+Fırsatı Yakaladın!
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Başı 7500.00 TRY İndirim İçin Ödeme Sayfasında Kupon Kodunu Kullanmayı Unutma!
+FIRSAT7500
+Kopyala
+BU TURDA FIRSAT VAR!
+Fırsat indirimi
+Fırsatı yakaladın!
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Başı 7500.00 TRY İndirim İçin Ödeme Sayfasında Kupon Kodunu Kullanmayı Unutma!
+FIRSAT7500
+Kopyala
+@media (max-width: 767.98px) {
+.breadcrumb {
+display: flex !important;
+flex-wrap: nowrap !important;
+overflow-x: auto !important;
+white-space: nowrap !important;
+scroll-behavior: smooth;
+-webkit-overflow-scrolling: touch; /* iOS için pürüzsüz kaydırma */
+padding-bottom: 5px; /* Kaydırma çubuğu metne çok yapışmasın diye */
+}
+.breadcrumb::-webkit-scrollbar {
+display: none; /* İsteğe bağlı: Mobilde alt yatay kaydırma çubuğunu gizler */
+}
+.breadcrumb-item {
+display: inline-block !important;
+float: none !important;
+}
+}
+Anasayfa
+Yurtdışı Tur
+İskandinavya Turları
+İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş
+.heart-red { color: red !important; }
+İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş (Tur Kodu: 2316)
+Facebook
+Twitter
+Sizi Arayalım
+İstanbul Hareketli
+7 gece 8 gün (7 gece konaklamalı)
+Pegasus Hava Yolları
+İskandinavya, Helsinki, Stockholm, Oslo, Göteborg, Örebro, Karlstad, Malmö, Kopenhag
+949.00 EUR
+(50.961,30 TRY)
+'den başlayan fiyatlar
+Rezervasyon yap
+.anchor { scroll-margin-top: 80px; }
+TUR PROGRAMI
+REZERVASYON YAP
+GENEL BİLGİLER
+TARİHLER VE FİYATLAR
+VİZE BİLGİLERİ
+KAMPANYALAR
+Ücrete Dahil Olan Hizmetler
+Ücrete Dahil Olmayan Hizmetler
+Tur Hareket Noktaları
+Ekstra Turlar ve Aktiviteler
+Rehberimizden Notlar
+İSKANDİNAVYA VE FİYORDLAR TURU
+PEGASUS İLE
+4 ÜLKE 6 ŞEHİR
+SİLJA LİNE CRUİSE'DA KONAKLAMA!
+Helsinki (1) - Silja Line Cruise (1) - Stockholm (1) - Karlstad - Örebro - Oslo (2) - Göteborg (1) - Malmö - Kopenhag (1)
+.itinarylistcontent p{
+margin-top:15px !important;
+}
+Gün
+İSTANBUL – HELSİNKİ
+UÇUŞ DETAYLARI
+PC1310 SAW-HEL 11:00 – 14:40
+PC1074 CPH-SAW 15:55 – 20:10
+06 Haziran
+PC1311 SAW-HEL 11:00 – 14:40
+PC1072 CPH-SAW 12:15 – 16:25
+ÖNEMLİ NOT
+Tur tarihlerine göre uçuş bilgileri değişiklik gösterebilmektedir. İç hat bağlantılı bilet alacak yolcularımızın bilgi almasını önemle rica ederiz.
+Sabiha Gökçen Havalimanı dış hatlar gidiş terminalinde uçuştan üç saat önce buluşuyoruz Bagaj, bilet ve biniş işlemlerinin ardından Pegasus Havayolları tarifeli seferi ile Helsinki’ye gerçekleşecek uçuşumuzun ardından havalimanında bizleri bekleyen özel otobüsümüze geçiyoruz. Ardından Helsinki panoramik şehir turu. Finlandiya’nın başkenti ve ülkenin en büyük ve kalabalık şehri olan Helsinki, açık renkli taş mimarisi nedeniyle Kuzey’in Beyaz Kenti olarak bilinmektedir. Şehir gezimiz sırasında Sibelius Anıtı’nın da bulunduğu Senato Meydanı, Parlamento Meydanı ve Kraliyet Opera Binası görülecek yerler arasındadır. Arzu eden misafirlerimizle ekstra olarak düzenlenecek tarihi Porvoo Kasabası (45 Euro) turumuz için hareket. “Büyüleyici Anların Şehri” olarak anılan ortaçağ kasabasının sokaklarında keyifli bir gezintiye çıkıyoruz. Turumuzun ardından Helsinki’deki otelinize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Porvoo Kasabası (45 Euro)
+Gün
+HELSİNKİ – STOCKHOLM (Silja Line Cruise) Cruise Konaklama
+Otelde alacağımız kahvaltının ardından otelden çıkış işlemlerimizi tamamlayıp bizleri Stockholm’e götürecek olan Silja Line Cruise’a geçiyoruz. Kabinlere yerleştikten sonra serbest zaman. Konaklama gemide.
+Gün
+STOCKHOLM
+Cruise’da alacağımız kahvaltının ardından Stockholm panoramik şehir turumuz için hareket. Turumuz esnasında; Fjallgatan Tepesi, ortaçağdan kalma Gamla Stan, Djurgarden Parkı, Belediye binası, yedi tiyatroyu aynı çatı altında toplamış olan Ulusal Tiyatro binası, borsa binası ve Kunqsrad Parkı görülecek yerler arasındadır. Turumuzun ardından alışveriş için serbest zaman. Arzu eden misafirlerimizle ekstra olarak düzenlenecek tarihi Vasa Gemi Müzesi (50 Euro) turumuz için hareket. XVII. yy’da yapılmış olan Vasa gemisi, 1628’de çıktığı ilk seferinde Stockholm’de alabora olup batmıştır. Deniz dibinde geçirdiği 333 yıldan sonra bu devasa savaş gemisi kurtarılmış ve dönemin tek savaş gemisi olarak müzede sergilenmeye başlanmıştır. Arzu eden misafirlerimizle ekstra olarak düzenlenecek Uppsala & Sigtuna (85 Euro) turumuz için hareket. Gezimizde yarı gotik, yarı ortaçağ tarzını göreceğiniz, bir üniversite şehri olan Uppsala ve İsveç tarihinde kurulan ilk kent olan Sigtuna görülecek yerler arasındadır. Uppsala gezimiz sırasında, Uppsala Katedrali, Uppsala Üniversite müzesi ve binası göreceğimiz yerler arasınadır. Sigtuna’daki eski renkli evleri de gördükten sonraTurumuzun ardından otelinize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Vasa Gemi Müzesi (50 Euro)
+Uppsala & Sigtuna (85 Euro)
+Gün
+STOCKHOLM – ÖREBRO – KARLSTAD – OSLO
+Otelde alacağımız kahvaltının ardından erken saatlerde Örebro ve Karlstad üzerinden Oslo’ya uzun bir yolculuğa çıkıyoruz. Karlstad’da panoramik şehir turumuzu yapıyoruz ve öğle yemeği için serbest zaman alıyoruz. Varışımıza istinaden Oslo panoramik şehir turumuz için hareket. Turumuzda Kraliyet Sarayı, Meclis Binası, Nobel ödüllerinin dağıtıldığı ve dünyadaki en mükemmel yapılardan birisi olarak bilinen belediye sarayı, Ulusal Tiyatro, Oslo Katedrali, Karl Johans Caddesi, Residance Müzesi görülecek yerler arasındadır. Oslo’daki otelinize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Gün
+OSLO
+Otelde alacağımız kahvaltının ardından erken saatlerde arzu eden misafirlerimizle ekstra olarak düzenlenecek tarihi Flam Treni (150 Euro) turumuz için hareket. Flam treni turumuzun ardından arzu eden misafirlerimizle ekstra olarak düzenlenecek Fiyord Tekne (150 Euro) turumuz için hareket. Turumuzda iki saatlik muhteşem bir Fiyord gezisi yapacağız. Turumuzun ardından Oslo’daki otelinize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Flam Treni (150 Euro)
+Fiyord Tekne (150 Euro)
+Gün
+OSLO – GÖTEBORG
+Arzu eden misafirlerimizle ekstra olarak düzenlenecek Vigeland (40 Euro) turumuz için hareket. Dünyanın en büyük açık hava heykel müzesi olan Frogner Parkı Vigeland Sergisi aynı zamanda tüm heykellerin aynı kişi tarafından yapıldığı tek sergi olmasıyla da ilk ve tek. Serginin asıl önemli özelliği ise birkaç istisna haricinde tüm çalışmaların insan figürü olmasıdır. Frogner Parkı’nda bulunan daimi Vigeland Sergisi’nde bütün eserler Gustav Vigeland’ın tüm hayatı boyunca hazırladığı 214 adet granit ve bronz insan heykeli ve 13 adet dökme demir kapıdan oluşuyor. 320 bin metrekarelik bu serginin hazırlanması ise Vigeland ve asistanlarının 10 yıllık bir çalışmasının ürünü. Ardından Göteborg’a transfer. Varışımıza istinaden Göteborg panoramik şehir turu. Temelleri İsveç Kralı IX. Charles tarafından Göta Nehri üzerinde kurulmuş olan, tarihi ve kültürel zenginlikleri ile herkesi büyüleyen Göteborg aynı zamanda İskandinavya'nın en büyük liman şehridir. Kanalları ile ünlü bu şehirde Avenue Bulvarı, Gustav Adolf meydanı, Poseidon heykeli, opera ve tiyatro binaları görülecek yerler arasındadır. Turumuzun ardından otelinize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Vigeland (40 Euro)
+Gün
+GÖTEBORG – MALMÖ – KOPENHAG
+Otelde alacağımız kahvaltının ardından, Malmö’ye hareket ediyoruz. Eski adı Malmhaug olan ve kum yığını anlamına gelen Malmö’ye varışımızla birlikte şehir turumuz başlıyor. Şehir turumuz esnasında Stortorget Meydanı, City Hall, kafe ve restoranlarıyla cıvıl cıvıl Lilla Torg Meydanı ve Sankt Petri kilisesi göreceğimiz yerler arasındadır. Turumuzun ardından Kopenhag’a hareket ediyoruz. İsveç ve Danimarka’yı birleştiren muhteşem manzarasıyla Öresund köprüsünü kullanarak Kopenhag’a geçiyoruz. Ardından Kopenhag panoramik şehir turumuz için hareket. Christianborg Kalesi, Amelienborg Kalesi (Kraliyet Sarayı), Küçük Denizkızı, Avrupa’nın en uzun yaya yolu olan Stroget, Nyhavn Kanalı, ortaçağ borsa binaları ve belediye binası meydanı görülecek yerler arasındadır. Arzu eden misafirlerimizle ekstra olarak düzenlenecek Kronborg Kalesi & Frederisburg Sarayı (85 Euro) turumuz için hareket. Rönesans akımının olağanüstü örneklerinden biri olan ve Kuzey Avrupa bölgesinin tarihinde önemli bir role sahip olan kaleyi dışarıdan görecek, ardından Danimarka kraliyet ailesinin yazlık sarayı olarak kullanılan sarayı ve özel olarak dizayn edilmiş bahçesini gezeceğiz. Turumuzun ardından Kopenhag’daki otelinize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Kronborg Kalesi & Frederisburg Sarayı (85 Euro)
+Gün
+KOPENHAG – İSTANBUL
+Otelde alacağımız kahvaltının ardından odaların boşaltılması ve serbest zaman. Rehberimizin belirteceği saatte havalimanına transfer. Bagaj, bilet ve gümrük işlemlerinden sonra Pegasus Hava Yolları tarifeli seferi ile İstanbul’a uçuşumuz gerçekleşiyor. Sabiha Gökçen Havalimanı’na varışımızla birlikte turumuzun ve servislerimizin sonu.
+devamını göster
+Tur programını indir
+Tur Programını Mail Gönder
+Tur Hareket Noktası
+08:00 Sabiha Gökçen Havalimanı
+TUR ÜCRETİNE DAHİL OLAN HİZMETLER
+-Pegasus Havayolları ile İstanbul (SAW) - Helsinki (HEL) gidiş, Kopenhag (CPH) - İstanbul (SAW) dönüş ekonomi sınıf uçak bileti,
+-Havalimanı vergileri,
+-3*& 4* otellerde 6 gece oda & kahvaltı konaklama, Silja Line Cruise’da 1 gece ekonomi iç kabin + kahvaltı konaklama, toplam 7 gece konaklama
+-Havalimanı-Otel-havalimanı transferleri,
+-Özel otobüslerimiz ile tüm şehir transferleri,
+-Helsinki-Stockholm arası cruise yolculuğu,
+-Kopenhag Panoramik Şehir Turu
+-Malmö Panoramik Şehir Turu
+-Göteborg Panoramik Şehir Turu
+-Oslo Panoramik Şehir Turu
+-Karlstad Panoramik Şehir Turu
+-Stockholm Panoramik Şehir Turu
+-Helsinki Panoramik Şehir Turu
+-Profesyonel Türkçe rehberlik hizmetleri,
+-TURSAB mesleki sorumluluk sigortası.
+TUR ÜCRETİNE DAHİL OLMAYAN HİZMETLER
+-Zorunlu Seyahat sağlık sigortası (20 Euro)
+-Vize ücreti
+-Yurt dışı çıkış harcı bedeli,
+-Programda belirtilmeyen Öğle ve Akşam yemekleri,
+-Her türlü kişisel harcamalar ve Otel ve Cruise’da yapılacak ekstra harcamalar,
+-Programda belirtilmeyen müze ve ören yerleri girişleri,
+-Ekstra Turlar
+-Turist şehir vergileri,
+-Şoför tipleri 10 Euro (İsteğe bağlı).
+Ekstra Turlar ve Aktiviteler
+AVANTAJLI EKSTRA GEZİLER
+570 EURO
+Kronborg Kalesi & Frederisburg Sarayı (85 Euro) + Vigeland Turu (40 Euro) + Flam Tren turu (150 Euro) + Vasa Gemisi Müzesi (50 Euro) + Fiyord Tekne Turu (150 Euro) + Uppsala ve Sigtuna (85 Euro) + Porvoo Kasabası (55 Euro)
+0-5 yaş ücretsiz, 5-12 yaş %50 indirimlidir.
+/* Genel tab görümü: çok açık gri zemin */
+.visa-procedures-tabmenu .nav-tabs .nav-link {
+background-color: #f8f9fb; /* pasif */
+border: 1px solid #e9ecef;
+color: #495057;
+margin-right: .25rem; /* küçük aralık */
+}
+/* Hover */
+.visa-procedures-tabmenu .nav-tabs .nav-link:hover {
+background-color: #f2f4f7;
+border-color: #dee2e6;
+color: #212529;
+}
+/* Aktif tab: bir tık daha koyu açık gri */
+.visa-procedures-tabmenu .nav-tabs .nav-link.active {
+background-color: #eceff3; /* aktif */
+border-color: #dee2e6 #dee2e6 #fff; /* içerikle birleşen alt kenar */
+color: #0d6efd; /* isteğe bağlı: aktif renge vurgu */
+}
+/* İçerik kutusunun üst kenarı aktif tabla hizalı dursun */
+.visa-procedures-tabmenu .tab-content {
+border: 1px solid #dee2e6;
+border-top: 0;
+background: #fff;
+padding: 1rem;
+border-radius: 0 0 .375rem .375rem;
+}
+/* İstersen mobilde daha yumuşak görünüm için köşe yuvarla */
+.visa-procedures-tabmenu .nav-tabs .nav-link {
+border-radius: .375rem .375rem 0 0;
+}
+/* --- Sol menü: çizgili liste + aktif ok (arrow) --- */
+.vtab-nav .nav-link {
+position: relative;
+border-radius: 0;
+background: #f7f9fb;
+color: #495057;
+padding: .875rem 1rem;
+font-weight: 500;
+border-bottom: 1px solid #e9ecef;
+text-align: left;
+transition: all .15s ease-in-out;
+}
+.vtab-nav .nav-link:first-child { border-top-left-radius: .5rem; border-top-right-radius: .5rem; }
+.vtab-nav .nav-link:last-child { border-bottom-left-radius: .5rem; border-bottom-right-radius: .5rem; border-bottom: 0; }
+.vtab-nav .nav-link:hover { background:#f1f4f8; color:#212529; }
+.vtab-nav .nav-link.active {
+background: linear-gradient(0deg, #e8eef7, #e8eef7);
+color:#0d6efd;
+box-shadow: inset 2px 0 0 #0d6efd;
+}
+/* Sağ ok oku */
+.vtab-nav .nav-link.active::after {
+content:"";
+position:absolute;
+right:-12px; top:50%;
+transform: translateY(-50%);
+border-width: 12px 0 12px 12px; /* üçgen */
+border-style: solid;
+border-color: transparent transparent transparent #e8eef7;
+filter: drop-shadow(0 1px 0 rgba(0,0,0,.08));
+}
+/* --- İçerik kutusu --- */
+.vtab-content {
+background: #ffffff;
+border-radius: .5rem;
+padding: 1.25rem 1.25rem;
+}
+.vtab-content .lead-compact {
+font-size: .98rem;
+color:#2c3e50;
+margin-bottom:.75rem;
+}
+/* --- Liste görselleştirme: yumuşak gri panel + özel madde imi --- */
+.fancy-list {
+list-style: none;
+margin: 0;
+padding-left: 0;
+}
+.fancy-list li {
+position: relative;
+padding: .4rem .5rem .4rem 1.6rem;
+margin: .125rem 0;
+border-radius: .35rem;
+background:#f8f9fa;
+border:1px solid #eef1f4;
+}
+.fancy-list li + li { margin-top:.4rem; }
+/* Madde imi */
+.fancy-list li::before {
+content:"";
+position:absolute; left:.55rem; top:50%;
+transform: translateY(-50%);
+width: .45rem; height: .45rem; border-radius:50%;
+background:#0d6efd;
+box-shadow: 0 0 0 3px #e6efff;
+}
+/* --- Responsive iyileştirme --- */
+@media (max-width: 991.98px) {
+.vtab-nav .nav-link.active::after { display:none; } /* dar ekranda oku gizle */
+.vtab-nav .nav-link { border-radius: .35rem; margin: .25rem; border:1px solid #e9ecef; }
+.vtab-nav { padding:.5rem; }
+}
+.appforms-grid{row-gap:1.75rem}
+.appform-card{
+display:flex; align-items:flex-start; gap:14px;
+padding:14px 4px 16px 4px; border-bottom:1px solid #eee;
+text-decoration:none !important;
+}
+.appform-card:hover .appform-title{color:#0d6efd}
+.appform-icon{
+flex:0 0 56px; width:56px; height:56px; border-radius:50%;
+background:#4b4b4b; display:grid; place-items:center;
+}
+.appform-icon svg{width:28px; height:28px; fill:#fff}
+.appform-body{flex:1 1 auto}
+.appform-title{
+font-size:20px; line-height:1.25; font-weight:700; color:#222; margin:0 0 6px 0;
+}
+.appform-desc{
+font-size:14px; color:#6c757d; margin:0;
+}
+/* son kartta alt çizgi olmasın */
+.appforms-col .appform-card:last-child{border-bottom:0}
+@media (max-width: 575.98px){
+.appform-title{font-size:18px}
+}
+Umuma Mahsus Pasaportlar (Bordo Pasaport)
+Hususi Pasaportlar (Yeşil Pasaport)
+Hizmet Pasaportları (Gri Pasaport)
+Diplomatik Pasaportlar (Kırmızı Pasaport)
+Hizmet, hususi veya diplomatik pasaport başvurusu için 5682 sayılı Pasaport Kanunu’nda belirtilen şartları taşımayan kişiler umuma mahsus pasaport başvurusunda bulunabilirler.
+Hususi pasaportlar; Türkiye Büyük Millet Meclisi eski üyeleri, eski Bakanlar ile birinci, ikinci ve üçüncü derece kadrolarda bulunan veya bu kadrolar karşılık gösterilmek veya T.C. Emekli Sandığı ile ilgilendirilip emekli kesenekleri bu derecelerden kesilmek suretiyle sözleşmeli olarak çalıştırılan Devlet memurları ve diğer kamu görevlilerine; diplomatik pasaport verilmesini gerektiren vazifelerden başka herhangi bir resmi vazife ile veya kendi hesaplarına yabancı ülkelere gittikleri zaman verilir. Bankacılık Düzenleme ve Denetleme Kurulu ve Tasarruf Mevduatı Sigorta Fonu Kurulu üyeleri için, T.C. Emekli Sandığı ile ilgilendirilme ve emekli keseneklerinin bu derecelerden kesilmesi şartı aranmaz. Bunlardan emeklilik veya çekilme sebepleri ile vazifelerinden ayrılmış olanlara da bu tür pasaport verilir. İl ve ilçe belediye başkanlarına, görevleri süresince hususi pasaport verilir. Hususi pasaport alabilecek durumda bulunanların eşlerine de aynı tür pasaport verilir. Hususi pasaport almaya hakkı bulunduğu sırada vefat edenlerin dul eşlerine başkası ile evlenmemiş ise aynı türden pasaport verilmesi mümkündür. Hususi damgalı pasaport alabilecek durumda bulunanların ergin olmayan veya ergin olsalar dahi yanlarında yaşayıp evli bulunmayan ve iş sahibi olmayan öğrenimi devam eden çocuklarına 25 yaşının ikmaline kadar, yine ergin olsalar dahi evli bulunmayan ve iş sahibi olmayan, aynı zamanda bedensel, zihinsel veya ruhsal özürlerinden en az biri nedeniyle sürekli bakıma muhtaç durumda olduğu resmi sağlık kurumlarının düzenlediği sağlık kurulu raporu ile belgelenen çocuklarına da hususi damgalı pasaport verilir. Hak sahibi ebeveynin vefatı durumunda vefat eden ebeveynden dolayı emekli aylığı (yetim maaşı) bağlanan çocuklar iş sahibi olarak değerlendirilmeyip yukarıda belirtilen diğer şartları taşımaları halinde hususi pasaport verilebilecektir..
+Hizmet Pasaportları, Hükümetçe, Hususi İdarelerce veya Belediyelerce resmi vazifeyle dış memleketlere gönderildiklerinde veya dış memleketlerde vazifeye alınanlara, Türkiye Cumhuriyetinin üyesi bulunduğu uluslararası kuruluşlarda memur statüsünde çalışanlara, Türk Hava Kurumu ve Türkiye Kızılay Cemiyetince görevlendirilenlere verilir. Hizmet damgalı pasaport alabilecek durumda bulunanların eşlerine, ergin olmayan veya ergin olsalar dahi yanlarında yaşayıp evli bulunmayan ve iş sahibi olmayan öğrenimi devam eden çocuklarına 25 yaşının ikmaline kadar, yine ergin olsalar dahi yanlarında yaşayıp evli bulunmayan ve iş sahibi olmayan, aynı zamanda bedensel, zihinsel veya ruhsal özürlerinden en az biri nedeniyle sürekli bakıma muhtaç durumda olduğu resmi sağlık kurumlarının düzenlediği sağlık kurulu raporu ile belgelenen çocuklarına da hak sahibi kişinin pasaportu ile aynı süre geçerli hizmet damgalı pasaport verilir.
+Diplomatik pasaportlar, Dışişleri Bakanlığı ile yabancı memleketlerde Türkiye Cumhuriyeti Büyükelçilik ve Konsoloslukları tarafından Türkiye Büyük Millet Meclisi Üyelerine, Türkiye Büyük Millet Meclisi üyesi olmayan Bakanlara, Anayasa Mahkemesi, Yargıtay, Danıştay, Askeri Yargıtay, Askeri Yüksek İdare Mahkemesi, Uyuşmazlık Mahkemesi, Sayıştay, Genel Kurmay birinci ve ikinci başkanlarına, Cumhuriyet Başsavcısına, orgenerallere, oramirallere, eski cumhurbaşkanlarına, yasama meclisleri eski başkanlarına, eski başbakanlar ve dışişleri eski bakanlarına, Cumhurbaşkanlığı Genel Sekreterine, Başbakanlık ve bakanlık müsteşarları ile Diyanet İşleri Başkanına,Valilere, Büyükşehir Belediye Başkanlarına, Büyükelçilik unvanı almış olanlar ile, Dışişleri Bakanlığı meslek mensuplarına, Cumhurbaşkanlığı Genel Sekreterliği üst düzey görevlilerinden resmi bir görevle gönderilenlere, Türkiye Cumhuriyeti dış temsilcilikleri nezdinde memur edilen müşavirlere, ataşelere ve muavinlerine, Hükümet adına milletlerarası resmi müzakereler yapılması, mukavelenameler akdi için veya milletlerarası toplantılarla kongre ve konferanslara katılmak üzere gönderilenlere ve yabancı devletler veya millletlerarası teşekküller nezdinde daimi veya geçici görev yapmak üzere gönderilenlere, siyasi kuryelere verilir. Diplomatik pasaport alabilecek durumda bulunan veya alan kimselerin sıfat veya vazifeleri devam ettiği müddetçe, eşlerine, ergin olmayan veya ergin olsalar dahi yanlarında yaşayıp evli bulunmayan ve iş sahibi olmayan öğrenimi devam eden çocuklarına 25 yaşının ikmaline kadar, yine ergin olsalar dahi yanlarında yaşayıp evli bulunmayan ve iş sahibi olmayan, aynı zamanda bedensel, zihinsel veya ruhsal özürlerinden en az biri nedeniyle sürekli bakıma muhtaç durumda olduğu resmi sağlık kurumlarının düzenlediği sağlık kurulu raporu ile belgelenen çocuklarına da hak sahibi kişinin pasaportu ile aynı süre geçerli diplomatik pasaport verilir. Diplomatik pasaportlar hiçbir harç veya resme tabi değildir.
+Evrak Listesi
+Uyarılar
+Başvuru Formları
+Ücretlendirme
+Çalışan
+Çiftçi
+İşveren
+Öğrenci
+Emekli
+Memur
+Çalışmayan Kişiler
+Çocuk (0-18 yaş)
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+FAALİYET BELGESİ
+Şirkete ait, şirket faaliyet durumuna uygun (faaliyet belgesi, esnaf / ziraat odası kayıt belgesi, mesleki oda kaydı evrakı, ticaret odası kaydı) son 3 ay içinde alınmış belge aslı.
+Avukatlar kendi Baro kayıtlarına ek olarak başka bir Avukatın yanında çalışıyorlarsa, Baro kaydını da ibraz etmelidir.
+TİCARET SİCİL GAZETESİ
+Faaliyetin güncel yapısını gösterir Ticaret Sicil Gazetesi fotokopisi ibraz edilmelidir.
+VERGİ LEVHASI FOTOKOPİSİ
+MADDİ GELİR EVRAKLARI
+Şahsın maddi imkanlarını gösterir evrak : Banka şubesi tarafından kaşelenmiş ve imzalanmış, son altı aylık maaş yatış işlemlerini gösteren varsa birikim hesabının dökümü, başvuru tarihinden önceki son onbeş gün içinde düzenlenmiş kaşeli imzalı hesap cüzdanı aslı ve okunaklı fotokopisi Hesap dökümü ve imza sirküleri (çalışanlar için şahsi hesap) veya maaşı elden alması halinde “maaşı elden verildiğini” beyan eden dilekçe, gelir beyanları, son üç ayın kaşeli ve imzalı maaş bordroları, emeklilik gelirleri, kira kontratları, tapular.
+ÇALIŞMA & İZİN BELGESİ
+Şirketin antetli kağıdına yazılmış, işveren tarafından imzalanmış ve kaşelenmiş seyahat amacını açıklayan dilekçe. Barkodlu 4b Bağ-kur detaylı hizmet dökümü.
+İşveren olup ve eş zamanlı farklı bir kurumda çalışan statüsünde olan kişiler çalışan kategorisindeki evrakları ek olarak sunmalıdır.
+İMZA SİRKÜLERİ
+Şirkete ait imza sirkülerinin, şahıs şirketlerinde imza beyannamesinin fotokopisi.
+ÇALIŞMA EVRAKLARI
+İşe giriş bildirgesi ve tüm hizmet geçmişini gösterir barkodlu 4a hizmet dökümü ile işveren tarafından imzalanmış ve kaşelenmiş son üç aya ait maaş bordroları.
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+FAALİYET BELGESİ
+Faaliyetin güncel yapısını gösterir Ticaret Sicil Gazetesi fotokopisi ibraz edilmelidir
+VERGİ LEVHASI FOTOKOPİSİ
+MADDİ GELİR EVRAKLARI
+Şahsın maddi imkanlarını gösterir evrak : Banka şubesi tarafından kaşelenmiş ve imzalanmış, son altı aylık maaş yatış işlemlerini gösteren varsa birikim hesabının dökümü, başvuru tarihinden önceki son onbeş gün içinde düzenlenmiş kaşeli imzalı hesap cüzdanı aslı ve okunaklı fotokopisi Hesap dökümü ve imza sirküleri (çalışanlar için şahsi hesap) veya maaşı elden alması halinde “maaşı elden verildiğini” beyan eden dilekçe, gelir beyanları, son üç ayın kaşeli ve imzalı maaş bordroları, emeklilik gelirleri, kira kontratları, tapular.
+ÇALIŞMA & İZİN BELGESİ
+İşyerine ait şirketin antetli kağıdına yazılmış seyahat amacını açıklayan dilekçe. Barkodlu 4b Bağ-kur detaylı hizmet dökümü İşveren olup ve eş zamanlı farklı bir kurumda çalışan statüsünde olan kişiler çalışan kategorisindeki evrakları ek olarak sunmalıdır.
+İMZA SİRKÜLERİ
+Şirkete ait imza sirkülerinin, şahıs şirketlerinde imza beyannamesinin fotokopisi.
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+MUVAFAKATNAME ASLI VE FOTOKOPİSİ
+Sadece bir ebeveyniyle seyahat eden reşit olmayanlar için diğer ebeveynden alınacak noter tasdikli ve apostilli muvafakatname (3 aydan eski olmayan). Sınır polisinin muvafakatnameyi ingilizce olarak görmek isteyebileceğini lütfen unutmayın. Tek taraflı velayet durumunda diğer ebeveynin muvafakatnamesinin bulunmaması halinde, yetkili mahkemenin tek taraflı velayeti tanıdığına ilişkin kararı.
+Refakat Beyanı:
+Ebeveynsiz seyahat eden reşit olmayanlar için her iki ebeveynden alınacak muvafakatnameye ek olarak apostilli refakat beyanı (veya taahhütnamesi). Sınır polisinin refakat beyanını İngilizce olarak görmek isteyebileceğini lütfen unutmayın.
+Doğum Belgesi (Formül A)
+Önemli Bilgilendirme : Muvaffakatname çift apostille olmalıdır.
+Noterden Muvaffakatename
+Muvaffakatane Apostille yapılacak
+Apostille yapılmış muvaffakatname noter onaylı Tercüme
+Apostille yapılmış muvaffakatname noter onaylı Tercüme, tekrar apostille yapılacak.
+ÖĞRENCİ BELGESİ
+Kişinin öğrenim gördüğü okuldan kaşeli imzalı veya e-devletten son 3 ay içerisinde alınmış barkodlu öğrenci belgesi gerekmketedir.
+MADDİ GELİR EVRAKLARI
+Şahsın maddi imkanlarını gösterir evrak : Banka şubesi tarafından kaşelenmiş ve imzalanmış, son altı aylık maaş yatış işlemlerini gösteren varsa birikim hesabının dökümü, başvuru tarihinden önceki son onbeş gün içinde düzenlenmiş kaşeli imzalı hesap cüzdanı aslı ve okunaklı fotokopisi Hesap dökümü ve imza sirküleri (çalışanlar için şahsi hesap) veya maaşı elden alması halinde “maaşı elden verildiğini” beyan eden dilekçe, gelir beyanları, son üç ayın kaşeli ve imzalı maaş bordroları, emeklilik gelirleri, kira kontratları, tapular.
+MADDİ DESTEKÇİ EVRAKLARI
+Ekonomik olarak başkalarına bağımlı olan şahıslar (ör. öğrenciler, reşit olmayanlar, eşler) ve geçimi ebeveyni tarafından sağlananlar, Tam Vukuatlı Nüfus Kayıt Örneklerini, geçimlerini sağlayan eş ya da ebeveynlerine ait mali durumunu gösterir evrakları, kendilerini destekleyen eş ya da ebeveynlerinin maddi yükümlülüğü üstlendiğini beyan eder mektubu ve imza beyanı (Ehliyet fotokopisi, imza beyanı vb. imza bulunan resmi belge) ile birlikte sunmalıdırlar.
+Masraflarınızı karşılayacak eş yada ebevynler kendileri başvurmasa bile şahsen başvuruda bulunacakları şekilde tüm çalışma ve gelir evraklarını eksiksiz ibraz etmek durumundadır.
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+EMEKLİLİK BELGESİ / CÜZDANI
+E-Devletten veya Sgk'dan alınmış barkodlu Hizmet dökümü.
+Emekliği sandığı veya banka emeklilerinin bağlı olduğu kuruluştan emekli olduklarına dair ıslak imzalı kaşeli yazı gerekmektedir.
+MADDİ GELİR EVRAKLARI
+Şahsın maddi imkanlarını gösterir evrak : Banka şubesi tarafından kaşelenmiş ve imzalanmış, son altı aylık maaş yatış işlemlerini gösteren varsa birikim hesabının dökümü, başvuru tarihinden önceki son onbeş gün içinde düzenlenmiş kaşeli imzalı hesap cüzdanı aslı ve okunaklı fotokopisi Hesap dökümü ve imza sirküleri (çalışanlar için şahsi hesap) veya maaşı elden alması halinde “maaşı elden verildiğini” beyan eden dilekçe, gelir beyanları, son üç ayın kaşeli ve imzalı maaş bordroları, emeklilik gelirleri, kira kontratları, tapular.
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+ÇALIŞMA & İZİN BELGESİ
+İşveren kuruma ait antetli kağıdı üzerinde çalışanın görevini, işe giriş tarihini, maaşını ve talep ettiği izin süresini belirten, kaşeli ve imza yetkilisi tarafından imzalanmış yazı. E-devletten alınmış uzun vade barkodlu hizmet dökümü.
+MADDİ GELİR EVRAKLARI
+Şahsın maddi imkanlarını gösterir evrak : Banka şubesi tarafından kaşelenmiş ve imzalanmış, son altı aylık maaş yatış işlemlerini gösteren varsa birikim hesabının dökümü, başvuru tarihinden önceki son onbeş gün içinde düzenlenmiş kaşeli imzalı hesap cüzdanı aslı ve okunaklı fotokopisi Hesap dökümü ve imza sirküleri (çalışanlar için şahsi hesap) veya maaşı elden alması halinde “maaşı elden verildiğini” beyan eden dilekçe, gelir beyanları, son üç ayın kaşeli ve imzalı maaş bordroları, emeklilik gelirleri, kira kontratları, tapular.
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+MADDİ GELİR EVRAKLARI
+Şahsın maddi imkanlarını gösterir evrak : Banka şubesi tarafından kaşelenmiş ve imzalanmış, son altı aylık maaş yatış işlemlerini gösteren varsa birikim hesabının dökümü, başvuru tarihinden önceki son onbeş gün içinde düzenlenmiş kaşeli imzalı hesap cüzdanı aslı ve okunaklı fotokopisi Hesap dökümü ve imza sirküleri (çalışanlar için şahsi hesap) veya maaşı elden alması halinde “maaşı elden verildiğini” beyan eden dilekçe, gelir beyanları, son üç ayın kaşeli ve imzalı maaş bordroları, emeklilik gelirleri, kira kontratları, tapular.
+MADDİ DESTEKÇİ EVRAKLARI
+Ekonomik olarak başkalarına bağımlı olan şahıslar (ör. öğrenciler, reşit olmayanlar, eşler) ve geçimi ebeveyni tarafından sağlananlar, Tam Vukuatlı Nüfus Kayıt Örneklerini, geçimlerini sağlayan eş ya da ebeveynlerine ait mali durumunu gösterir evrakları, kendilerini destekleyen eş ya da ebeveynlerinin maddi yükümlülüğü üstlendiğini beyan eder mektubu ve imza beyanı (Ehliyet fotokopisi, imza beyanı vb. imza bulunan resmi belge) ile birlikte sunmalıdırlar.
+Masraflarınızı karşılayacak eş yada ebevynler kendileri başvurmasa bile şahsen başvuruda bulunacakları şekilde tüm çalışma ve gelir evraklarını eksiksiz ibraz etmelidir.
+Standart Evraklar
+VİZE HARCI
+Vize harç bedeli Başvuru ofislerinde nakit olarak ödenecektir.
+Pasaport
+Talep edilen vize bitiş tarihinden sonra en az 90 gün geçerliği ve en az iki boş sayfası olan pasaport. Pasaportun ve varsa eski pasaportların (kişisel bilgilerin ve diğer bütün vize ve damgaların bulunduğu sayfaların) fotokopisi.
+Kimlik Fotokopisi
+Üzerinde TC kimlik no bulunan TC nüfus cüzdanının fotokopisi. Yabancı uyruklular için TC makamları tarafından verilmiş oturma izninin fotokopisi.
+BAŞVURU FORMU
+aşvuru sahibi tarafından doldurulmuş, imza kutucuklarının imzalanıp tarih atılmış Vize başvuru formu. Shengen vize başvuru formu (90 güne kadar olan konaklamalarda) / Ulusal vize başvuru formu (90 günü aşan konaklamalarda)
+BİOMETRİK FOTOĞRAF
+Açık renk fonlu 35 x 40 mm ebatlarında 2 adet biyometrik fotoğraf.
+SEYAHAT SAĞLIK SİGORTASI
+Öngürülen yolculuk ve Schengen ülkelerinde kalınacak süreyi kapsayan, sağlık sorunları, acil tedavi, hastanede yatış, hastalık ya da vefata bağlı yurda dönüş masraflarını karşılayabilecek, en az 30.000 Euro teminatlı seyahat sağlık sigortası. Seyahat sağlık sigortası belgelenmiş seyahat tarihlerinin önceki ve sonraki günlerini kapsamalıdır (yani gidiş tarihinden bir gün önce ve dönüş tarihinden bir gün sonra). Teminat bedeli Euro olarak belirtilmiş olmalıdır.
+TARİHÇELİ YERLEŞİM YERİ BELGESİ
+E-devletten alınmış barkodlu Tarihçeli yerleşim yeri belgesi.
+TAM VUKUATALI NÜFUS KAYIT ÖRNEĞİ
+E-devletten alınmış barkodlu nüfus kayıt örneği.
+SEYAHAT BİLDİRGESİ
+Tüm seyahati ayrıntılı açıklayan dilekçe sunulması gerekmektedir. Bu dilekçe içerisinde aylık ortalama gelirinizi de beyan etmeniz gerekmektedir. Buna ek olarak birlikte Seyahat edecek olan kişilerin dilekçede bildirilmesi gerekmektedir. Kişinin Vize Fotokopisi ve varsa Yeşil Pasaportunun Fotokopisi. Balayı Seyahati ise; Belediyeden alınmış imzalı Nikah tarihinin belirtildiği belgenin ek olarak sunulması gerekmektedir.
+SEYAHAT REZARVASYONLARI
+Uçuş veya tur organizasyonlarının rezervasyonları sunulmalı ve gidiş dönüş tarihleri ile seyahat detaylarını içerir olması gerekmektedir. Avrupa ülkeleri arasında geçiş öngörüldüğü durumlarda, başvuru sahibinden güzergah ve kullanılması öngörülen ulaşım araçlarına ilişkin tüm rezervasyonların sunulması gerekmektedir.
+Tur Organizasyonları: Tur satın alınması durumunda Otel ve Uçak Rezervasyonları dışında Tur kayıt belgesi, Tur Programı ve kaşeli imzalı Tur ödeme makbuzu sunulması gerekmektedir.
+Otel vb.
+Seyahat konaklama durumunuza ait belgeleri ibraz etmeniz gerekmektedir. Otel vb. rezervasyonlar sunulmalıdır.
+Mesleki Evraklar
+MUVAFAKATNAME ASLI VE FOTOKOPİSİ
+Sadece bir ebeveyniyle seyahat eden reşit olmayanlar için diğer ebeveynden alınacak noter tasdikli ve apostilli muvafakatname (3 aydan eski olmayan). Sınır polisinin muvafakatnameyi İngilizce olarak görmek isteyebileceğini lütfen unutmayın. Tek taraflı velayet durumunda diğer ebeveynin muvafakatnamesinin bulunmaması halinde, yetkili mahkemenin tek taraflı velayeti tanıdığına ilişkin kararı.
+Refakat Beyanı:
+Ebeveynsiz seyahat eden reşit olmayanlar için her iki ebeveynden alınacak muvafakatnameye ek olarak apostilli refakat beyanı (veya taahhütnamesi). Sınır polisinin refakat beyanını İngilizce olarak görmek isteyebileceğini lütfen unutmayın.
+Doğum Belgesi (Formül A)
+Önemli Bilgilendirme : Muvaffakatname çift apostille olmalıdır.
+Noterden Muvaffakatename
+Muvaffakatane Apostille yapılacak
+Apostille yapılmış muvaffakatname noter onaylı Tercüme
+Apostille yapılmış muvaffakatname noter onaylı Tercüme, tekrar apostille yapılacak.
+MADDİ DESTEKÇİ EVRAKLARI
+Ekonomik olarak başkalarına bağımlı olan şahıslar (ör. öğrenciler, reşit olmayanlar, eşler) ve geçimi ebeveyni tarafından sağlananlar, Tam Vukuatlı Nüfus Kayıt Örneklerini, geçimlerini sağlayan eş ya da ebeveynlerine ait mali durumunu gösterir evrakları, kendilerini destekleyen eş ya da ebeveynlerinin maddi yükümlülüğü üstlendiğini beyan eder mektubu ve imza beyanı (Ehliyet fotokopisi, imza beyanı vb. imza bulunan resmi belge) ile birlikte sunmalıdırlar.
+Masraflarınızı karşılayacak eş yada ebevynler kendileri başvurmasa bile şahsen başvuruda bulunacakları şekilde tüm çalışma ve gelir evraklarını eksiksiz ibraz etmek durumundadır.
+Konsolosluk Bilgilendirme
+Fotoğraf özellikleri için aşağıdaki şartların yer aldığı I.C.A.O. yönetmelikleri referans alınmaktadır:
+Fotoğraf + 12 yaş altı ay, - 12 yaş 3 aydan eski olmamalı, 35 x 40 mm ebatlarında, açık renkli ve düz renkli fon üzerine, net ve nötr, lekesiz, mükemmel aydınlık ve kontrast ayarlarına sahip olmalıdır. Işık yüze eşit ölçüde dağılmış olmalı ve üzerinde gölge, yansıma, kırmızı göz efekti bulunmamalıdır. Kaliteli fotoğraf kağıdına yüksek çözünürlükte basılmış olmalıdır.
+Fotoğraf ilk planda kişinin yüzünü ve omuzlarını göstermeli (yüz fotoğrafın %70–80’ini kaplamalı), doğal renkleri yansıtmalıdır. Gözler açık ve rahatlıkla görünebilir olmalı, saçlarla kapanmamalıdır. Tam karşıdan çekilmiş olmalı, yandan (portre stili) ya da eğik olmamalı, yüzün her iki yanını da açıkça göstermelidir;
+Fotoğraflanan kişi direkt olarak objektife bakmalı ve yüz hatları nötr bir ifade ile ağzı kapalı olarak net bir şekilde görülmelidir.
+Gözlük kullanılıyorsa, fotoğrafta gözlük üzerinde yansımalar olmadan, gözler açıkça görünecek şekilde olmalı ve gözlük camları renksiz olmalıdır. Kalın ve gözlerin bir kısmını kapatan çerçeveler kullanılmamalıdır.
+Başörtüsü kabul edilmektedir ancak yüz hatları çenenin alt ucundan tüm alın bölgesini ve yüzün her iki yanını kapsayacak şekilde açıkça görülebilir olmalıdır.
+Vize başvuruları en az 90 gündür ikamet edilen bölgede yapılmalıdır.
+Aksi belirtilmediği müddetçe, istenen evrakın aslı ile birlikte bir fotokopisi ibraz edilmeli ve belgeler üç aydan eski olmamalıdır.
+İstenen tüm belgeler kaşe ve imza kısımları da dahil olmak üzere okunaklı olmalı, kaşe ve imzalar üst üste gelmemelidir.
+Ticaret Odalarının web sitelerinden alınan e-imzalı faaliyet belgelerinin geçerlik süresi bir aydır.
+Avrupa Birliği üye ülkeleri vatandaşlarının akrabaları (eş, 21 yaşına kadar ya da bakmakla yükümlü bulunulan çocuklar, ebeveyn ve bakmakla yükümlü bulunulan kayınpeder/kayınvalide) için ilgili web sayfasına bakınız.
+Çift olarak ya da grup halinde yapılacak seyahatler için birlikte seyahat edilecek olan şahıslara ait vize fotokopilerinin ibraz edilmesi tavsiye edilir.
+Başvuru sahibinin başvurusunu Başvuru ofislerinden bizzat yapmak istemediği ve başvuru işlemleri için kendisini temsil edecek üçüncü bir şahsı yetkilendirmeyi tercih ettiği durumlarda, yetkilendirme formu - vekaletname doldurması gerekmektedir. Yetkilendirme şartı vekalet formunun ekinde bulunan resmi bildiriye tabidir. (Vekaletname + Resmi bildiri) Yetkilendirilme şartlarına uygun kişi, bahsi geçen yetki belgesinin başvuru sahibi tarafından imzalanmış aslı ile birlikte kendisine ait, üzerinde TC kimlik numarası bulunan kimlik fotokopisini vermek zorundadır. Her halükarda vize başvuru formunu şahsen doldurmak, imzalamak ve başvurunun düzgün ve isteğine uygun evrakla yapılmış olduğunu denetlemekle başvuru sahibi yükümlüdür. Sahte ya da üzerinde düzeltme yapılmış evrak ibraz edilmesi halinde hem başvuru sahibi hem de yetkilendirilen şahıs sorumlu tutulacaktır.
+Yabancı ülkeler tarafından düzenlenmiş evrak, ancak uygun şekilde tasdik ettirildiği (İngilizce’ye tercüme ettirildiği takdirde) takdirde geçerli kabul edilir.
+Diplomatik temsilcilikler üçüncü ülkelerdeki mukim şahısların ekonomik, ticari ve profesyonel durumları ile ilgili değerlendirme yapacak yetki ve araçlara sahip değildir.
+Önemli Bilgilendirme
+Başvurularınızın değerlendirilmesi için Diplomatik Temsilcilikleri tarafından mülakata çağırılabilirsiniz ve yukarıda belirtilen maddelere ek olarak Büyükelçilik/Konsolosluk tarafından başka belgeler de getirmeniz istenebilir. Her iki durumda da vize işlem süresi ve pasaport teslim tarihi değişebilir.
+Vize harcı ve koordinasyon ücretleri her bir başvuru için ödenecek olup iade edilmezler.
+Seyahat tarihlerini kapsayan geçerli bir Schengen vizesinin olduğu durumlarda vize başvuruları kabul edilmeyecektir.
+Başvuru formunda belirtilen telefon numaraları başvuru sahibine ait olmalıdır.
+Soyadı tutmama, boşanma, Avrupa Birliği vatandaşı yakını olma vs... gibi durumlarda başvuru sahiplerinin vukuatlı nüfus kayıt örneği ibraz etmeleri gerekebilir.
+Evlenme, boşanma vb. durumlarda soyisim değişikliği nedeniyle güncellenmeyen pasaportlar geçerli olmayacaktır, vize işlemi yalnızca yeni soyadın göründüğü pasaport üzerine işlenebilir.
+Başvuru Formları
+Ücretlendirme Bilgileri
+Vize Adı
+Kategori
+Başvuru Merkezi
+Yaş Aralığı
+Ücret
+İsveç Schengen Vizesi
+Turistik
+Ankara
+12 + Yaş
+220.00 EUR
+İsveç Schengen Vizesi
+Turistik
+Ankara
+0 - 5 Yaş
+150.00 EUR
+İsveç Schengen Vizesi
+Turistik
+Ankara
+6 - 11 Yaş
+180.00 EUR
+İsveç Schengen Vizesi
+Turistik
+İstanbul
+12 + Yaş
+220.00 EUR
+İsveç Schengen Vizesi
+Turistik
+İstanbul
+0 - 5 Yaş
+150.00 EUR
+İsveç Schengen Vizesi
+Turistik
+İstanbul
+6 - 11 Yaş
+180.00 EUR
+İsveç Schengen Vizesi
+Turistik
+İzmir
+12 + Yaş
+220.00 EUR
+İsveç Schengen Vizesi
+Turistik
+İzmir
+6 - 11 Yaş
+180.00 EUR
+İsveç Schengen Vizesi
+Turistik
+İzmir
+0 - 5 Yaş
+150.00 EUR
+Tur Tarihi
+06-07-2026
+18-07-2026
+20-07-2026
+03-08-2026
+15-08-2026
+17-08-2026
+19-09-2026
+17-10-2026
+26-12-2026
+Kişi Bilgileri
+1
+2
+0
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+Oda Ekle
+Tur Ara
+Tur Ara
+Vize Bilgileri
+Tur Bilgileri
+Önemli Notlar
+-Genel Şartlar tur programının ayrılmaz bir parçasıdır ve tur programından bağımsız düşünülemez.
+-Gezi için yeterli katılım sağlanamadığı takdirde; Malitur gezi hareket tarihinden 21 gün öncesine kadar turu iptal edebilir. Böyle bir durumda iptal bilgisi misafire iletilir. Tur bedelinin tamamı misafire iade edilir. Tur dışında satın alınan ilave hizmetlerin iadesinde; Malitur’ dan alınmış olan iç hat bağlantı uçuşu da misafire iade edilir, vize hizmeti, seyahat sağlık sigortası kullanılarak misafir adına vize başvurusu yapılmış ise bu hizmetler kullanılmış olacağından misafire iadesi yapılamaz, vize başvurusu yapılmamışsa vize ve seyahat sağlık sigortası da iptal edilerek ücret iadesi yapılır. Misafir iç hat bağlantı uçuşunu Malitur’ dan bağımsız farklı bir ürün sağlayıcıdan aldıysa, gezinin Malitur tarafından iptal edilmesi durumunda Malitur’ dan herhangi bir ücret iadesi talep edemez. Turun iptalinden dolayı oluşabilecek maddi ve manevi kayıpları misafir turu satın aldığında peşinen kabul eder, Malitur sorumlu tutulamaz.
+-Gezi için yeterli katılım sağlanamadığı takdirde Malitur iyi niyet göstererek turu iptal etmeme hakkında sahiptir. Bu durumda turun misafir için münferiden sağlanması söz konusu olacağından pakete dahil rehberlik hizmeti sadece yurtdışı gidiş-dönüş alan transferini kapsayacaktır.
+İptal ve değişiklik
+-Misafirlerimizin tur çıkış tarihinden 30 gün öncesine kadar Malitur’a yazılı olarak bildirmek koşulu ile cezasız iptal hakkı vardır. Gezi başlangıç tarihine 31 günden az kalması durumunda tur ücretinin P’ si tutarında ceza ödeyerek, gezi başlangıç tarihine 15 gün ve daha az kalması durumunda tur ücretinin tamamını ceza bedeli ödeyerek iptal yapabilir. İptal talep edilmesi durumunda, iç hat bağlantı, vize hizmeti, seyahat sağlık sigortası gibi ilave alınan hizmetlerin iptal iade şartları iptal talep edilen süreye göre değişkenlik gösterebileceği için iadesi konusunda önden bilgi sorulması gerekmektedir. Malitur ilave hizmetlerin iptal iadesi için herhangi bir taahhütte bulunamaz.
+Rehberlik Hizmetleri ve Ekstra Turlar
+-Ekstra turlar, en az 20 kişi katılım şartı ile düzenlenmektedir. Yeterli sayı sağlanamadığı takdirde geziler yapılamamakta veya ekstra gezi fiyatları ve içerikleri değişiklik gösterebilir. Ayrıca turların günleri ve saatleri, gidilecek yerlerdeki müze, ören yerlerinin açık/kapalı olma durumlarına ve hava şartlarına göre rehber tarafından değiştirilebilir. Ekstra turlar sırasında misafirlerimize farklı rehber eşlik edebilir.
+-Ekstra turlar için tahsis edilen araçlar, bu ekstra turu satın alan misafirlerin kullanımı içindir.
+-Tur paketine dahil olan panoramik şehir turları, şehirlerin genel tanıtımı için düzenlenen ve araç içinden rehber anlatımıyla panoramik olarak yapılan müze, ören yeri girişlerini içermeyen en fazla 2-3 saatlik turlardır. Panoramik turlar, programda belirtilen diğer turlar da dahil olmak üzere, tura denk gelen gün ve saatte yerel otoriteler tarafından gezilmesine, girilmesine izin verilmeyen veya herhangi bir etkinlik nedeniyle kapalı yollar sebebiyle gerçekleşmediği takdirde, keza hava şartları nedeniyle turun yapılması imkânsız hale geldiği durumlarda bahse konu turların yapılamamasından Malitur sorumlu değildir. Bazı turlar kapalı yollar veya araç girişine izin verilmeyen noktalarda imkanlar dahilinde toplu taşıma veya yaya olarak yapılabilir.
+-Rehberimiz, turlarımızın içeriğine bağlı kalarak, katılımcı sayısına, müze ve ören yerinin kapalı olma durumuna göre şehir turu ve/veya ekstra turların günlerinde değişiklik yapabilir. Bu durum uçuş saatlerinde oluşabilecek değişiklikler karşısında da geçerlidir.
+-Ekstra turlar katılımcının isteğine bağlı olup zorunlu değildir. Tur esnasında düzenlenen ekstra turlara katılmak istemeyen yolcular, yol üzerinde bulunan müsait bir dinlenme tesisinde beklemeyi kabul etmiş sayılırlar. Bu yolcular ekstra tur başlamadan yol üstü dinlenme tesisine bırakılıp, turun tamamlanması ardından bırakıldıkları noktadan alınırlar. Bekleme esnasında yapacakları kişisel harcamalar kendilerine aittir.
+Uçuşlar Hakkında
+-Malitur hava yolu ile yolcu arasında aracı kurum olup, olası ihtilaflarda Türk mevzuatının ilgili hükümlerinin yanı sıra Lahey Protokolü ve Varşova Konvansiyonu uygulanacaktır.
+-Tarifeli ve özel uçuşlarda rötar ya da uçuş saati değişiklikleri olabilir. Malitur, bu değişiklikleri en kısa sürede bildirmekle yükümlüdür. Yolcu uçuş saatinin değişme/iptal riskini kabul ederek geziyi satın almıştır.
+-0-2 yaş arası çocuklar sadece alan vergisi bedeli öderler.
+-Hava yolları kuralları gereğince; gidiş-dönüş olarak satın alınmış uçak biletlerinin gidiş uçuşu kullanılmadığı takdirde, dönüş uçuşu hava yolu tarafından iptal edilmektedir.
+-Uçaklı turlara katılan kişiler için yapılması gereken check-in ve boarding işlemleri kişisel işlemlerdir ve bu işlemlerin misafir tarafından uçuş öncesinde havalimanlarında, ilgili hava yolu kontuarlarından ya da online olarak hava yolu firmalarının internet sitelerinden yapılması zorunludur.
+-Uçuşlarda oluşabilecek son dakika rötarları ve kapı değişiklikleri, havalimanlarında sesli anons edilmekte ve alandaki bilgi panolarında gösterilmektedir. Bu bilgiler bizzat misafirler tarafından takip edilmelidir.
+-Tura katılım için hava yolları kuralları doğrultusunda bildirilen saatlerde, belirtilen havalimanında hazır bulunmayan, check-in ve boarding işlemlerini zamanında yaptırmayan, check-in ve boarding işlemlerini zamanında yaptıran ancak uçağa binmeyen misafirlerin, uçuşu gerçekleştirememeleri durumundan Malitur sorumlu değildir. Uçağı kaçıran misafirlerin tura dahil olmaları için gerekli olacak gidiş-dönüş yeni uçak biletlerinin temini ve gidilecek bölgedeki transferleri vb. gibi konulara dair oluşacak tüm masraflar kendilerine aittir.
+-Türkiye çıkışlı uçakların genelinde valiz ağırlığı 20 kg’dır. Bu ağırlık uçak firması ve gidilecek ülkeye göre değişiklik gösterebilir. Gidilecek ülkede iç hat uçuşları bulunuyorsa, bu iç hat uçuşlarda valiz ağırlığı 15 kg’a düşebilmektedir. Fazla bagaj ağırlık/fiyat kuralları hava yolları tarafından belirlenmekte olup, Malitur’un sorumluluğunda değildir.
+-Uçak biletlerini milleri ile upgrade etmek (business veya first class’a yükseltmek) isteyen misafirlerimiz için; biletleri kesildikten sonra hava yolunun (üyeliğinizin bulunduğu hava yolunu kontrol ediniz) müsaitliğine bağlı olarak upgrade işlemleri gerçekleştirebilir. Her uçuş için mil garantisi verilmez. Programın biletlerinin upgrade edilebilir sınıftan olup olmadığını kontrol ediniz.
+-Bazı havayollarında yeme-içme ve online check-in hizmetleri ekstra ücrete tabi olabilir.
+Diğer Hususlar
+-Malitur misafirin doğrudan otel ile iletişime geçerek yaptığı herhangi bir değişiklik veya iptal işlemi için sorumluluk kabul etmeyecektir. Bu durumda Malitur’un iptal koşulları geçerli olacaktır.
+-Tur programında otel(ler) isim belirtilmeden sadece kategori bilgisi verildiği ve/veya aynı destinasyon için seçenekli sunulduğu durumlarda gezi hareketinden 48 saat önce misafire Malitur tarafından bildirilecektir.
+-Fuar, kongre, konser, etkinlik, spor turnuvası vb. gibi özel dönemlerde oteller belirtilen lokasyonlardan veya km’ lerden daha fazla mesafede kullanılabilir. Böyle bir durumda, turun hareket tarihinden 15 gün önce Malitur tarafından bilgi verilecektir.
+-Satın alınan tura kayıt esnasında; misafir tarafından pasaportta geçen isim, doğum tarihi, pasaport numarasının sisteme doğru şekilde girilmesi/beyan edilmesi gerekmektedir. Uçak biletleri bu bilgilere göre kesilmektedir. Hatalı bilgilerden oluşacak uçak bileti iptal veya değişikliklerinin ceza bedeli misafirlere yansıtılır.
+-Cep telefonlarınızı yurt dışında kullanabilmek için Türkiye’den ayrılmadan önce, telefonunuzun yurt dışına açık olup olmadığını, hattınızın ait olduğu şirket ile iletişime geçerek kontrol ediniz.
+-Konaklama için otel giriş saati 15.00, çıkış saati ise 12.00’dir.
+-Malitur tarafından, oda ile ilgili talepler (yüksek kat, genel alanlara yakın, sigara içilen/içilmeyen, yatak tipi) otele bildirilir. Ayırtılan odaların, otelin müsaitliğine göre misafirin tercihleri doğrultusunda olmasına özen gösterilir. Bu taleplerin gerçekleşmesi otele giriş sırasındaki müsaitliğe bağlıdır ve Malitur tarafından garanti edilemez.
+-Otellerde sunulan kahvaltı Türk mutfağında alışılagelmiş zengin kahvaltıdan farklılık göstermektedir. Genelde kontinental kahvaltı olarak adlandırılan tereyağı, reçel, ekmek, çay veya kahveden oluşan sınırlı seçenekler ile sunulmakta olup, gruplar için gruba tahsis edilmiş ayrı bir salonda servis edilebilir.
+-Bazı durumlarda çift yataklı oda yerine çift kişilik yatak olabilmektedir. Çoğu Avrupa oteli, gerektiğinde birleştirilebilen 2 yataklı odalar sunmaktadır.
+-Çocuk ve ek yatak politikası her otelin, oda tiplerine göre değişiklik gösterebilir.
+-Her türlü ilave yatak ve bebek karyolası, talep üzerine ve otelin müsaitliği doğrultusunda temin edilir ve otel tarafından onaylanması gerekir.
+-Odadaki ilave yatak veya bebek karyolası kapasitesi 1 adettir (azami).
+-3 kişilik odalarda ilave yatak uygulaması vardır, bu tip odalarda 3. Kişiye tahsis edilen yatak standart yataklardan küçüktür. 3 Kişilik odalar 1 büyük yatak + 1 ilave yataktan oluşmaktadır. İlave yataklar, açma-kapama ve coach bed olarak adlandırılan yataklardan oluşmaktadır. Misafirlerimiz 3 kişilik oda ve/veya çocuklu rezervasyonlarında standart odaya eklenecek ilave yataklar nedeniyle odalarda yaşanabilecek sıkışıklık ve yatak tipini kabul ettiklerini beyan etmiş sayılırlar.
+-Otel rezervasyonlarında belirtilen, yetişkinler ile konaklayacak çocuk sayısı ve çocukların yaşları misafirlerimizce hatalı beyan edilir ise ilgili oteller ek bedel tahsil edebilir. Böyle bir durumda sorumluluk yanlış beyanda bulunan misafire aittir. Otel tarafından çocuklar için yaş tespitine yönelik kimlik talep edilebilir.
+-2 yetişkin + 1 çocuk olan rezervasyonlarda, çocuk için ayrı yatak bulunmayabilir. Çocuk fiyatları ancak çocuğun iki yetişkin yanında konaklaması durumunda geçerlidir. Çocuk indirimleri 2 yetişkin yanında kalan yaş grubuna uyan, “tek çocuk” için geçerlidir.
+-Gün içindeki kur değişimi, TL fiyatlara yansıtılmaktadır. Ödeme anındaki kurlar geçerlidir. İlave talepleriniz, otelde alacağınız bazı ek hizmetler (minibar, ütü vb.) otel tarafından ekstra ücrete tabi tutulur. Bu masraflar satın alma esnasında ücrete dahil edilmez ve konaklamanız sırasında doğrudan otele ödenir.
+-Bazı ülkeler şehir, turizm ya da yerel düzeyde vergiler ile ilgili farklı uygulamalara sahiptir. Bu şekilde uygulanmakta olan her türlü şehir, turizm ya da diğer vergiler, giriş veya çıkış sırasında otel tarafından, misafirden tahsil edilir.
+-Programlarda verilen yol mesafeleri harita bazlıdır. Trafik, hava şartları, gidilen ülkenin coğrafi konumu, yol çalışmaları ve şartları gibi durumlarda yolculuk süreleri uzayabilir.
+-Malitur zorunlu durumlarda veya gerek gördüğü durumlarda programın içeriğini bozmadan şehirlerin programdaki sırasını ve uçulacak olan ana havayolunu değiştirebilir.
+-Tura iştirak eden kişilerin, şahsi eşyaları, çantaları, valizleri, pasaportları / kimlikleri kendi sorumluluğunda olup, unutulan/kaybolan/çalınan eşyalardan Malitur sorumlu değildir. Unutulan eşyaların bulunma durumlarında Ülkeye ve/veya kişiye ulaştırılması sırasında yapılan masraflar eşya sahibine aittir.
+-Tura katılan kişilerin seyahat sağlık sigorta poliçelerini ve herhangi bir sağlık sorunları varsa ilgili ilaç ve raporlarını yanlarında bulundurmaları zorunludur.
+-Olası ekstra harcamalar için otele girişte, resmî kurumlarca düzenlenmiş fotoğraflı kimlik/pasaport ve kredi kartı ya da nakit depozit, otel tarafından talep edilebilir. Çıkış sırasında talep edilen depozit iadesi otel ile misafir arasında olan bir işlem olup, Malitur’un herhangi bir müdahalesi bulunmamaktadır.
+Vize ve Pasaport
+-T.C vatandaşları için vize uygulaması vardır.
+Malitur misafirlerimiz ile konsolosluk arasında aracı konumunda olup herhangi bir vize alım garantisi vermez. Konsolosluk gerekli gördüğü durumlarda vize vermeme veya ret verme hakkına sahiptir, Yolcunun vize alamaması ile ilgili olarak Malitur`un hiçbir sorumluluğu yoktur. Malitur sadece aracı kurum görevini üstlenmektedir. Şahsi vize başvurularında Malitur’un herhangi bir yaptırımı ve sorumluluğu bulunmamaktadır. Misafirlerimiz bu şartları kabul ederek tura kayıt yaptırmışlardır.
+-Vize başvurusu için seyahat bitiş tarihinden itibaren en az 6 ay geçerli pasaport ile acentemizden temin edebileceğiniz evrak listesinde belirtilen belgeler ile başvurmak gerekmektedir. Yeşil pasaport sahipleri için vize uygulaması olmayıp, seyahat bitiş tarihinden itibaren en az 6 ay geçerli pasaport yeterlidir.
+-Gidilecek tur bakımından mevcut vizesi olan ya da Malitur aracılığı ile herhangi bir vize başvurusu yapmayacak olan misafirlerimizin pasaportlarının da seyahat bitiş tarihinden itibaren en az 6 ay geçerli olması gerekmektedir.
+-Gümrük geçişlerinde/sınır kapılarında, pasaportunuza giriş-çıkış kaşesi basılabilmesi için, pasaportunuzda en az 2 sayfalık boş alan olması gerekmektedir.
+-Vize alınmış olması/yeşil pasaport gibi vize gerektirmeyen özel nitelikli pasaporta sahip olunması, ülkeye giriş/ülkeden çıkış yapılabileceği anlamına gelmez, pasaport polisinin sizi ülkeye sokmama/çıkarmama yetkisi vardır, bu durumdan Malitur sorumlu değildir, sorumluluk yolcuya aittir.
+-Türk vatandaşı olmayan ya da çifte vatandaşlığı olup da diğer ülke pasaportunu kullanarak tura katılacak olan misafirlerimizin; seyahat edilecek ülkenin, kullanacakları pasaporta uyguladığı vize prosedürünü ilgili konsolosluklara bizzat danışmaları gerekmektedir, aksi halde doğacak sonuçlardan Malitur sorumlu olmayacaktır.
+-Vize başvuruları, tur hareketinden 3 ay öncesinden itibaren yapılabilmektedir. Vize sürecinizin daha sağlıklı ilerleyebilmesi ve konsolosluklarda oluşabilecek dönemsel yoğunluklardan ve/veya uygulama farklılıklarından etkilenmemek adına, tur kalkış tarihine 3 aylık süre kalmasından itibaren, vize başvurunuzu bir an önce tamamlanması tavsiye olunur.
+-T.C. yeşil pasaportu ile seyahat edecek misafirlerimizin, eğer pasaportlarının alınış tarihi 10 yıldan eski ise; pasaportlarını yenilemeleri gereklidir. Aksi halde gidecekleri ülkeye kabul edilmeyebilirler ve/veya Türkiye'den hava yolu firması tarafından uçuşları gerçekleştirilmeyebilirler. Böyle bir durumda sorumluluk yolcuya aittir.
+-Yırtık, yıpranmış, ıslanmış ve/veya benzeri tahribat(lar)a uğramış pasaportlar nedeniyle ziyaret edilecek ülke sınır kapısında gümrük polisi ile sorun yaşanmaması adına; pasaportların yenilenmesi ve T.C. vatandaşlarına vize uygulayan bir ülke ise ilgili vizenin yeni pasaportta olması gerekmektedir. Aksi durumda sorumluluk yolcuya aittir.
+-İptal edilmiş pasaportlardaki geçerli Schengen vizeleri ile seyahat edilememektedir.
+-18 yaşından küçük misafirlerimiz tek başlarına ya da yanlarında anne ya da babadan sadece biri ile seyahat ederken ülke giriş-çıkışlarında görevli polis memurunca anne-babanın ortak muvafakatini gösterir belge sorulması ihtimali olduğundan; 18 yaş altı misafirlerimizin ve anne-babalarının bu konuda hassasiyet göstermelerini tavsiye ederiz.
+İptal Şartları
+Şartlar ve Koşullar
+Turun Dahil Olduğu Temalar
+İsveç Turları
+Danimarka Turları
+Malmö Turları
+İskandinavya Turları
+Norveç Turları
+Stockholm Turları
+Oslo Turları
+Kopenhag Turları
+Yurt Dışı Turlar
+Yurt Dışı Erken Rezervasyon Turları
+Avrupa Turları
+Yurt Dışı Fırsat Turları
+Uçaklı Yurt Dışı Turlar
+Tur Hareket Tarihi
+06-07-2026
+Tur Hareket Tarihi
+18-07-2026
+Tur Hareket Tarihi
+20-07-2026
+Tur Hareket Tarihi
+03-08-2026
+Tur Hareket Tarihi
+15-08-2026
+Tur Hareket Tarihi
+17-08-2026
+Tur Hareket Tarihi
+19-09-2026
+Tur Hareket Tarihi
+17-10-2026
+Tur Hareket Tarihi
+26-12-2026
+Fiyatlar ve Tarihler - (06-07-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+1.299,00 €
+Tek Kişilik Oda
+1.649,00 €
+İlave Yatak
+1.299,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+1.249,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (18-07-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+1.149,00 €
+Tek Kişilik Oda
+1.499,00 €
+İlave Yatak
+1.149,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+1.099,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (20-07-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+1.149,00 €
+Tek Kişilik Oda
+1.499,00 €
+İlave Yatak
+1.149,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+1.149,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (03-08-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+1.049,00 €
+Tek Kişilik Oda
+1.399,00 €
+İlave Yatak
+1.049,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+999,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (15-08-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+1.149,00 €
+Tek Kişilik Oda
+1.499,00 €
+İlave Yatak
+1.149,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+1.149,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (17-08-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+1.199,00 €
+Tek Kişilik Oda
+1.549,00 €
+İlave Yatak
+1.199,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+1.149,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (19-09-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+1.049,00 €
+Tek Kişilik Oda
+1.399,00 €
+İlave Yatak
+1.049,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+999,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (17-10-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+949,00 €
+Tek Kişilik Oda
+1.299,00 €
+İlave Yatak
+949,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+899,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (26-12-2026)
+3 ve 4* Oteller
+İki Kişilik Oda Kişi Başı
+999,00 €
+Tek Kişilik Oda
+1.349,00 €
+İlave Yatak
+999,00 €
+0 - 1,99 Yaş
+250,00 €
+3 - 11,99 Yaş
+949,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Tur Hareket Tarihi: 06-07-2026 Pazartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+1.299,00 €
+(69.756,30 TRY)
+1.649,00 €
+(88.551,30 TRY)
+1.299,00 €
+(69.756,30 TRY)
+250,00 €
+(13.425,00 TRY)
+1.249,00 €
+(67.071,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 18-07-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+1.149,00 €
+(61.701,30 TRY)
+1.499,00 €
+(80.496,30 TRY)
+1.149,00 €
+(61.701,30 TRY)
+250,00 €
+(13.425,00 TRY)
+1.099,00 €
+(59.016,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 20-07-2026 Pazartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+1.149,00 €
+(61.701,30 TRY)
+1.499,00 €
+(80.496,30 TRY)
+1.149,00 €
+(61.701,30 TRY)
+250,00 €
+(13.425,00 TRY)
+1.149,00 €
+(61.701,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 03-08-2026 Pazartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+1.049,00 €
+(56.331,30 TRY)
+1.399,00 €
+(75.126,30 TRY)
+1.049,00 €
+(56.331,30 TRY)
+250,00 €
+(13.425,00 TRY)
+999,00 €
+(53.646,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 15-08-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+1.149,00 €
+(61.701,30 TRY)
+1.499,00 €
+(80.496,30 TRY)
+1.149,00 €
+(61.701,30 TRY)
+250,00 €
+(13.425,00 TRY)
+1.149,00 €
+(61.701,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 17-08-2026 Pazartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+1.199,00 €
+(64.386,30 TRY)
+1.549,00 €
+(83.181,30 TRY)
+1.199,00 €
+(64.386,30 TRY)
+250,00 €
+(13.425,00 TRY)
+1.149,00 €
+(61.701,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 19-09-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+1.049,00 €
+(56.331,30 TRY)
+1.399,00 €
+(75.126,30 TRY)
+1.049,00 €
+(56.331,30 TRY)
+250,00 €
+(13.425,00 TRY)
+999,00 €
+(53.646,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 17-10-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+949,00 €
+(50.961,30 TRY)
+1.299,00 €
+(69.756,30 TRY)
+949,00 €
+(50.961,30 TRY)
+250,00 €
+(13.425,00 TRY)
+899,00 €
+(48.276,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 26-12-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3 ve 4* Oteller
+999,00 €
+(53.646,30 TRY)
+1.349,00 €
+(72.441,30 TRY)
+999,00 €
+(53.646,30 TRY)
+250,00 €
+(13.425,00 TRY)
+949,00 €
+(50.961,30 TRY)
+Rezervasyon Yap
+.campaign-card{border:0; box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.campaign-card .card-header{
+background: linear-gradient(135deg,#36d1dc,#5b86e5);
+color:#fff;
+}
+.campaign-card2{
+--grad-1:#36d1dc;
+--grad-2:#5b86e5;
+--header-fg:#fff;
+}
+.campaign-card2 .card-header{
+background: linear-gradient(135deg,var(--grad-1),var(--grad-2));
+color: var(--header-fg);
+}
+/* Tema seçenekleri */
+.campaign-card2.sunset { --grad-1:#ff7e5f; --grad-2:#feb47b; } /* turuncu-şeftali */
+.campaign-card2.forest { --grad-1:#0bab64; --grad-2:#3bb78f; } /* zümrüt-yeşil */
+.campaign-card2.royal { --grad-1:#8360c3; --grad-2:#2ebf91; } /* mor → turkuaz */
+.campaign-card2.flamingo{ --grad-1:#f857a6; --grad-2:#ff5858; } /* pembe-kor */
+.campaign-card2.midnight{ --grad-1:#141e30; --grad-2:#243b55; } /* koyu lacivert */
+.campaign-card2.aurora { --grad-1:#00c6ff; --grad-2:#0072ff; } /* camgöbeği-mavi */
+.campaign-card2.mango { --grad-1:#f6d365; --grad-2:#fda085; --header-fg:#1f2937; }
+.discount-pill{
+border:1px dashed rgba(0,0,0,.15);
+border-radius:14px; padding:.6rem .8rem; display:flex; gap:.6rem; align-items:center;
+background:#fff;
+}
+.discount-pill .ic{
+width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.7);
+}
+.ribbon{
+position:absolute; top:.75rem; right:-.5rem; background:#ffd166; color:#212529;
+padding:.25rem .75rem; border-radius:999px 0 0 999px; font-weight:600;
+box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+Kampanyalar
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT7500
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 7500.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+150.000,00 - 15.000.000,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT5000
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 5000.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+90.000,00 - 149.999,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT3000
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 3000.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+60.000,00 - 89.999,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT2000
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 2000.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+40.000,00 - 59.999,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Ücrete Dahil Olan Hizmetler
+-Pegasus Havayolları ile İstanbul (SAW) - Helsinki (HEL) gidiş, Kopenhag (CPH) - İstanbul (SAW) dönüş ekonomi sınıf uçak bileti,
+-Havalimanı vergileri,
+-3*& 4* otellerde 6 gece oda & kahvaltı konaklama, Silja Line Cruise’da 1 gece ekonomi iç kabin + kahvaltı konaklama, toplam 7 gece konaklama
+-Havalimanı-Otel-havalimanı transferleri,
+-Özel otobüslerimiz ile tüm şehir transferleri,
+-Helsinki-Stockholm arası cruise yolculuğu,
+-Kopenhag Panoramik Şehir Turu
+-Malmö Panoramik Şehir Turu
+-Göteborg Panoramik Şehir Turu
+-Oslo Panoramik Şehir Turu
+-Karlstad Panoramik Şehir Turu
+-Stockholm Panoramik Şehir Turu
+-Helsinki Panoramik Şehir Turu
+-Profesyonel Türkçe rehberlik hizmetleri,
+-TURSAB mesleki sorumluluk sigortası.
+Ücrete Dahil Olmayan Hizmetler
+-Zorunlu Seyahat sağlık sigortası (20 Euro)
+-Vize ücreti
+-Yurt dışı çıkış harcı bedeli,
+-Programda belirtilmeyen Öğle ve Akşam yemekleri,
+-Her türlü kişisel harcamalar ve Otel ve Cruise’da yapılacak ekstra harcamalar,
+-Programda belirtilmeyen müze ve ören yerleri girişleri,
+-Ekstra Turlar
+-Turist şehir vergileri,
+-Şoför tipleri 10 Euro (İsteğe bağlı).
+Tur Hareket Noktaları
+08:00 Sabiha Gökçen Havalimanı
+Ekstra Tur ve Aktiviteler
+AVANTAJLI EKSTRA GEZİLER
+570 EURO
+Kronborg Kalesi & Frederisburg Sarayı (85 Euro) + Vigeland Turu (40 Euro) + Flam Tren turu (150 Euro) + Vasa Gemisi Müzesi (50 Euro) + Fiyord Tekne Turu (150 Euro) + Uppsala ve Sigtuna (85 Euro) + Porvoo Kasabası (55 Euro)
+0-5 yaş ücretsiz, 5-12 yaş %50 indirimlidir.
+Tur Programını Gönder
+E-Main Adresi
+Gönder
+Rehberimizden Notlar
+Bilgilendirme
+Yaş Sınırı Uyarı
+Bu turumuzda 0 yaşından küçük çocuklar kabul edilmemektedir.
+Anlayışınız için teşekkür ederiz.
+Anladım
+Sizin İçin
+Vize Bilgileri
+İptal İade Güvence Paketi
+Sıkça Sorulan Sorular
+Ödeme Seçenekleri
+İnsan Kaynakları
+Tur Takvimi
+Malitur Öneriyor
+Balkan Turları
+Gap Turları
+İtalya Turları
+Karadeniz Turları
+Benelüks Paris Turları
+Dubai Turları
+Tayland Turları
+Uzak Doğu Turları
+Kapadokya Turları
+Kurumsal
+Hakkımızda
+İletişim
+Satış Ofislerimiz
+Paket Tur Sözleşmesi
+Gizlilik Sözleşmesi
+Kulanım Sözleşmesi
+Kütahya Çizelgesi
+Kişisel Verilerin Korunması
+Çağrı Merkezi
+0850 303 1363
+Rezervasyon Sorgula
+Malitur Blog
+Markalarımız
+Her hakkı saklıdır.
+Site Kullanım Sözleşmesi | Gizlilik Sözleşmesi Malitur.com web sitesi, kişisel bilgisayarınıza bilgi depolamak amacıyla tanımlama bilgilerini kullanır.
+Bilgilerin bir kısmı sitenin çalışmasında asıl rolü üstlenirken bazı kısımları ise kullanıcı deneyimlerinin daha da iyileştirilmesine yardımcı olur.
+Sitemizi kullanarak bu tanımlama bilgilerinin yerleştirilmesine izin vermiş olursunuz.
+Detaylı bilgi için Gizlilik politikamızı okuyunuz.Afişe edilen tüm fiyatlar, ilgili üründe kontenjan olması durumunda geçerli olup seçeceğiniz döneme göre fiyatlar değişkenlik gösterebilir.
+Sitemizde görmüş olduğunuz tüm fiyatlara KDV dahildir.
+Hemen Ara
+Whatsapp
+Sizi Arayalım
+Ad
+E-Mail
+Telefon Numarası
+Arama Tarihi
+Bugün
+Yarın
+Arama Zamanı
+Farketmez
+09:00 - 12:00 Arası
+12:00 - 13:30 Arası
+13:00 - 17:00 Arası
+17:00 - 21:00 Arası
+Notunuz
+Gönder
+Üye Girişi
+Gmail ile devam et
+E-posta Adresi
+Şifre
+Şifrenizi mi unuttunuz?
+Giriş Yap
+Hesabınız yok mu? Kayıt olun
+Kayıt Ol
+Gmail ile devam et
+Ad
+Soyad
+E-posta Adresi
+Şifre
+Please provide a valid city.
+Kayıt Ol
+Zaten bir hesabınız var mı? Giriş yapın
+Şifremi Unuttum
+E-posta Adresi
+Şifremi Gönder
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+/* Firefox */
+input[type=number] {
+-moz-appearance: textfield;
+}
+Rezervasyon Sorgula
+E-posta Adresi veya Kimlik No *
+Rezervasyon Numarası
+Rezervasyonu Kontrol Et
+1. Oda
+Kaldır
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+En Popüler Bölgeler
+Erken Rezervasyon Otelleri
+Kayak Otelleri
+Termal Otelleri
+Kıbrıs Otelleri
+Grup Talepleri
+İsim Soyisim (*)
+Telefon (*)
+Email (*)
+Tur Türü (*)
+Seçiniz
+Yurtdışı Tur
+Yurtiçi Tur
+Günübirlik Tur
+Gemi Turları
+Ana Destinasyon
+Tarih Aralığı
+Kişi Bilgileri
+Seçiniz
+1-5 Kişi
+6-10 Kişi
+11-20 Kişi
+21-30 Kişi
+31-40 Kişi
+41-50 Kişi
+İletmek İstediğiniz Notlar
+Kapat
+Kaydet
+window.csrfName = 'csrf_test_name';
+window.csrfHash = '1de17daa800a57e845e74354ad5e393e';
+{
+"@context": "https://schema.org",
+"@type": "ItemList",
+"name": "İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş",
+"description": "İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş",
+"itemListElement": [
+{"@type":"ListItem","position":1,
+"url":"https://malitur.com/iskandinavya-ve-fiyordlar-turu-pegasus-ile-7-gece-otel-konaklamali-istanbul-cikisli-helsinki-gidis",
+"name":"İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş"}
+]
+}
+// Global scope'a taşıyarak extra.js'den erişimi garanti ediyoruz
+window.minChildAge = 0;
+const PicketGroupRequests = new easepick.create({
+element: document.getElementById("DateRange"),
+css: ["https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css", "/assets/css/ease-custom.css"],
+lang: "tr-TR",
+grid: 2,
+format: "DD.MM.YYYY",
+calendars: 2,
+zIndex: 1001,
+locale: {
+nextMonth:
+" ",
+previousMonth:
+" ",
+apply: "Select",
+},
+RangePlugin: {
+tooltipNumber(num) {
+return num - 1;
+},
+locale: {
+one: "Gün",
+other: "Gün",
+},
+},
+LockPlugin: {
+minDate: "2022-07-16T21:00:00.000Z",
+minDays: 0,
+maxDays: 0,
+selectForward: true,
+inseparable: true,
+},
+plugins: ["RangePlugin", "LockPlugin"],
+setup(picker) {
+picker.on('select', (e) => {
+let startDate = picker.getStartDate('DD-MM-YYYY');
+let endDate = picker.getEndDate('DD-MM-YYYY');
+var checkindate = HumanizeRequrstGroupDate(startDate);
+var checkoutdate = HumanizeRequrstGroupDate(endDate);
+if ($('#GroupRequestsModal #DateStart').length > 0) {
+$('#GroupRequestsModal #DateStart').val(checkindate);
+}
+if ($('#GroupRequestsModal #DateEnd').length > 0) {
+$('#GroupRequestsModal #DateEnd').val(checkoutdate);
+}
+});
+},
+});
+function HumanizeRequrstGroupDate(startDate){
+var formattedDate = new Date(startDate);
+var d = formattedDate.getDate();
+var m = formattedDate.getMonth();
+m += 1; // JavaScript months are 0-11
+var y = formattedDate.getFullYear();
+return d + "-" + m + "-" + y;
+}
+if( $('.GroupRequestsTourlist').length ) // use this if you are using id to check
+{
+$('.GroupRequestsTourlist').select2({
+theme: 'bootstrap-5',
+dataType: 'json',
+dropdownParent: $('#GroupRequestsModal'),
+delay: 250,
+ajax: {
+url: '/Ajax/Tours/GetTours',
+data: function (params) {
+var query = {
+TourTypeSngle: $('#TourType option:selected').val(),
+term: params.term
+}
+// Query parameters will be ?search=[term]&type=public
+return query;
+},
+processResults: function (data) {
+return {
+results: $.map(data.Suggestions, function (item) {
+return {
+text: item.Name,
+id: item.TourId
+}
+})
+};
+}
+}
+});
+}
+document.addEventListener('DOMContentLoaded', function () {
+// Tab değişince URL hash’i güncelle
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (el) {
+el.addEventListener('shown.bs.tab', function (e) {
+const hash = e.target.getAttribute('href') || e.target.getAttribute('data-bs-target');
+if (hash) {
+if (history.replaceState) history.replaceState(null, '', hash);
+else location.hash = hash;
+}
+});
+});
+function activateFromHash() {
+const hash = window.location.hash;
+if (!hash) return;
+const trigger = document.querySelector(
+`[data-bs-toggle="tab"][href="${hash}"], [data-bs-toggle="tab"][data-bs-target="${hash}"]`
+);
+if (trigger) new bootstrap.Tab(trigger).show();
+if (history.replaceState) history.replaceState(null, '', '');
+}
+// İlk yüklemede ve geri/ileri hareketinde hash’e göre tab’ı aç
+activateFromHash();
+window.addEventListener('hashchange', activateFromHash);
+});
+$(".coupon-title").on("click", function () {
+$(".coupon-box").toggleClass("active");
+});
+var cpnBtn = document.getElementById("cpnBtn");
+var cpnCode = document.getElementById("cpnCode");
+cpnBtn.onclick = function () {
+console.time("time1");
+var temp = $("");
+$("body").append(temp);
+temp.val($("#cpnCode").text()).select();
+document.execCommand("copy");
+temp.remove();
+console.timeEnd("time1");
+$(".coupon-btn").addClass("active");
+cpnBtn.innerHTML = "Kopyalandı";
+setTimeout(function () {
+$(".coupon-btn").removeClass("active");
+cpnBtn.innerHTML = "Kopyala";
+}, 3000);
+};
+document.querySelector("#show-room-btn").addEventListener("click", (e) => {
+e.preventDefault();
+$("#nav-tab button#detail-2-tab").tab("show");
+setTimeout(() => {
+$("#nav-tabContent #detail-2")[0].scrollIntoView({
+behavior: "smooth",
+block: "start",
+inline: "start",
+});
+}, 100);
+});
+document.addEventListener("DOMContentLoaded", function () {
+const entertainmentItems = document.querySelectorAll(".entertainment-list .e-item");
+const showButton = document.querySelector(".show-entertainment");
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+item.style.display = "none";
+}
+});
+showButton.addEventListener("click", function () {
+const isShowingAll = this.textContent === "Daha az göster";
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+if (isShowingAll) {
+item.style.display = "none";
+} else {
+item.style.display = "block";
+}
+}
+});
+this.textContent = isShowingAll ? "Daha fazla göster" : "Daha az göster";
+});
+});
+document.addEventListener("DOMContentLoaded", function () {
+document.querySelectorAll(".svg-explorer-content").forEach((container) => {
+const svgContainer = container.querySelector(".svg-container");
+const svgElement = svgContainer.querySelector("svg");
+const zoomInBtn = container.querySelector(".zoom-in");
+const zoomOutBtn = container.querySelector(".zoom-out");
+let scale = 1;
+let minScale = 1;
+let maxScale = 3;
+let isDragging = false;
+let startX, startY;
+let translateX = 0,
+translateY = 0;
+let lastTranslateX = 0,
+lastTranslateY = 0;
+function updateTransform() {
+let maxTranslateX = (svgElement.clientWidth * scale - container.clientWidth) / 2;
+let maxTranslateY = (svgElement.clientHeight * scale - container.clientHeight) / 2;
+translateX = Math.min(maxTranslateX, Math.max(-maxTranslateX, translateX));
+translateY = Math.min(maxTranslateY, Math.max(-maxTranslateY, translateY));
+svgElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+zoomInBtn.addEventListener("click", function () {
+if (scale < maxScale) {
+scale += 0.2;
+updateTransform();
+}
+});
+zoomOutBtn.addEventListener("click", function () {
+if (scale > minScale) {
+scale -= 0.2;
+updateTransform();
+}
+});
+// *** Mouse Sürükleme ***
+svgContainer.addEventListener("mousedown", function (event) {
+isDragging = true;
+startX = event.clientX - lastTranslateX;
+startY = event.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+document.addEventListener("mousemove", function (event) {
+if (isDragging) {
+translateX = event.clientX - startX;
+translateY = event.clientY - startY;
+updateTransform();
+}
+});
+document.addEventListener("mouseup", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+// *** Dokunmatik Sürükleme ***
+svgContainer.addEventListener("touchstart", function (event) {
+isDragging = true;
+const touch = event.touches[0];
+startX = touch.clientX - lastTranslateX;
+startY = touch.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+svgContainer.addEventListener("touchmove", function (event) {
+if (isDragging) {
+const touch = event.touches[0];
+translateX = touch.clientX - startX;
+translateY = touch.clientY - startY;
+updateTransform();
+}
+});
+svgContainer.addEventListener("touchend", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+});
+});
+function recalculate(Date){
+$('#tour_date').val(Date).trigger('change');
+// $('#TourDetailForm').submit();
+}
+{
+"@context": "https://schema.org",
+"@type": "BreadcrumbList",
+"itemListElement": [
+{ "@type": "ListItem", "position": 1, "name": "Anasayfa", "item": "https://malitur.com/" },
+{ "@type": "ListItem", "position": 2, "name": "Yurtdışı Tur", "item": "https://malitur.com/yurt-disi-turlar" },
+{ "@type": "ListItem", "position": 3, "name": "İsveç Turları", "item": "https://malitur.com/isvec-turlari" }
+{ "@type": "ListItem", "position": 4, "name": "İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş", "item": "https://malitur.com/iskandinavya-ve-fiyordlar-turu-pegasus-ile-7-gece-otel-konaklamali-istanbul-cikisli-helsinki-gidis" }
+]
+}
+(function () {
+window.dataLayer = window.dataLayer || [];
+if (window.__maliturTourDetailGa4Loaded === true) {
+return;
+}
+window.__maliturTourDetailGa4Loaded = true;
+var baseItem = {"item_id":"TOUR-2316","item_name":"İskandinavya ve Fiyordlar Turu Pegasus ile / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı / Helsinki Gidiş","affiliation":"Malitur","item_brand":"Malitur","item_category":"Tour","item_category2":"İskandinavya Turları","item_category3":"İstanbul Hareketli","item_category4":"Pegasus Hava Yolları","item_variant":"7 gece 8 gün","item_list_id":"iskandinavya-turlari","item_list_name":"İskandinavya Turları","location_id":"İstanbul","price":949,"quantity":1,"tour_date":"2026-07-06"};
+var currency = "EUR";
+var lastBeginCheckoutKey = '';
+function toNumber(value) {
+var number = parseFloat(value || '0');
+return isNaN(number) ? 0 : number;
+}
+function cleanText(value) {
+return (value || '').replace(/\s+/g, ' ').trim();
+}
+function pushGa4Event(eventName, ecommerce) {
+window.dataLayer.push({ ecommerce: null });
+window.dataLayer.push({
+event: eventName,
+ecommerce: ecommerce || {}
+});
+}
+function getSelectedTourDate() {
+var selectedDate = '';
+var tourDateInput = document.querySelector('#tour_date');
+if (tourDateInput && tourDateInput.value) {
+selectedDate = tourDateInput.value;
+}
+return selectedDate;
+}
+function buildCurrentItem(extra) {
+var item = Object.assign({}, baseItem);
+var selectedDate = extra && extra.tour_date ? extra.tour_date : getSelectedTourDate();
+item.price = toNumber(item.price);
+item.quantity = 1;
+if (selectedDate) {
+item.tour_date = selectedDate;
+}
+return item;
+}
+function buildEcommerce(item) {
+var ecommerce = {
+currency: currency,
+items: [item]
+};
+if (item.price > 0) {
+ecommerce.value = item.price;
+}
+return ecommerce;
+}
+/**
+* 1) Ürün detay görüntüleme
+*/
+var viewItem = buildCurrentItem({});
+pushGa4Event('view_item', buildEcommerce(viewItem));
+/**
+* 2) Rezervasyon başlatma
+*/
+function trackBeginCheckout(source, tourDate) {
+var item = buildCurrentItem({
+tour_date: tourDate || ''
+});
+var key = item.item_id + '|' + (item.tour_date || '');
+if (key === lastBeginCheckoutKey) {
+return;
+}
+lastBeginCheckoutKey = key;
+var ecommerce = buildEcommerce(item);
+ecommerce.checkout_step = 1;
+ecommerce.checkout_source = source || 'tour_detail';
+pushGa4Event('begin_checkout', ecommerce);
+}
+document.addEventListener('click', function (event) {
+var button = event.target.closest('[data-ga4-click="begin_checkout"]');
+if (!button) {
+return;
+}
+var tourDate = button.getAttribute('data-ga4-tour-date') || getSelectedTourDate();
+trackBeginCheckout('reservation_button', tourDate);
+});
+/**
+* 3) Detay rezervasyon formu submit
+* Form zaten /Tours/Search/Calculate action'ına gidiyor.
+* Submit akışını bozmayalım; sadece event basalım.
+*/
+var detailForm = document.querySelector('#TourDetailForm');
+if (detailForm) {
+detailForm.addEventListener('submit', function () {
+trackBeginCheckout('reservation_form', getSelectedTourDate());
+});
+}
+/**
+* 4) Favoriye ekleme
+*/
+document.addEventListener('click', function (event) {
+var favButton = event.target.closest('.add-favourite[data-type="tour"]');
+if (!favButton) {
+return;
+}
+var item = buildCurrentItem({});
+pushGa4Event('add_to_wishlist', buildEcommerce(item));
+});
+})();
+document.addEventListener("DOMContentLoaded", function () {
+let lazyImages = document.querySelectorAll("img.lazy-load");
+let observer = new IntersectionObserver((entries, observer) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) {
+let img = entry.target;
+img.src = img.getAttribute("data-src");
+img.classList.remove("lazy-load");
+observer.unobserve(img);
+}
+});
+});
+lazyImages.forEach(img => observer.observe(img));
+});
+(function(){
+const SITE_KEY = 'fa126a60b1023754b6eb6a43e472ca1b'; // analytics_sites.site_key
+const ENDPOINT = 'https://tracker.malitur.com.tr/v1/collect'; // HTTPS şart
+function uuidv4(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+const cookieName='va_vid';
+function getCookie(n){ return (document.cookie.match('(^|;)\s*'+n+'\s*=\s*([^;]+)')||0)[2]; }
+function setCookie(n,v,days){ const d=new Date(); d.setTime(d.getTime()+days*864e5); document.cookie=n+'='+v+';path=/;expires='+d.toUTCString()+';SameSite=Lax'; }
+let visitorId=getCookie(cookieName); if(!visitorId){ visitorId=uuidv4(); setCookie(cookieName,visitorId,365*2); }
+const body = JSON.stringify({
+siteKey: "fa126a60b1023754b6eb6a43e472ca1b", // API key koymayın
+url: location.href,
+path: location.pathname + location.search,
+title: document.title,
+referrer: document.referrer || null,
+event: 'pageview',
+screen: (screen.width+'x'+screen.height),
+lang: navigator.language || null,
+visitorId,
+utm_source: new URLSearchParams(location.search).get('utm_source'),
+utm_medium: new URLSearchParams(location.search).get('utm_medium'),
+utm_campaign: new URLSearchParams(location.search).get('utm_campaign')
+});
+let queued=false;
+if (navigator.sendBeacon) {
+try { queued = navigator.sendBeacon(ENDPOINT, new Blob([body], {type:'application/json'})); } catch(e){ queued=false; }
+}
+if(!queued){
+fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true,credentials:'omit'}).catch(()=>{});
+}
+})();

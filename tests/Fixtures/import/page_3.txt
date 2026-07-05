@@ -1,0 +1,1442 @@
+Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı
+window.dataLayer = window.dataLayer || [];
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5B8MMVX7');
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '442978066294627');
+fbq('track', 'PageView');
+Yurt İçi Turlar
+Yurt Dışı Turlar
+Cruise Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Kampanyalar
+Hızlı Erişim
+Rezervasyon Sorgula
+Blog
+Grup Talepleri
+Okul Turları
+Sosyal Medya
+Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Tüm Kültür Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Tüm Haftasonu Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Tüm Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Tüm İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Tüm Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Tüm Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Tüm Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Tüm Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Tüm İzmir Çıkışlı Yurt Dışı Turlar
+Cruise Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Tüm Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Tüm Nehir Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+Kampanyalar
+Üyelik
+Kampanyalardan haberdar olmak ve rezervasyonlarına hızlıca ulaşmak için hemen üye ol!
+Giriş Yap
+Üye Ol
+0850 303 1363
+Sizi arayalım
+Grup Talepleri
+Okul Turları
+Türkçe
+English
+Üye girişi
+Kayıt ol
+Yardım
+Satış Noktaları
+Yurt İçi Turlar
+Kültür Turları
+Haftasonu Turları
+Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Cruise Turları
+Gemi Turları
+Nehir Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Kampanyalar
+@media (max-width: 767.98px) {
+.breadcrumb {
+display: flex !important;
+flex-wrap: nowrap !important;
+overflow-x: auto !important;
+white-space: nowrap !important;
+scroll-behavior: smooth;
+-webkit-overflow-scrolling: touch; /* iOS için pürüzsüz kaydırma */
+padding-bottom: 5px; /* Kaydırma çubuğu metne çok yapışmasın diye */
+}
+.breadcrumb::-webkit-scrollbar {
+display: none; /* İsteğe bağlı: Mobilde alt yatay kaydırma çubuğunu gizler */
+}
+.breadcrumb-item {
+display: inline-block !important;
+float: none !important;
+}
+}
+Anasayfa
+Cruise Turları
+Vizesiz Gemi Turları
+Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı
+.heart-red { color: red !important; }
+Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı (Tur Kodu: 2946)
+Facebook
+Twitter
+Sizi Arayalım
+İstanbul Hareketli
+7 gece 8 gün (7 gece konaklamalı)
+Gemi ile gidiş dönüş
+770.64 EUR
+(41.383,37 TRY)
+'den başlayan fiyatlar
+Rezervasyon yap
+.anchor { scroll-margin-top: 80px; }
+TUR PROGRAMI
+REZERVASYON YAP
+GENEL BİLGİLER
+TARİHLER VE FİYATLAR
+GEMİ DETAY
+KAMPANYALAR
+Ücrete Dahil Olan Hizmetler
+Ücrete Dahil Olmayan Hizmetler
+Tur Hareket Noktaları
+Ekstra Turlar ve Aktiviteler
+Rehberimizden Notlar
+.itinarylistcontent p{
+margin-top:15px !important;
+}
+Gün
+İstanbul, Türkiye. Aroya Cruises Gemimize biniş
+Liman: İstanbul, Türkiye. Aroya Cruises Gemimize biniş | Kalkış: 23:59
+Gün
+Denizde
+Liman: Denizde
+Gün
+Marmaris, Türkiye
+Liman: Marmaris, Türkiye | Varış: 08:00 | Kalkış: 20:00
+Gün
+Bodrum, Türkiye
+Liman: Bodrum, Türkiye | Varış: 10:00 | Kalkış: 20:00
+Gün
+Kaş, Türkiye
+Liman: Kaş, Türkiye | Varış: 08:00 | Kalkış: 16:00
+Gün
+İskenderiye, Mısır
+Liman: İskenderiye, Mısır | Varış: 08:00 | Kalkış: 17:00
+Gün
+Denizde
+Liman: Denizde
+Gün
+İstanbul, Türkiye.
+Liman: İstanbul, Türkiye. | Varış: 09:00
+devamını göster
+Tur programını indir
+Tur Programını Mail Gönder
+Tur Hareket Noktası
+23:59 Liman: İstanbul, Türkiye
+TUR ÜCRETİNE DAHİL OLAN HİZMETLER
+Liman vergileri (140 USD)
+5 Yıldızlı Aroya Cruises gemimizde tam pansiyon (tüm yiyecekler dahil-Specialty Restaurant giriş ücretleri hariç) konaklama
+Gemide düzenlenen animasyon ve aktiviteler
+Gemi Servis Ücreti
+Mısır Online Vize Ücreti
+TUR ÜCRETİNE DAHİL OLMAYAN HİZMETLER
+Limanlarda düzenlenen ekstra geziler
+Yurtdışı çıkış harcı
+Gemideki kapağı kapalı içecekler
+Kişisel Harcamalar
+Seyahat sağlık ve iptal sigortası 70 yaş altı 60 $, 70 yaş üstü surprim uygulanır
+Ekstra Turlar ve Aktiviteler
+Gemi Hakkında Bilgiler Yükleniyor.
+Tur Tarihi
+11-07-2026
+25-07-2026
+01-08-2026
+22-08-2026
+Kişi Bilgileri
+1
+2
+0
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+Oda Ekle
+Tur Ara
+Tur Ara
+Tur Bilgileri
+Önemli Notlar
+İptal Şartları;
+Rezervasyon konfirmesini takiben, seyahatin başlangıç tarihinden itibaren;
+121 güne kadar cezasız
+120 -61 gün arası depozito bedeli ceza,
+60-15 gün arası %50 ceza ,
+14-0 gün arası %100 ceza uygulanacaktır.
+İptal Şartları
+Şartlar ve Koşullar
+Turun Dahil Olduğu Temalar
+Aroya Cruises Turları
+Ege ve Akdeniz Cruise Turları
+Erken Rezervasyon Cruise Turları
+Gemi Turları
+İstanbul Çıkışlı Cruise Turları
+Mısır Cruise Turları
+Tüm Cruise Turları
+Türkiye Çıkışlı Cruise Turları
+Vizesiz Cruise Turları
+Tur Hareket Tarihi
+11-07-2026
+Tur Hareket Tarihi
+25-07-2026
+Tur Hareket Tarihi
+01-08-2026
+Tur Hareket Tarihi
+22-08-2026
+Fiyatlar ve Tarihler - (11-07-2026)
+İç Kabin
+İki Kişilik Oda Kişi Başı
+767,43 €
+Tek Kişilik Oda
+1.534,86 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Dış Kabin
+İki Kişilik Oda Kişi Başı
+895,77 €
+Tek Kişilik Oda
+1.791,54 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Okyanus Manzaralı Balkonlu Kabin
+İki Kişilik Oda Kişi Başı
+1.205,71 €
+Tek Kişilik Oda
+2.411,42 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Superior Suit Kabin
+İki Kişilik Oda Kişi Başı
+1.665,82 €
+Tek Kişilik Oda
+3.331,63 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (25-07-2026)
+İç Kabin
+İki Kişilik Oda Kişi Başı
+767,43 €
+Tek Kişilik Oda
+1.534,86 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Dış Kabin
+İki Kişilik Oda Kişi Başı
+895,77 €
+Tek Kişilik Oda
+1.791,54 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Okyanus Manzaralı Balkonlu Kabin
+İki Kişilik Oda Kişi Başı
+1.205,71 €
+Tek Kişilik Oda
+2.411,42 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (01-08-2026)
+İç Kabin
+İki Kişilik Oda Kişi Başı
+767,43 €
+Tek Kişilik Oda
+1.534,86 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Dış Kabin
+İki Kişilik Oda Kişi Başı
+895,77 €
+Tek Kişilik Oda
+1.791,54 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Okyanus Manzaralı Balkonlu Kabin
+İki Kişilik Oda Kişi Başı
+1.205,71 €
+Tek Kişilik Oda
+2.411,42 €
+İlave Yatak
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (22-08-2026)
+İç Kabin
+İki Kişilik Oda Kişi Başı
+767,43 €
+Tek Kişilik Oda
+1.534,86 €
+İlave Yatak
+493,28 €
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Dış Kabin
+İki Kişilik Oda Kişi Başı
+884,42 €
+Tek Kişilik Oda
+1.768,84 €
+İlave Yatak
+493,28 €
+0 - -1,99 Yaş
+Kabul Edilemez
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Okyanus Manzaralı Balkonlu Kabin
+İki Kişilik Oda Kişi Başı
+1.140,23 €
+Tek Kişilik Oda
+2.280,46 €
+İlave Yatak
+493,28 €
+0 - 11,99 Yaş
+672,26 €
+0 - -1,99 Yaş
+0 - -1,99 Yaş
+Rezervasyon Yap
+Tur Hareket Tarihi: 11-07-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+İç Kabin
+767,43 €
+(41.210,99 TRY)
+1.534,86 €
+(82.421,98 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Dış Kabin
+895,77 €
+(48.102,85 TRY)
+1.791,54 €
+(96.205,70 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Okyanus Manzaralı Balkonlu Kabin
+1.205,71 €
+(64.746,63 TRY)
+2.411,42 €
+(129.493,25 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Superior Suit Kabin
+1.665,82 €
+(89.454,53 TRY)
+3.331,63 €
+(178.908,53 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 25-07-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+İç Kabin
+767,43 €
+(41.210,99 TRY)
+1.534,86 €
+(82.421,98 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Dış Kabin
+895,77 €
+(48.102,85 TRY)
+1.791,54 €
+(96.205,70 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Okyanus Manzaralı Balkonlu Kabin
+1.205,71 €
+(64.746,63 TRY)
+2.411,42 €
+(129.493,25 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 01-08-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+İç Kabin
+767,43 €
+(41.210,99 TRY)
+1.534,86 €
+(82.421,98 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Dış Kabin
+895,77 €
+(48.102,85 TRY)
+1.791,54 €
+(96.205,70 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Okyanus Manzaralı Balkonlu Kabin
+1.205,71 €
+(64.746,63 TRY)
+2.411,42 €
+(129.493,25 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 22-08-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+İç Kabin
+767,43 €
+(41.210,99 TRY)
+1.534,86 €
+(82.421,98 TRY)
+493,28 €
+(26.489,14 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+Dış Kabin
+884,42 €
+(47.493,35 TRY)
+1.768,84 €
+(94.986,71 TRY)
+493,28 €
+(26.489,14 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 11,99 Yaş
+Okyanus Manzaralı Balkonlu Kabin
+1.140,23 €
+(61.230,35 TRY)
+2.280,46 €
+(122.460,70 TRY)
+493,28 €
+(26.489,14 TRY)
+672,26 €
+(36.100,36 TRY)
+Rezervasyon Yap
+.campaign-card{border:0; box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.campaign-card .card-header{
+background: linear-gradient(135deg,#36d1dc,#5b86e5);
+color:#fff;
+}
+.campaign-card2{
+--grad-1:#36d1dc;
+--grad-2:#5b86e5;
+--header-fg:#fff;
+}
+.campaign-card2 .card-header{
+background: linear-gradient(135deg,var(--grad-1),var(--grad-2));
+color: var(--header-fg);
+}
+/* Tema seçenekleri */
+.campaign-card2.sunset { --grad-1:#ff7e5f; --grad-2:#feb47b; } /* turuncu-şeftali */
+.campaign-card2.forest { --grad-1:#0bab64; --grad-2:#3bb78f; } /* zümrüt-yeşil */
+.campaign-card2.royal { --grad-1:#8360c3; --grad-2:#2ebf91; } /* mor → turkuaz */
+.campaign-card2.flamingo{ --grad-1:#f857a6; --grad-2:#ff5858; } /* pembe-kor */
+.campaign-card2.midnight{ --grad-1:#141e30; --grad-2:#243b55; } /* koyu lacivert */
+.campaign-card2.aurora { --grad-1:#00c6ff; --grad-2:#0072ff; } /* camgöbeği-mavi */
+.campaign-card2.mango { --grad-1:#f6d365; --grad-2:#fda085; --header-fg:#1f2937; }
+.discount-pill{
+border:1px dashed rgba(0,0,0,.15);
+border-radius:14px; padding:.6rem .8rem; display:flex; gap:.6rem; align-items:center;
+background:#fff;
+}
+.discount-pill .ic{
+width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.7);
+}
+.ribbon{
+position:absolute; top:.75rem; right:-.5rem; background:#ffd166; color:#212529;
+padding:.25rem .75rem; border-radius:999px 0 0 999px; font-weight:600;
+box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+Kampanyalar
+Bu tur için aktif kampanya bulunmuyor.
+Ücrete Dahil Olan Hizmetler
+Liman vergileri (140 USD)
+5 Yıldızlı Aroya Cruises gemimizde tam pansiyon (tüm yiyecekler dahil-Specialty Restaurant giriş ücretleri hariç) konaklama
+Gemide düzenlenen animasyon ve aktiviteler
+Gemi Servis Ücreti
+Mısır Online Vize Ücreti
+Ücrete Dahil Olmayan Hizmetler
+Limanlarda düzenlenen ekstra geziler
+Yurtdışı çıkış harcı
+Gemideki kapağı kapalı içecekler
+Kişisel Harcamalar
+Seyahat sağlık ve iptal sigortası 70 yaş altı 60 $, 70 yaş üstü surprim uygulanır
+Tur Hareket Noktaları
+23:59 Liman: İstanbul, Türkiye
+Ekstra Tur ve Aktiviteler
+Tur Programını Gönder
+E-Main Adresi
+Gönder
+Rehberimizden Notlar
+Bilgilendirme
+Yaş Sınırı Uyarı
+Bu turumuzda 0 yaşından küçük çocuklar kabul edilmemektedir.
+Anlayışınız için teşekkür ederiz.
+Anladım
+Sizin İçin
+Vize Bilgileri
+İptal İade Güvence Paketi
+Sıkça Sorulan Sorular
+Ödeme Seçenekleri
+İnsan Kaynakları
+Tur Takvimi
+Malitur Öneriyor
+Balkan Turları
+Gap Turları
+İtalya Turları
+Karadeniz Turları
+Benelüks Paris Turları
+Dubai Turları
+Tayland Turları
+Uzak Doğu Turları
+Kapadokya Turları
+Kurumsal
+Hakkımızda
+İletişim
+Satış Ofislerimiz
+Paket Tur Sözleşmesi
+Gizlilik Sözleşmesi
+Kulanım Sözleşmesi
+Kütahya Çizelgesi
+Kişisel Verilerin Korunması
+Çağrı Merkezi
+0850 303 1363
+Rezervasyon Sorgula
+Malitur Blog
+Markalarımız
+Her hakkı saklıdır.
+Site Kullanım Sözleşmesi | Gizlilik Sözleşmesi Malitur.com web sitesi, kişisel bilgisayarınıza bilgi depolamak amacıyla tanımlama bilgilerini kullanır.
+Bilgilerin bir kısmı sitenin çalışmasında asıl rolü üstlenirken bazı kısımları ise kullanıcı deneyimlerinin daha da iyileştirilmesine yardımcı olur.
+Sitemizi kullanarak bu tanımlama bilgilerinin yerleştirilmesine izin vermiş olursunuz.
+Detaylı bilgi için Gizlilik politikamızı okuyunuz.Afişe edilen tüm fiyatlar, ilgili üründe kontenjan olması durumunda geçerli olup seçeceğiniz döneme göre fiyatlar değişkenlik gösterebilir.
+Sitemizde görmüş olduğunuz tüm fiyatlara KDV dahildir.
+Hemen Ara
+Whatsapp
+Sizi Arayalım
+Ad
+E-Mail
+Telefon Numarası
+Arama Tarihi
+Bugün
+Yarın
+Arama Zamanı
+Farketmez
+09:00 - 12:00 Arası
+12:00 - 13:30 Arası
+13:00 - 17:00 Arası
+17:00 - 21:00 Arası
+Notunuz
+Gönder
+Üye Girişi
+Gmail ile devam et
+E-posta Adresi
+Şifre
+Şifrenizi mi unuttunuz?
+Giriş Yap
+Hesabınız yok mu? Kayıt olun
+Kayıt Ol
+Gmail ile devam et
+Ad
+Soyad
+E-posta Adresi
+Şifre
+Please provide a valid city.
+Kayıt Ol
+Zaten bir hesabınız var mı? Giriş yapın
+Şifremi Unuttum
+E-posta Adresi
+Şifremi Gönder
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+/* Firefox */
+input[type=number] {
+-moz-appearance: textfield;
+}
+Rezervasyon Sorgula
+E-posta Adresi veya Kimlik No *
+Rezervasyon Numarası
+Rezervasyonu Kontrol Et
+1. Oda
+Kaldır
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+En Popüler Bölgeler
+Erken Rezervasyon Otelleri
+Kayak Otelleri
+Termal Otelleri
+Kıbrıs Otelleri
+Grup Talepleri
+İsim Soyisim (*)
+Telefon (*)
+Email (*)
+Tur Türü (*)
+Seçiniz
+Yurtdışı Tur
+Yurtiçi Tur
+Günübirlik Tur
+Gemi Turları
+Ana Destinasyon
+Tarih Aralığı
+Kişi Bilgileri
+Seçiniz
+1-5 Kişi
+6-10 Kişi
+11-20 Kişi
+21-30 Kişi
+31-40 Kişi
+41-50 Kişi
+İletmek İstediğiniz Notlar
+Kapat
+Kaydet
+window.csrfName = 'csrf_test_name';
+window.csrfHash = '4f1d38647bc93e4d222bbbb74ab22b7a';
+{
+"@context": "https://schema.org",
+"@type": "ItemList",
+"name": "Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı",
+"description": "Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı",
+"itemListElement": [
+{"@type":"ListItem","position":1,
+"url":"https://malitur.com/aroya-cruises-ile-egenin-incileri-ve-iskenderiye-turu-vizesiz-7-gece-konaklamali-istanbul-cikisli",
+"name":"Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı"}
+]
+}
+// Global scope'a taşıyarak extra.js'den erişimi garanti ediyoruz
+window.minChildAge = 0;
+const PicketGroupRequests = new easepick.create({
+element: document.getElementById("DateRange"),
+css: ["https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css", "/assets/css/ease-custom.css"],
+lang: "tr-TR",
+grid: 2,
+format: "DD.MM.YYYY",
+calendars: 2,
+zIndex: 1001,
+locale: {
+nextMonth:
+" ",
+previousMonth:
+" ",
+apply: "Select",
+},
+RangePlugin: {
+tooltipNumber(num) {
+return num - 1;
+},
+locale: {
+one: "Gün",
+other: "Gün",
+},
+},
+LockPlugin: {
+minDate: "2022-07-16T21:00:00.000Z",
+minDays: 0,
+maxDays: 0,
+selectForward: true,
+inseparable: true,
+},
+plugins: ["RangePlugin", "LockPlugin"],
+setup(picker) {
+picker.on('select', (e) => {
+let startDate = picker.getStartDate('DD-MM-YYYY');
+let endDate = picker.getEndDate('DD-MM-YYYY');
+var checkindate = HumanizeRequrstGroupDate(startDate);
+var checkoutdate = HumanizeRequrstGroupDate(endDate);
+if ($('#GroupRequestsModal #DateStart').length > 0) {
+$('#GroupRequestsModal #DateStart').val(checkindate);
+}
+if ($('#GroupRequestsModal #DateEnd').length > 0) {
+$('#GroupRequestsModal #DateEnd').val(checkoutdate);
+}
+});
+},
+});
+function HumanizeRequrstGroupDate(startDate){
+var formattedDate = new Date(startDate);
+var d = formattedDate.getDate();
+var m = formattedDate.getMonth();
+m += 1; // JavaScript months are 0-11
+var y = formattedDate.getFullYear();
+return d + "-" + m + "-" + y;
+}
+if( $('.GroupRequestsTourlist').length ) // use this if you are using id to check
+{
+$('.GroupRequestsTourlist').select2({
+theme: 'bootstrap-5',
+dataType: 'json',
+dropdownParent: $('#GroupRequestsModal'),
+delay: 250,
+ajax: {
+url: '/Ajax/Tours/GetTours',
+data: function (params) {
+var query = {
+TourTypeSngle: $('#TourType option:selected').val(),
+term: params.term
+}
+// Query parameters will be ?search=[term]&type=public
+return query;
+},
+processResults: function (data) {
+return {
+results: $.map(data.Suggestions, function (item) {
+return {
+text: item.Name,
+id: item.TourId
+}
+})
+};
+}
+}
+});
+}
+document.addEventListener('DOMContentLoaded', function () {
+// Tab değişince URL hash’i güncelle
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (el) {
+el.addEventListener('shown.bs.tab', function (e) {
+const hash = e.target.getAttribute('href') || e.target.getAttribute('data-bs-target');
+if (hash) {
+if (history.replaceState) history.replaceState(null, '', hash);
+else location.hash = hash;
+}
+});
+});
+function activateFromHash() {
+const hash = window.location.hash;
+if (!hash) return;
+const trigger = document.querySelector(
+`[data-bs-toggle="tab"][href="${hash}"], [data-bs-toggle="tab"][data-bs-target="${hash}"]`
+);
+if (trigger) new bootstrap.Tab(trigger).show();
+if (history.replaceState) history.replaceState(null, '', '');
+}
+// İlk yüklemede ve geri/ileri hareketinde hash’e göre tab’ı aç
+activateFromHash();
+window.addEventListener('hashchange', activateFromHash);
+});
+$(".coupon-title").on("click", function () {
+$(".coupon-box").toggleClass("active");
+});
+var cpnBtn = document.getElementById("cpnBtn");
+var cpnCode = document.getElementById("cpnCode");
+cpnBtn.onclick = function () {
+console.time("time1");
+var temp = $("");
+$("body").append(temp);
+temp.val($("#cpnCode").text()).select();
+document.execCommand("copy");
+temp.remove();
+console.timeEnd("time1");
+$(".coupon-btn").addClass("active");
+cpnBtn.innerHTML = "Kopyalandı";
+setTimeout(function () {
+$(".coupon-btn").removeClass("active");
+cpnBtn.innerHTML = "Kopyala";
+}, 3000);
+};
+document.querySelector("#show-room-btn").addEventListener("click", (e) => {
+e.preventDefault();
+$("#nav-tab button#detail-2-tab").tab("show");
+setTimeout(() => {
+$("#nav-tabContent #detail-2")[0].scrollIntoView({
+behavior: "smooth",
+block: "start",
+inline: "start",
+});
+}, 100);
+});
+document.addEventListener("DOMContentLoaded", function () {
+const entertainmentItems = document.querySelectorAll(".entertainment-list .e-item");
+const showButton = document.querySelector(".show-entertainment");
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+item.style.display = "none";
+}
+});
+showButton.addEventListener("click", function () {
+const isShowingAll = this.textContent === "Daha az göster";
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+if (isShowingAll) {
+item.style.display = "none";
+} else {
+item.style.display = "block";
+}
+}
+});
+this.textContent = isShowingAll ? "Daha fazla göster" : "Daha az göster";
+});
+});
+document.addEventListener("DOMContentLoaded", function () {
+document.querySelectorAll(".svg-explorer-content").forEach((container) => {
+const svgContainer = container.querySelector(".svg-container");
+const svgElement = svgContainer.querySelector("svg");
+const zoomInBtn = container.querySelector(".zoom-in");
+const zoomOutBtn = container.querySelector(".zoom-out");
+let scale = 1;
+let minScale = 1;
+let maxScale = 3;
+let isDragging = false;
+let startX, startY;
+let translateX = 0,
+translateY = 0;
+let lastTranslateX = 0,
+lastTranslateY = 0;
+function updateTransform() {
+let maxTranslateX = (svgElement.clientWidth * scale - container.clientWidth) / 2;
+let maxTranslateY = (svgElement.clientHeight * scale - container.clientHeight) / 2;
+translateX = Math.min(maxTranslateX, Math.max(-maxTranslateX, translateX));
+translateY = Math.min(maxTranslateY, Math.max(-maxTranslateY, translateY));
+svgElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+zoomInBtn.addEventListener("click", function () {
+if (scale < maxScale) {
+scale += 0.2;
+updateTransform();
+}
+});
+zoomOutBtn.addEventListener("click", function () {
+if (scale > minScale) {
+scale -= 0.2;
+updateTransform();
+}
+});
+// *** Mouse Sürükleme ***
+svgContainer.addEventListener("mousedown", function (event) {
+isDragging = true;
+startX = event.clientX - lastTranslateX;
+startY = event.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+document.addEventListener("mousemove", function (event) {
+if (isDragging) {
+translateX = event.clientX - startX;
+translateY = event.clientY - startY;
+updateTransform();
+}
+});
+document.addEventListener("mouseup", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+// *** Dokunmatik Sürükleme ***
+svgContainer.addEventListener("touchstart", function (event) {
+isDragging = true;
+const touch = event.touches[0];
+startX = touch.clientX - lastTranslateX;
+startY = touch.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+svgContainer.addEventListener("touchmove", function (event) {
+if (isDragging) {
+const touch = event.touches[0];
+translateX = touch.clientX - startX;
+translateY = touch.clientY - startY;
+updateTransform();
+}
+});
+svgContainer.addEventListener("touchend", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+});
+});
+function recalculate(Date){
+$('#tour_date').val(Date).trigger('change');
+// $('#TourDetailForm').submit();
+}
+{
+"@context": "https://schema.org",
+"@type": "BreadcrumbList",
+"itemListElement": [
+{ "@type": "ListItem", "position": 1, "name": "Anasayfa", "item": "https://malitur.com/" },
+{ "@type": "ListItem", "position": 2, "name": "Cruise Turları", "item": "https://malitur.com/cruise-turlari" },
+{ "@type": "ListItem", "position": 3, "name": "Aroya Cruises Turları", "item": "https://malitur.com/aroya-cruises-turlari" }
+{ "@type": "ListItem", "position": 4, "name": "Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı", "item": "https://malitur.com/aroya-cruises-ile-egenin-incileri-ve-iskenderiye-turu-vizesiz-7-gece-konaklamali-istanbul-cikisli" }
+]
+}
+(function () {
+window.dataLayer = window.dataLayer || [];
+if (window.__maliturTourDetailGa4Loaded === true) {
+return;
+}
+window.__maliturTourDetailGa4Loaded = true;
+var baseItem = {"item_id":"TOUR-2946","item_name":"Aroya Cruises ile Egenin İncileri ve İskenderiye Turu / Vizesiz / 7 Gece Konaklamalı / İstanbul Çıkışlı","affiliation":"Malitur","item_brand":"Malitur","item_category":"Tour","item_category2":"Vizesiz Gemi Turları","item_category3":"İstanbul Hareketli","item_category4":"Gemi ile gidiş dönüş","item_variant":"7 gece 8 gün","item_list_id":"vizesiz-gemi-turlari","item_list_name":"Vizesiz Gemi Turları","location_id":"İstanbul","price":770.6399999999999863575794734060764312744140625,"quantity":1,"tour_date":"2026-07-11"};
+var currency = "EUR";
+var lastBeginCheckoutKey = '';
+function toNumber(value) {
+var number = parseFloat(value || '0');
+return isNaN(number) ? 0 : number;
+}
+function cleanText(value) {
+return (value || '').replace(/\s+/g, ' ').trim();
+}
+function pushGa4Event(eventName, ecommerce) {
+window.dataLayer.push({ ecommerce: null });
+window.dataLayer.push({
+event: eventName,
+ecommerce: ecommerce || {}
+});
+}
+function getSelectedTourDate() {
+var selectedDate = '';
+var tourDateInput = document.querySelector('#tour_date');
+if (tourDateInput && tourDateInput.value) {
+selectedDate = tourDateInput.value;
+}
+return selectedDate;
+}
+function buildCurrentItem(extra) {
+var item = Object.assign({}, baseItem);
+var selectedDate = extra && extra.tour_date ? extra.tour_date : getSelectedTourDate();
+item.price = toNumber(item.price);
+item.quantity = 1;
+if (selectedDate) {
+item.tour_date = selectedDate;
+}
+return item;
+}
+function buildEcommerce(item) {
+var ecommerce = {
+currency: currency,
+items: [item]
+};
+if (item.price > 0) {
+ecommerce.value = item.price;
+}
+return ecommerce;
+}
+/**
+* 1) Ürün detay görüntüleme
+*/
+var viewItem = buildCurrentItem({});
+pushGa4Event('view_item', buildEcommerce(viewItem));
+/**
+* 2) Rezervasyon başlatma
+*/
+function trackBeginCheckout(source, tourDate) {
+var item = buildCurrentItem({
+tour_date: tourDate || ''
+});
+var key = item.item_id + '|' + (item.tour_date || '');
+if (key === lastBeginCheckoutKey) {
+return;
+}
+lastBeginCheckoutKey = key;
+var ecommerce = buildEcommerce(item);
+ecommerce.checkout_step = 1;
+ecommerce.checkout_source = source || 'tour_detail';
+pushGa4Event('begin_checkout', ecommerce);
+}
+document.addEventListener('click', function (event) {
+var button = event.target.closest('[data-ga4-click="begin_checkout"]');
+if (!button) {
+return;
+}
+var tourDate = button.getAttribute('data-ga4-tour-date') || getSelectedTourDate();
+trackBeginCheckout('reservation_button', tourDate);
+});
+/**
+* 3) Detay rezervasyon formu submit
+* Form zaten /Tours/Search/Calculate action'ına gidiyor.
+* Submit akışını bozmayalım; sadece event basalım.
+*/
+var detailForm = document.querySelector('#TourDetailForm');
+if (detailForm) {
+detailForm.addEventListener('submit', function () {
+trackBeginCheckout('reservation_form', getSelectedTourDate());
+});
+}
+/**
+* 4) Favoriye ekleme
+*/
+document.addEventListener('click', function (event) {
+var favButton = event.target.closest('.add-favourite[data-type="tour"]');
+if (!favButton) {
+return;
+}
+var item = buildCurrentItem({});
+pushGa4Event('add_to_wishlist', buildEcommerce(item));
+});
+})();
+document.addEventListener("DOMContentLoaded", function () {
+let lazyImages = document.querySelectorAll("img.lazy-load");
+let observer = new IntersectionObserver((entries, observer) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) {
+let img = entry.target;
+img.src = img.getAttribute("data-src");
+img.classList.remove("lazy-load");
+observer.unobserve(img);
+}
+});
+});
+lazyImages.forEach(img => observer.observe(img));
+});
+(function(){
+const SITE_KEY = 'fa126a60b1023754b6eb6a43e472ca1b'; // analytics_sites.site_key
+const ENDPOINT = 'https://tracker.malitur.com.tr/v1/collect'; // HTTPS şart
+function uuidv4(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+const cookieName='va_vid';
+function getCookie(n){ return (document.cookie.match('(^|;)\s*'+n+'\s*=\s*([^;]+)')||0)[2]; }
+function setCookie(n,v,days){ const d=new Date(); d.setTime(d.getTime()+days*864e5); document.cookie=n+'='+v+';path=/;expires='+d.toUTCString()+';SameSite=Lax'; }
+let visitorId=getCookie(cookieName); if(!visitorId){ visitorId=uuidv4(); setCookie(cookieName,visitorId,365*2); }
+const body = JSON.stringify({
+siteKey: "fa126a60b1023754b6eb6a43e472ca1b", // API key koymayın
+url: location.href,
+path: location.pathname + location.search,
+title: document.title,
+referrer: document.referrer || null,
+event: 'pageview',
+screen: (screen.width+'x'+screen.height),
+lang: navigator.language || null,
+visitorId,
+utm_source: new URLSearchParams(location.search).get('utm_source'),
+utm_medium: new URLSearchParams(location.search).get('utm_medium'),
+utm_campaign: new URLSearchParams(location.search).get('utm_campaign')
+});
+let queued=false;
+if (navigator.sendBeacon) {
+try { queued = navigator.sendBeacon(ENDPOINT, new Blob([body], {type:'application/json'})); } catch(e){ queued=false; }
+}
+if(!queued){
+fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true,credentials:'omit'}).catch(()=>{});
+}
+})();

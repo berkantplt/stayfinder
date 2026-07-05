@@ -655,7 +655,12 @@
                         throw new Error((res.body && res.body.message) || 'İçe aktarma başarısız.');
                     }
                     applyImported(res.body.data, url);
-                    showImportStatus('Bilgiler dolduruldu. Lütfen kategori seçin, kontrol edip kaydedin.', 'success');
+                    var warns = (res.body.data && res.body.data.warnings) || [];
+                    if (warns.length) {
+                        showImportStatus('Bilgiler dolduruldu, ancak dikkat: ' + warns.join(' '), 'error');
+                    } else {
+                        showImportStatus('Bilgiler dolduruldu. Lütfen kategori seçin, kontrol edip kaydedin.', 'success');
+                    }
                 })
                 .catch(function(e){ showImportStatus(e.message || 'İçe aktarma başarısız.', 'error'); })
                 .finally(function(){ btn.disabled = false; btn.textContent = oldLabel; });

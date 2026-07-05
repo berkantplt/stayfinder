@@ -1,0 +1,1694 @@
+Acapulco Resort Convention SPA Hotel | MaliTur.com | 0850 303 1363
+window.dataLayer = window.dataLayer || [];
+.alt_butonlar{
+display: none !important;
+}
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5B8MMVX7');
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '442978066294627');
+fbq('track', 'PageView');
+Yurt İçi Turlar
+Yurt Dışı Turlar
+Cruise Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Kampanyalar
+Hızlı Erişim
+Rezervasyon Sorgula
+Blog
+Grup Talepleri
+Okul Turları
+Sosyal Medya
+Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Tüm Kültür Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Tüm Haftasonu Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Tüm Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Tüm İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Tüm Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Tüm Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Tüm Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Tüm Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Tüm İzmir Çıkışlı Yurt Dışı Turlar
+Cruise Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Tüm Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Tüm Nehir Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+Kampanyalar
+Üyelik
+Kampanyalardan haberdar olmak ve rezervasyonlarına hızlıca ulaşmak için hemen üye ol!
+Giriş Yap
+Üye Ol
+0850 303 1363
+Sizi arayalım
+Grup Talepleri
+Okul Turları
+Türkçe
+English
+Üye girişi
+Kayıt ol
+Yardım
+Satış Noktaları
+Yurt İçi Turlar
+Kültür Turları
+Haftasonu Turları
+Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Cruise Turları
+Gemi Turları
+Nehir Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Kampanyalar
+İşleminiz Gerçekleştiriliyor. Lütfen Bekleyin...
+Malitur
+Kıbrıs Otelleri
+Girne Otelleri
+Merkez Otelleri
+Acapulco Resort Convention SPA Hotel
+Acapulco Resort Convention SPA Hotel
+Kıbrıs, Girne, Merkez
+.heart-red { color: red !important; }
+Facebook
+Twitter
+Whatsapp
+Sizi Arayalım
+Oda Seç
+Malitur Öneriyor
+Genel
+(12 fotoğraf)
+Aktivite
+(11 fotoğraf)
+Havuz & Plaj
+(7 fotoğraf)
+Aquapark
+(3 fotoğraf)
+Tüm fotoğraflar
+(33 fotoğraf)
+Denize Sıfır
+Balayı Oteli
+Kum Plaj
+4.6
+Mükemmel
+2873 yorum
+ODALAR
+TESİS BİLGİLERİ
+ÇEVRE VE KONUM
+ETKİNLİKLER
+YORUMLAR
+.reservation-detail {
+z-index: auto !important;
+}
+Sadece Otel
+Otel + Uçak + Transfer
+Tarih Aralığı
+Oda ve Misafir Sayısı
+1
+2
+0
+1. Oda
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Oda Ekle
+Otel Ara
+Otel Ara
+Popüler Aramalar
+Kayak Otelleri
+Termal Oteller
+Erken Rezervasyon Otelleri
+Kalkış
+Seçiniz
+Adnan Menderes Havalimani
+Antalya Havalimani
+Istanbul Havalimani
+Sabiha Gökçen Havalimani
+Esenboga Havalimani
+Adana Mersin Çukurova Havalimanı
+Varış
+Ercan Havalimanı
+Tarih Aralığı
+Oda ve Misafir Sayısı
+1
+2
+0
+1. Oda
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Otel Ara
+Otel Ara
+Popüler Aramalar
+Kayak Otelleri
+Termal Oteller
+Erken Rezervasyon Otelleri
+Konum Özelli̇kleri̇
+ÜLKE
+Kuzey Kıbrıs Türk Cumhuriyeti
+SEHİR
+Girne
+HAVALİMANINA MESAFE
+Ercan Havalimanına 28 Km
+ŞEHİR MERKEZİNE MESAFESİ
+Girne şehir merkezine 8 Km
+DENİZ MESAFESİ
+Denize sıfır
+Genel Tanitim
+GENEL TANITIM
+Acapulco Resort & Convention & SPA, Kuzey Kıbrıs otelleri içerisinde, tatil keyfini dünya standartlarında ve servis kalitesiyle Kıbrıs'a getiren, Akdeniz kültürü ile, gelen konuklarına gerek iş, gerek tatil amacı ile beş yıldızlı ve dostça bir servis sağlamaktadır. Otel hizmetleri, bir kilometre uzunluğundaki özel sahili, yetişkin ve çocuk havuzu, deniz manzaralı ve klimalı otel odaları, sahil barı, restoranları, spor salonu, tenis, plaj voleybolu, golf, ısıtmalı havuz, sıcak banyo, SPA, toplantı ve konferans odaları, hızlı erişimli internet, casino ve hediyelik eşya dükkanlarını içermektedir.
+Single ,Double ve Triple Bay Rezervasyonları kabul edilmemektedir
+Birbirinden konforlu odaları mevcut olup Villa oda 110, PineCourt/1 156, Pine Court/2 248, Ana Bina 255 ( Toplam 659 Adet Balkonlu Oda), Garden Junior 32, Garden Suite 11, Lagoon Suite 14 adet olmak üzere toplam 826 odası bulunmaktadır.
+Genel Özelli̇kler
+Oda Sayısı
+Villa oda 110, PineCourt/1 156, Pine Court/2 248, Ana Bina 255 ( Toplam 659 Adet Balkonlu Oda), Garden Junior 32, Garden Suite 11, Lagoon Suite 14 adet olmak üzere toplam 826 odası bulunmaktadır.
+Genel Uyarılar
+Tesis odalarına giriş saati 15:00 ile başlar, çıkış günü ise tesisten ayrılış saatine bakılmaksızın odaların en geç saat 11:00 'de boşaltılması gerekmekte olup tesisten alınan ekstra yiyecek- içecek ve sistem dışı hizmet ücretleri konuklara aittir.
+Taze sıkılmış meyve suları, Türk kahvesi ve import içecekler ücretlidir.
+Otelde hizmet veren açık alanların kullanımı mevsim koşullarına bağlıdır.
+Aile odaları veya bazı özel odalar haricindeki odalarda yapılacak 2+2 veya 3+1 konaklamalar, odada sıkışıklık yaratabilir ve verilen ilave yataklar sabit yatak konforunda olmayabilir.
+*1 Haziran 2024 Tarihinde hizmete girecek olan Lagoon Suite odalarda 17 yaş ve üstü misafirlerin konaklaması kabul edilecektir.
+Açık Restoran - (Var)
+Fitness Center - (Var)
+Aquapark - (Var)
+Casino - (Var)
+Çamaşırhane - (Ücretli)
+Kuaför - (Ücretli)
+Motorlu Su Sporları - (Ücretli)
+Motorsuz Su Sporları - (Ücretsiz)
+Telefon / Fax Hizmeti - (Ücretli)
+Fotoğrafçı - (Ücretli)
+Kuru Temizleme - (Ücretli)
+Doktor - (Ücretli)
+Hemşire - (Ücretsiz)
+Market - (Ücretli)
+Oto Park - (Ücretsiz)
+Aktiviteler
+Aktivite Bilgisi
+Otelde, perşembe akşamları Kıbrıs gecesi yapılmaktadır. Lunapark 18.00 ile 24.00 saatleri arasında ücretli hizmet verirken diskoda eğlenebilir ya da masa tenisinden golfe, dart oyunundan su sporlarına kadar birçok aktiviteyle zaman geçirebilirsiniz.
+Plaj Voleybolu - (Ücretsiz)
+Tenis Ekipmanları - (Ücretli)
+Banana - (Ücretli)
+Dart - (Ücretsiz)
+Lunapark - (Ücretli)
+Oyun Salonu - (Ücretli)
+Tenis Kortu - (Ücretsiz)
+Bilardo Salonu - (Ücretli)
+Disco - (Ücretli)
+Jet-ski - (Ücretli)
+Masa Tenisi - (Ücretsiz)
+Parasailing - (Ücretli)
+Havuz & Plaj
+Havuz Plaj Bilgisi
+Otelde, açık ve kapalı olmak üzere yetişkinlere ve çocuklara farklı boyutlarda hizmet veren havuzlar bulunmaktadır. Açık havuzlara bağlı 5 adet kaydırak hem yetişkinlerin hem de çocukların gönüllerince eğlenebilmesi için farklı boyutlarda hizmet vermektedir.
+**Tesiste 20 Kasım 2023-31 Mart 2024 Tarihleri arasında Aquapark kapalı olacaktır.
+Açık Havuz - (Var)
+Plaj (Kum) - (Var)
+Kapalı Havuz - (Var)
+Bay Bayan Ayrı Plaj - (Hayır)
+Kaydıraklı Havuz - (Var)
+Özel Plaj - (Var)
+Su Kaydırağı - (Var)
+Şezlong & Şemsiye - (Ücretsiz)
+Spa
+Spa Bilgisi
+Spa merkezinde Klasik Türk Hamamı keyfinin yanında asırlardır süregelen bir gelenek olan Shiatsu, Ayurveda ve Thai masajlarının keyfini çıkarabilirsiniz. Vücudunuzun layık olduğu tazeliğe kavuşması için hazırlanan hidroterapi küvetinde çamur, bal, çikolata ve yosun bakımları yaptırabilirsiniz. Çok geniş bir yelpazede hizmet veren Spa merkezinde aradığınız her türlü masajı, vücut bakımlarını ve özel kürleri bulabilirsiniz.
+Buhar Odası - (Ücretli)
+Kese - Köpük - (Ücretli)
+Fizik Tedavi - (Ücretli)
+Masaj - (Ücretli)
+Hamam - (Ücretli)
+Sauna - (Ücretli)
+Thai Masajı - (Ücretli)
+Bebek & Çocuklara Özel
+Bebek Ve Çocuk Bilgisi
+Çocuklarınızın yaratıcılığını geliştirmek için eğitici programlar ile hizmet veren tecrübeli personel sayesinde minik misafirler hem bilgilenecek hem de eğlenceli yönleri ile güzel bir zaman geçirecektir. Çocuklara özel Aquapark, yüzme havuzu ve plajda lunapark bulunmaktadır. Çocukların günlerini faydalı ve eğlenceli geçirmeleri için otelde çocuk kulübü kurulmuştur.
+*12.11.2022- 19.11.2022 tarihleri arasında 3. Acapulco Çocuk Şenliği gerçekleştirilecektir.
+Aquaparklı Çocuk Havuzu - (Var)
+Mini Club - (Var)
+Oyun Parkı - (Var)
+Çocuk Havuzu - (Var)
+Bebek Bakıcısı - (Ücretli)
+Balayı Çiftleri İçin
+Balayı Konsept Bilgisi
+Balayı paketinden yararlanmak isteyen çiftlerin, evlilik tarihinden itibaren bir ay içinde yapacakları konaklamalar için check in sırasında evlilik cüzdanlarını göstermeleri gerekiyor.
+Odaya Meyve Sepeti Şarap İkramı - (Var)
+Spa İndirimi - (Var)
+Genel Açiklamalar
+GENEL AÇIKLAMALAR
+Kıbrıs Seyahatleri İçin Dikkat Edilmesi Gereken Uyarılar!Seyahat edecek 18 yaşından küçük misafirler; annesi ile seyahat ediyorsa babasından, babası ile seyahat ediyorsa annesinden, üçüncü bir kişi / kişiler ile seyahat ediyorsa hem annesinden, hem babasından noter aracılığı ile "muvafakatname" almak zorundadır. Kıbrıs Uçuş Uyarıları! Kıbrıs seyahatleri için misafirlerin en az 2 saat öncesinden dış hatlar terminalinde olmaları gerekmektedir. Özel dönemlerde (bayram, yılbaşı vs.) 3 saat önceden dış hatlar terminalinde olmaları gerekmektedir. Uçuş öncesi pasaport kontrolü sırasında kimlik ibrazı zorunludur. Ehliyet tarzı belgeler ibraz için kabul edilmemektedir. Ayrıca, Yunanistan makamları pasaportlarda KKTC giriş/çıkış damgası olması halinde ülkeye giriş izni vermemektedirler. Buna istinaden Kıbrıs seyahatlerinizde pasaport ile işlem yaptırmamanızı tavsiye ederiz.
+Konsept Özelli̇kleri̇
+A'la Carte Bilgisi
+A'la Carte Restoranlar rezervasyonlu ve ücretli olarak hizmet vermektedir.
+Bistro A'la Carte Restoran ve Aqua A'la Carte Restoran olmak üzere çok özel lezzetlerin sunulduğu restoranlarda yemekten çok keyif alacaksınız!
+Konsept Bilgisi
+Tesis Tam Pansiyon konseptinde hizmet vermekte olup sabah, öğle ve akşam açık büfe yemekler ücretsiz sunulur. Bunun dışında alınan tüm yiyecek ve içecekler ücrete tabi tutulur. Otelde verilen Tam Pansiyon Plus konaklamalar, akşam yemeği ile başlayıp konaklanan gece sayısı kadar akşam yemeğini içerir ve çıkış günü sabah kahvaltısı ile son bulur. Yemek saatleri aşağıdaki şekildedir;
+07.00-10.00 Kahvaltı
+12.30-14.30 Öğle Yemeği
+19.00-21.30 Akşam Yemeği
+Akşam Yemeği - (Var)
+Kahvaltı - (Var)
+Öğle Yemeği - (Var)
+İçecekler - (Ücretli)
+Oda Özelli̇kleri̇
+Oda Büyüklüğü
+32 m2
+Oda Bilgisi
+40 m2 genişliğindeki oda masmavi sulara bakmakta olup içerisinde; direkt hatlı telefon, split klima, uydu yayınlı tv, banyo (kabin küvet), kasa, saç kurutma makinesi, ve mini bar imkanlarını bulundurur.
+Kasa - (Var)
+Duman Dedektörü - (Var)
+Çay-Kahve Seti - (Var)
+Laminant Kaplı Zemin - (Var)
+Halı Kaplı Zemin - (Var)
+Deniz Manzarası - (Var)
+Saç Kurutma Makinesi - (Var)
+Merkezi Klima - (Var)
+Telefon - (Var)
+Oda Servisi - (Var)
+Televizyon - (Var)
+Uyandırma Servisi - (Var)
+Uydu Yayını - (Var)
+Elektronik Anahtar Sistemi - (Var)
+Banyo (Küvet) - (Var)
+Banyo (Duşakabin) - (Var)
+Klima (Split) - (Var)
+Parke Kaplı Zemin - (Var)
+İnternet - (Ücretli)
+Oda Servisi - (Ücretli)
+Kasa - (Ücretli)
+Telefon - (Ücretli)
+Minibar - (Ücretli)
+Önemli Bilgiler
+Giriş Saati
+14:00
+Çıkış Saati
+12:00
+İptal / Ön ödeme
+72 saat öncesine kadar iptal ve değişiklik yapılabilmektedir.
+Evcil Hayvanlar
+Evcil hayvan giremez.
+Bu Tesisin Kabul Ettiği Kartlar
+fa-cc-visa, fa-cc-mastercard, fa-cc-amex, fa-cc-diners-club
+Restoranlar & Barlar
+Restoranlar
+Sunset Restaurant
+1175 kişi oturma kapasiteli olan Sunset Restaurant , 850 kişi alt bölüm ve 325 kişi üst bölümden oluşmaktadır. Açık hava bölümü 1100 kişi oturma kapasiteli olup deniz ile adeta içiçe yemek keyfini yaşatmaktadır. Otel, Tam Pansiyon Plus (Kahvaltı, öğle ve akşam yemekleri ile öğle ve akşam yemeklerinde alınacak tüm yerli premix içecekler dahil) konaklama hizmeti sunmaktadır .
+Bistro A’la Carte
+Otel ana binasında bulunan restaurant, dünya mutfağının en seçkin yemekleriyle hizmetinizdedir.
+Aqua Bar & Restaurant
+Acapulco Resort otel Aqua Park ve Yüzme havuzu yanında bulunan Aqua Bar çeşitli snack menuleriyle sizlere hizmet vermektedir.
+Lobby Bar
+Otel Lobby Bar'ı 7/24 hizmetinizde olup tüm alkollü -alkolsüz içecekler ve snack menu secenekleriyle hizmet alabileceğiniz ve konforlu br şekilde dinlenebileceğiniz bir mekanımızdır.
+Pine Court Bar
+Pine Court 2 binasında bulunan lobby bar tüm gün boyunca sizlere içecek ve de snack menuleriyle hizmet vermektedir.
+Beach Bar
+Sahilde bulunan Acapulco Beach Bar, gün boyunca onlarca menü çeşitleriyle tüm yaş grubu damak tadına hitap etmektedir.
+Anfi Tiyatro
+Tüm akşam gösteri ve eğlencelerinin yapıldığı bu alanda gösterileri izlerken içecek servisinden yararlanabilirsiniz.
+Çevre ve Konum
+Diğer
+Ercan Havalimanı
+28 km
+Girne şehir merkezi
+8 km
+tümünü gör
+Tüm Diğer
+Ercan Havalimanı
+28 km
+Girne şehir merkezi
+8 km
+.event-card__top {
+background: #fafafa;
+}
+.event-flag {
+width: 28px;
+height: 20px;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+font-size: 18px;
+flex: 0 0 auto;
+}
+.event-top-title {
+font-weight: 600;
+color: #333;
+min-width: 0;
+}
+.event-thumb {
+width: 100%;
+aspect-ratio: 16 / 9;
+border-radius: 12px;
+overflow: hidden;
+background: #f2f2f2;
+display: flex; /* ek */
+align-items: center; /* ek */
+justify-content: center; /* ek */
+}
+.event-thumb img {
+width: 100%;
+height: 100%;
+object-fit: contain; /* cover -> contain */
+}
+.event-title {
+line-height: 1.25;
+}
+.event-desc {
+display: -webkit-box;
+-webkit-line-clamp: 2; /* açıklama 2 satırla sınırlı */
+-webkit-box-orient: vertical;
+overflow: hidden;
+}
+.event-meta .badge {
+font-weight: 500;
+}
+🇹🇷
+Serkan Kaya | Etkinlik Programı
+Serkan Kaya | Etkinlik Programı (Etkinlik Tarihi : 25-07-2026)
+Konser için kişi başı katılım bedeli 10.000 TL'dir. Konsere katılım zorunlu değildir.
+Yayınlanma Tarihi 29-01-2026 / 25-07-2026
+Dil: TR
+🇹🇷
+Murat Dalkılıç | Etkinlik Programı
+Murat Dalkılıç | Etkinlik Programı (Etkinlik Tarihi : 29-08-2026)
+Konser için kişi başı katılım bedeli 10.000 TL'dir. Konsere katılım zorunlu değildir.
+Yayınlanma Tarihi 29-01-2026 / 29-08-2026
+Dil: TR
+🇹🇷
+Koray Avcı | Etkinlik Programı
+Koray Avcı | Etkinlik Programı (Etkinlik Tarihi : 26-09-2026)
+Konser için kişi başı katılım bedeli 10.000 TL'dir. Konsere katılım zorunlu değildir.
+Yayınlanma Tarihi 29-01-2026 / 26-09-2026
+Dil: TR
+🇹🇷
+Serkan Kaya | Etkinlik Programı
+Serkan Kaya | Etkinlik Programı (Etkinlik Tarihi : 24-10-2026)
+Konser için kişi başı katılım bedeli 10.000 TL'dir. Konsere katılım zorunlu değildir.
+Yayınlanma Tarihi 29-01-2026 / 24-10-2026
+Dil: TR
+🇹🇷
+Mert Demir | Etkinlik Programı
+Mert Demir | Etkinlik Programı (Etkinlik Tarihi : 14-11-2026)
+Konser için kişi başı katılım bedeli 10.000 TL'dir. Konsere katılım zorunlu değildir.
+Yayınlanma Tarihi 29-01-2026 / 14-11-2026
+Dil: TR
+🇹🇷
+Derya Uluğ | Etkinlik Programı
+Derya Uluğ | Etkinlik Programı (Etkinlik Tarihi : 31-12-2026)
+Konser için kişi başı katılım bedeli 10.000 TL'dir. Konsere katılım zorunlu değildir.
+Yayınlanma Tarihi 29-01-2026 / 31-12-2026
+Dil: TR
+Yorumlar
+Yorum Yap
+Daha Fazla Yorum Göster
+Deneyiminizi Paylaşın
+Otel Puanınız
+Puan Seçiniz...
+5 - Mükemmel
+4 - Çok İyi
+3 - İyi
+2 - Ortalama
+1 - Memnun Kalmadım
+0 - Kötü
+Adınız Soyadınız
+E-Posta Adresiniz
+E-posta adresiniz üçüncü şahıslarla paylaşılmaz.
+Yorum Başlığı
+Yorumunuz
+Vazgeç
+Yorumu Gönder
+Benzer Oteller
+Tümü
+Genel
+Aktivite
+Havuz & Plaj
+Aquapark
+Casino
+Fitnes
+Restoran
+Sizin İçin
+Vize Bilgileri
+İptal İade Güvence Paketi
+Sıkça Sorulan Sorular
+Ödeme Seçenekleri
+İnsan Kaynakları
+Tur Takvimi
+Malitur Öneriyor
+Balkan Turları
+Gap Turları
+İtalya Turları
+Karadeniz Turları
+Benelüks Paris Turları
+Dubai Turları
+Tayland Turları
+Uzak Doğu Turları
+Kapadokya Turları
+Kurumsal
+Hakkımızda
+İletişim
+Satış Ofislerimiz
+Paket Tur Sözleşmesi
+Gizlilik Sözleşmesi
+Kulanım Sözleşmesi
+Kütahya Çizelgesi
+Kişisel Verilerin Korunması
+Çağrı Merkezi
+0850 303 1363
+Rezervasyon Sorgula
+Malitur Blog
+Markalarımız
+Her hakkı saklıdır.
+Site Kullanım Sözleşmesi | Gizlilik Sözleşmesi Malitur.com web sitesi, kişisel bilgisayarınıza bilgi depolamak amacıyla tanımlama bilgilerini kullanır.
+Bilgilerin bir kısmı sitenin çalışmasında asıl rolü üstlenirken bazı kısımları ise kullanıcı deneyimlerinin daha da iyileştirilmesine yardımcı olur.
+Sitemizi kullanarak bu tanımlama bilgilerinin yerleştirilmesine izin vermiş olursunuz.
+Detaylı bilgi için Gizlilik politikamızı okuyunuz.Afişe edilen tüm fiyatlar, ilgili üründe kontenjan olması durumunda geçerli olup seçeceğiniz döneme göre fiyatlar değişkenlik gösterebilir.
+Sitemizde görmüş olduğunuz tüm fiyatlara KDV dahildir.
+Hemen Ara
+Whatsapp
+Sizi Arayalım
+Ad
+E-Mail
+Telefon Numarası
+Arama Tarihi
+Bugün
+Yarın
+Arama Zamanı
+Farketmez
+09:00 - 12:00 Arası
+12:00 - 13:30 Arası
+13:00 - 17:00 Arası
+17:00 - 21:00 Arası
+Notunuz
+Gönder
+Üye Girişi
+Gmail ile devam et
+E-posta Adresi
+Şifre
+Şifrenizi mi unuttunuz?
+Giriş Yap
+Hesabınız yok mu? Kayıt olun
+Kayıt Ol
+Gmail ile devam et
+Ad
+Soyad
+E-posta Adresi
+Şifre
+Please provide a valid city.
+Kayıt Ol
+Zaten bir hesabınız var mı? Giriş yapın
+Şifremi Unuttum
+E-posta Adresi
+Şifremi Gönder
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+/* Firefox */
+input[type=number] {
+-moz-appearance: textfield;
+}
+Rezervasyon Sorgula
+E-posta Adresi veya Kimlik No *
+Rezervasyon Numarası
+Rezervasyonu Kontrol Et
+1. Oda
+Kaldır
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+En Popüler Bölgeler
+Erken Rezervasyon Otelleri
+Kayak Otelleri
+Termal Otelleri
+Kıbrıs Otelleri
+Grup Talepleri
+İsim Soyisim (*)
+Telefon (*)
+Email (*)
+Tur Türü (*)
+Seçiniz
+Yurtdışı Tur
+Yurtiçi Tur
+Günübirlik Tur
+Gemi Turları
+Ana Destinasyon
+Tarih Aralığı
+Kişi Bilgileri
+Seçiniz
+1-5 Kişi
+6-10 Kişi
+11-20 Kişi
+21-30 Kişi
+31-40 Kişi
+41-50 Kişi
+İletmek İstediğiniz Notlar
+Kapat
+Kaydet
+window.csrfName = 'csrf_test_name';
+window.csrfHash = '9996ca6566ece2af9aa34b52a5765a68';
+{
+"@context": "https://schema.org",
+"@type": "ItemList",
+"name": "Acapulco Resort Convention SPA Hotel | MaliTur.com | 0850 303 1363",
+"description": "Acapulco Resort Convention SPA Hotel rezervasyonu ve en uygun fiyat seçenekleri | MaliTur.com | 0850 303 1363",
+"itemListElement": [
+{"@type":"ListItem","position":1,
+"url":"https://malitur.com/acapulco-resort-convention-spa-hotel",
+"name":"Acapulco Resort Convention SPA Hotel rezervasyonu ve en uygun fiyat seçenekleri | MaliTur.com | 0850 303 1363"}
+]
+}
+const PicketGroupRequests = new easepick.create({
+element: document.getElementById("DateRange"),
+css: ["https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css", "/assets/css/ease-custom.css"],
+lang: "tr-TR",
+grid: 2,
+format: "DD.MM.YYYY",
+calendars: 2,
+zIndex: 1001,
+locale: {
+nextMonth:
+" ",
+previousMonth:
+" ",
+apply: "Select",
+},
+RangePlugin: {
+tooltipNumber(num) {
+return num - 1;
+},
+locale: {
+one: "Gün",
+other: "Gün",
+},
+},
+LockPlugin: {
+minDate: "2022-07-16T21:00:00.000Z",
+minDays: 0,
+maxDays: 0,
+selectForward: true,
+inseparable: true,
+},
+plugins: ["RangePlugin", "LockPlugin"],
+setup(picker) {
+picker.on('select', (e) => {
+let startDate = picker.getStartDate('DD-MM-YYYY');
+let endDate = picker.getEndDate('DD-MM-YYYY');
+var checkindate = HumanizeRequrstGroupDate(startDate);
+var checkoutdate = HumanizeRequrstGroupDate(endDate);
+if ($('#GroupRequestsModal #DateStart').length > 0) {
+$('#GroupRequestsModal #DateStart').val(checkindate);
+}
+if ($('#GroupRequestsModal #DateEnd').length > 0) {
+$('#GroupRequestsModal #DateEnd').val(checkoutdate);
+}
+});
+},
+});
+function HumanizeRequrstGroupDate(startDate){
+var formattedDate = new Date(startDate);
+var d = formattedDate.getDate();
+var m = formattedDate.getMonth();
+m += 1; // JavaScript months are 0-11
+var y = formattedDate.getFullYear();
+return d + "-" + m + "-" + y;
+}
+if( $('.GroupRequestsTourlist').length ) // use this if you are using id to check
+{
+$('.GroupRequestsTourlist').select2({
+theme: 'bootstrap-5',
+dataType: 'json',
+dropdownParent: $('#GroupRequestsModal'),
+delay: 250,
+ajax: {
+url: '/Ajax/Tours/GetTours',
+data: function (params) {
+var query = {
+TourTypeSngle: $('#TourType option:selected').val(),
+term: params.term
+}
+// Query parameters will be ?search=[term]&type=public
+return query;
+},
+processResults: function (data) {
+return {
+results: $.map(data.Suggestions, function (item) {
+return {
+text: item.Name,
+id: item.TourId
+}
+})
+};
+}
+}
+});
+}
+$(document).ready(function () {
+$('#hotelDetailForm').submit();
+});
+// Güvenli tarih formatlama fonksiyonu (HumanizeDate tanımlı değilse çökmesin diye)
+function safeHumanizeDate(dateStr) {
+if (typeof HumanizeDate === "function") {
+return HumanizeDate(dateStr);
+}
+// Eğer HumanizeDate fonksiyonun yoksa gelen DD-MM-YYYY formatını koru
+return dateStr;
+}
+$('body').on('submit', '.hotelDetailForm', function (e) {
+e.preventDefault();
+var form = $(this);
+var url = form.attr('action');
+var method = form.attr('method') || 'GET';
+var targetSelector = form.data('target');
+var target = $(targetSelector);
+var resultDetail = $('#reservation-detail');
+if (!target.length) {
+console.warn('Hedef div bulunamadı: ' + targetSelector);
+return;
+}
+// Önce loading animasyonunu/modalını güvenle tetikle
+if (typeof showLoading === "function") {
+showLoading();
+}
+// Tüm submit butonlarını yakala ve kilitle
+var submitButtons = form.find('button[type="submit"]');
+submitButtons.each(function () {
+var $btn = $(this);
+if (!$btn.data('old-text')) {
+$btn.data('old-text', $btn.html());
+}
+});
+submitButtons.prop('disabled', true).html('Lütfen Bekleyiniz...');
+// Target içine local loading spinner bas
+var loadingHtml = `
+Yükleniyor...
+Lütfen bekleyiniz...
+`;
+target.html(loadingHtml);
+resultDetail.html(loadingHtml);
+$.ajax({
+url: url,
+type: method,
+data: form.serialize(),
+dataType: 'html',
+success: function (data) {
+target.html(data);
+resultDetail.html(''); // Temizle
+// Güvenli Tooltip Tetikleme
+try {
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"][title]:not([title=""])'));
+tooltipTriggerList.map(function (tooltipTriggerEl) {
+return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+} catch (tooltipError) {
+console.warn("Bootstrap Tooltip başlatılamadı:", tooltipError);
+}
+},
+error: function (xhr, status, error) {
+console.error(error);
+target.html(`
+Bir hata oluştu. Lütfen tekrar deneyiniz.
+`);
+resultDetail.html('');
+},
+complete: function () {
+// Sayfa içi local loading elementlerini kaldır
+$('#hotel-loading').remove();
+// Global loading modalını kapat
+if (typeof hideLoading === "function") {
+hideLoading();
+}
+// Butonları eski haline getir
+submitButtons.each(function () {
+var $btn = $(this);
+var oldText = $btn.data('old-text');
+if (oldText) {
+$btn.html(oldText);
+}
+$btn.prop('disabled', false);
+});
+}
+});
+});
+// --- EASEPICK REVIZYONLARI ---
+const HotelPackageDatepicker = new easepick.create({
+element: document.querySelector("#HotelPackageForm #datepicker"),
+css: ["https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css", "/Themes/Malitur/assets/css/ease-custom.css"],
+lang: "tr-TR",
+grid: 2,
+format: "DD.MM.YYYY",
+calendars: 2,
+zIndex: 1001,
+locale: {
+nextMonth: " ",
+previousMonth: " ",
+apply: "Select",
+},
+LockPlugin: {
+minDate: new Date(),
+minDays: 0,
+maxDays: 0,
+selectForward: true,
+inseparable: true,
+},
+RangePlugin: {
+tooltipNumber(num) { return num - 1; },
+locale: { one: "gece", other: "gece" },
+},
+plugins: ["RangePlugin", "LockPlugin"],
+setup(picker) {
+picker.on("select", (e) => {
+syncRange(picker, picker5);
+let startDate = picker.getStartDate('DD-MM-YYYY');
+let endDate = picker.getEndDate('DD-MM-YYYY');
+var checkindate = safeHumanizeDate(startDate);
+var checkoutdate = safeHumanizeDate(endDate);
+// ID yerine form bazlı input seçimi (Çakışmayı önler)
+$('#HotelPackageForm input[name="CheckinDate"]').val(checkindate);
+$('#HotelPackageForm input[name="CheckoutDate"]').val(checkoutdate);
+$('#hotelDetailForm input[name="CheckinDate"]').val(checkindate);
+$('#hotelDetailForm input[name="CheckoutDate"]').val(checkoutdate);
+});
+picker.on("show", () => {
+const container = picker.ui.container;
+$('.mobile-fixed-price-bar').addClass('d-none');
+if (!container) return;
+if (container.querySelector('.easepick-close-btn')) return;
+// Container relative olmalı ki buton sağ üste konumlansın
+container.style.position = 'relative';
+const closeBtn = document.createElement('button');
+closeBtn.type = 'button';
+closeBtn.className = 'easepick-close-btn';
+closeBtn.innerHTML = '×';
+closeBtn.setAttribute('aria-label', 'Takvimi kapat');
+Object.assign(closeBtn.style, {
+position: 'absolute',
+top: '0px',
+right: '0px',
+width: '30px',
+height: '30px',
+border: 'none',
+borderRadius: '50%',
+background: '#ffffff',
+color: '#3a66e5',
+fontSize: '24px',
+lineHeight: '28px',
+fontWeight: '400',
+cursor: 'pointer',
+zIndex: '99999',
+boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+display: 'flex',
+alignItems: 'center',
+justifyContent: 'center',
+padding: '0'
+});
+closeBtn.addEventListener('click', function (e) {
+e.preventDefault();
+e.stopPropagation();
+picker.hide();
+});
+container.appendChild(closeBtn);
+});
+picker.on("hide", () => {
+$('.mobile-fixed-price-bar').removeClass('d-none');
+});
+},
+});
+const picker5 = new easepick.create({
+element: "#otel-datepicker",
+css: ["https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css", "/Themes/Malitur/assets/css/ease-custom.css"],
+zIndex: 10,
+lang: "tr-TR",
+format: "DD.MM.YYYY",
+grid: 2,
+calendars: 2,
+inline: false,
+LockPlugin: {
+minDate: new Date(),
+minDays: 0,
+maxDays: 0,
+selectForward: true,
+inseparable: true,
+},
+RangePlugin: {
+tooltipNumber(num) { return num - 1; },
+locale: { one: "gece", other: "gece" },
+},
+plugins: ["RangePlugin", "LockPlugin"],
+setup(picker) {
+picker.on("select", (e) => {
+syncRange(picker, HotelPackageDatepicker);
+let startDate = picker.getStartDate('DD-MM-YYYY');
+let endDate = picker.getEndDate('DD-MM-YYYY');
+var checkindate = safeHumanizeDate(startDate);
+var checkoutdate = safeHumanizeDate(endDate);
+// ID yerine form bazlı input seçimi (Çakışmayı önler)
+$('#hotelDetailForm input[name="CheckinDate"]').val(checkindate);
+$('#hotelDetailForm input[name="CheckoutDate"]').val(checkoutdate);
+$('#HotelPackageForm input[name="CheckinDate"]').val(checkindate);
+$('#HotelPackageForm input[name="CheckoutDate"]').val(checkoutdate);
+});
+picker.on("show", () => {
+const container = picker.ui.container;
+$('.mobile-fixed-price-bar').addClass('d-none');
+if (!container) return;
+if (container.querySelector('.easepick-close-btn')) return;
+// Container relative olmalı ki buton sağ üste konumlansın
+container.style.position = 'relative';
+const closeBtn = document.createElement('button');
+closeBtn.type = 'button';
+closeBtn.className = 'easepick-close-btn';
+closeBtn.innerHTML = '×';
+closeBtn.setAttribute('aria-label', 'Takvimi kapat');
+Object.assign(closeBtn.style, {
+position: 'absolute',
+top: '0px',
+right: '0px',
+width: '30px',
+height: '30px',
+border: 'none',
+borderRadius: '50%',
+background: '#ffffff',
+color: '#3a66e5',
+fontSize: '24px',
+lineHeight: '28px',
+fontWeight: '400',
+cursor: 'pointer',
+zIndex: '99999',
+boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+display: 'flex',
+alignItems: 'center',
+justifyContent: 'center',
+padding: '0'
+});
+closeBtn.addEventListener('click', function (e) {
+e.preventDefault();
+e.stopPropagation();
+picker.hide();
+});
+container.appendChild(closeBtn);
+});
+picker.on("hide", () => {
+$('.mobile-fixed-price-bar').removeClass('d-none');
+});
+},
+});
+let isSyncing = false;
+function syncRange(fromPicker, toPicker) {
+if (isSyncing) return;
+const start = fromPicker.getStartDate();
+const end = fromPicker.getEndDate();
+if (!start || !end) return;
+const tStart = toPicker.getStartDate?.();
+const tEnd = toPicker.getEndDate?.();
+if (tStart && tEnd && tStart.isSame(start, 'day') && tEnd.isSame(end, 'day')) return;
+isSyncing = true;
+toPicker.setDateRange(start.toJSDate(), end.toJSDate());
+isSyncing = false;
+}
+$(document).ready(function () {
+// 1. HotelPackageForm altındaki guestDropdown için dinleyici
+$('#HotelPackageForm').on('show.bs.dropdown', function () {
+$('.mobile-fixed-price-bar').addClass('d-none');
+});
+$('#HotelPackageForm').on('hide.bs.dropdown', function () {
+$('.mobile-fixed-price-bar').removeClass('d-none');
+});
+// 2. hotelDetailForm altındaki guestDropdown için dinleyici
+$('#hotelDetailForm').on('show.bs.dropdown', function () {
+$('.mobile-fixed-price-bar').addClass('d-none');
+});
+$('#hotelDetailForm').on('hide.bs.dropdown', function () {
+$('.mobile-fixed-price-bar').removeClass('d-none');
+});
+});
+ymaps.ready(function () {
+var myMap = new ymaps.Map('hotel_map_div', {
+center: [35.330395,33.420933],
+zoom: 13 }, {
+searchControlProvider: 'yandex#search'
+}),
+// Creating a content layout.
+MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
+'$[properties.iconContent]
+'
+),
+myPlacemark = new ymaps.Placemark(myMap.getCenter(), {
+hintContent: 'Acapulco Resort Convention SPA Hotel',
+balloonContent: 'Acapulco Resort Convention SPA Hotel'
+}, {
+/**
+* Options.
+* You must specify this type of layout.
+*/
+iconLayout: 'default#image',
+// Custom image for the placemark icon.
+iconImageHref: '/Themes/Malitur/assets/pin.png',
+// The size of the placemark.
+iconImageSize: [50, 50],
+/**
+* The offset of the upper left corner of the icon relative
+* to its "tail" (the anchor point).
+*/
+iconImageOffset: [-5, -38]
+});
+myMap.geoObjects
+.add(myPlacemark)
+});
+// Sayfa yüklendiğinde modal instance'ını hazırla
+let loadingModal;
+document.addEventListener('DOMContentLoaded', function () {
+const loadingEl = document.getElementById('loading');
+if (loadingEl) {
+loadingModal = new bootstrap.Modal(loadingEl, {
+backdrop: 'static',
+keyboard: false
+});
+}
+});
+function showLoading() {
+if (loadingModal) {
+loadingModal.show();
+}
+}
+function hideLoading() {
+// Bootstrap animasyon kuyruğuna takılmaması için setTimeout ile güvenli kapatıyoruz
+setTimeout(function() {
+if (loadingModal) {
+loadingModal.hide();
+}
+// Her ihtimale karşı ekranda asılı kalan siyah karartı backdrop'ları temizle
+document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+document.body.style.overflow = '';
+document.body.style.paddingRight = '';
+document.body.classList.remove('modal-open');
+}, 300); // 300ms animasyonların tamamlanması için yeterli bir süredir
+}
+// (Opsiyonel) TL formatı
+const formatTL = (value) =>
+new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" })
+.format(value)
+.replace("₺", "TL"); // tasarımın TL yazıyorsa
+function similarHotelSlide(item) {
+return `
+${item.Name}
+${item.CityName}, ${item.TownName}, ${item.DistrictName}
+${item.board ?? ""}
+${Number(item.AverageScore).toFixed(1)}
+${item.AverageScore ?? ""}
+`;
+}
+async function loadSimilarHotels() {
+const swiperEl = document.getElementById("similarHotelsSwiper");
+const wrapper = document.getElementById("similarHotelsWrapper");
+const hotelId = swiperEl?.dataset?.hotelId;
+if (!swiperEl || !wrapper || !hotelId) return;
+// Loading (basit)
+wrapper.innerHTML = `Yükleniyor...
+`;
+try {
+const res = await fetch(`/Hotels/SearchHotel/GetSimilar?Region=${hotelId}`, {
+headers: { "Accept": "application/json" }
+});
+if (!res.ok) throw new Error("API error: " + res.status);
+const json = await res.json();
+const list = json.results ?? [];
+if (!list.length) {
+wrapper.innerHTML = `Benzer otel bulunamadı.
+`;
+return;
+}
+wrapper.innerHTML = list.map(similarHotelSlide).join("");
+// Swiper güncelle / init
+// Eğer swiper zaten init edildiyse:
+if (swiperEl.swiper) {
+swiperEl.swiper.update();
+} else {
+// Swiper init (projendeki mevcut ayarlarına göre düzenle)
+new Swiper("#similarHotelsSwiper", {
+slidesPerView: 4,
+spaceBetween: 16,
+navigation: {
+nextEl: "#similarHotelsSwiper .swiper-button-next",
+prevEl: "#similarHotelsSwiper .swiper-button-prev",
+},
+breakpoints: {
+0: { slidesPerView: 1.2 },
+576: { slidesPerView: 2.2 },
+992: { slidesPerView: 4 }
+}
+});
+}
+} catch (err) {
+console.error(err);
+wrapper.innerHTML = `Benzer oteller yüklenemedi.
+`;
+}
+}
+document.addEventListener("DOMContentLoaded", loadSimilarHotels);
+$(document).ready(function () {
+$("#tumu-tab").on("click", function () {
+$('#Package-cat-2').addClass('show').addClass('active');
+$('#Hotel-cat-1').removeClass('show').removeClass('active');
+});
+$("#sadece-otel-tab").on("click", function () {
+$('#Hotel-cat-1').addClass('show').addClass('active');
+$('#Package-cat-2').removeClass('show').removeClass('active');
+});
+});
+document.querySelector(".btn-comment").addEventListener("click", (e) => {
+e.preventDefault();
+$("#nav-tab button#detail-6-tab").tab("show");
+setTimeout(() => {
+$("#nav-tabContent #detail-6")[0].scrollIntoView({
+behavior: "smooth",
+block: "start",
+inline: "start",
+});
+}, 200);
+});
+document.querySelector("#show-room-btn").addEventListener("click", (e) => {
+e.preventDefault();
+$("#nav-tab button#detail-1-tab").tab("show");
+setTimeout(() => {
+const targetElement = document.querySelector("#nav-tabContent #detail-1");
+if (targetElement) {
+// Elementin sayfa üzerindeki mutlak Y koordinatını alıyoruz
+const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+// İstediğiniz 50px ofset değerini düşüyoruz
+const offsetPosition = elementPosition - 50;
+window.scrollTo({
+top: offsetPosition,
+behavior: "smooth"
+});
+}
+}, 100);
+});
+$(".coupon-title").on("click", function () {
+$(".coupon-box").toggleClass("active");
+});
+var cpnBtn = document.getElementById("cpnBtn");
+var cpnCode = document.getElementById("cpnCode");
+cpnBtn.onclick = function () {
+console.time("time1");
+var temp = $("");
+$("body").append(temp);
+temp.val($("#cpnCode").text()).select();
+document.execCommand("copy");
+temp.remove();
+console.timeEnd("time1");
+$(".coupon-btn").addClass("active");
+cpnBtn.innerHTML = "Kopyalandı";
+setTimeout(function () {
+$(".coupon-btn").removeClass("active");
+cpnBtn.innerHTML = "Kopyala";
+}, 3000);
+};
+document.querySelector("#show-all-features-btn")?.addEventListener("click", (e) => {
+e.preventDefault();
+// 1. Tesis Bilgileri tab'ını aktifleştir/aç
+$("#nav-tab button#detail-2-tab").tab("show");
+// 2. Tab içeriğine yumuşak bir şekilde kaydır (Scroll)
+setTimeout(() => {
+const targetElement = document.querySelector("#nav-tabContent #detail-2");
+if (targetElement) {
+const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+const offsetPosition = elementPosition - 80; // Sayfa tepesinden bırakılacak boşluk (sticky menu için)
+window.scrollTo({
+top: offsetPosition,
+behavior: "smooth"
+});
+}
+}, 150);
+});
+// Sayfalama durumunu tutan global state
+let reviewPageState = {
+currentPage: 1,
+hotelId: "57",
+isLoading: false
+};
+async function loadHotelReviews(isLoadMore = false) {
+const commentListContainer = document.querySelector(".comment-list");
+const loadMoreContainer = document.querySelector(".load-more-container");
+const loadMoreBtn = document.getElementById("btn-load-more");
+if (!commentListContainer || !reviewPageState.hotelId || reviewPageState.hotelId == 0) return;
+if (reviewPageState.isLoading) return;
+reviewPageState.isLoading = false;
+// İlk yüklemede loading animasyonu basıyoruz
+if (!isLoadMore) {
+commentListContainer.innerHTML = `Yorumlar yükleniyor...
+`;
+loadMoreContainer.style.display = "none";
+} else {
+loadMoreBtn.disabled = true;
+loadMoreBtn.innerText = "Yükleniyor...";
+}
+try {
+const res = await fetch(`/Hotels/Reviews/${reviewPageState.hotelId}?page=${reviewPageState.currentPage}`, {
+headers: { "Accept": "application/json" }
+});
+if (!res.ok) throw new Error("Yorumlar yüklenirken hata oluştu: " + res.status);
+const json = await res.json();
+const list = json.reviews ?? [];
+// İlk sayfa yüklenirken iskele/loading elementini temizle
+if (!isLoadMore) {
+const skeleton = document.getElementById("review-skeleton");
+if (skeleton) skeleton.remove();
+}
+if (!list.length && !isLoadMore) {
+commentListContainer.innerHTML = `Bu otel için henüz yorum yapılmamış.
+`;
+return;
+}
+// Gelen verileri haritalandırıp HTML üretiyoruz
+const htmlContent = list.map(review => {
+let ratingText = 'Başarılı';
+if (review.Rating >= 5) ratingText = 'Mükemmel';
+else if (review.Rating >= 4) ratingText = 'Çok İyi';
+else if (review.Rating >= 3) ratingText = 'İyi';
+return `
+${review.FullNameMasked}
+${review.FormattedDate}
+${Number(review.Rating).toFixed(1)} ${ratingText}
+${review.Title ? `${review.Title}
+` : ''}
+${review.Comment}
+Genel Puan ${Number(review.Rating).toFixed(1)}
+`;
+}).join("");
+// Eğer "Daha Fazla" denmişse üzerine ekle, yoksa sıfırdan bas
+if (isLoadMore) {
+commentListContainer.insertAdjacentHTML('beforeend', htmlContent);
+} else {
+commentListContainer.innerHTML = htmlContent;
+}
+// Sayfalamanın devamı var mı kontrolü
+if (json.has_more) {
+loadMoreContainer.style.display = "block";
+loadMoreBtn.disabled = false;
+loadMoreBtn.innerText = "Daha Fazla Yorum Göster";
+} else {
+loadMoreContainer.style.display = "none";
+}
+} catch (err) {
+console.error(err);
+if (!isLoadMore) {
+commentListContainer.innerHTML = `Yorumlar yüklenirken bir hata oluştu.
+`;
+} else {
+alert("Yeni yorumlar yüklenirken bir sorun oluştu.");
+loadMoreBtn.disabled = false;
+loadMoreBtn.innerText = "Daha Fazla Yorum Göster";
+}
+} finally {
+reviewPageState.isLoading = false;
+}
+}
+// Tetikleyicileri (Event Listeners) bağla
+document.addEventListener("DOMContentLoaded", () => {
+// İlk yükleme
+loadHotelReviews(false);
+// Daha fazla yükle butonu tetikleyicisi
+const loadMoreBtn = document.getElementById("btn-load-more");
+if (loadMoreBtn) {
+loadMoreBtn.addEventListener("click", () => {
+reviewPageState.currentPage += 1;
+loadHotelReviews(true);
+});
+}
+});
+document.getElementById('addCommentForm')?.addEventListener('submit', async function (e) {
+e.preventDefault();
+const form = this;
+// HTML5 Doğrulama kontrolü
+if (!form.checkValidity()) {
+form.classList.add('was-validated');
+return;
+}
+// Mevcut global loading modalını açıyoruz
+// if (typeof showLoading === 'function') showLoading();
+// Form verilerini topluyoruz
+const formData = new FormData(form);
+try {
+// İleride yazacağın veya tanımladığın yorum kaydetme route adresi (Örn: /Hotels/SaveReview)
+const res = await fetch('/Hotels/SaveReview', {
+method: 'POST',
+body: formData,
+headers: { 'X-Requested-With': 'XMLHttpRequest' }
+});
+if (!res.ok) throw new Error("Sunucu hatası: " + res.status);
+const json = await res.json();
+if (json.status) {
+// Modalı kapat
+const modalEl = document.getElementById('addCommentModal');
+const modalInstance = bootstrap.Modal.getInstance(modalEl);
+if (modalInstance) modalInstance.hide();
+// Formu sıfırla
+form.reset();
+form.classList.remove('was-validated');
+// Başarılı uyarısı (İsteğe bağlı alert yerine projendeki toast yapısını koyabilirsin)
+alert(json.message ?? 'Yorumunuz başarıyla alındı. Onaylandıktan sonra listelenecektir.');
+// Yorum listesini dinamik olarak yeniden güncelle
+if (typeof loadHotelReviews === 'function') {
+loadHotelReviews();
+}
+} else {
+alert(json.message ?? 'Yorum kaydedilirken bir hata oluştu.');
+}
+} catch (err) {
+console.error(err);
+alert('Sistemsel bir hata oluştu, lütfen daha sonra tekrar deneyiniz.');
+} finally {
+// Global loading modalını kapatıyoruz
+if (typeof hideLoading === 'function') hideLoading();
+}
+});
+// Yorum sayısına veya "Mükemmel" alanındaki linke tıklanınca Yorumlar tabını aç ve kaydır
+document.querySelector("#trigger-comments-tab")?.addEventListener("click", (e) => {
+e.preventDefault();
+// 1. Bootstrap tab'ını aktifleştir
+$("#nav-tab button#detail-6-tab").tab("show");
+// 2. Sekme içeriğinin olduğu panele yumuşak bir şekilde scroll yap
+setTimeout(() => {
+const targetElement = document.querySelector("#Comments-Tabs");
+if (targetElement) {
+const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+const offsetPosition = elementPosition - 80; // Sticky menünün altında kalmaması için ofset
+window.scrollTo({
+top: offsetPosition,
+behavior: "smooth"
+});
+}
+}, 150);
+});
+document.addEventListener("DOMContentLoaded", function () {
+let lazyImages = document.querySelectorAll("img.lazy-load");
+let observer = new IntersectionObserver((entries, observer) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) {
+let img = entry.target;
+img.src = img.getAttribute("data-src");
+img.classList.remove("lazy-load");
+observer.unobserve(img);
+}
+});
+});
+lazyImages.forEach(img => observer.observe(img));
+});
+(function(){
+const SITE_KEY = 'fa126a60b1023754b6eb6a43e472ca1b'; // analytics_sites.site_key
+const ENDPOINT = 'https://tracker.malitur.com.tr/v1/collect'; // HTTPS şart
+function uuidv4(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+const cookieName='va_vid';
+function getCookie(n){ return (document.cookie.match('(^|;)\s*'+n+'\s*=\s*([^;]+)')||0)[2]; }
+function setCookie(n,v,days){ const d=new Date(); d.setTime(d.getTime()+days*864e5); document.cookie=n+'='+v+';path=/;expires='+d.toUTCString()+';SameSite=Lax'; }
+let visitorId=getCookie(cookieName); if(!visitorId){ visitorId=uuidv4(); setCookie(cookieName,visitorId,365*2); }
+const body = JSON.stringify({
+siteKey: "fa126a60b1023754b6eb6a43e472ca1b", // API key koymayın
+url: location.href,
+path: location.pathname + location.search,
+title: document.title,
+referrer: document.referrer || null,
+event: 'pageview',
+screen: (screen.width+'x'+screen.height),
+lang: navigator.language || null,
+visitorId,
+utm_source: new URLSearchParams(location.search).get('utm_source'),
+utm_medium: new URLSearchParams(location.search).get('utm_medium'),
+utm_campaign: new URLSearchParams(location.search).get('utm_campaign')
+});
+let queued=false;
+if (navigator.sendBeacon) {
+try { queued = navigator.sendBeacon(ENDPOINT, new Blob([body], {type:'application/json'})); } catch(e){ queued=false; }
+}
+if(!queued){
+fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true,credentials:'omit'}).catch(()=>{});
+}
+})();

@@ -1,0 +1,303 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Services\TourImport\TourUrlImporter;
+use Carbon\Carbon;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+
+/**
+ * Deterministik fiyat/tarih parser'ının GERÇEK malitur.com sayfalarına karşı
+ * doğruluk testleri. Fixture'lar tests/Fixtures/import/page_N.txt (cleanHtml
+ * çıktısıyla aynı format); beklenen değerler sayfaların elle doğrulanmış
+ * ground-truth'undan alınmıştır (10-URL doğrulama denetimi, 2026-07).
+ */
+class TourImportParserTest extends TestCase
+{
+    private TourUrlImporter $importer;
+
+    private ReflectionClass $ref;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Fixture'lardaki tarihler 2026 yazı/sonbaharı — "geçmiş tarih" filtresi
+        // deterministik çalışsın diye sabit bugün.
+        Carbon::setTestNow(Carbon::parse('2026-07-03'));
+        $this->importer = new TourUrlImporter;
+        $this->ref = new ReflectionClass($this->importer);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
+    private function fixture(int $n): string
+    {
+        return (string) file_get_contents(__DIR__."/../Fixtures/import/page_{$n}.txt");
+    }
+
+    private function invoke(string $method, array $args = []): mixed
+    {
+        $m = $this->ref->getMethod($method);
+        $m->setAccessible(true);
+
+        return $m->invokeArgs($this->importer, $args);
+    }
+
+    /** @return array{blocks: array, currency: ?string} */
+    private function parseBlocks(int $n): array
+    {
+        return $this->invoke('deterministicPricingBlocks', [$this->fixture($n)]);
+    }
+
+    /** Bloklardaki tüm paketleri düz listeye açar. */
+    private function allPackages(array $blocks): array
+    {
+        $out = [];
+        foreach ($blocks as $b) {
+            foreach ($b['packages'] as $p) {
+                $out[] = $p;
+            }
+        }
+
+        return $out;
+    }
+
+    // ─── B2: "Kabul Edilemez" hayalet paketleri ────────────────────────────────
+
+    public function test_no_ghost_packages_on_any_fixture(): void
+    {
+        foreach ([1, 2, 3, 6, 7, 8, 9, 10] as $n) {
+            $blocks = $this->parseBlocks($n)['blocks'];
+            foreach ($this->allPackages($blocks) as $pkg) {
+                $this->assertStringNotContainsStringIgnoringCase(
+                    'kabul edilemez',
+                    $pkg['hotel'],
+                    "page_{$n}: 'Kabul Edilemez' paket adı olarak sızmış"
+                );
+            }
+        }
+    }
+
+    // ─── B1: İndirimli sayfalarda old/new eşlemesi ─────────────────────────────
+
+    public function test_sivas_discounted_prices_old_new_mapping(): void
+    {
+        // page_2: %50 indirim — çift kişi 49.998 → 24.999, tek kişi 58.998 → 29.499
+        $result = $this->parseBlocks(2);
+        $blocks = $result['blocks'];
+        $this->assertNotEmpty($blocks, 'Sivas blokları boş dönmemeli');
+        $this->assertSame('TRY', $result['currency']);
+
+        $pkg = $this->allPackages($blocks)[0];
+        $this->assertSame(49998.0, $pkg['prices']['double_pp']['old'], 'double eski fiyat');
+        $this->assertSame(24999.0, $pkg['prices']['double_pp']['new'], 'double indirimli fiyat');
+        $this->assertSame(58998.0, $pkg['prices']['single']['old'], 'single eski fiyat');
+        $this->assertSame(29499.0, $pkg['prices']['single']['new'], 'single indirimli fiyat');
+
+        // Çocuk fiyatları DOĞRU pakette ve indirimli değerleriyle olmalı
+        $this->assertSame(20499.0, $pkg['prices']['child_3_5']['new'], '3-5,99 yaş indirimli');
+        $this->assertSame(22749.0, $pkg['prices']['child_7_11']['new'], '7-11,99 yaş indirimli');
+
+        // Başlangıç fiyatı = en düşük İNDİRİMLİ yetişkin fiyat
+        $this->assertSame(24999.0, $this->invoke('minAdultPriceFromBlocks', [$blocks]));
+
+        // 18 kalkış tarihi tek blokta
+        $allDates = array_merge(...array_map(fn ($b) => $b['dates'], $blocks));
+        $this->assertCount(18, array_unique($allDates), 'Sivas: 18 kalkış tarihi');
+    }
+
+    public function test_salda_discounted_prices(): void
+    {
+        // page_9: %50 indirim — en düşük çift kişi 9.500 → 4.750
+        $blocks = $this->parseBlocks(9)['blocks'];
+        $this->assertNotEmpty($blocks);
+
+        $found = false;
+        foreach ($this->allPackages($blocks) as $pkg) {
+            if (($pkg['prices']['double_pp']['old'] ?? null) === 9500.0) {
+                $this->assertSame(4750.0, $pkg['prices']['double_pp']['new'], 'Salda 9500→4750');
+                $found = true;
+            }
+        }
+        $this->assertTrue($found, 'Salda: 9500 eski fiyatlı paket bulunmalı');
+        $this->assertSame(4750.0, $this->invoke('minAdultPriceFromBlocks', [$blocks]));
+
+        // Otel adları gerçek adlar olmalı
+        $hotels = implode(' | ', array_column($this->allPackages($blocks), 'hotel'));
+        $this->assertStringContainsString('Marlen', $hotels);
+        $this->assertStringContainsString('Anemon', $hotels);
+
+        // 19 tarih
+        $allDates = array_unique(array_merge(...array_map(fn ($b) => $b['dates'], $blocks)));
+        $this->assertCount(19, $allDates, 'Salda: 19 kalkış tarihi');
+    }
+
+    public function test_ege_koyleri_discounted_prices(): void
+    {
+        // page_10: blok1 16.498→8.249, blok2 14.998→7.499
+        $blocks = $this->parseBlocks(10)['blocks'];
+        $this->assertNotEmpty($blocks);
+
+        $pairs = [];
+        foreach ($this->allPackages($blocks) as $pkg) {
+            $d = $pkg['prices']['double_pp'];
+            $pairs[($d['old'] ?? 0).'→'.($d['new'] ?? 0)] = true;
+        }
+        $this->assertArrayHasKey('16498→8249', $pairs, 'Ege: yaz dönemi indirim çifti');
+        $this->assertArrayHasKey('14998→7499', $pairs, 'Ege: ekim dönemi indirim çifti');
+        $this->assertSame(7499.0, $this->invoke('minAdultPriceFromBlocks', [$blocks]));
+    }
+
+    // ─── İndirimsiz sayfalar: regresyon (old=null, new=tek fiyat) ─────────────
+
+    public function test_italya_blocks_regression(): void
+    {
+        // page_1: indirim yok — 6 blok, LIGHT PAKET, double 899/849/799/749/699/599
+        $result = $this->parseBlocks(1);
+        $blocks = $result['blocks'];
+        $this->assertCount(6, $blocks, 'İtalya: 6 fiyat bloğu');
+        $this->assertSame('EUR', $result['currency']);
+
+        $doubleNews = [];
+        foreach ($this->allPackages($blocks) as $pkg) {
+            $this->assertSame('LIGHT PAKET', $pkg['hotel']);
+            $this->assertNull($pkg['prices']['double_pp']['old'], 'İndirimsiz sayfada old=null kalmalı');
+            $doubleNews[] = $pkg['prices']['double_pp']['new'];
+        }
+        sort($doubleNews);
+        $this->assertSame([599.0, 699.0, 749.0, 799.0, 849.0, 899.0], $doubleNews);
+
+        // B4: "2 - 10,99 Yaş" bandı child_3_5 VE child_7_11'i doldurmalı
+        $pkg = $this->allPackages($blocks)[0];
+        $this->assertNotNull($pkg['prices']['child_3_5']['new'], 'geniş bant child_3_5');
+        $this->assertNotNull($pkg['prices']['child_7_11']['new'], 'geniş bant child_7_11');
+        $this->assertSame(
+            $pkg['prices']['child_3_5']['new'],
+            $pkg['prices']['child_7_11']['new'],
+            'aynı bandın fiyatı iki kovada aynı olmalı'
+        );
+
+        $this->assertSame(599.0, $this->invoke('minAdultPriceFromBlocks', [$blocks]));
+    }
+
+    public function test_japonya_blocks_regression(): void
+    {
+        // page_6: 9 blok, 50 fiyat hücresi — en karmaşık indirimsiz sayfa
+        $blocks = $this->parseBlocks(6)['blocks'];
+        $this->assertCount(9, $blocks, 'Japonya: 9 fiyat bloğu');
+        $this->assertSame(2599.0, $this->invoke('minAdultPriceFromBlocks', [$blocks]));
+
+        // İlk blokta (13-07) iki paket olmalı
+        $first = null;
+        foreach ($blocks as $b) {
+            if (in_array('2026-07-13', $b['dates'], true)) {
+                $first = $b;
+                break;
+            }
+        }
+        $this->assertNotNull($first, '13-07 bloğu bulunmalı');
+        $this->assertCount(2, $first['packages'], '13-07: 2 paket (3* + 3-4* merkezi)');
+    }
+
+    public function test_cruise_cabin_names(): void
+    {
+        // page_3: kabin adları gerçek adlar olmalı (önceki bug: 7/10 "Kabul Edilemez")
+        $blocks = $this->parseBlocks(3)['blocks'];
+        $this->assertNotEmpty($blocks);
+
+        $hotels = array_unique(array_column($this->allPackages($blocks), 'hotel'));
+        $joined = implode(' | ', $hotels);
+        $this->assertStringContainsString('İç Kabin', $joined);
+        $this->assertStringContainsString('Dış Kabin', $joined);
+        $this->assertStringContainsString('Okyanus', $joined);
+
+        // B5: başlangıç fiyatı ilave yatak (493.28) DEĞİL, en düşük double (767.43)
+        $this->assertSame(767.43, $this->invoke('minAdultPriceFromBlocks', [$blocks]));
+    }
+
+    // ─── B3: Fantom tarihler (kampanya + etkinlik) ────────────────────────────
+
+    public function test_campaign_date_not_harvested(): void
+    {
+        // Kupon metnindeki "31-12-2026" kalkış tarihi DEĞİL — 1, 6, 7, 8. sayfalarda var
+        foreach ([1, 6, 7, 8] as $n) {
+            $dates = $this->invoke('harvestDates', [$this->fixture($n)]);
+            $this->assertNotContains('2026-12-31', $dates, "page_{$n}: kampanya bitiş tarihi sızmamalı");
+        }
+    }
+
+    public function test_real_dates_still_harvested(): void
+    {
+        // Filtre gerçek kalkış tarihlerini YEMEMELİ
+        $dates1 = $this->invoke('harvestDates', [$this->fixture(1)]);
+        foreach (['2026-07-06', '2026-08-17', '2026-10-26'] as $d) {
+            $this->assertContains($d, $dates1, "İtalya gerçek tarihi {$d} korunmalı");
+        }
+
+        $dates7 = $this->invoke('harvestDates', [$this->fixture(7)]);
+        $this->assertContains('2026-12-26', $dates7, 'İskandinavya 26-12 gerçek tarihi korunmalı');
+    }
+
+    public function test_hotel_page_detected_and_concert_dates_suppressed(): void
+    {
+        // page_5: otel sayfası — tespit edilmeli
+        $this->assertTrue(
+            $this->invoke('looksLikeHotelPage', [$this->fixture(5)]),
+            'Acapulco otel sayfası tespit edilmeli'
+        );
+
+        // Tur sayfaları otel sanılmamalı
+        foreach ([1, 2, 6, 9] as $n) {
+            $this->assertFalse(
+                $this->invoke('looksLikeHotelPage', [$this->fixture($n)]),
+                "page_{$n} tur sayfası otel sanılmamalı"
+            );
+        }
+
+        // Konser tarihleri harvest'ten de elenmiş olmalı (etkinlik bağlamı)
+        $dates = $this->invoke('harvestDates', [$this->fixture(5)]);
+        $this->assertNotContains('2026-12-31', $dates, 'Derya Uluğ konser tarihi elenmiş olmalı');
+    }
+
+    // ─── B4: Geniş yaş bandı eşleme ───────────────────────────────────────────
+
+    public function test_age_band_bucket_mapping(): void
+    {
+        $cases = [
+            ['0 - 1,99 yas', ['child_0_2']],
+            ['3 - 5,99 yas', ['child_3_5']],
+            ['7 - 11,99 yas', ['child_7_11']],
+            ['3 - 11,99 yas', ['child_3_5', 'child_7_11']],
+            ['0 - 11,99 yas', ['child_0_2', 'child_3_5', 'child_7_11']],
+            ['2 - 11,99 yas', ['child_3_5', 'child_7_11']],
+            ['2 - 10,99 yas', ['child_3_5', 'child_7_11']],
+            ['iki kisilik oda kisi basi', ['double_pp']],
+            ['tek kisilik oda', ['single']],
+            ['ilave yatak', ['extra_bed']],
+        ];
+        foreach ($cases as [$label, $expected]) {
+            $this->assertSame(
+                $expected,
+                $this->invoke('roomTypesFromLabel', [$label]),
+                "etiket: {$label}"
+            );
+        }
+    }
+
+    // ─── B8: LLM fiyatı × matris çapraz doğrulama (sahte akışla) ──────────────
+
+    public function test_unavailable_cell_detection(): void
+    {
+        foreach (['Kabul Edilemez', 'kabul edilemez', 'DOLU', '-', 'Sold Out'] as $cell) {
+            $this->assertTrue($this->invoke('isUnavailableCell', [$cell]), "'{$cell}' hücre değeri sayılmalı");
+        }
+        foreach (['LIGHT PAKET', '4* Anemon Otelleri', 'İç Kabin', '899,00 €'] as $name) {
+            $this->assertFalse($this->invoke('isUnavailableCell', [$name]), "'{$name}' hücre değeri sayılmamalı");
+        }
+    }
+}

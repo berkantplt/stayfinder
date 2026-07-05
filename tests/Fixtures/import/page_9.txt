@@ -1,0 +1,2669 @@
+Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı
+window.dataLayer = window.dataLayer || [];
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5B8MMVX7');
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '442978066294627');
+fbq('track', 'PageView');
+Yurt İçi Turlar
+Yurt Dışı Turlar
+Cruise Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Kampanyalar
+Hızlı Erişim
+Rezervasyon Sorgula
+Blog
+Grup Talepleri
+Okul Turları
+Sosyal Medya
+Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Tüm Kültür Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Tüm Haftasonu Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Tüm Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Tüm İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Tüm Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Tüm Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Tüm Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Tüm Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Tüm İzmir Çıkışlı Yurt Dışı Turlar
+Cruise Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Tüm Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Tüm Nehir Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+Kampanyalar
+Üyelik
+Kampanyalardan haberdar olmak ve rezervasyonlarına hızlıca ulaşmak için hemen üye ol!
+Giriş Yap
+Üye Ol
+0850 303 1363
+Sizi arayalım
+Grup Talepleri
+Okul Turları
+Türkçe
+English
+Üye girişi
+Kayıt ol
+Yardım
+Satış Noktaları
+Yurt İçi Turlar
+Kültür Turları
+Haftasonu Turları
+Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Cruise Turları
+Gemi Turları
+Nehir Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Kampanyalar
+@media (max-width: 767.98px) {
+.breadcrumb {
+display: flex !important;
+flex-wrap: nowrap !important;
+overflow-x: auto !important;
+white-space: nowrap !important;
+scroll-behavior: smooth;
+-webkit-overflow-scrolling: touch; /* iOS için pürüzsüz kaydırma */
+padding-bottom: 5px; /* Kaydırma çubuğu metne çok yapışmasın diye */
+}
+.breadcrumb::-webkit-scrollbar {
+display: none; /* İsteğe bağlı: Mobilde alt yatay kaydırma çubuğunu gizler */
+}
+.breadcrumb-item {
+display: inline-block !important;
+float: none !important;
+}
+}
+Anasayfa
+Yurtiçi Tur
+Ege Turları
+Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı
+.heart-red { color: red !important; }
+Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı (Tur Kodu: 17)
+Facebook
+Twitter
+Sizi Arayalım
+İstanbul Hareketli
+2 gece 3 gün (1 gece konaklamalı)
+Otobüs ile gidiş dönüş
+%50 indirim
+9500.00 TRY
+4750.00 TRY
+'den başlayan fiyatlar
+Rezervasyon yap
+.anchor { scroll-margin-top: 80px; }
+TUR PROGRAMI
+REZERVASYON YAP
+GENEL BİLGİLER
+TARİHLER VE FİYATLAR
+KAMPANYALAR
+Ücrete Dahil Olan Hizmetler
+Ücrete Dahil Olmayan Hizmetler
+Tur Hareket Noktaları
+Ekstra Turlar ve Aktiviteler
+Rehberimizden Notlar
+Türkiye'nin Maldivleri Salda Gölü'nü Malitur ile #HemenKeşfet
+Her Cuma Kesin Hareketli
+.itinarylistcontent p{
+margin-top:15px !important;
+}
+Gün
+Gece Yolculuğu
+21:00 Yenibosna Airport Avm Otoparkı
+21:30 Mecidiyeköy Torun Center Önü
+22:00 Kadıköy Evlendirme Dairesi Otoparkı Önü
+22:10 Bostancı Köprüsü Altı
+22:20 Kartal Köprüsü Altı
+22:30 Pendik Köprüsü Altı
+22:40 Çayırova Mc Donald’s
+22:50 Gebze Center Önü
+Belirlenen noktalardan siz değerli misafirlerimizi aldıktan sonra Malitur ile Salda Gölü Pamukkale Çeşme Alaçatı Turu için gece yolculuğuna başlıyoruz.
+Gün
+Salda Gölü – Laodikya Antik Kenti – Hierapolis Antik Kenti – Pamukkale Travertenleri - Denizli
+Gece yolculuğumuzun ardından Malitur ile Salda Gölü Pamukkale Çeşme Alaçatı Turu için sabah saatlerinde dinlenme tesisinde alacağımız ekstra kahvaltı molamız sonrası turumuzun ilk noktası olan Türkiye’nin 3. En derin gölü Salda Gölü’ne varıyoruz. Türkiye’nin Maldivleri olarak bilinen ve ‘’Mars’ı merak eden Salda’ya gitsin’’ denilen, Mars ile benzer kayaç özelliklerini taşıyan Salda Gölü bizi adeta büyüleyecektir. Bembeyaz kumları ve turkuaz rengindeki suyu ile bizi kendisine hayran bırakan Salda Gölü’nde eşsiz fotoğraflar çekebilmek ve o atmosferin tadını doyasıya yaşayabilmek için rehberimizin belirleyeceği zamana kadar serbest zaman veriyoruz. Bu serbest zaman sırasında dileyen misafirlerimiz bu güzel atmosferi ölümsüzleştirmek adına fotoğraf çekebilir, dileyen misafirlerimiz ise bu zaman sırasında Salda Gölü’nde yüzebilir. Serbest zamanımızın bitimiyle otobüsümüze geçerek Pamukkale'ye doğru hareket ediyoruz. Pamukkale'de ilk gezi noktamız Laodikya Antik Kenti olacaktır. M.Ö. 3 yy’ın ortalarında Seleukos Kralı II. Antiokhos tarafından karısı Laodike adına kurulmuş Antik Kent’te kazı çalışmaları devam ettiği için izin verilen alanlarda gezimizi gerçekleştiriyoruz. Gezimizin ardından öğle yemeğimizi alacağımız restauranta geçiyoruz. Öğle yemeğimizin ardından Unesco Dünya Kültürel ve Doğa Miras Listesi’nde yer alan Hierapolis Antik Kenti’ne geçiyoruz. Hierapolis Antik Kenti 2 bin yıl önce Pamukkale Travertenlerinin güzelliğine ve çekiciliğine karşı koyamayan Bergama Krallığı tarafından Travertenlerin hemen yanına inşaa edilmiştir. Hierapolis Antik Kenti gezimize Anadolu’nun en büyük Nekropü ile Şehrin surları dışında kalan Hamam Binası ile başlıyoruz. Daha sonra şehrin ana caddesi Domityanus Kapısı ve Latin Binası’nı gezerken fotoğraflıyoruz. Daha sonra Anadolu’nun en iyi şekilde korunarak günümüze gelmiş Hierapolis Antik Tiyatrosu’na çıkarak rehberimizden Antik Tiyatro ile ilgili bilgiler alıyoruz. Hierapolis Antik Tiyatro aynı zaman bizi muhteşem Antik Kent ve Denizli manzarası ile büyüleyecektir. Fotoğraflarımızı çektikten sonra Apollon Tapnağı ve Cehennem’in giriş kapısı olarak bilinen Plutonium yani cin Aralığı’nı rehberimizden dinleyip geziyoruz. Ardından Sütunlu Cadde üzerinde yapacağımız yürüyüş sonrasında Dünyada benzeri sadece İtalya’da Travertino isimli kasabada görülebilen, bembeyaz dokusuyla 2 bin yıl önce Bergama Krallığı’nı hayran bıraktığı gibi bizi de kendisine hayran bırakan Pamukkale Travertenlerine ulaşıyoruz. Travertenlerde yürüyüşe izin verilen terasta gezerken Denizli Ovası’na hakim manzarasıyla çektiğimiz fotoğraflar bizlere unutulmaz anılar olarak kalacaktır. Burada ki zamanımızı tamamladıktan sonra Denizli'nin meşhur tekstil atölyelerinde kısa bir alışveriş molası veriyoruz. Buradaki alışveriş molamızın ardından gezimizin bitimiyle otelimize doru hareket ediyoruz. Akşam yemeği ve konaklama otelimizde.
+Sabah Kahvaltısı : Yol güzergahında dinlenme tesisinde alınacaktır. (Ekstra)
+Öğle Yemeği : Pamukkale’de menü olarak alınacaktır. (Ekstra)
+Akşam Yemeği : Otelde alınacaktır. Tur ücretine dahildir.
+Konaklama : Anemon Otel Denizli , Marlen Otel Denizli , Çimenoğlu Otel Denizli,
+Gün
+Çeşme – Çeşme Kalesi – Kervansaray - Alaçatı – Ilıca – Yüzme Molası – İstanbul
+Malitur ile Salda Gölü Pamukkale Çeşme Alaçatı Tur son gününde otelimizde alacağımız kahvaltı sonrası otobüsümüze binerek İzmir Çeşme’ye doğru hareket ediyoruz. Çeşme’de ilk durağımız Batı Anadolu’daki en önemli kalelerden biri olan, Ceneviz ve Osmanlı Mimari üslubunu bir arada görebileceğimiz Çeşme Kalesi olacaktır. Rehberimizden Çeşme Kalesi’ne dair bilgiler aldıktan sonra kaleyi gezmeye başlıyoruz. Kale gezimizi tamamladıktan sora Kanuni Sulta Süleyman tarafından 1528 yılında yaptırılan Kervansaray’ı panoramik olarak görüyoruz. Ardından Çeşme’de serbest zaman veriyoruz. Bu serbest zaman sırasında Çeşme’ye özgü dondurmalardan tatmanızı tavsiye ederiz. Serbest zamanımızın ardından otobüsümüze binerek bir sonraki durağımız olan Alaçatı’ya hareket ediyoruz. Dar ve Arnavut kaldırım taşları üzerine kurulu, Rum mimarisi ile Osmanlı mimarisinin birleştiği renkli sokaklara sahip Alaçatı bizleri kendisine hayran bırakacaktır. Rehberimizden Alaçatı hakkında kısa bilgiler aldıktan sonra Alaçatı sokaklarında gezmeye başlamadan önce meşhur kumru yiyeceğimiz öğle yemeği molamızı veriyoruz. Öğle yemeğimizin ardından rehberimizin belirleyeceği saate kadar serbest zaman veriyoruz. Serbest zaman sırasında Alaçatı sokaklarında Tarihi Taş Evleri önünde renkli fotoğraflar çekerek turu unutulmaz hale getirebilirsiniz. Serbest zamanın bitimiyle tatlı yorgunluğumuzu atabilmek için Ilıca Plajı’na geçiyoruz. Ülkemizin en önemli Mavi Bayrak taşıyan plajlarından biri olan Ilıca Plajı Masmavi denizi ve Ilıca sıcak su kaynaklarına sahip olmasıyla Dünyanın nadir yerlerinden biridir. Burada 1-1,5 saat kadar yüzme molası veriyoruz. Yüzmek istemeyen misafirlerimiz plaj boyunca yürüyüş yapabilir, kafelerde denizin muhteşem manzarasına karşı kahvesini yudumlayabilir. Ilıca Plajı’nda verdiğimiz zamanın bitmesinin ardından Malitur ile Salda Gölü Pamukkale Çeşme Alaçatı Turumuzun sonuna geliyor ve dönüş yolculuğumuza başlıyoruz. Siz değerli misafirlerimizi aldığımız noktalara bırakarak bir sonraki Malitur organizasyonunda buluşmak üzere vedalaşıyoruz.
+Sabah Kahvaltısı : Otelde alınacaktır. Tur ücretine dahildir.
+Öğle Yemeği : Alaçatı’da menü olarak alınacaktır. (Ekstra)
+Akşam Yemeği : Yol güzergahında dinlenme tesisinde alınacaktır. (Ekstra)
+Konaklama : Bu gece otel konaklaması yoktur.
+devamını göster
+Tur programını indir
+Tur Programını Mail Gönder
+Rehberimizden Notlar
+Tur Hareket Noktası
+21:00 Yenibosna Airport Avm Otoparkı
+21:30 Mecidiyeköy Torun Center Önü
+22:00 Kadıköy Evlendirme Dairesi Önü
+22:20 Kartal Köprüsü Altı (Ankara Yönü)
+22:40 Çayırova Mc Donalds Önü
+22:50 Gebze Center Önü
+22:10 Bostancı Köprüsü Altı
+22:30 Pendik Köprüsü Altı
+TUR ÜCRETİNE DAHİL OLAN HİZMETLER
+• Otelde 1 gece konaklama
+• Otelde açık büfe 1 sabah kahvaltısı
+• Otelde açık büfe veya set menü 1 akşam yemeği
+• Lüks araçlar ile ulaşım (Kişi sayısına göre araç verilmektedir.)
+• Programda belirtilen çevre gezileri
+• Profesyonel rehberlik hizmeti
+• Araç içi bardak su
+• Malitur güvencesi
+• 1618 nolu Turizm Kanununa göre Zorunlu Seyahat Sigortası
+TUR ÜCRETİNE DAHİL OLMAYAN HİZMETLER
+• Programda belirtilen ilk gün sabah kahvaltısı
+• Programda belirtilen son gün akşam yemeği
+• Tüm yemeklerde alınan içecekler
+• Öğle yemekleri
+• Ekstra belirtilen tüm organizasyonlar
+• Kişisel harcamalar
+• Müze ve Ören Yeri giriş ücretleri (Belediye ve özel işletmeler için geçerlidir.)
+• Müze Kart (Kültür ve Turizm Bakanlığına bağlı müzeler için geçerlidir.)
+Ekstra Turlar ve Aktiviteler
+Tur Tarihi
+10-07-2026
+17-07-2026
+24-07-2026
+31-07-2026
+07-08-2026
+14-08-2026
+21-08-2026
+28-08-2026
+04-09-2026
+11-09-2026
+18-09-2026
+25-09-2026
+02-10-2026
+09-10-2026
+16-10-2026
+23-10-2026
+28-10-2026
+29-10-2026
+30-10-2026
+Kişi Bilgileri
+1
+2
+0
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+Oda Ekle
+Tur Ara
+Tur Ara
+Tur Bilgileri
+Önemli Notlar
+• Tur süresi hareket ve dönüş günü dahil olmak üzere 2 Gece 3 Gün olup 1 gece otel konaklamalıdır. 1 gece yolculuk sürmektedir.
+• Turumuzda rehberlik, ulaşım, konaklama ve çevre gezileri bir paket halindedir ve ayrı düşünülemez. Kullanılmayan ulaşım, konaklama, rehberlik, çevre geziler vb. haklar geri iade edilemez.
+• Tur paketlerinde uygulanan çocuk indirimleri 2 yetişkin yanında tek bir çocuk için kullanılır. 0-6 yaş çocuklarda otel konaklamasında ayrı yatak verilmeyebilir.
+• Otel konaklamalarında 3 kişilik odalarda 3. Misafirimiz genellikle ek yatakta konaklama sağlamaktadır.
+• Programda belirtilen oteller Malitur’un öncelikli konaklama tesisleridir. Konaklanacak bölge ve otellerde yoğunluğa göre otel standartları aynı kalmak şartıyla değişiklik yapılabilir. Müsaitlikler doğrultusunda otel isimleri turun kalkışından 48 saat öncesinde talep edilmesi durumunda bildirilecektir.
+• Kalınacak otellerdeki odalar otel tarafından belirlenmektedir. Odalar arasında seçim yapılamamaktadır.
+• Mola yerlerimiz yoğunluk, tadilat vb. gibi mücbir sebeplerden ötürü mevkii ve hizmet standartları açısından aynı kalmak kaydıyla değiştirilebilir.
+• Program zamanlamasında (gün içerisinde gezilecek noktaların sırasında veya günler arasında) hava durumu, yol durumu, ziyaret yerlerindeki yoğunluk vb. gibi durumlarda rehber gerekli gördüğü takdirde değişiklik yapabilir.
+• Turumuzda mücbir sebeplerden dolayı (hava, yol, ziyaret yerlerindeki yoğunluk vb.) veya misafirlerin tur sırasında rehberimizin verdiği zamanlamalara uymamaları halinde tur programında yazdığı halde gezilemeyen yerlerden Malitur sorumlu değildir. Böyle bir durumda misafirin hak talebi doğmaz.
+• Tüm turlarımızda kademeli fiyat sistemi uygulanmaktadır. Paket turun içerisindeki rezervasyon sayısının yükselmesi ve tarihin yaklaşması ile tur fiyatları da kademeli olarak artış gösterebilir. Malitur fiyatları arttırma hakkını saklı tutar. Bu durumda ön ödeme almadan fiyat sabitleme yapılamamaktadır.
+• Rezervasyon sırasında kesinlikle koltuk numarası sözü ve garantisi verilemez. Rezervasyona girilen notların bir garantisi yoktur. En ön veya en arka gibi özel koltuk seçimi yapılmamaktadır.
+• Araç içerisindeki koltuk düzeni Malitur Operasyonu tarafından rezervasyon sırası göz önüne alınarak ayarlanmaktadır. Koltuk yerleşimi konusundaki itiraz durumlarında ödeme iadesi mümkün değildir. Araçlarımızın tüm koltukları aynı standartlardadır.
+• Tur programında yer alan gece turları gibi ekstra turlar kişi sayısı ve mevcut personelin şartlarına bağlı olarak gerçekleşir. Yol üzerinde yapılacak olan ekstra turlar tüm misafirlerin katılımı olmasa dahi gerçekleştirilecektir. Ekstra turlarda tur katılmayacak misafirlerimizi rehberimizin tarafından dinlenme alanlarına veya şehir merkezlerine yönlendirilecektir. Ekstra turlara katılmayan misafirler mola yerinde beklemeyi kabul ederek tura katılmışlardır.
+• Ekstra bir turun herhangi bir sebeple gerçekleşmemesi halinde misafirin herhangi bir hak talebi doğmaz. Malitur’un bu durumda bir sorumluluğu yoktur.
+• Ekstra tur fiyatları dönemlere göre değişebilir. Böyle bir durumda misafirin turu satın aldığı tarih değil, turun hareket ettiği tarih dikkate alınır. Tura gidilen dönemdeki ekstra tur fiyatı geçerli olur. Misafir bunu kabul ederek turu satın almıştır.
+• Ulaşım aracı, otel, yeme-içme alanları ve tedarikçiler tarafından sağlanan bütün hizmetlerde misafir tarafından meydana gelebilecek maddi zararlardan Malitur sorumlu değildir. İşletmeler misafir tarafından meydana gelen maddi zararları talep etme hakkına sahiptir.
+• 18 yaş altı reşit sayılmayan çocukların anne veya babalarından biri veya ikisi ile beraber katılmadığı durumlarda, tura katılım için gerekli olan muvafakatname seyahat sırasında kişilerin yanında bulundurulması zorunludur.
+•Tur katılan misafirlerimiz sağlık sorunları, hamilelik durumu, sürekli kullanımda bulundukları ilaçlar ile ilgili raporları yanlarında bulundurmaları gerekmektedir.
+• Kalkış noktaları için belirlenen saatlerde trafik, kaza vb. gibi rötar durumlarında gecikmeler yaşanabilir.
+• Tur bitiminde varılacak saatler ile alakalı bilgiler tahmini olup, mücbir sebeplerle gelişecek gecikmelerden Malitur sorumlu değildir.
+• Misafirlerimizi tur bitiminde aldığımız durakların karşı istikametinde indirilecektir. Farklı bir noktada inmek için araç personellerine lütfen ısrarcı olmayınız.
+• Trafik kanunu gereği araçta bulunan tüm misafirlerimiz seyahatleri boyunca emniyet kemeri takması zorunlu olup, aksi haldeki durumlarda Malitur sorumlu değildir.
+• Araç içerisinde bulunan kişisel tüm eşyaların sorumluluğu mola vb. yerlerde misafire aittir.
+• İlk gün gezi otele girmeden başlayacağı için yanınızda bulundurmanız gereken eşyalarınızı ayrı bir şekilde hazırlayınız.
+• Tur esnasında program yoğunluğundan dolayı bankamatik, döviz bürosu vs. yerler bulmak her zaman mümkün olmadığından dolayı hazırlıklı olunmasında yarar vardır.
+• Gerçekleştirilecek programlar içerisinde uzun yollar kat edilebilir. Gerekli bilgilendirme tur rehberi tarafından araç içerisinde yapılacaktır.
+• Öğle yemekleri yöreye özgü ekonomik menüler oluşturulmuştur. Öğle ve akşam yemeklerinde bölge yoğunluğuna bağlı olarak gruplara ayrılan masalar kullanılır.
+• Turlarımızın başlangıç ve bitiş rotası bölge yoğunluğuna göre belirlenmektedir. Turumuz başlamadan kesinleşmiş rota başlangıç ve bitişini, misafirlerimiz diledikleri takdirde 2 gün öncesinde iletişime geçerek öğrenebilirler.
+• Acenta tarafından tur yeterli sayıya ulaşamadığı durumlarda, misafire bilgi verilerek misafirin isteğine göre tur bir sonraki tarihe ertelenebilir veya iptal edilebilir. Ya da en yakın hareket noktasına biletleme yapılarak misafirin tura katılımı sağlanabilir. Böyle bir durumda Acenta misafirine üç (3) gün öncesinden arama, sms veya e-posta yoluyla bilgi vermekle yükümlüdür. Böyle bir durumda misafirin hak talebi hakkı doğmaz.
+• Misafir tarafından hizmetin başlangıç tarihinden 30 gün önceye kadar sebep gösterilmeksizin yapılan iptal ve değişiklik işlemlerinde ödediği bedel misafire iade edilir. Tur tarihinden 29 ile 15 gün arasında yapılan iptal ve değişiklik işlemlerinde rezervasyon bedelinin %30’una; 15-7 gün arasında yapılan iptal ve değişiklik işlemlerinde rezervasyon bedelinin %50’sine; 7 Gün ve daha az sürede yapılan iptal ve değişiklik işlemlerinde rezervasyon bedelinin %100’üne kesinti uygulanır.
+• İptal, İade ve Güvence Paketi satın alan misafirlerimiz sebep belirtmeksizin satın aldığı paket turu, tur başlangıç tarihinden 72 saat öncesine kadar kesintisiz olarak iptal edebilmektedir. İptal İade ve Güvence Paketi uçak biletlerini kapsamamaktadır.
+• Müze Kart ve müze ören yeri girişleri tur ücretine dahil değildir. Tüm müze girişleri misafirler tarafından ödenir.
+İPTAL İADE VE GÜVENCE PAKETİ
+İptal İade ve Güvence Paketi, misafirin satın almış olduğu paket turu, tur başlangıç tarihinden 72 saat öncesine kadar hiçbir neden belirtmeksizin iptal ve değişiklik yapabilmesine olanak verir. İptal sonrasında ödemiş olduğu paket tur ücretinin tamamı hiçbir kesinti yapılmadan, ödeme şekline göre iade yapılır. İptal İade ve Güvence Paketi uçaklı turlarda uçak ulaşımını kapsamamaktadır.
+1618 NOLU ZORUNLU SEYAHAT SİGORTASI
+1618 nolu Zorunlu Seyahat Sigortası kapsamı Acentenin iflası veya herhangi bir nedenle paket tur hizmetinin verilmemesini kapsar. Tur ücretine dahildir. Sağlık sigortası değildir, tedavi masraflarını karşılamaz. Özel sağlık sigortası misafire ait harcamadır.
+ULAŞIM ARAÇLARIMIZ
+Turlarımızda ulaşımlarımız kişi sayısına göre aşağıdaki şekilde sınıflandırılmaktadır. Her turumuzda bulunan kişi sayısına göre aşağıdaki araç tipleri verilir. Araçlarımızda kulaklık bulunmamaktadır. TV üniteli araçlarda telefonunuzu şarj etmeniz telefonunuzun batarya ömrünü azalttığı için harici bir şarj aleti bulundurmanızı tavsiye ederiz.
+Minibüsler (19 kişiye kadar): Volkswagen Crafter, Mercedes Sprinter
+Midibüsler (20-32 kişi sayları): Otokar Sultan Maxi, Otokar Sultan Mega, Isuzu Novo Lux
+Otobüsler (33-54 kişi sayıları): Mercedes Travego/Tourismo, Temsa Safir/Maraton, Neoplan Tourliner/ Cityliner, Man Fortuna/Lions, Setra
+SALDA GÖLÜ PAMUKKALE ÇEŞME ALAÇATI TURU / 1 GECE OTEL KONAKLAMALI TUR PROGRAMI, MALİTUR TARAFINDAN ÖZGÜN OLARAK HAZIRLANMIŞTIR. PROGRAMIN KOPYALANMASI VE YAYINLANMASI YASAKTIR. TÜM HAKLARI MALİTUR’A AİTTİR. (01.01.2021) TUR PROGRAMININ OLUŞTURULAN KOPYALARINDAN MALİTUR SORUMLU TUTULAMAZ
+TUR PROGRAMLARIMIZ 6502 NOLU TÜKETİCİ KANUNUNA UYGUN OLARAK HAZIRLANMIŞTIR. EN SON YAYIMLANAN SİRKÜ BİR ÖNCEKİ SİRKÜYÜ GEÇERSİZ KILAR.
+İptal Şartları
+Şartlar ve Koşullar
+Turun Dahil Olduğu Temalar
+Pamukkale Turları
+Salda Gölü Turları
+Çeşme Turları
+Haftasonu Turları
+İzmir Turları
+Ege Turları
+Kasım Ara Tatil Turları
+Konaklamalı Turlar
+Erken Rezervasyon Turları
+Yurtiçi Turlar
+Tur Hareket Tarihi
+10-07-2026
+Tur Hareket Tarihi
+17-07-2026
+Tur Hareket Tarihi
+24-07-2026
+Tur Hareket Tarihi
+31-07-2026
+Tur Hareket Tarihi
+07-08-2026
+Tur Hareket Tarihi
+14-08-2026
+Tur Hareket Tarihi
+21-08-2026
+Tur Hareket Tarihi
+28-08-2026
+Tur Hareket Tarihi
+04-09-2026
+Tur Hareket Tarihi
+11-09-2026
+Tur Hareket Tarihi
+18-09-2026
+Tur Hareket Tarihi
+25-09-2026
+Tur Hareket Tarihi
+02-10-2026
+Tur Hareket Tarihi
+09-10-2026
+Tur Hareket Tarihi
+16-10-2026
+Tur Hareket Tarihi
+23-10-2026
+Tur Hareket Tarihi
+28-10-2026
+Tur Hareket Tarihi
+29-10-2026
+Tur Hareket Tarihi
+30-10-2026
+Fiyatlar ve Tarihler - (10-07-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.500,00 ₺
+4.750,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.500,00 ₺
+4.750,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (17-07-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (24-07-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (31-07-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (07-08-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (14-08-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (21-08-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (28-08-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (04-09-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (11-09-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (18-09-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (25-09-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (02-10-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (09-10-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (16-10-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (23-10-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (28-10-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (29-10-2026)
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (30-10-2026)
+4* Marlen Otel Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+10.998,00 ₺
+5.499,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+4.998,00 ₺
+2.499,00 ₺
+7 - 11,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+5* Anemon Denizli
+İki Kişilik Oda Kişi Başı
+9.998,00 ₺
+4.999,00 ₺
+Tek Kişilik Oda
+11.998,00 ₺
+5.999,00 ₺
+İlave Yatak
+9.998,00 ₺
+4.999,00 ₺
+0 - 1,99 Yaş
+Kabul Edilemez
+3 - 5,99 Yaş
+6.998,00 ₺
+3.499,00 ₺
+7 - 11,99 Yaş
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 10-07-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.500,00 ₺
+4.750,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.500,00 ₺
+4.750,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 17-07-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 24-07-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 31-07-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 07-08-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 14-08-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 21-08-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 28-08-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 04-09-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 11-09-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 18-09-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 25-09-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 02-10-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 09-10-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 16-10-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 23-10-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 28-10-2026 Çarşamba
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 29-10-2026 Perşembe
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+Tur Hareket Tarihi: 30-10-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+4* Marlen Otel Denizli
+9.998,00 ₺
+4.999,00 ₺
+10.998,00 ₺
+5.499,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+4.998,00 ₺
+2.499,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+3 - 5,99 Yaş
+7 - 11,99 Yaş
+5* Anemon Denizli
+9.998,00 ₺
+4.999,00 ₺
+11.998,00 ₺
+5.999,00 ₺
+9.998,00 ₺
+4.999,00 ₺
+6.998,00 ₺
+3.499,00 ₺
+8.498,00 ₺
+4.249,00 ₺
+Rezervasyon Yap
+.campaign-card{border:0; box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.campaign-card .card-header{
+background: linear-gradient(135deg,#36d1dc,#5b86e5);
+color:#fff;
+}
+.campaign-card2{
+--grad-1:#36d1dc;
+--grad-2:#5b86e5;
+--header-fg:#fff;
+}
+.campaign-card2 .card-header{
+background: linear-gradient(135deg,var(--grad-1),var(--grad-2));
+color: var(--header-fg);
+}
+/* Tema seçenekleri */
+.campaign-card2.sunset { --grad-1:#ff7e5f; --grad-2:#feb47b; } /* turuncu-şeftali */
+.campaign-card2.forest { --grad-1:#0bab64; --grad-2:#3bb78f; } /* zümrüt-yeşil */
+.campaign-card2.royal { --grad-1:#8360c3; --grad-2:#2ebf91; } /* mor → turkuaz */
+.campaign-card2.flamingo{ --grad-1:#f857a6; --grad-2:#ff5858; } /* pembe-kor */
+.campaign-card2.midnight{ --grad-1:#141e30; --grad-2:#243b55; } /* koyu lacivert */
+.campaign-card2.aurora { --grad-1:#00c6ff; --grad-2:#0072ff; } /* camgöbeği-mavi */
+.campaign-card2.mango { --grad-1:#f6d365; --grad-2:#fda085; --header-fg:#1f2937; }
+.discount-pill{
+border:1px dashed rgba(0,0,0,.15);
+border-radius:14px; padding:.6rem .8rem; display:flex; gap:.6rem; align-items:center;
+background:#fff;
+}
+.discount-pill .ic{
+width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.7);
+}
+.ribbon{
+position:absolute; top:.75rem; right:-.5rem; background:#ffd166; color:#212529;
+padding:.25rem .75rem; border-radius:999px 0 0 999px; font-weight:600;
+box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+Kampanyalar
+Bu tur için aktif kampanya bulunmuyor.
+Ücrete Dahil Olan Hizmetler
+• Otelde 1 gece konaklama
+• Otelde açık büfe 1 sabah kahvaltısı
+• Otelde açık büfe veya set menü 1 akşam yemeği
+• Lüks araçlar ile ulaşım (Kişi sayısına göre araç verilmektedir.)
+• Programda belirtilen çevre gezileri
+• Profesyonel rehberlik hizmeti
+• Araç içi bardak su
+• Malitur güvencesi
+• 1618 nolu Turizm Kanununa göre Zorunlu Seyahat Sigortası
+Ücrete Dahil Olmayan Hizmetler
+• Programda belirtilen ilk gün sabah kahvaltısı
+• Programda belirtilen son gün akşam yemeği
+• Tüm yemeklerde alınan içecekler
+• Öğle yemekleri
+• Ekstra belirtilen tüm organizasyonlar
+• Kişisel harcamalar
+• Müze ve Ören Yeri giriş ücretleri (Belediye ve özel işletmeler için geçerlidir.)
+• Müze Kart (Kültür ve Turizm Bakanlığına bağlı müzeler için geçerlidir.)
+Tur Hareket Noktaları
+21:00 Yenibosna Airport Avm Otoparkı
+21:30 Mecidiyeköy Torun Center Önü
+22:00 Kadıköy Evlendirme Dairesi Önü
+22:20 Kartal Köprüsü Altı (Ankara Yönü)
+22:40 Çayırova Mc Donalds Önü
+22:50 Gebze Center Önü
+22:10 Bostancı Köprüsü Altı
+22:30 Pendik Köprüsü Altı
+Ekstra Tur ve Aktiviteler
+Tur Programını Gönder
+E-Main Adresi
+Gönder
+Rehberimizden Notlar
+Merhaba değerli misafirim. Ben Ülkesel Profesyonel turist rehberi Hediye Yiğit. Bu programı seçmen için bazı önemli detayları listeledim. Umarım faydası olur. Turlardada görüşmek dileği ile…
+Neden bu tura katılmalıyım?
+Salda Gölü’nün eşsiz beyaz kumsalları, Pamukkale’nin dünyaca ünlü travertenleri ve hem doğayı hem tarihi hem de Ege kültürünü bir arada deneyimleyeceğiz.
+Hangi dönemlerde tercih etmeliyim?
+Bu tura yılın büyük bölümünde katılabilirsiniz. Ancak ilkbahar ve yaz ayları doğal güzelliklerini görmek için oldukça keyiflidir. Pamukkale ise yılın her mevsimi ziyaret edilebilen bir destinasyondur.
+Program zamanlaması nasıl?
+Turlar genellikle sabah erken saatlerde başlar. Gün içinde doğal alan gezileri, tarihi yer ziyaretleri ve yemek molaları ile program devam eder.
+Akşam saatlerinde ise program tamamlanır ve otele dönüş yapılır.
+Program yoğunluğu nedir?
+Program orta yoğunlukta ve keyifli bir tempoya sahiptir. Gün içinde birkaç farklı nokta ziyaret edilir ancak dinlenme ve fotoğraf molaları da verilir.
+Bizi neler bekliyor?
+Orta tempolu olsa da dinlendirici ve keyifli bir Ege turu bekliyor. Elbette fotoğrafladığımız bolca anı da☺️
+Nelere dikkat etmeliyim?
+* Rahat yürüyüş ayakkabısı tercih edilmelidir.
+* Travertenlerde yürürken dikkatli olunmalıdır.
+* Tarihi alanlarda kurallara uyulmalıdır.
+Yanımıza neler almalıyız?
+* Rahat yürüyüş ayakkabısı
+* Şapka ve güneş kremi
+* Mevsime uygun kıyafet
+* Güneş gözlüğü
+Gün içerisinde kıyafet değişikliği yapabilir miyim?
+Evet, genellikle otellere dönüşte veya uzun molalarda kıyafet değişikliği yapılabilir. Yedek kıyafetlerinizi küçük bir çantada bulundurmanızı tavsiye ederim.
+Çok yürüyüş var mı?
+Pamukkale travertenleri ve antik kent gezilerinde orta seviyede yürüyüş yapılabilir.
+Müzekart gerekli mi?
+Evet, birçok ören yerine girişte Müzekart geçerlidir.
+Müzekartınız yoksa girişlerde ayrıca ücret ödemeniz gerekebilir.
+Yöresel yemeklerden neler tadabileceğiz?
+* Zeytinyağlılar
+* Ege otları
+* Deniz ürünleri
+* Çeşme kumrusu
+* Boyoz
+Hangi yaş grubu katılabilir?
+Tur genellikle her yaş grubuna uygundur.
+Ortalama turun bitiş zamanı
+Genellikle akşam saatlerinde 18.00 – 20.00 arasında günlük program tamamlanır ve otele dönüş yapılır. Normal şartlarda turun İstanbul’da tamamlanması 23:30 civarı olur.
+Bölgeden hangi ürünleri satın alabiliriz?
+* Çeşme sakızlı ürünleri
+* Zeytinyağı
+* Ege otları ve baharatlar
+* Denizli tekstil ürünleri
+* Yerel reçeller ve doğal ürünler
+Bilgilendirme
+Yaş Sınırı Uyarı
+Bu turumuzda 2 yaşından küçük çocuklar kabul edilmemektedir.
+Anlayışınız için teşekkür ederiz.
+Anladım
+Sizin İçin
+Vize Bilgileri
+İptal İade Güvence Paketi
+Sıkça Sorulan Sorular
+Ödeme Seçenekleri
+İnsan Kaynakları
+Tur Takvimi
+Malitur Öneriyor
+Balkan Turları
+Gap Turları
+İtalya Turları
+Karadeniz Turları
+Benelüks Paris Turları
+Dubai Turları
+Tayland Turları
+Uzak Doğu Turları
+Kapadokya Turları
+Kurumsal
+Hakkımızda
+İletişim
+Satış Ofislerimiz
+Paket Tur Sözleşmesi
+Gizlilik Sözleşmesi
+Kulanım Sözleşmesi
+Kütahya Çizelgesi
+Kişisel Verilerin Korunması
+Çağrı Merkezi
+0850 303 1363
+Rezervasyon Sorgula
+Malitur Blog
+Markalarımız
+Her hakkı saklıdır.
+Site Kullanım Sözleşmesi | Gizlilik Sözleşmesi Malitur.com web sitesi, kişisel bilgisayarınıza bilgi depolamak amacıyla tanımlama bilgilerini kullanır.
+Bilgilerin bir kısmı sitenin çalışmasında asıl rolü üstlenirken bazı kısımları ise kullanıcı deneyimlerinin daha da iyileştirilmesine yardımcı olur.
+Sitemizi kullanarak bu tanımlama bilgilerinin yerleştirilmesine izin vermiş olursunuz.
+Detaylı bilgi için Gizlilik politikamızı okuyunuz.Afişe edilen tüm fiyatlar, ilgili üründe kontenjan olması durumunda geçerli olup seçeceğiniz döneme göre fiyatlar değişkenlik gösterebilir.
+Sitemizde görmüş olduğunuz tüm fiyatlara KDV dahildir.
+Hemen Ara
+Whatsapp
+Sizi Arayalım
+Ad
+E-Mail
+Telefon Numarası
+Arama Tarihi
+Bugün
+Yarın
+Arama Zamanı
+Farketmez
+09:00 - 12:00 Arası
+12:00 - 13:30 Arası
+13:00 - 17:00 Arası
+17:00 - 21:00 Arası
+Notunuz
+Gönder
+Üye Girişi
+Gmail ile devam et
+E-posta Adresi
+Şifre
+Şifrenizi mi unuttunuz?
+Giriş Yap
+Hesabınız yok mu? Kayıt olun
+Kayıt Ol
+Gmail ile devam et
+Ad
+Soyad
+E-posta Adresi
+Şifre
+Please provide a valid city.
+Kayıt Ol
+Zaten bir hesabınız var mı? Giriş yapın
+Şifremi Unuttum
+E-posta Adresi
+Şifremi Gönder
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+/* Firefox */
+input[type=number] {
+-moz-appearance: textfield;
+}
+Rezervasyon Sorgula
+E-posta Adresi veya Kimlik No *
+Rezervasyon Numarası
+Rezervasyonu Kontrol Et
+1. Oda
+Kaldır
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+En Popüler Bölgeler
+Erken Rezervasyon Otelleri
+Kayak Otelleri
+Termal Otelleri
+Kıbrıs Otelleri
+Grup Talepleri
+İsim Soyisim (*)
+Telefon (*)
+Email (*)
+Tur Türü (*)
+Seçiniz
+Yurtdışı Tur
+Yurtiçi Tur
+Günübirlik Tur
+Gemi Turları
+Ana Destinasyon
+Tarih Aralığı
+Kişi Bilgileri
+Seçiniz
+1-5 Kişi
+6-10 Kişi
+11-20 Kişi
+21-30 Kişi
+31-40 Kişi
+41-50 Kişi
+İletmek İstediğiniz Notlar
+Kapat
+Kaydet
+window.csrfName = 'csrf_test_name';
+window.csrfHash = 'a4df752d556277cbbc510570d59bfd0e';
+{
+"@context": "https://schema.org",
+"@type": "ItemList",
+"name": "Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı ",
+"description": "Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı ",
+"itemListElement": [
+{"@type":"ListItem","position":1,
+"url":"https://malitur.com/salda-golu-pamukkale-cesme-alacati-turu-1-gece-otel-konaklamali-istanbul-cikisli",
+"name":"Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı "}
+]
+}
+// Global scope'a taşıyarak extra.js'den erişimi garanti ediyoruz
+window.minChildAge = 2;
+const PicketGroupRequests = new easepick.create({
+element: document.getElementById("DateRange"),
+css: ["https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css", "/assets/css/ease-custom.css"],
+lang: "tr-TR",
+grid: 2,
+format: "DD.MM.YYYY",
+calendars: 2,
+zIndex: 1001,
+locale: {
+nextMonth:
+" ",
+previousMonth:
+" ",
+apply: "Select",
+},
+RangePlugin: {
+tooltipNumber(num) {
+return num - 1;
+},
+locale: {
+one: "Gün",
+other: "Gün",
+},
+},
+LockPlugin: {
+minDate: "2022-07-16T21:00:00.000Z",
+minDays: 0,
+maxDays: 0,
+selectForward: true,
+inseparable: true,
+},
+plugins: ["RangePlugin", "LockPlugin"],
+setup(picker) {
+picker.on('select', (e) => {
+let startDate = picker.getStartDate('DD-MM-YYYY');
+let endDate = picker.getEndDate('DD-MM-YYYY');
+var checkindate = HumanizeRequrstGroupDate(startDate);
+var checkoutdate = HumanizeRequrstGroupDate(endDate);
+if ($('#GroupRequestsModal #DateStart').length > 0) {
+$('#GroupRequestsModal #DateStart').val(checkindate);
+}
+if ($('#GroupRequestsModal #DateEnd').length > 0) {
+$('#GroupRequestsModal #DateEnd').val(checkoutdate);
+}
+});
+},
+});
+function HumanizeRequrstGroupDate(startDate){
+var formattedDate = new Date(startDate);
+var d = formattedDate.getDate();
+var m = formattedDate.getMonth();
+m += 1; // JavaScript months are 0-11
+var y = formattedDate.getFullYear();
+return d + "-" + m + "-" + y;
+}
+if( $('.GroupRequestsTourlist').length ) // use this if you are using id to check
+{
+$('.GroupRequestsTourlist').select2({
+theme: 'bootstrap-5',
+dataType: 'json',
+dropdownParent: $('#GroupRequestsModal'),
+delay: 250,
+ajax: {
+url: '/Ajax/Tours/GetTours',
+data: function (params) {
+var query = {
+TourTypeSngle: $('#TourType option:selected').val(),
+term: params.term
+}
+// Query parameters will be ?search=[term]&type=public
+return query;
+},
+processResults: function (data) {
+return {
+results: $.map(data.Suggestions, function (item) {
+return {
+text: item.Name,
+id: item.TourId
+}
+})
+};
+}
+}
+});
+}
+document.addEventListener('DOMContentLoaded', function () {
+// Tab değişince URL hash’i güncelle
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (el) {
+el.addEventListener('shown.bs.tab', function (e) {
+const hash = e.target.getAttribute('href') || e.target.getAttribute('data-bs-target');
+if (hash) {
+if (history.replaceState) history.replaceState(null, '', hash);
+else location.hash = hash;
+}
+});
+});
+function activateFromHash() {
+const hash = window.location.hash;
+if (!hash) return;
+const trigger = document.querySelector(
+`[data-bs-toggle="tab"][href="${hash}"], [data-bs-toggle="tab"][data-bs-target="${hash}"]`
+);
+if (trigger) new bootstrap.Tab(trigger).show();
+if (history.replaceState) history.replaceState(null, '', '');
+}
+// İlk yüklemede ve geri/ileri hareketinde hash’e göre tab’ı aç
+activateFromHash();
+window.addEventListener('hashchange', activateFromHash);
+});
+$(".coupon-title").on("click", function () {
+$(".coupon-box").toggleClass("active");
+});
+var cpnBtn = document.getElementById("cpnBtn");
+var cpnCode = document.getElementById("cpnCode");
+cpnBtn.onclick = function () {
+console.time("time1");
+var temp = $("");
+$("body").append(temp);
+temp.val($("#cpnCode").text()).select();
+document.execCommand("copy");
+temp.remove();
+console.timeEnd("time1");
+$(".coupon-btn").addClass("active");
+cpnBtn.innerHTML = "Kopyalandı";
+setTimeout(function () {
+$(".coupon-btn").removeClass("active");
+cpnBtn.innerHTML = "Kopyala";
+}, 3000);
+};
+document.querySelector("#show-room-btn").addEventListener("click", (e) => {
+e.preventDefault();
+$("#nav-tab button#detail-2-tab").tab("show");
+setTimeout(() => {
+$("#nav-tabContent #detail-2")[0].scrollIntoView({
+behavior: "smooth",
+block: "start",
+inline: "start",
+});
+}, 100);
+});
+document.addEventListener("DOMContentLoaded", function () {
+const entertainmentItems = document.querySelectorAll(".entertainment-list .e-item");
+const showButton = document.querySelector(".show-entertainment");
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+item.style.display = "none";
+}
+});
+showButton.addEventListener("click", function () {
+const isShowingAll = this.textContent === "Daha az göster";
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+if (isShowingAll) {
+item.style.display = "none";
+} else {
+item.style.display = "block";
+}
+}
+});
+this.textContent = isShowingAll ? "Daha fazla göster" : "Daha az göster";
+});
+});
+document.addEventListener("DOMContentLoaded", function () {
+document.querySelectorAll(".svg-explorer-content").forEach((container) => {
+const svgContainer = container.querySelector(".svg-container");
+const svgElement = svgContainer.querySelector("svg");
+const zoomInBtn = container.querySelector(".zoom-in");
+const zoomOutBtn = container.querySelector(".zoom-out");
+let scale = 1;
+let minScale = 1;
+let maxScale = 3;
+let isDragging = false;
+let startX, startY;
+let translateX = 0,
+translateY = 0;
+let lastTranslateX = 0,
+lastTranslateY = 0;
+function updateTransform() {
+let maxTranslateX = (svgElement.clientWidth * scale - container.clientWidth) / 2;
+let maxTranslateY = (svgElement.clientHeight * scale - container.clientHeight) / 2;
+translateX = Math.min(maxTranslateX, Math.max(-maxTranslateX, translateX));
+translateY = Math.min(maxTranslateY, Math.max(-maxTranslateY, translateY));
+svgElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+zoomInBtn.addEventListener("click", function () {
+if (scale < maxScale) {
+scale += 0.2;
+updateTransform();
+}
+});
+zoomOutBtn.addEventListener("click", function () {
+if (scale > minScale) {
+scale -= 0.2;
+updateTransform();
+}
+});
+// *** Mouse Sürükleme ***
+svgContainer.addEventListener("mousedown", function (event) {
+isDragging = true;
+startX = event.clientX - lastTranslateX;
+startY = event.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+document.addEventListener("mousemove", function (event) {
+if (isDragging) {
+translateX = event.clientX - startX;
+translateY = event.clientY - startY;
+updateTransform();
+}
+});
+document.addEventListener("mouseup", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+// *** Dokunmatik Sürükleme ***
+svgContainer.addEventListener("touchstart", function (event) {
+isDragging = true;
+const touch = event.touches[0];
+startX = touch.clientX - lastTranslateX;
+startY = touch.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+svgContainer.addEventListener("touchmove", function (event) {
+if (isDragging) {
+const touch = event.touches[0];
+translateX = touch.clientX - startX;
+translateY = touch.clientY - startY;
+updateTransform();
+}
+});
+svgContainer.addEventListener("touchend", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+});
+});
+function recalculate(Date){
+$('#tour_date').val(Date).trigger('change');
+// $('#TourDetailForm').submit();
+}
+{
+"@context": "https://schema.org",
+"@type": "BreadcrumbList",
+"itemListElement": [
+{ "@type": "ListItem", "position": 1, "name": "Anasayfa", "item": "https://malitur.com/" },
+{ "@type": "ListItem", "position": 2, "name": "Yurtiçi Tur", "item": "https://malitur.com/yurtici-turlar" },
+{ "@type": "ListItem", "position": 3, "name": "Pamukkale Turları", "item": "https://malitur.com/pamukkale-turlari" }
+{ "@type": "ListItem", "position": 4, "name": "Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı ", "item": "https://malitur.com/salda-golu-pamukkale-cesme-alacati-turu-1-gece-otel-konaklamali-istanbul-cikisli" }
+]
+}
+(function () {
+window.dataLayer = window.dataLayer || [];
+if (window.__maliturTourDetailGa4Loaded === true) {
+return;
+}
+window.__maliturTourDetailGa4Loaded = true;
+var baseItem = {"item_id":"TOUR-17","item_name":"Salda Gölü Pamukkale Çeşme Alaçatı Turu / 1 Gece Otel Konaklamalı / İstanbul Çıkışlı ","affiliation":"Malitur","item_brand":"Malitur","item_category":"Tour","item_category2":"Ege Turları","item_category3":"İstanbul Hareketli","item_category4":"Otobüs ile gidiş dönüş","item_variant":"2 gece 3 gün","item_list_id":"ege-turlari","item_list_name":"Ege Turları","location_id":"İstanbul","price":4750,"quantity":1,"discount":4750,"tour_date":"2026-07-10"};
+var currency = "TRY";
+var lastBeginCheckoutKey = '';
+function toNumber(value) {
+var number = parseFloat(value || '0');
+return isNaN(number) ? 0 : number;
+}
+function cleanText(value) {
+return (value || '').replace(/\s+/g, ' ').trim();
+}
+function pushGa4Event(eventName, ecommerce) {
+window.dataLayer.push({ ecommerce: null });
+window.dataLayer.push({
+event: eventName,
+ecommerce: ecommerce || {}
+});
+}
+function getSelectedTourDate() {
+var selectedDate = '';
+var tourDateInput = document.querySelector('#tour_date');
+if (tourDateInput && tourDateInput.value) {
+selectedDate = tourDateInput.value;
+}
+return selectedDate;
+}
+function buildCurrentItem(extra) {
+var item = Object.assign({}, baseItem);
+var selectedDate = extra && extra.tour_date ? extra.tour_date : getSelectedTourDate();
+item.price = toNumber(item.price);
+item.quantity = 1;
+if (selectedDate) {
+item.tour_date = selectedDate;
+}
+return item;
+}
+function buildEcommerce(item) {
+var ecommerce = {
+currency: currency,
+items: [item]
+};
+if (item.price > 0) {
+ecommerce.value = item.price;
+}
+return ecommerce;
+}
+/**
+* 1) Ürün detay görüntüleme
+*/
+var viewItem = buildCurrentItem({});
+pushGa4Event('view_item', buildEcommerce(viewItem));
+/**
+* 2) Rezervasyon başlatma
+*/
+function trackBeginCheckout(source, tourDate) {
+var item = buildCurrentItem({
+tour_date: tourDate || ''
+});
+var key = item.item_id + '|' + (item.tour_date || '');
+if (key === lastBeginCheckoutKey) {
+return;
+}
+lastBeginCheckoutKey = key;
+var ecommerce = buildEcommerce(item);
+ecommerce.checkout_step = 1;
+ecommerce.checkout_source = source || 'tour_detail';
+pushGa4Event('begin_checkout', ecommerce);
+}
+document.addEventListener('click', function (event) {
+var button = event.target.closest('[data-ga4-click="begin_checkout"]');
+if (!button) {
+return;
+}
+var tourDate = button.getAttribute('data-ga4-tour-date') || getSelectedTourDate();
+trackBeginCheckout('reservation_button', tourDate);
+});
+/**
+* 3) Detay rezervasyon formu submit
+* Form zaten /Tours/Search/Calculate action'ına gidiyor.
+* Submit akışını bozmayalım; sadece event basalım.
+*/
+var detailForm = document.querySelector('#TourDetailForm');
+if (detailForm) {
+detailForm.addEventListener('submit', function () {
+trackBeginCheckout('reservation_form', getSelectedTourDate());
+});
+}
+/**
+* 4) Favoriye ekleme
+*/
+document.addEventListener('click', function (event) {
+var favButton = event.target.closest('.add-favourite[data-type="tour"]');
+if (!favButton) {
+return;
+}
+var item = buildCurrentItem({});
+pushGa4Event('add_to_wishlist', buildEcommerce(item));
+});
+})();
+document.addEventListener("DOMContentLoaded", function () {
+let lazyImages = document.querySelectorAll("img.lazy-load");
+let observer = new IntersectionObserver((entries, observer) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) {
+let img = entry.target;
+img.src = img.getAttribute("data-src");
+img.classList.remove("lazy-load");
+observer.unobserve(img);
+}
+});
+});
+lazyImages.forEach(img => observer.observe(img));
+});
+(function(){
+const SITE_KEY = 'fa126a60b1023754b6eb6a43e472ca1b'; // analytics_sites.site_key
+const ENDPOINT = 'https://tracker.malitur.com.tr/v1/collect'; // HTTPS şart
+function uuidv4(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+const cookieName='va_vid';
+function getCookie(n){ return (document.cookie.match('(^|;)\s*'+n+'\s*=\s*([^;]+)')||0)[2]; }
+function setCookie(n,v,days){ const d=new Date(); d.setTime(d.getTime()+days*864e5); document.cookie=n+'='+v+';path=/;expires='+d.toUTCString()+';SameSite=Lax'; }
+let visitorId=getCookie(cookieName); if(!visitorId){ visitorId=uuidv4(); setCookie(cookieName,visitorId,365*2); }
+const body = JSON.stringify({
+siteKey: "fa126a60b1023754b6eb6a43e472ca1b", // API key koymayın
+url: location.href,
+path: location.pathname + location.search,
+title: document.title,
+referrer: document.referrer || null,
+event: 'pageview',
+screen: (screen.width+'x'+screen.height),
+lang: navigator.language || null,
+visitorId,
+utm_source: new URLSearchParams(location.search).get('utm_source'),
+utm_medium: new URLSearchParams(location.search).get('utm_medium'),
+utm_campaign: new URLSearchParams(location.search).get('utm_campaign')
+});
+let queued=false;
+if (navigator.sendBeacon) {
+try { queued = navigator.sendBeacon(ENDPOINT, new Blob([body], {type:'application/json'})); } catch(e){ queued=false; }
+}
+if(!queued){
+fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true,credentials:'omit'}).catch(()=>{});
+}
+})();

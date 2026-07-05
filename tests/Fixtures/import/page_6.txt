@@ -1,0 +1,1712 @@
+Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı
+window.dataLayer = window.dataLayer || [];
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5B8MMVX7');
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '442978066294627');
+fbq('track', 'PageView');
+Yurt İçi Turlar
+Yurt Dışı Turlar
+Cruise Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Kampanyalar
+Hızlı Erişim
+Rezervasyon Sorgula
+Blog
+Grup Talepleri
+Okul Turları
+Sosyal Medya
+Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Tüm Kültür Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Tüm Haftasonu Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Tüm Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Tüm İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Tüm Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Tüm Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Tüm Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Tüm Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Tüm İzmir Çıkışlı Yurt Dışı Turlar
+Cruise Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Tüm Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Tüm Nehir Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Tüm Ankara Çıkışlı Yurt İçi Turlar
+Kampanyalar
+Üyelik
+Kampanyalardan haberdar olmak ve rezervasyonlarına hızlıca ulaşmak için hemen üye ol!
+Giriş Yap
+Üye Ol
+0850 303 1363
+Sizi arayalım
+Grup Talepleri
+Okul Turları
+Türkçe
+English
+Üye girişi
+Kayıt ol
+Yardım
+Satış Noktaları
+Yurt İçi Turlar
+Kültür Turları
+Haftasonu Turları
+Özel Dönem Turları
+Ankara Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Yurt İçi Turlar
+Bursa Çıkışlı Yurt İçi Turlar
+Kültür Turları
+Gap Turları
+Karadeniz Turları
+Doğu Anadolu Turları
+Kapadokya Turları
+Uçaklı Turlar
+Batum & Tiflis Turları
+Trenli Turlar
+Batı Karadeniz Turları
+Ege Akdeniz Turları
+Fethiye Turları
+Antalya Turları
+Bodrum Turları
+Marmaris Turları
+Ege Turları
+Kuzey Ege Turları
+Haftasonu Turları
+Günübirlik Turlar
+Safranbolu Turları
+İzmir Turları
+Salda Gölü Turları
+Bozcaada Turları
+Kuşadası Turları
+Eskişehir Turları
+Çanakkale Turları
+Pamukkale Turları
+Çeşme Turları
+Ayvalık Turları
+Gökçeada Turları
+Özel Dönem Turları
+Festival Turları
+Ramazan Bayramı Turları
+23 Nisan Turları
+1 Mayıs Turları
+19 Mayıs Turları
+Kurban Bayramı Turları
+15 Temmuz Turları
+30 Ağustos Turları
+29 Ekim Turları
+Sömestir Turları
+Kasım Ara Tatil Turları
+Yılbaşı Turları
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+İzmir Çıkışlı Yurt İçi Turlar
+İzmir Çıkışlı Gap Turları
+Bursa Çıkışlı Yurt İçi Turlar
+Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Vizesiz Turlar
+Temalarına Göre Yurt Dışı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Yurt Dışı Turlar
+Popüler Yurt Dışı Turları
+Balkan Turları
+Dubai Turları
+İtalya Turları
+Benelüks Paris Turları
+İspanya Turları
+Orta Avrupa Turları
+Fas Turları
+Avrupa Turları
+İskandinavya Turları
+Tayland Turları
+Uzak Doğu Turları
+Mısır Turları
+Sharm El Sheikh Turları
+Bernina Ekspresi Turları
+İngiltere Turları
+Rusya Turları
+Küba Turları
+Lapland Turları
+Prag Turları
+Yunanistan Turları
+Vizesiz Turlar
+Balkan Turları
+Fas Turları
+Sharm El Sheikh Turları
+Uzak Doğu Turları
+Phuket Turları
+Japonya Turları
+Belgrad Turları
+Budva Turları
+Mısır Turları
+Bali Turları
+Bakü Turları
+Moldova Turları
+Ürdün Turları
+Özbekistan Turları
+Tunus Turları
+Maldivler Turları
+Orta Asya Turları
+Temalarına Göre Yurt Dışı Turlar
+Yurt Dışı Sömestir Turları
+Ramazan Bayramı Yurt Dışı Turları
+Kurban Bayramı Yurt Dışı Turları
+Balayı Turları
+Yurt Dışı Festival Turları
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+İzmir Çıkışlı Yurt Dışı Turlar
+İzmir Çıkışlı Balkan Turları
+İzmir Çıkışlı Dubai Turları
+İzmir Çıkışlı İtalya Turları
+İzmir Çıkışlı Budva Turları
+İzmir Çıkışlı Benelüks Paris Turları
+İzmir Çıkışlı İskandinavya Turları
+İzmir Çıkışlı İspanya Turları
+İzmir Çıkışlı İngiltere Turları
+İzmir Çıkışlı Orta Avrupa Turları
+Cruise Turları
+Gemi Turları
+Nehir Turları
+Gemi Turları
+Yunan Adaları Gemi Turları
+Tüm Gemi Turları
+Vizesiz Gemi Turları
+MSC Cruises Turları
+Costa Cruises Turları
+Celestyal Cruises Turları
+Selectum Blu Cruises Turları
+Muhafazakar Gemi Turları
+Nehir Turları
+Tuna Nehri Turları
+Ren Nehri Turları
+Volga Nehri Turları
+Seine Nehri Turları
+Main Nehri Turları
+Kıbrıs Otelleri
+Ankara Çıkışlı Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Ankara Çıkışlı Yurt İçi Turlar
+Ankara Çıkışlı Yurt Dışı Turlar
+Balkan Turları Ankara Çıkışlı
+Dubai Turları Ankara Çıkışlı
+Mısır Turları Ankara Çıkışlı
+Sharm El Sheikh Turları Ankara Çıkışlı
+Benelüks Paris Turları Ankara Çıkışlı
+Orta Avrupa Turları Ankara Çıkışlı
+İtalya Turları Ankara Çıkışlı
+İspanya Turları Ankara Çıkışlı
+Portekiz Turları Ankara Çıkışlı
+Bernina Ekspresi Turları Ankara Çıkışlı
+Ankara Çıkışlı Yurt İçi Turlar
+Gap Turları Ankara Çıkışlı
+Karadeniz Turları Ankara Çıkışlı
+Kapadokya Turları Ankara Çıkışlı
+Bodrum Tatil Paketleri Ankara Çıkışlı
+Marmaris Tatil Paketleri Ankara Çıkışlı
+Ege Turları Ankara Çıkışlı
+Uçaklı Turlar Ankara Çıkışlı
+Doğu Anadolu Turları Ankara Çıkışlı
+Ege Akdeniz Turları Ankara Çıkışlı
+Festival Turları Ankara Çıkışlı
+İstanbul Turları Ankara Çıkışlı
+Haftasonu Turları Ankara Çıkışlı
+Kuşadası Turları Ankara Çıkışlı
+İzmir Turları Ankara Çıkışlı
+Günübirlik Turlar Ankara Çıkışlı
+Kampanyalar
+Fırsatı Yakaladın!
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Başı 7500.00 TRY İndirim İçin Ödeme Sayfasında Kupon Kodunu Kullanmayı Unutma!
+FIRSAT7500
+Kopyala
+BU TURDA FIRSAT VAR!
+Fırsat indirimi
+Fırsatı yakaladın!
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Başı 7500.00 TRY İndirim İçin Ödeme Sayfasında Kupon Kodunu Kullanmayı Unutma!
+FIRSAT7500
+Kopyala
+@media (max-width: 767.98px) {
+.breadcrumb {
+display: flex !important;
+flex-wrap: nowrap !important;
+overflow-x: auto !important;
+white-space: nowrap !important;
+scroll-behavior: smooth;
+-webkit-overflow-scrolling: touch; /* iOS için pürüzsüz kaydırma */
+padding-bottom: 5px; /* Kaydırma çubuğu metne çok yapışmasın diye */
+}
+.breadcrumb::-webkit-scrollbar {
+display: none; /* İsteğe bağlı: Mobilde alt yatay kaydırma çubuğunu gizler */
+}
+.breadcrumb-item {
+display: inline-block !important;
+float: none !important;
+}
+}
+Anasayfa
+Yurtdışı Tur
+Uzak Doğu Turları
+Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı
+.heart-red { color: red !important; }
+Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı (Tur Kodu: 2642)
+Facebook
+Twitter
+Sizi Arayalım
+İstanbul Hareketli
+8 gece 9 gün (7 gece konaklamalı)
+Türk Hava Yolları
+Osaka, Todaiji, NaraGeyikParkı, Dotonbori, Shinsaibashi, Kobe, Kyoto, ArashiyamaBambuOrmanı, KiyomizuderaTapınağı, Gion, Tokyo, Ginza, ShibuyaGeçidi, OshinoHakkai, FujiDağı, Hakone, AshiGölü, OutletTuru, Akihabara, NakamiseArcade
+2599.00 EUR
+(139.566,30 TRY)
+'den başlayan fiyatlar
+Rezervasyon yap
+.anchor { scroll-margin-top: 80px; }
+TUR PROGRAMI
+REZERVASYON YAP
+GENEL BİLGİLER
+TARİHLER VE FİYATLAR
+KAMPANYALAR
+Ücrete Dahil Olan Hizmetler
+Ücrete Dahil Olmayan Hizmetler
+Tur Hareket Noktaları
+Ekstra Turlar ve Aktiviteler
+Rehberimizden Notlar
+ELEGANT JAPONYA TURU
+TÜRK HAVA YOLLARI İLE
+EKSTRA TURLAR DAHİL!
+Osaka (3) - Todaiji - Nara Geyik Parkı - Dotonbori - Shinsaibashi - Kobe - Kyoto (1) - Arashiyama Bambu Ormanı - Kiyomizudera Tapınağı - Gion - Tokyo (3) - Ginza - Shibuya Geçidi - Oshino Hakkai - Fuji Dağı - Hakone - Ashi Gölü - Outlet Turu - Akihabara - Nakamise Arcade
+.itinarylistcontent p{
+margin-top:15px !important;
+}
+Gün
+İSTANBUL – OSAKA
+UÇUŞ DETAYLARI
+TK86 ISTKIX 0200 1855
+TK51 NRTIST 1015 1750
+09, 20, 23 Nisan
+TK86 ISTKIX 0210 1850
+TK301 NRTIST 2125 0440*
+ÖNEMLİ NOT
+Tur tarihlerine göre uçuş bilgileri değişiklik gösterebilmektedir. İç hat bağlantılı bilet alacak yolcularımızın bilgi almasını önemle rica ederiz.
+İstanbul Yeni Havalimanı dış hatlar gidiş terminalinde uçuştan üç saat önce (uçuş gününden bir gün önce) buluşuyoruz. Bagaj, bilet ve biniş işlemlerinin ardından Türk Hava Yolları tarifeli seferi ile Osaka’ya uçuşumuz başlıyor.
+Gün
+OSAKA
+Osaka’ya varışımıza istinaden havalimanında bekleyen özel aracımızla Osaka’daki otelimize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Gün
+OSAKA
+Otelde alacağımız kahvaltının ardından Osaka panoramik şehir turumuz için hareket. Turumuzda 16. yüzyılda inşa edilen ve Japon ulusunun birleşmesinde önemli bir rol oynamış Osaka Kalesi, 173 metre uzunluğunda iki yapıdan oluşan Umeda Gökdeleni panoramik olarak görülecek yerler arasındadır. Umeda Gökdeleni, Osaka ve Umeda istasyonlarının yakınında bulunan muhteşem bir yüksek binadır. 173 metre yüksekliğindeki bina, 39. kattaki "Yüzen Bahçe Gözlemevi" ile birbirine bağlanan iki kuleden oluşuyor. Gözlemevi, pencerelerinden ve açık hava güvertesinden şehrin harika manzaralarını sunmaktadır. Ardından akşam saatlerinde otelimize doğru yapacağımız yolculukta, Osaka’nın ışıklarla süslenmiş caddeleri ve modern binaların geceyi aydınlatan silüetleri eşliğinde büyüleyici bir şehir manzarasına tanıklık edeceğiz. Renkli tabelalar, parıldayan sokak lambaları ve hareketli şehir atmosferi yolculuğumuza görsel bir şölen katacak. Osaka’daki otelimize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Gün
+OSAKA – NARA GEYİK PARKI – TODAİJİ TAPINAĞI – DOTONBARI & SHINSAIBASHI – OSAKA
+Otelde alacağımız kahvaltının ardından Nara turumuz için hareket. Turumuza Todaiji Tapınağı ile başlıyoruz. 752 yılında yapılan tapınak bütün Budist tapınaklarının başı olması amacıyla yapılmıştır. Zamanla etkisi büyüyen tapınak 8. yüzyılda politikayı da etkilemeye başlamıştır. Todaiji’nin ana salonu dünyanın en büyük ahşap yapısı olarak da rekorlar kitabına adını yazdırmıştır. Devasa bina, Japonya'nın en büyük bronz Buda heykellerinden birine (Daibutsu) ev sahipliği yapmaktadır. Ardından, Nara'nın merkezindeki büyük bir park olan Nara Geyik Park’ını ziyaret ediyoruz. 1880 yılında kurulan otel, Todaiji, Kasuga Taisha, Kofukuji ve Nara Ulusal Müzesi dahil olmak üzere Nara'nın başlıca cazibe merkezlerinin çoğunun bulunduğu yerdir. Ayrıca yüzlerce serbestçe dolaşan geyiğe de ev sahipliği yapmaktadır. Geyiklerin, Japon mitolojisinde tanrıların habercisi olarak kabul edilmesi, bu alanı sadece görsel değil, aynı zamanda kültürel olarak da özel kılmaktadır. Parkta dolaşırken, meraklı bakışlarla yanınıza yaklaşan geyikler ile unutulmaz anılar biriktirme ve fotoğraflama şansı yakalayacaksınız. Ardından tarihsel olarak bir tiyatro bölgesi olmasına karşın artık eksantrik atmosferi ve büyük ışıklı tabelalarıyla karakterize edilen popüler bir gece hayatı, alışveriş ve eğlence bölgesi olan Dotonbori & Shinsaibashi turumuzu gerçekleştiriyoruz. Ardından Osaka’daki otelimize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Gün
+OSAKA – KOBE – ARASHİYAMA BAMBU ORMANI – KİYOMİZUDERA TAPINAĞI – GİON – KYOTO
+Otelde alacağımız kahvaltının ardından Kobe şehir turumuz için hareket. Turumuza Meriken Park’ın ferah havasını soluyarak başlıyoruz. Ardından ünlü Kobe Kulesi’nin önünde fotoğraf molamızı verdikten sonra Kitano bölgesine çıkıp eski yabancı konaklarının bulunduğu sokaklarda geziyoruz. Ardından Nunobiki Bitki Bahçelerinde doğa ile iç içe keyifli bir geziye çıkacağız. Turumuzun ardından Kyoto şehir turumuz için hareket. II. Dünya Savaşı sırasında, Japonya’da bombalanmamış tek yer Kyoto’dur. Kyoto şehri, UNESCO Dünya Kültür Mirası Listesi’nde yer almaktadır. Şehir turumuza Arashiyama Bambu Ormanı’yla başlıyoruz. Bambu ormanına ziyarete gelenleri 500 metrelik yürüyüş parkuru ile karşılıyor. Parkur boyunca yapacağımız bu yürüyüşte, rüzgarın bambuların arasından ulaşan sesi ile keyifli anlar yaşayacak ve ormanın resimlerini çekebileceksiniz. Vereceğimiz serbest zamanın ardından, bir Zen tapınağı olan Ryoanji tapınağı panoramik olarak görülecek yerler arasındadır. Tapınak, Japonya'nın en ünlü kaya bahçesinin bulunduğu yerdir. Aslen Heian Dönemi'nde bir aristokratın villası olan site, 1450'de bir Zen tapınağına dönüştürülmüştür. Bahçe tasarımının ilginç bir özelliği, herhangi bir noktadan kayalardan en az birinin her zaman izleyiciden gizlenmiş olmasıdır. Ardından, 780 yılında Kyoto'nun doğusundaki ormanlık tepelerdeki Otowa Şelalesi'nin bulunduğu yerde kurulmuş olan ve adını sonbaharın saf sularından alan Kiyomizudera (Saf Su) Tapınağı turumuzu gerçekleştiriyoruz. Ardından, doğuda Yasaka Mabedi ile batıda Kamo Nehri arasındaki Shijo Bulvarı çevresinde yer alan Kyoto'nun en ünlü geyşa bölgesi Gion’a transfer. Turumuzun ardından Kyoto’daki otelimize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Gün
+KYOTO – GİNZA – SHIBUYA – TOKYO
+Otelde alacağımız kahvaltının ardından, Kyoto tren istasyonuna hareket ediyoruz. Yüksek hızlı tren ile Tokyo’ya varıyoruz. Varışımıza istinaden çok sayıda mağaza, butik, sanat galerisi, restoran, gece kulübü ve kafeye ev sahipliği yapan Tokyo'nun en ünlü lüks alışveriş, yemek ve eğlence bölgesi olan Ginza’ya hareket. 1612'den 1800'e kadar, bugünkü Ginza bölgesi, bir gümüş madeni para darphanesinin bulunduğu yer olduğundan, Ginza, Japonca'da "gümüş darphane" anlamına gelen ismi almıştır. Turumuzun devamında, öğle yemeği için mola veriyoruz. Ardından, Japonya'nın başkenti Tokyo'nun 23 özel semtinden biri olan Shibuya’daki en kalabalık yaya geçitlerinden biri olarak anılan Shibuya Yaya Geçidi’ni ziyaret ediyoruz. İş ve alışveriş merkezlerinin ortasında yer alması nedeniyle şehrin en kalabalık bölgelerinden birinde bulunan yaya geçidi, dünyanın en kalabalık yaya geçidi olarak anılmaktadır. Turumuzun ardından Tokyo’daki otelimize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Not: Tur günü sabah otelden ayrılırken bir günlük küçük bir çanta yanınıza almanız gerekmektedir. Otelde bırakacağınız diğer tüm eşyalar, Kyoto’dan Tokyo’daki otele transfer edilecektir.
+Gün
+TOKYO – OSHINO HAKKAI – FUJİ DAĞI – HAKONE – ASHİ GÖLÜ – OUTLET – TOKYO
+Otelde alacağımız kahvaltının ardından Oshino Hakkai turumuz için hareket. Oshino Hakkai, Fuji Dağı’nın eteklerinde, doğanın kalbinde saklanmış bir Japon köyüdür. Kristal berraklığında kaynak sularının sekiz kutsal havuzda hayat bulduğu, adeta bir tabloyu andıran bu köyde, geleneksel Japon evleri, bambu köprüler ve Fuji Dağı siluetiyle; huzur, dinginlik ve Japon kültürünün derinliği bir arada deneyimlenebilmektedir. Turumuzun ardından Hakone & Fuji Dağı turumuz için hareket. 3776 metre yüksekliği ile 2013 yılında UNESCO’nun Dünya Mirası Listesi’ne girmeye hak kazanan Fuji Dağı Japonya'daki en yüksek dağdır ve zarif konik formuyla bilinir. Ülkenin kutsal sembolüdür ve yanardağın çevresinde ve üzerinde tapınaklar ve türbeler bulunur. Hava şartlarının da elverdiği sürece, beşinci istasyonu kullanarak ulaşacağımız Fuji Dağı’nın muhteşem manzarasını bulutların üstünden izleyerek kendinizi harika bir ambiyansta bulacaksınız. Ardından, Hakone turumuz için hareket. Hakone kasabasının en belirgin özellikleri arasında, Fuji Dağı’na yakın konumuyla sunduğu eşsiz manzarası yer almaktadır. Burada misafirlerimizle beraber bu muhteşem manzaranın tadını çıkarmak için Ashi Gölü Tekne turumuzu gerçekleştiriyoruz. Ardından Outlet için hareket ediyoruz. Gotemba Premium Outlet, Japonya'nın Shizuoka iline bağlı Gotemba şehrinde, Fuji Dağı'nın eteğinde bulunan büyük bir outlet alışveriş merkezidir. 2000 yılında açılan bu merkez, Japonya'nın en büyük outletlerinden biridir ve 290 mağazasıyla dikkat çeker. Outlet gezimizde dilediğiniz gibi alışveriş yapabilir ve serbest zamanın tadını çıkarabilirsiniz. Ardından Tokyo’daki otelimize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Gün
+TOKYO – AKIHABARA – NAKAMISE SHOPPING ARCADE – TOKYO
+Otelde alacağımız kahvaltının ardından Tokyo’nun uluslararası en ünlü mahallelerinden biri olan Akihabara ziyaretimiz ile turumuza devam ediyoruz. Günümüzde popüler anime ve manga simgelerinin bölgedeki dükkânlarda göze çarpmasının yanı sıra, 2. Dünya Savaşı'ndan kısa bir süre sonra elektronik ev eşyaları ile savaş sonrası karaborsa için büyük bir alışveriş merkezi haline geldiğinden dolayı Akihabara Elektrik Kenti olarak bilinmektedir. Burada Öğle yemeği için vereceğimiz serbest zamanın ardından Nakamise & Shopping Arcade turumuz için hareket ediyoruz. Alışveriş caddesinde vereceğimiz mola sırasında, çeşitli kimonolar ve katlanır yelpazeler gibi tipik Japon hediyelik eşyaları satın alabilir veya Asakusa bölgesinin çeşitli geleneksel yerel atıştırmalıklarının tadına bakabilirsiniz. Turumuzun ardından Tokyo’daki otelimize transfer ve dinlenmek üzere serbest zaman. Konaklama otelimizde.
+Gün
+TOKYO – İSTANBUL
+Otelde alacağımız kahvaltının ardından gerçekleştireceğimiz İstanbul uçuşumuz için Tokyo Havalimanına transfer. Bagaj, pasaport ve bilet işlemlerinin ardından Türk Havayolları tarifeli seferi ile uçuşumuzu gerçekleştiriyoruz. İstanbul Yeni Havalimanı’na varışımızla birlikte turumuzun ve servislerimizin sonu.
+ÖNEMLİ NOT
+Müze, Ören Yeri ve Tapınaklar Girişleri + Ashi Gölü Tekne Turu + Lokal Rehberler + Turist Şehir Vergileri
+Kişi başı 175 Euro
+Tur esnasında rehberimize ödenecektir.
+devamını göster
+Tur programını indir
+Tur Programını Mail Gönder
+Tur Hareket Noktası
+23:00 İstanbul Yeni Havalimanı
+TUR ÜCRETİNE DAHİL OLAN HİZMETLER
+-Türk Havayolları ile İstanbul (IST) – Osaka (KIX) gidiş, Tokyo (NRT) – İstanbul (IST) dönüş ekonomi sınıf uçak bileti
+-3* & 4* otellerde 3 gece Osaka, 1 gece Kyoto, 3 gece Tokyo’da oda & kahvaltı konaklama
+-Alan-otel-alan transferleri
+-Özel otobüslerimiz ile belirtilen tüm şehir transferleri
+-Kyoto – Tokyo arası hızlı tren bileti
+-Osaka Şehir Turu
+-Todaiji Tapınağı
+-Nara Park
+-Dotonbori & Shinsibashi
+-Kobe Şehir Turu
+-Kyoto Şehir Turu
+-Arashiyama Bambu Ormanı Turu
+-Kiyomuzidera Tapınağı
+-Gion Turu
+-Ginza Turu
+-Shibuya Yaya Geçidi
+-Oshino Hakkai Turu
+-Fuji Dağı Turu
+-Hakone Turu
+-Ashi Gölü Tekne Turu
+-Outlet Turu
+-Akihabara Turu
+-Nakamise & Shopping Arcade Turu
+-Türkçe Rehberlik hizmeti
+-TURSAB mesleki sorumluluk sigortası
+TUR ÜCRETİNE DAHİL OLMAYAN HİZMETLER
+-Seyahat sağlık sigortası (20 Euro)
+-Programda belirtilmeyen öğle ve akşam yemekleri
+-Her türlü kişisel harcamalar ve otel ekstraları
+-Yurt dışı çıkış harcı bedeli
+-Müze & Ören Yeri girişleri
+-Turist şehir vergileri
+-Şoför tipleri 10 Euro/ kişibaşı (isteğe bağlı)
+Ekstra Turlar ve Aktiviteler
+Müze, Ören Yeri ve Tapınaklar Girişleri + Ashi Gölü Tekne Turu + Lokal Rehberler + Turist Şehir Vergileri
+Kişi başı 175 Euro
+-Tur esnasında rehberimize ödenecektir.
+Tur Tarihi
+13-07-2026
+18-07-2026
+19-07-2026
+24-07-2026
+10-08-2026
+14-09-2026
+09-10-2026
+11-10-2026
+23-10-2026
+07-11-2026
+08-11-2026
+Kişi Bilgileri
+1
+2
+0
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+Oda Ekle
+Tur Ara
+Tur Ara
+Tur Bilgileri
+Önemli Notlar
+-Tur Programımız minimum 20 kişi katılım şartı ile düzenlenmektedir. Gezi için yeterli katılım sağlanamadığı takdirde, son iptal bildirim tarihi tur kakışına 20 gün kaladır. Katılım yetersizliği nedeniyle İptal edilen tur acenteniz aracılığı ile tarafınıza bildirilecektir.
+-Yeterli katılımın olmadığı ancak turun gerçekleştirildiği durumlarda İngilizce rehberlik verilebilir.
+-Tur programında isim belirtilmeden sadece kategori bilgisi verildiği ve/veya aynı destinasyon için seçenekli bulunduğu durumlarda otel(ler) gezi hareketinden 48 saat önce acenteniz tarafından bildirilecektir.
+-Çocuk indirimleri 2 yetişkin yanında kalan –yaş grubuna uyan- tek çocuk için geçerlidir. 0-2 yaş çocuklar için otellerde yatak garantisi verilmemektedir.
+-Tur programında dâhil olan hizmetlerden Otelde alınan Kahvaltılar, bulunulan ülkenin kahvaltı kültürüne uygun olarak ve genelde kontinental kahvaltı olarak adlandırılan tereyağı, reçel, ekmek, çay veya kahveden oluşan sınırlı bir mönü ile sunulmakta olup gruplar için gruba tahsis edilmiş ayrı bir salonda servis edilebilir.
+-Tur uçuşları grup bileti olduğu için uçak saatleri değişebilir. Güncel uçuş detaylarını acentenizden teyit edebilirsiniz. Güncel saatler tur bilgilendirmesi ile acenteniz tarafından iletilecektir.
+-İç hat uçuşu almadan tur uçuş saatlerinin teyit edilmesi gerekmektedir. Misafir iç hat bağlantı uçuşunu acenteden bağımsız farklı bir ürün sağlayıcıdan aldıysa, gezinin acente tarafından iptal edilmesi durumunda ya da saat değişikliği olduğu durumlarda acenteden herhangi bir ücret iadesi talep edemez. Turun iptal değişikliğinden dolayı oluşabilecek maddi ve manevi kayıpları misafir turu satın aldığında peşinen kabul eder. Bu durumdan Malitur sorumlu tutulamaz. Kendi iç hat uçuşunu alan misafirlerin olası rötar, uçuş iptali vb sebeplerden dolayı dış hat uçuşu kaçırmasından Malitur sorumlu değildir.
+-Hava yolları kuralları gereğince; gidiş-dönüş olarak satın alınmış uçak biletlerinin gidiş uçuşu kullanılmadığı takdirde, dönüş uçuşu hava yolu tarafından iptal edilmektedir.
+-Uçaksız olarak tura dahil olan misafirlerimizin, kendi imkanları ile ve herhangi bir gecikme olmadan tur başlangıç noktasında hazır bulunması gerekmektedir. Aksi bir durumda tüm transferlerini kendi imkanları ile sağlayacaklardır.
+-Tura katılım için hava yolları kuralları doğrultusunda bildirilen saatlerde, belirtilen havalimanında hazır bulunmayan, check-in ve boarding işlemlerini zamanında yaptırmayan, check-in ve boarding işlemlerini zamanında yaptıran ancak uçağa binemeyen misafirlerin, uçuşu gerçekleştirememeleri durumundan Malitur sorumlu değildir. Uçağı kaçıran misafirlerin tura dahil olmaları için gerekli olacak gidiş-dönüş yeni uçak biletlerinin temini ve gidilecek bölgedeki transferleri vb. gibi konulara dair oluşacak tüm masraflar kendilerine aittir.
+-Tura iştirak eden kişilerin, şahsi eşyaları, çantaları, valizleri, pasaportları / kimlikleri kendi sorumluluğunda olup, unutulan/kaybolan/çalınan eşyalardan Malitur sorumlu değildir. Unutulan eşyaların bulunma durumlarında ülkeye ve/veya kişiye ulaştırılması zorunluluğu olmadığı gibi ulaştırılması sırasında yapılan masraflar eşya sahibine aittir.
+-Hastalık, kayıp çalıntı gibi durumlarda rehber için grubun bütünlüğü ve devamı esas olduğundan, rehber bu tarz olumsuz durumlarda misafirlere birebir eşlik edememektedir.
+-Turun satın alınması sırasında pasaportta geçen isim, doğum tarihi, pasaport numarasının doğru olarak bildirilmesi zorunludur. Uçak biletleri bu bilgilere göre kesilmektedir. Hatalı bilgilerden oluşacak bilet iptal ve değişiklik ceza bedelleri tarafınızdan tahsil edilir.
+VİZE
+-T.C vatandaşları için Japonya’da vize uygulaması yoktur. Pasaport geçerlilik süresi tur bitiş tarihi itibari ile minimum 6 ay olmalıdır.
+-T.C. yeşil pasaportu ile seyahat edecek misafirlerimizin, eğer pasaportlarının alınış tarihi 10 yıldan eski ise; pasaportlarını yenilemeleri gereklidir. Aksi halde gidecekleri ülkeye kabul edilmeyebilirler ve/veya havayolu firması tarafından uçuşları gerçekleştirilmeyebilir. Böyle bir durumda sorumluluk yolcuya aittir.
+-Pasaport polisinin sizi ülkeye sokmama yetkisi vardır. Bu durumdan Malitur sorumlu değildir, sorumluluk yolcuya aittir.
+-Yırtık, yıpranmış, ıslanmış ve/veya benzeri tahribat(lar)a uğramış pasaportlar nedeniyle ziyaret edilecek ülke sınır kapısında gümrük polisi ile sorun yaşanmaması adına; anılan pasaportların yenilenmesi ve T.C. vatandaşlarına vize uygulayan bir ülke ise ilgili vizenin yeni pasaportta olması gerekmektedir. Aksi durumda sorumluluk yolcuya aittir.
+-18 yaşından küçük misafirlerimiz tek başlarına ya da yanlarında anne ya da babadan sadece biri ile seyahat ederken ülke giriş-çıkışlarında görevli polis memurunca anne-babanın ortak muvafakatini gösterir belge sorulması ihtimali olduğundan; 18 yaş altı misafirlerimizin ve anne-babalarının bu konuda hassasiyet göstermelerini tavsiye ederiz.
+İptal Şartları
+Şartlar ve Koşullar
+Turun Dahil Olduğu Temalar
+Uzakdoğu Turları
+Japonya Turları
+Kyoto Turları
+Osaka Turları
+Tokyo Turları
+Yurt Dışı Turlar
+Vizesiz Turlar
+Yurt Dışı Erken Rezervasyon Turları
+Yurt Dışı Fırsat Turları
+Uçaklı Yurt Dışı Turlar
+Tur Hareket Tarihi
+13-07-2026
+Tur Hareket Tarihi
+18-07-2026
+Tur Hareket Tarihi
+19-07-2026
+Tur Hareket Tarihi
+24-07-2026
+Tur Hareket Tarihi
+10-08-2026
+Tur Hareket Tarihi
+14-09-2026
+Tur Hareket Tarihi
+09-10-2026
+Tur Hareket Tarihi
+11-10-2026
+Tur Hareket Tarihi
+23-10-2026
+Tur Hareket Tarihi
+07-11-2026
+Tur Hareket Tarihi
+08-11-2026
+Fiyatlar ve Tarihler - (13-07-2026)
+3* Oteller
+İki Kişilik Oda Kişi Başı
+2.849,00 €
+Tek Kişilik Oda
+3.249,00 €
+İlave Yatak
+99.999,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+2.799,00 €
+0 - -1,99 Yaş
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+2.999,00 €
+Tek Kişilik Oda
+3.399,00 €
+İlave Yatak
+2.999,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+2.949,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (18-07-2026)
+3* & 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+2.949,00 €
+Tek Kişilik Oda
+3.349,00 €
+İlave Yatak
+2.949,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+2.899,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (19-07-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+3.099,00 €
+Tek Kişilik Oda
+3.499,00 €
+İlave Yatak
+3.099,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+3.049,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (24-07-2026)
+3* & 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+2.949,00 €
+Tek Kişilik Oda
+3.349,00 €
+İlave Yatak
+2.949,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+2.899,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (10-08-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+3.399,00 €
+Tek Kişilik Oda
+3.799,00 €
+İlave Yatak
+3.399,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+3.349,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (14-09-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+3.299,00 €
+Tek Kişilik Oda
+3.699,00 €
+İlave Yatak
+3.299,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+3.249,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (09-10-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+2.849,00 €
+Tek Kişilik Oda
+3.249,00 €
+İlave Yatak
+2.849,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+2.799,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (11-10-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+2.599,00 €
+Tek Kişilik Oda
+2.999,00 €
+İlave Yatak
+2.599,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+2.549,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (23-10-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+2.899,00 €
+Tek Kişilik Oda
+3.299,00 €
+İlave Yatak
+2.899,00 €
+0 - 1,99 Yaş
+300,00 €
+3 - 11,99 Yaş
+2.849,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (07-11-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+3.299,00 €
+Tek Kişilik Oda
+3.699,00 €
+İlave Yatak
+3.299,00 €
+0 - 1,99 Yaş
+300,00 €
+2 - 11,99 Yaş
+3.249,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Fiyatlar ve Tarihler - (08-11-2026)
+3* ve 4* Merkezi Oteller
+İki Kişilik Oda Kişi Başı
+2.649,00 €
+Tek Kişilik Oda
+3.049,00 €
+İlave Yatak
+2.649,00 €
+0 - 1,99 Yaş
+300,00 €
+2 - 11,99 Yaş
+2.599,00 €
+0 - -1,99 Yaş
+Rezervasyon Yap
+Tur Hareket Tarihi: 13-07-2026 Pazartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* Oteller
+2.849,00 €
+(152.991,30 TRY)
+3.249,00 €
+(174.471,30 TRY)
+99.999,00 €
+(5.369.946,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.799,00 €
+(150.306,30 TRY)
+Rezervasyon Yap
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+2.999,00 €
+(161.046,30 TRY)
+3.399,00 €
+(182.526,30 TRY)
+2.999,00 €
+(161.046,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.949,00 €
+(158.361,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 18-07-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* & 4* Merkezi Oteller
+2.949,00 €
+(158.361,30 TRY)
+3.349,00 €
+(179.841,30 TRY)
+2.949,00 €
+(158.361,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.899,00 €
+(155.676,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 19-07-2026 Pazar
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+3.099,00 €
+(166.416,30 TRY)
+3.499,00 €
+(187.896,30 TRY)
+3.099,00 €
+(166.416,30 TRY)
+300,00 €
+(16.110,00 TRY)
+3.049,00 €
+(163.731,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 24-07-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* & 4* Merkezi Oteller
+2.949,00 €
+(158.361,30 TRY)
+3.349,00 €
+(179.841,30 TRY)
+2.949,00 €
+(158.361,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.899,00 €
+(155.676,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 10-08-2026 Pazartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+3.399,00 €
+(182.526,30 TRY)
+3.799,00 €
+(204.006,30 TRY)
+3.399,00 €
+(182.526,30 TRY)
+300,00 €
+(16.110,00 TRY)
+3.349,00 €
+(179.841,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 14-09-2026 Pazartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+3.299,00 €
+(177.156,30 TRY)
+3.699,00 €
+(198.636,30 TRY)
+3.299,00 €
+(177.156,30 TRY)
+300,00 €
+(16.110,00 TRY)
+3.249,00 €
+(174.471,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 09-10-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+2.849,00 €
+(152.991,30 TRY)
+3.249,00 €
+(174.471,30 TRY)
+2.849,00 €
+(152.991,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.799,00 €
+(150.306,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 11-10-2026 Pazar
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+2.599,00 €
+(139.566,30 TRY)
+2.999,00 €
+(161.046,30 TRY)
+2.599,00 €
+(139.566,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.549,00 €
+(136.881,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 23-10-2026 Cuma
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+3 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+2.899,00 €
+(155.676,30 TRY)
+3.299,00 €
+(177.156,30 TRY)
+2.899,00 €
+(155.676,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.849,00 €
+(152.991,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 07-11-2026 Cumartesi
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+2 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+3.299,00 €
+(177.156,30 TRY)
+3.699,00 €
+(198.636,30 TRY)
+3.299,00 €
+(177.156,30 TRY)
+300,00 €
+(16.110,00 TRY)
+3.249,00 €
+(174.471,30 TRY)
+Rezervasyon Yap
+Tur Hareket Tarihi: 08-11-2026 Pazar
+Paket Adı
+İki Kişilik Oda Kişi Başı
+Tek Kişilik Oda
+İlave Yatak
+0 - 1,99 Yaş
+2 - 11,99 Yaş
+3* ve 4* Merkezi Oteller
+2.649,00 €
+(142.251,30 TRY)
+3.049,00 €
+(163.731,30 TRY)
+2.649,00 €
+(142.251,30 TRY)
+300,00 €
+(16.110,00 TRY)
+2.599,00 €
+(139.566,30 TRY)
+Rezervasyon Yap
+.campaign-card{border:0; box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.campaign-card .card-header{
+background: linear-gradient(135deg,#36d1dc,#5b86e5);
+color:#fff;
+}
+.campaign-card2{
+--grad-1:#36d1dc;
+--grad-2:#5b86e5;
+--header-fg:#fff;
+}
+.campaign-card2 .card-header{
+background: linear-gradient(135deg,var(--grad-1),var(--grad-2));
+color: var(--header-fg);
+}
+/* Tema seçenekleri */
+.campaign-card2.sunset { --grad-1:#ff7e5f; --grad-2:#feb47b; } /* turuncu-şeftali */
+.campaign-card2.forest { --grad-1:#0bab64; --grad-2:#3bb78f; } /* zümrüt-yeşil */
+.campaign-card2.royal { --grad-1:#8360c3; --grad-2:#2ebf91; } /* mor → turkuaz */
+.campaign-card2.flamingo{ --grad-1:#f857a6; --grad-2:#ff5858; } /* pembe-kor */
+.campaign-card2.midnight{ --grad-1:#141e30; --grad-2:#243b55; } /* koyu lacivert */
+.campaign-card2.aurora { --grad-1:#00c6ff; --grad-2:#0072ff; } /* camgöbeği-mavi */
+.campaign-card2.mango { --grad-1:#f6d365; --grad-2:#fda085; --header-fg:#1f2937; }
+.discount-pill{
+border:1px dashed rgba(0,0,0,.15);
+border-radius:14px; padding:.6rem .8rem; display:flex; gap:.6rem; align-items:center;
+background:#fff;
+}
+.discount-pill .ic{
+width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.7);
+}
+.ribbon{
+position:absolute; top:.75rem; right:-.5rem; background:#ffd166; color:#212529;
+padding:.25rem .75rem; border-radius:999px 0 0 999px; font-weight:600;
+box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+Kampanyalar
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT7500
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 7500.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+150.000,00 - 15.000.000,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT5000
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 5000.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+90.000,00 - 149.999,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT3000
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 3000.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+60.000,00 - 89.999,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Son 28 gün
+Kampanya
+İndirim Kuponu
+Kupon Kodu : FIRSAT2000
+24-11-2025 ile 31-12-2026 tarihleri arasındaki turlarda Oda Bazlı 2000.00 TRY indirim.
+Rezervasyon Tarihleri:
+24 Kas 2025 – 31 Tem 2026
+Seyahat Tarihleri:
+24 Kas 2025 – 31 Ara 2026
+Rezervasyon Tutarı:
+40.000,00 - 59.999,00
+Kampanya stok ve kontenjan ile sınırlıdır.
+Ücrete Dahil Olan Hizmetler
+-Türk Havayolları ile İstanbul (IST) – Osaka (KIX) gidiş, Tokyo (NRT) – İstanbul (IST) dönüş ekonomi sınıf uçak bileti
+-3* & 4* otellerde 3 gece Osaka, 1 gece Kyoto, 3 gece Tokyo’da oda & kahvaltı konaklama
+-Alan-otel-alan transferleri
+-Özel otobüslerimiz ile belirtilen tüm şehir transferleri
+-Kyoto – Tokyo arası hızlı tren bileti
+-Osaka Şehir Turu
+-Todaiji Tapınağı
+-Nara Park
+-Dotonbori & Shinsibashi
+-Kobe Şehir Turu
+-Kyoto Şehir Turu
+-Arashiyama Bambu Ormanı Turu
+-Kiyomuzidera Tapınağı
+-Gion Turu
+-Ginza Turu
+-Shibuya Yaya Geçidi
+-Oshino Hakkai Turu
+-Fuji Dağı Turu
+-Hakone Turu
+-Ashi Gölü Tekne Turu
+-Outlet Turu
+-Akihabara Turu
+-Nakamise & Shopping Arcade Turu
+-Türkçe Rehberlik hizmeti
+-TURSAB mesleki sorumluluk sigortası
+Ücrete Dahil Olmayan Hizmetler
+-Seyahat sağlık sigortası (20 Euro)
+-Programda belirtilmeyen öğle ve akşam yemekleri
+-Her türlü kişisel harcamalar ve otel ekstraları
+-Yurt dışı çıkış harcı bedeli
+-Müze & Ören Yeri girişleri
+-Turist şehir vergileri
+-Şoför tipleri 10 Euro/ kişibaşı (isteğe bağlı)
+Tur Hareket Noktaları
+23:00 İstanbul Yeni Havalimanı
+Ekstra Tur ve Aktiviteler
+Müze, Ören Yeri ve Tapınaklar Girişleri + Ashi Gölü Tekne Turu + Lokal Rehberler + Turist Şehir Vergileri
+Kişi başı 175 Euro
+-Tur esnasında rehberimize ödenecektir.
+Tur Programını Gönder
+E-Main Adresi
+Gönder
+Rehberimizden Notlar
+Bilgilendirme
+Yaş Sınırı Uyarı
+Bu turumuzda 0 yaşından küçük çocuklar kabul edilmemektedir.
+Anlayışınız için teşekkür ederiz.
+Anladım
+Sizin İçin
+Vize Bilgileri
+İptal İade Güvence Paketi
+Sıkça Sorulan Sorular
+Ödeme Seçenekleri
+İnsan Kaynakları
+Tur Takvimi
+Malitur Öneriyor
+Balkan Turları
+Gap Turları
+İtalya Turları
+Karadeniz Turları
+Benelüks Paris Turları
+Dubai Turları
+Tayland Turları
+Uzak Doğu Turları
+Kapadokya Turları
+Kurumsal
+Hakkımızda
+İletişim
+Satış Ofislerimiz
+Paket Tur Sözleşmesi
+Gizlilik Sözleşmesi
+Kulanım Sözleşmesi
+Kütahya Çizelgesi
+Kişisel Verilerin Korunması
+Çağrı Merkezi
+0850 303 1363
+Rezervasyon Sorgula
+Malitur Blog
+Markalarımız
+Her hakkı saklıdır.
+Site Kullanım Sözleşmesi | Gizlilik Sözleşmesi Malitur.com web sitesi, kişisel bilgisayarınıza bilgi depolamak amacıyla tanımlama bilgilerini kullanır.
+Bilgilerin bir kısmı sitenin çalışmasında asıl rolü üstlenirken bazı kısımları ise kullanıcı deneyimlerinin daha da iyileştirilmesine yardımcı olur.
+Sitemizi kullanarak bu tanımlama bilgilerinin yerleştirilmesine izin vermiş olursunuz.
+Detaylı bilgi için Gizlilik politikamızı okuyunuz.Afişe edilen tüm fiyatlar, ilgili üründe kontenjan olması durumunda geçerli olup seçeceğiniz döneme göre fiyatlar değişkenlik gösterebilir.
+Sitemizde görmüş olduğunuz tüm fiyatlara KDV dahildir.
+Hemen Ara
+Whatsapp
+Sizi Arayalım
+Ad
+E-Mail
+Telefon Numarası
+Arama Tarihi
+Bugün
+Yarın
+Arama Zamanı
+Farketmez
+09:00 - 12:00 Arası
+12:00 - 13:30 Arası
+13:00 - 17:00 Arası
+17:00 - 21:00 Arası
+Notunuz
+Gönder
+Üye Girişi
+Gmail ile devam et
+E-posta Adresi
+Şifre
+Şifrenizi mi unuttunuz?
+Giriş Yap
+Hesabınız yok mu? Kayıt olun
+Kayıt Ol
+Gmail ile devam et
+Ad
+Soyad
+E-posta Adresi
+Şifre
+Please provide a valid city.
+Kayıt Ol
+Zaten bir hesabınız var mı? Giriş yapın
+Şifremi Unuttum
+E-posta Adresi
+Şifremi Gönder
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+/* Firefox */
+input[type=number] {
+-moz-appearance: textfield;
+}
+Rezervasyon Sorgula
+E-posta Adresi veya Kimlik No *
+Rezervasyon Numarası
+Rezervasyonu Kontrol Et
+1. Oda
+Kaldır
+Yetişkin Sayısı
+-
++
+Çocuk Sayısı
+-
++
+Yurt dışı turlarda çocuk yaşı maksimum 11 olabilmektedir. 11 yaşından büyük çocuklar yetişkin olarak kabul edilmektedir.
+En Popüler Bölgeler
+Erken Rezervasyon Otelleri
+Kayak Otelleri
+Termal Otelleri
+Kıbrıs Otelleri
+Grup Talepleri
+İsim Soyisim (*)
+Telefon (*)
+Email (*)
+Tur Türü (*)
+Seçiniz
+Yurtdışı Tur
+Yurtiçi Tur
+Günübirlik Tur
+Gemi Turları
+Ana Destinasyon
+Tarih Aralığı
+Kişi Bilgileri
+Seçiniz
+1-5 Kişi
+6-10 Kişi
+11-20 Kişi
+21-30 Kişi
+31-40 Kişi
+41-50 Kişi
+İletmek İstediğiniz Notlar
+Kapat
+Kaydet
+window.csrfName = 'csrf_test_name';
+window.csrfHash = '6617c2b71dd36c909e4dcca48cca9a05';
+{
+"@context": "https://schema.org",
+"@type": "ItemList",
+"name": "Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı",
+"description": "Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı",
+"itemListElement": [
+{"@type":"ListItem","position":1,
+"url":"https://malitur.com/elegant-japonya-turu-thy-ile-ekstra-turlar-dahil-vizesiz-7-gece-otel-konaklamali-istanbul-cikisli",
+"name":"Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı"}
+]
+}
+// Global scope'a taşıyarak extra.js'den erişimi garanti ediyoruz
+window.minChildAge = 0;
+const PicketGroupRequests = new easepick.create({
+element: document.getElementById("DateRange"),
+css: ["https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.0/dist/index.css", "/assets/css/ease-custom.css"],
+lang: "tr-TR",
+grid: 2,
+format: "DD.MM.YYYY",
+calendars: 2,
+zIndex: 1001,
+locale: {
+nextMonth:
+" ",
+previousMonth:
+" ",
+apply: "Select",
+},
+RangePlugin: {
+tooltipNumber(num) {
+return num - 1;
+},
+locale: {
+one: "Gün",
+other: "Gün",
+},
+},
+LockPlugin: {
+minDate: "2022-07-16T21:00:00.000Z",
+minDays: 0,
+maxDays: 0,
+selectForward: true,
+inseparable: true,
+},
+plugins: ["RangePlugin", "LockPlugin"],
+setup(picker) {
+picker.on('select', (e) => {
+let startDate = picker.getStartDate('DD-MM-YYYY');
+let endDate = picker.getEndDate('DD-MM-YYYY');
+var checkindate = HumanizeRequrstGroupDate(startDate);
+var checkoutdate = HumanizeRequrstGroupDate(endDate);
+if ($('#GroupRequestsModal #DateStart').length > 0) {
+$('#GroupRequestsModal #DateStart').val(checkindate);
+}
+if ($('#GroupRequestsModal #DateEnd').length > 0) {
+$('#GroupRequestsModal #DateEnd').val(checkoutdate);
+}
+});
+},
+});
+function HumanizeRequrstGroupDate(startDate){
+var formattedDate = new Date(startDate);
+var d = formattedDate.getDate();
+var m = formattedDate.getMonth();
+m += 1; // JavaScript months are 0-11
+var y = formattedDate.getFullYear();
+return d + "-" + m + "-" + y;
+}
+if( $('.GroupRequestsTourlist').length ) // use this if you are using id to check
+{
+$('.GroupRequestsTourlist').select2({
+theme: 'bootstrap-5',
+dataType: 'json',
+dropdownParent: $('#GroupRequestsModal'),
+delay: 250,
+ajax: {
+url: '/Ajax/Tours/GetTours',
+data: function (params) {
+var query = {
+TourTypeSngle: $('#TourType option:selected').val(),
+term: params.term
+}
+// Query parameters will be ?search=[term]&type=public
+return query;
+},
+processResults: function (data) {
+return {
+results: $.map(data.Suggestions, function (item) {
+return {
+text: item.Name,
+id: item.TourId
+}
+})
+};
+}
+}
+});
+}
+document.addEventListener('DOMContentLoaded', function () {
+// Tab değişince URL hash’i güncelle
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (el) {
+el.addEventListener('shown.bs.tab', function (e) {
+const hash = e.target.getAttribute('href') || e.target.getAttribute('data-bs-target');
+if (hash) {
+if (history.replaceState) history.replaceState(null, '', hash);
+else location.hash = hash;
+}
+});
+});
+function activateFromHash() {
+const hash = window.location.hash;
+if (!hash) return;
+const trigger = document.querySelector(
+`[data-bs-toggle="tab"][href="${hash}"], [data-bs-toggle="tab"][data-bs-target="${hash}"]`
+);
+if (trigger) new bootstrap.Tab(trigger).show();
+if (history.replaceState) history.replaceState(null, '', '');
+}
+// İlk yüklemede ve geri/ileri hareketinde hash’e göre tab’ı aç
+activateFromHash();
+window.addEventListener('hashchange', activateFromHash);
+});
+$(".coupon-title").on("click", function () {
+$(".coupon-box").toggleClass("active");
+});
+var cpnBtn = document.getElementById("cpnBtn");
+var cpnCode = document.getElementById("cpnCode");
+cpnBtn.onclick = function () {
+console.time("time1");
+var temp = $("");
+$("body").append(temp);
+temp.val($("#cpnCode").text()).select();
+document.execCommand("copy");
+temp.remove();
+console.timeEnd("time1");
+$(".coupon-btn").addClass("active");
+cpnBtn.innerHTML = "Kopyalandı";
+setTimeout(function () {
+$(".coupon-btn").removeClass("active");
+cpnBtn.innerHTML = "Kopyala";
+}, 3000);
+};
+document.querySelector("#show-room-btn").addEventListener("click", (e) => {
+e.preventDefault();
+$("#nav-tab button#detail-2-tab").tab("show");
+setTimeout(() => {
+$("#nav-tabContent #detail-2")[0].scrollIntoView({
+behavior: "smooth",
+block: "start",
+inline: "start",
+});
+}, 100);
+});
+document.addEventListener("DOMContentLoaded", function () {
+const entertainmentItems = document.querySelectorAll(".entertainment-list .e-item");
+const showButton = document.querySelector(".show-entertainment");
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+item.style.display = "none";
+}
+});
+showButton.addEventListener("click", function () {
+const isShowingAll = this.textContent === "Daha az göster";
+entertainmentItems.forEach((item, index) => {
+if (index > 2) {
+if (isShowingAll) {
+item.style.display = "none";
+} else {
+item.style.display = "block";
+}
+}
+});
+this.textContent = isShowingAll ? "Daha fazla göster" : "Daha az göster";
+});
+});
+document.addEventListener("DOMContentLoaded", function () {
+document.querySelectorAll(".svg-explorer-content").forEach((container) => {
+const svgContainer = container.querySelector(".svg-container");
+const svgElement = svgContainer.querySelector("svg");
+const zoomInBtn = container.querySelector(".zoom-in");
+const zoomOutBtn = container.querySelector(".zoom-out");
+let scale = 1;
+let minScale = 1;
+let maxScale = 3;
+let isDragging = false;
+let startX, startY;
+let translateX = 0,
+translateY = 0;
+let lastTranslateX = 0,
+lastTranslateY = 0;
+function updateTransform() {
+let maxTranslateX = (svgElement.clientWidth * scale - container.clientWidth) / 2;
+let maxTranslateY = (svgElement.clientHeight * scale - container.clientHeight) / 2;
+translateX = Math.min(maxTranslateX, Math.max(-maxTranslateX, translateX));
+translateY = Math.min(maxTranslateY, Math.max(-maxTranslateY, translateY));
+svgElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+zoomInBtn.addEventListener("click", function () {
+if (scale < maxScale) {
+scale += 0.2;
+updateTransform();
+}
+});
+zoomOutBtn.addEventListener("click", function () {
+if (scale > minScale) {
+scale -= 0.2;
+updateTransform();
+}
+});
+// *** Mouse Sürükleme ***
+svgContainer.addEventListener("mousedown", function (event) {
+isDragging = true;
+startX = event.clientX - lastTranslateX;
+startY = event.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+document.addEventListener("mousemove", function (event) {
+if (isDragging) {
+translateX = event.clientX - startX;
+translateY = event.clientY - startY;
+updateTransform();
+}
+});
+document.addEventListener("mouseup", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+// *** Dokunmatik Sürükleme ***
+svgContainer.addEventListener("touchstart", function (event) {
+isDragging = true;
+const touch = event.touches[0];
+startX = touch.clientX - lastTranslateX;
+startY = touch.clientY - lastTranslateY;
+svgContainer.style.cursor = "grabbing";
+});
+svgContainer.addEventListener("touchmove", function (event) {
+if (isDragging) {
+const touch = event.touches[0];
+translateX = touch.clientX - startX;
+translateY = touch.clientY - startY;
+updateTransform();
+}
+});
+svgContainer.addEventListener("touchend", function () {
+isDragging = false;
+lastTranslateX = translateX;
+lastTranslateY = translateY;
+svgContainer.style.cursor = "grab";
+});
+});
+});
+function recalculate(Date){
+$('#tour_date').val(Date).trigger('change');
+// $('#TourDetailForm').submit();
+}
+{
+"@context": "https://schema.org",
+"@type": "BreadcrumbList",
+"itemListElement": [
+{ "@type": "ListItem", "position": 1, "name": "Anasayfa", "item": "https://malitur.com/" },
+{ "@type": "ListItem", "position": 2, "name": "Yurtdışı Tur", "item": "https://malitur.com/yurt-disi-turlar" },
+{ "@type": "ListItem", "position": 3, "name": "Uzakdoğu Turları", "item": "https://malitur.com/uzakdogu-turlari" }
+{ "@type": "ListItem", "position": 4, "name": "Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı", "item": "https://malitur.com/elegant-japonya-turu-thy-ile-ekstra-turlar-dahil-vizesiz-7-gece-otel-konaklamali-istanbul-cikisli" }
+]
+}
+(function () {
+window.dataLayer = window.dataLayer || [];
+if (window.__maliturTourDetailGa4Loaded === true) {
+return;
+}
+window.__maliturTourDetailGa4Loaded = true;
+var baseItem = {"item_id":"TOUR-2642","item_name":"Elegant Japonya Turu THY ile Ekstra Turlar Dahil Vizesiz / 7 Gece Otel Konaklamalı / İstanbul Çıkışlı","affiliation":"Malitur","item_brand":"Malitur","item_category":"Tour","item_category2":"Uzak Doğu Turları","item_category3":"İstanbul Hareketli","item_category4":"Türk Hava Yolları","item_variant":"8 gece 9 gün","item_list_id":"uzakdogu-turlari","item_list_name":"Uzak Doğu Turları","location_id":"İstanbul","price":2599,"quantity":1,"tour_date":"2026-07-13"};
+var currency = "EUR";
+var lastBeginCheckoutKey = '';
+function toNumber(value) {
+var number = parseFloat(value || '0');
+return isNaN(number) ? 0 : number;
+}
+function cleanText(value) {
+return (value || '').replace(/\s+/g, ' ').trim();
+}
+function pushGa4Event(eventName, ecommerce) {
+window.dataLayer.push({ ecommerce: null });
+window.dataLayer.push({
+event: eventName,
+ecommerce: ecommerce || {}
+});
+}
+function getSelectedTourDate() {
+var selectedDate = '';
+var tourDateInput = document.querySelector('#tour_date');
+if (tourDateInput && tourDateInput.value) {
+selectedDate = tourDateInput.value;
+}
+return selectedDate;
+}
+function buildCurrentItem(extra) {
+var item = Object.assign({}, baseItem);
+var selectedDate = extra && extra.tour_date ? extra.tour_date : getSelectedTourDate();
+item.price = toNumber(item.price);
+item.quantity = 1;
+if (selectedDate) {
+item.tour_date = selectedDate;
+}
+return item;
+}
+function buildEcommerce(item) {
+var ecommerce = {
+currency: currency,
+items: [item]
+};
+if (item.price > 0) {
+ecommerce.value = item.price;
+}
+return ecommerce;
+}
+/**
+* 1) Ürün detay görüntüleme
+*/
+var viewItem = buildCurrentItem({});
+pushGa4Event('view_item', buildEcommerce(viewItem));
+/**
+* 2) Rezervasyon başlatma
+*/
+function trackBeginCheckout(source, tourDate) {
+var item = buildCurrentItem({
+tour_date: tourDate || ''
+});
+var key = item.item_id + '|' + (item.tour_date || '');
+if (key === lastBeginCheckoutKey) {
+return;
+}
+lastBeginCheckoutKey = key;
+var ecommerce = buildEcommerce(item);
+ecommerce.checkout_step = 1;
+ecommerce.checkout_source = source || 'tour_detail';
+pushGa4Event('begin_checkout', ecommerce);
+}
+document.addEventListener('click', function (event) {
+var button = event.target.closest('[data-ga4-click="begin_checkout"]');
+if (!button) {
+return;
+}
+var tourDate = button.getAttribute('data-ga4-tour-date') || getSelectedTourDate();
+trackBeginCheckout('reservation_button', tourDate);
+});
+/**
+* 3) Detay rezervasyon formu submit
+* Form zaten /Tours/Search/Calculate action'ına gidiyor.
+* Submit akışını bozmayalım; sadece event basalım.
+*/
+var detailForm = document.querySelector('#TourDetailForm');
+if (detailForm) {
+detailForm.addEventListener('submit', function () {
+trackBeginCheckout('reservation_form', getSelectedTourDate());
+});
+}
+/**
+* 4) Favoriye ekleme
+*/
+document.addEventListener('click', function (event) {
+var favButton = event.target.closest('.add-favourite[data-type="tour"]');
+if (!favButton) {
+return;
+}
+var item = buildCurrentItem({});
+pushGa4Event('add_to_wishlist', buildEcommerce(item));
+});
+})();
+document.addEventListener("DOMContentLoaded", function () {
+let lazyImages = document.querySelectorAll("img.lazy-load");
+let observer = new IntersectionObserver((entries, observer) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) {
+let img = entry.target;
+img.src = img.getAttribute("data-src");
+img.classList.remove("lazy-load");
+observer.unobserve(img);
+}
+});
+});
+lazyImages.forEach(img => observer.observe(img));
+});
+(function(){
+const SITE_KEY = 'fa126a60b1023754b6eb6a43e472ca1b'; // analytics_sites.site_key
+const ENDPOINT = 'https://tracker.malitur.com.tr/v1/collect'; // HTTPS şart
+function uuidv4(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+const cookieName='va_vid';
+function getCookie(n){ return (document.cookie.match('(^|;)\s*'+n+'\s*=\s*([^;]+)')||0)[2]; }
+function setCookie(n,v,days){ const d=new Date(); d.setTime(d.getTime()+days*864e5); document.cookie=n+'='+v+';path=/;expires='+d.toUTCString()+';SameSite=Lax'; }
+let visitorId=getCookie(cookieName); if(!visitorId){ visitorId=uuidv4(); setCookie(cookieName,visitorId,365*2); }
+const body = JSON.stringify({
+siteKey: "fa126a60b1023754b6eb6a43e472ca1b", // API key koymayın
+url: location.href,
+path: location.pathname + location.search,
+title: document.title,
+referrer: document.referrer || null,
+event: 'pageview',
+screen: (screen.width+'x'+screen.height),
+lang: navigator.language || null,
+visitorId,
+utm_source: new URLSearchParams(location.search).get('utm_source'),
+utm_medium: new URLSearchParams(location.search).get('utm_medium'),
+utm_campaign: new URLSearchParams(location.search).get('utm_campaign')
+});
+let queued=false;
+if (navigator.sendBeacon) {
+try { queued = navigator.sendBeacon(ENDPOINT, new Blob([body], {type:'application/json'})); } catch(e){ queued=false; }
+}
+if(!queued){
+fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true,credentials:'omit'}).catch(()=>{});
+}
+})();
