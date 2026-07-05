@@ -104,11 +104,17 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
+            'requires_visa' => 'nullable|boolean',
+            'visa_general' => 'nullable|string',
+            'visa_documents' => 'nullable|string',
+            'visa_fees' => 'nullable|string',
+            'visa_notes' => 'nullable|string',
         ], [
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
+        $validated = $this->applyVisaFields($validated, $request);
 
         $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
         $dates = $this->prepareValidatedDatePrices(
@@ -181,11 +187,17 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
+            'requires_visa' => 'nullable|boolean',
+            'visa_general' => 'nullable|string',
+            'visa_documents' => 'nullable|string',
+            'visa_fees' => 'nullable|string',
+            'visa_notes' => 'nullable|string',
         ], [
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
+        $validated = $this->applyVisaFields($validated, $request, $tour);
         $validated['stop_cities'] = $this->normalizeStopCities($validated['stop_cities'] ?? null, $validated['departure_city']);
 
         $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
@@ -218,6 +230,37 @@ class TourController extends Controller
 
         return redirect()->route('agency.tours.index')
             ->with('success', 'Tur güncellendi.');
+    }
+
+    /**
+     * Vizeli/Vizesiz seçimini uygular: "Vizesiz" seçildiyse vize alanları temizlenir
+     * (eski vize metinleri kayıtta kalmasın); "Vizeli" seçilen tur tanım gereği yurt
+     * dışıdır → is_international da işaretlenir (AI arama "vizesiz" filtresi için).
+     * Vizeli→Vizesiz dönüşünde, vizeli işaretin yazdığı is_international geri alınır
+     * (yanlışlıkla "Vizeli" kaydedilen yurt içi tur kalıcı olarak yurt dışı kalmasın);
+     * turun önceki hali vizesizse is_international'a dokunulmaz.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function applyVisaFields(array $validated, Request $request, ?Tour $tour = null): array
+    {
+        $validated['requires_visa'] = $request->boolean('requires_visa');
+
+        if ($validated['requires_visa']) {
+            $validated['is_international'] = true;
+        } else {
+            $validated['visa_general'] = null;
+            $validated['visa_documents'] = null;
+            $validated['visa_fees'] = null;
+            $validated['visa_notes'] = null;
+
+            if ($tour && $tour->requires_visa) {
+                $validated['is_international'] = false;
+            }
+        }
+
+        return $validated;
     }
 
     /**

@@ -263,6 +263,29 @@
                         <div id="importStatus" style="font-size:13px;margin-top:10px;display:none;"></div>
                     </div>
 
+                    {{-- Vizeli / Vizesiz seçimi: Vizeli'de vize kutuları açılır ve
+                         URL içe aktarma vize bölümlerini de çeker --}}
+                    @php $requiresVisa = (bool) old('requires_visa'); @endphp
+                    <div class="form-group">
+                        <label>Vize Durumu *</label>
+                        <div style="display:flex;gap:8px;">
+                            <button type="button" id="visaOffBtn" class="btn {{ $requiresVisa ? 'btn-outline' : 'btn-primary' }}" onclick="setVisaMode(false)">Vizesiz</button>
+                            <button type="button" id="visaOnBtn" class="btn {{ $requiresVisa ? 'btn-primary' : 'btn-outline' }}" onclick="setVisaMode(true)">🛂 Vizeli</button>
+                        </div>
+                        <input type="hidden" name="requires_visa" id="requiresVisaInput" value="{{ $requiresVisa ? 1 : 0 }}">
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">
+                            Vize gereken turlarda "Vizeli"yi seçin: vize bilgi kutuları açılır, URL'den içe aktarmada vize bölümleri de otomatik çekilir.
+                        </div>
+                    </div>
+
+                    <div id="visaFields" style="display:{{ $requiresVisa ? 'block' : 'none' }};border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:24px;background:#f8fafc;">
+                        <div style="font-weight:700;margin-bottom:12px;">🛂 Vize Bilgileri</div>
+                        <div class="form-group"><label>Genel Vize Bilgileri</label><textarea name="visa_general" rows="3" placeholder="Pasaport geçerlilik süresi, başvuru süreci, vize türü (ör. Schengen)…">{{ old('visa_general') }}</textarea></div>
+                        <div class="form-group"><label>Gerekli Evraklar</label><textarea name="visa_documents" rows="5" placeholder="Standart evraklar + meslek grubuna göre (çalışan, işveren, emekli, öğrenci, çocuk…) evrak listesi">{{ old('visa_documents') }}</textarea></div>
+                        <div class="form-group"><label>Vize Ücretleri</label><textarea name="visa_fees" rows="3" placeholder="İstanbul - 12 yaş ve üzeri: 370 €&#10;Ankara - 12 yaş ve üzeri: 300 €">{{ old('visa_fees') }}</textarea></div>
+                        <div class="form-group" style="margin-bottom:0;"><label>Önemli Notlar / Konsolosluk Bilgilendirmesi</label><textarea name="visa_notes" rows="3" placeholder="Fotoğraf standartları, ret/iade koşulları, konsolosluk uyarıları…">{{ old('visa_notes') }}</textarea></div>
+                    </div>
+
                     <div class="form-group"><label>Tur Adı *</label><input type="text" name="title" value="{{ old('title') }}" required></div>
                     <div class="form-group">
                         <label>Kategori Yetkisi *</label>
@@ -548,6 +571,23 @@
                 if (i.files[0]) r.readAsDataURL(i.files[0]);
             }
 
+            // --- Vizeli / Vizesiz ---
+            function setVisaMode(on) {
+                var input = document.getElementById('requiresVisaInput');
+                var fields = document.getElementById('visaFields');
+                var onBtn = document.getElementById('visaOnBtn');
+                var offBtn = document.getElementById('visaOffBtn');
+                if (!input || !fields || !onBtn || !offBtn) return;
+                input.value = on ? '1' : '0';
+                fields.style.display = on ? 'block' : 'none';
+                onBtn.className = 'btn ' + (on ? 'btn-primary' : 'btn-outline');
+                offBtn.className = 'btn ' + (on ? 'btn-outline' : 'btn-primary');
+            }
+            function isVisaMode() {
+                var input = document.getElementById('requiresVisaInput');
+                return !!(input && input.value === '1');
+            }
+
             // --- URL'den İçe Aktar ---
             function showImportStatus(msg, type) {
                 var s = document.getElementById('importStatus');
@@ -578,6 +618,16 @@
                 setVal('textarea[name="guide_info"]', data.guide_info);
                 setVal('input[name="frequency"]', data.frequency);
                 setVal('input[name="tour_url"]', sourceUrl);
+
+                // Vize bilgileri: yanıt vize anahtarlarını içeriyorsa ("Vizeli" modda her
+                // zaman döner) null/boş değer alanı TEMİZLER — önceki import'un metinleri
+                // yeni turun kutularında kalmasın (uyarı "elle doldurun" derken kutular
+                // eski turun evrak listesiyle dolu kalıyordu).
+                ['visa_general', 'visa_documents', 'visa_fees', 'visa_notes'].forEach(function(k) {
+                    if (!(k in data)) return;
+                    var el = document.querySelector('textarea[name="' + k + '"]');
+                    if (el) el.value = data[k] || '';
+                });
 
                 // Görseller: URL'den çekilenleri galeriye ekle
                 if (typeof window.setGalleryImages === 'function' && Array.isArray(data.image_urls)) {
@@ -647,7 +697,7 @@
                 fetch('{{ route('agency.tours.import') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify({ url: url, deep: deep ? 1 : 0 })
+                    body: JSON.stringify({ url: url, deep: deep ? 1 : 0, visa: isVisaMode() ? 1 : 0 })
                 })
                 .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
                 .then(function(res){
@@ -991,6 +1041,9 @@
                 renderMasterCalendar();
 
                 setItinerary(@json(old('itinerary', [])));
+
+                // Vizeli/vizesiz: doğrulama hatası sonrası old() değerini koru
+                setVisaMode(isVisaMode());
 
                 document.getElementById('durationDaysInput').addEventListener('input', renderPricingOptions);
                 var currencySelect = document.getElementById('currencySelect');

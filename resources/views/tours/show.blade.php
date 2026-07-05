@@ -69,6 +69,9 @@
                     @endif
                     <span class="badge badge-accent">📍 {{ $tour->destination }}</span>
                     <span class="badge badge-accent">⏱ {{ $tour->duration_days }} gün</span>
+                    @if($tour->requires_visa)
+                        <span class="badge badge-accent">🛂 Vizeli</span>
+                    @endif
                 </div>
 
                 @php
@@ -311,6 +314,11 @@
                         ['➕', 'Ekstra Tur ve Aktiviteler', $tour->extras],
                         ['👤', 'Rehber', $tour->guide_info],
                         ['↩️', 'İptal / İade Koşulları', $tour->cancellation_policy],
+                        // Vize bölümleri yalnızca vizeli turlarda (vizesizde alanlar zaten null)
+                        ['🛂', 'Vize Bilgileri', $tour->requires_visa ? $tour->visa_general : null],
+                        ['📄', 'Vize İçin Gerekli Evraklar', $tour->requires_visa ? $tour->visa_documents : null],
+                        ['💶', 'Vize Ücretleri', $tour->requires_visa ? $tour->visa_fees : null],
+                        ['⚠️', 'Vize — Önemli Notlar', $tour->requires_visa ? $tour->visa_notes : null],
                     ];
                 @endphp
                 @foreach($detailSections as [$icon, $heading, $body])
