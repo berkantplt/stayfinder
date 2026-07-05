@@ -248,6 +248,8 @@
                 <form method="POST" action="{{ route('agency.tours.update', $tour) }}" enctype="multipart/form-data">
                     @csrf @method('PUT')
 
+                    @include('agency.tours._import_panel')
+
                     {{-- Vizeli / Vizesiz seçimi: Vizeli'de vize kutuları açılır --}}
                     @php $requiresVisa = (bool) old('requires_visa', $tour->requires_visa ? 1 : 0); @endphp
                     <div class="form-group">
