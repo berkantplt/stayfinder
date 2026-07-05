@@ -364,7 +364,10 @@
 
             const onEvent = (eventName, data) => {
                 if (eventName === 'search') {
-                    if (!uuidInput.value && data.conversation_uuid) {
+                    // uuid HER ZAMAN senkronize: oturum yenilenirse (ör. login) sunucu
+                    // yeni konuşma açar; eski uuid ile devam edilirse her mesaj ayrı
+                    // konuşmaya düşüyor ve bağlam hiç birikmiyordu
+                    if (data.conversation_uuid && uuidInput.value !== data.conversation_uuid) {
                         uuidInput.value = data.conversation_uuid;
                         window.history.replaceState({}, '', showRouteBase + '/' + data.conversation_uuid);
                     }

@@ -16,8 +16,10 @@ class ConversationService
     /** Bir konuşmada en fazla bu kadar netleştirme sorusu sorulur, sonra zorla aramaya geçilir. */
     public const MAX_CLARIFICATIONS = 2;
 
-    /** Aynı conversation'a paralel mesaj çakışmasını önlemek için lock. */
-    public const LOCK_TTL_SECONDS = 30;
+    /** Aynı conversation'a paralel mesaj çakışmasını önlemek için lock.
+     *  TTL, en yavaş yol (intent + embedding + streaming yorum) bitmeden kilit
+     *  düşmesin diye beklenen en kötü sürenin üzerinde tutulur. */
+    public const LOCK_TTL_SECONDS = 90;
     public const LOCK_BLOCK_SECONDS = 5;
 
     /**
@@ -51,6 +53,84 @@ class ConversationService
         }
 
         return $conversation->session_id === Str::limit($request->session()->getId(), 64, '');
+    }
+
+    /**
+     * Tur başlangıcı hazırlığı: sıfırlama isteği, netleştirme turlarında biriken
+     * bağlam ve "beğenmedim, başka öner" akışını tek yerde çözer.
+     *
+     * @return array{0: array<string, mixed>, 1: string, 2: array<int, int>}
+     *              [previousIntent, searchQuery, excludeTourIds]
+     */
+    private function prepareTurn(AiSearchConversation $conversation, string $userMessage): array
+    {
+        $previousIntent = $conversation->current_intent ?? [];
+
+        // "Baştan başlayalım / yeni arama" → tüm eski niyet ve sayaçlar temizlenir;
+        // yapışkan filtrelerden kurtulmanın deterministik yolu.
+        if ($this->wantsReset($userMessage)) {
+            $previousIntent = [];
+        }
+
+        // Netleştirme turlarında verilen bilgiler (_pending_context) kaybolmasın:
+        // "Kapadokya" + soruya cevaben "30 bin" → arama "Kapadokya 30 bin" ile yapılır.
+        $pending = trim((string) ($previousIntent['_pending_context'] ?? ''));
+        $searchQuery = $pending !== '' ? trim($pending.' '.$userMessage) : $userMessage;
+
+        // Yazıyla "beğenmedim, başka öner": önceki sonuçlar dışlanır ve semantik
+        // sorgu, anlamsız "beğenmedim" metni yerine önceki aramanın konusuyla kurulur.
+        $excludeTourIds = [];
+        if ($this->wantsDifferentResults($userMessage)) {
+            $excludeTourIds = array_values(array_filter(array_map('intval', (array) ($conversation->last_result_tour_ids ?? []))));
+            $previousQuery = trim((string) ($previousIntent['search_query'] ?? ''));
+            if ($previousQuery !== '') {
+                $searchQuery = trim($previousQuery.' '.$userMessage);
+            }
+        }
+
+        return [$previousIntent, $searchQuery, $excludeTourIds];
+    }
+
+    private function wantsReset(string $userMessage): bool
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach ([
+            'bastan basla', 'bastan alalim', 'yeni arama', 'yeni bir arama',
+            'sifirla', 'sifirdan basla', 'oncekileri unut', 'onceki aramayi unut',
+            'hepsini unut', 'unut gitsin', 'temiz sayfa',
+        ] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function wantsDifferentResults(string $userMessage): bool
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach ([
+            'begenmedim', 'begenmedik', 'baska oner', 'baska tur', 'baska secenek',
+            'baska neler var', 'baska var mi', 'baskalarini goster', 'farkli oner',
+            'farkli tur', 'farkli secenek', 'farkli bir sey', 'daha farkli',
+            'bunlar olmadi', 'olmadi bunlar', 'bunlari begenmedim', 'degisik bir sey',
+        ] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeTr(string $text): string
+    {
+        return strtr(mb_strtolower(trim($text), 'UTF-8'), [
+            'ı' => 'i', 'ğ' => 'g', 'ü' => 'u', 'ş' => 's', 'ö' => 'o', 'ç' => 'c', 'i̇' => 'i',
+        ]);
     }
 
     /**
@@ -89,12 +169,14 @@ class ConversationService
                 'content' => $userMessage,
             ]);
 
-            $previousIntent = $conversation->current_intent ?? [];
+            [$previousIntent, $searchQuery, $excludeTourIds] = $this->prepareTurn($conversation, $userMessage);
             $clarificationsAsked = (int) ($previousIntent['_clarifications'] ?? 0);
 
-            // 1. Niyet eksikse, aramadan önce kullanıcıya bir netleştirme sorusu sor
+            // 1. Niyet eksikse, aramadan önce kullanıcıya bir netleştirme sorusu sor.
+            // Sinyal kontrolü birleşik bağlamla yapılır — kullanıcının önceki turda
+            // verdiği bilgi ("Kapadokya") tekrar sorulmaz.
             if ($clarificationsAsked < self::MAX_CLARIFICATIONS) {
-                $question = $this->maybeAskClarification($userMessage, $previousIntent);
+                $question = $this->maybeAskClarification($searchQuery, $previousIntent);
 
                 if ($question !== null) {
                     $assistantMsg = AiSearchMessage::create([
@@ -105,6 +187,9 @@ class ConversationService
 
                     $nextIntent = array_merge($previousIntent, [
                         '_clarifications' => $clarificationsAsked + 1,
+                        // Soru turlarında verilen bilgi kaybolmasın — arama anında
+                        // birleşik sorgu olarak kullanılacak
+                        '_pending_context' => Str::limit($searchQuery, 500, ''),
                     ]);
 
                     $conversation->update([
@@ -126,7 +211,7 @@ class ConversationService
             }
 
             // 2. Niyet yeterince dolu — arama yap
-            $searchResult = $this->searchController->performAiSearch($request, $userMessage, $previousIntent);
+            $searchResult = $this->searchController->performAiSearch($request, $searchQuery, $previousIntent, excludeTourIds: $excludeTourIds);
 
             if (!is_array($searchResult) || isset($searchResult['error'])) {
                 $errorMessage = $searchResult['error'] ?? 'Arama başarısız.';
@@ -161,10 +246,10 @@ class ConversationService
             ]);
 
             $mergedIntent = $searchResult['intent'] ?? $previousIntent;
-            // _clarifications sayacını koru (debug ve max enforcement için)
-            if (isset($previousIntent['_clarifications'])) {
-                $mergedIntent['_clarifications'] = $previousIntent['_clarifications'];
-            }
+            // Başarılı arama: soru hakkı yenilenir (yeni konuya geçince tekrar
+            // sorulabilsin) ve biriken soru-cevap bağlamı intent'e taşındığı için düşülür.
+            unset($mergedIntent['_pending_context']);
+            $mergedIntent['_clarifications'] = 0;
 
             $conversation->update([
                 'current_intent' => $mergedIntent,
@@ -217,12 +302,13 @@ class ConversationService
                     'content' => $userMessage,
                 ]);
 
-                $previousIntent = $conversation->current_intent ?? [];
+                [$previousIntent, $searchQuery, $excludeTourIds] = $this->prepareTurn($conversation, $userMessage);
                 $clarificationsAsked = (int) ($previousIntent['_clarifications'] ?? 0);
 
-                // 1a. Clarification check
+                // 1a. Clarification check (birleşik bağlamla — önceki turda verilen
+                // bilgi tekrar sorulmaz)
                 if ($clarificationsAsked < self::MAX_CLARIFICATIONS) {
-                    $question = $this->maybeAskClarification($userMessage, $previousIntent);
+                    $question = $this->maybeAskClarification($searchQuery, $previousIntent);
 
                     if ($question !== null) {
                         $assistantMsg = AiSearchMessage::create([
@@ -232,7 +318,10 @@ class ConversationService
                         ]);
 
                         $conversation->update([
-                            'current_intent' => array_merge($previousIntent, ['_clarifications' => $clarificationsAsked + 1]),
+                            'current_intent' => array_merge($previousIntent, [
+                                '_clarifications' => $clarificationsAsked + 1,
+                                '_pending_context' => Str::limit($searchQuery, 500, ''),
+                            ]),
                             'last_message_at' => now(),
                             'title' => $conversation->title ?: Str::limit($userMessage, 60),
                         ]);
@@ -249,9 +338,10 @@ class ConversationService
                 // 1b. Search (skipComment: streamComment dışarıda akıtacak)
                 $searchResult = $this->searchController->performAiSearch(
                     $request,
-                    $userMessage,
+                    $searchQuery,
                     $previousIntent,
-                    skipComment: true
+                    skipComment: true,
+                    excludeTourIds: $excludeTourIds
                 );
 
                 if (!is_array($searchResult) || isset($searchResult['error'])) {
@@ -289,9 +379,9 @@ class ConversationService
                 ]);
 
                 $mergedIntent = $searchResult['intent'] ?? $previousIntent;
-                if (isset($previousIntent['_clarifications'])) {
-                    $mergedIntent['_clarifications'] = $previousIntent['_clarifications'];
-                }
+                // Başarılı arama: soru hakkı yenilenir, biriken bağlam düşülür
+                unset($mergedIntent['_pending_context']);
+                $mergedIntent['_clarifications'] = 0;
 
                 $conversation->update([
                     'current_intent' => $mergedIntent,
