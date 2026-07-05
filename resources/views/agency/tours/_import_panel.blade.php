@@ -1,7 +1,7 @@
 {{-- URL'den İçe Aktar — create ve edit formlarının ORTAK paneli + JS'i.
      Hedef alan/fonksiyonlar (setItinerary, setDateEntries, setGalleryImages,
-     setStopCities, isVisaMode) sayfanın kendi script'inde tanımlıdır; buradaki
-     fonksiyonlar tıklama anında çalıştığı için yükleme sırası sorun olmaz. --}}
+     setStopCities) sayfanın kendi script'inde tanımlıdır; buradaki fonksiyonlar
+     tıklama anında çalıştığı için yükleme sırası sorun olmaz. --}}
 <div id="importPanel" style="border:1px dashed var(--accent);border-radius:12px;padding:16px;margin-bottom:24px;background:#f8fafc;">
     <div style="font-weight:700;margin-bottom:4px;">🔗 URL'den İçe Aktar</div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
@@ -46,15 +46,6 @@ function applyImported(data, sourceUrl) {
     setVal('textarea[name="guide_info"]', data.guide_info);
     setVal('input[name="frequency"]', data.frequency);
     setVal('input[name="tour_url"]', sourceUrl);
-
-    // Vize bilgileri: yanıt vize anahtarlarını içeriyorsa ("Vizeli" modda her
-    // zaman döner) null/boş değer alanı TEMİZLER — önceki import'un metinleri
-    // yeni turun kutularında kalmasın.
-    ['visa_general', 'visa_documents', 'visa_fees', 'visa_notes'].forEach(function(k) {
-        if (!(k in data)) return;
-        var el = document.querySelector('textarea[name="' + k + '"]');
-        if (el) el.value = data[k] || '';
-    });
 
     // Görseller: URL'den çekilenleri galeriye ekle
     if (typeof window.setGalleryImages === 'function' && Array.isArray(data.image_urls)) {
@@ -124,7 +115,7 @@ function importFromUrl(deep) {
     fetch('{{ route('agency.tours.import') }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-        body: JSON.stringify({ url: url, deep: deep ? 1 : 0, visa: (typeof isVisaMode === 'function' && isVisaMode()) ? 1 : 0 })
+        body: JSON.stringify({ url: url, deep: deep ? 1 : 0 })
     })
     .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
     .then(function(res){

@@ -22,11 +22,10 @@ class TourImportController extends Controller
         $validated = $request->validate([
             'url' => 'required|url|max:2000',
             'deep' => 'sometimes|boolean',
-            'visa' => 'sometimes|boolean', // formda "Vizeli" seçiliyse vize bölümleri de çıkarılır
         ]);
 
         try {
-            $data = $this->importer->import($validated['url'], $request->boolean('deep'), $request->boolean('visa'));
+            $data = $this->importer->import($validated['url'], $request->boolean('deep'));
 
             return response()->json(['ok' => true, 'data' => $data]);
         } catch (\RuntimeException $e) {

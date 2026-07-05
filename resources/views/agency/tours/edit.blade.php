@@ -250,28 +250,6 @@
 
                     @include('agency.tours._import_panel')
 
-                    {{-- Vizeli / Vizesiz seçimi: Vizeli'de vize kutuları açılır --}}
-                    @php $requiresVisa = (bool) old('requires_visa', $tour->requires_visa ? 1 : 0); @endphp
-                    <div class="form-group">
-                        <label>Vize Durumu *</label>
-                        <div style="display:flex;gap:8px;">
-                            <button type="button" id="visaOffBtn" class="btn {{ $requiresVisa ? 'btn-outline' : 'btn-primary' }}" onclick="setVisaMode(false)">Vizesiz</button>
-                            <button type="button" id="visaOnBtn" class="btn {{ $requiresVisa ? 'btn-primary' : 'btn-outline' }}" onclick="setVisaMode(true)">🛂 Vizeli</button>
-                        </div>
-                        <input type="hidden" name="requires_visa" id="requiresVisaInput" value="{{ $requiresVisa ? 1 : 0 }}">
-                        <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">
-                            "Vizesiz" seçilirse kayıtta vize bilgi alanları temizlenir.
-                        </div>
-                    </div>
-
-                    <div id="visaFields" style="display:{{ $requiresVisa ? 'block' : 'none' }};border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:24px;background:#f8fafc;">
-                        <div style="font-weight:700;margin-bottom:12px;">🛂 Vize Bilgileri</div>
-                        <div class="form-group"><label>Genel Vize Bilgileri</label><textarea name="visa_general" rows="3" placeholder="Pasaport geçerlilik süresi, başvuru süreci, vize türü (ör. Schengen)…">{{ old('visa_general', $tour->visa_general) }}</textarea></div>
-                        <div class="form-group"><label>Gerekli Evraklar</label><textarea name="visa_documents" rows="5" placeholder="Standart evraklar + meslek grubuna göre (çalışan, işveren, emekli, öğrenci, çocuk…) evrak listesi">{{ old('visa_documents', $tour->visa_documents) }}</textarea></div>
-                        <div class="form-group"><label>Vize Ücretleri</label><textarea name="visa_fees" rows="3" placeholder="İstanbul - 12 yaş ve üzeri: 370 €&#10;Ankara - 12 yaş ve üzeri: 300 €">{{ old('visa_fees', $tour->visa_fees) }}</textarea></div>
-                        <div class="form-group" style="margin-bottom:0;"><label>Önemli Notlar / Konsolosluk Bilgilendirmesi</label><textarea name="visa_notes" rows="3" placeholder="Fotoğraf standartları, ret/iade koşulları, konsolosluk uyarıları…">{{ old('visa_notes', $tour->visa_notes) }}</textarea></div>
-                    </div>
-
                     <div class="form-group"><label>Tur Adı *</label><input type="text" name="title" value="{{ old('title', $tour->title) }}" required></div>
                     <div class="form-group">
                         <label>Kategori Yetkisi *</label>
@@ -888,23 +866,6 @@
 
             document.addEventListener('click', closeAllCalendars);
 
-            // --- Vizeli / Vizesiz ---
-            function setVisaMode(on) {
-                var input = document.getElementById('requiresVisaInput');
-                var fields = document.getElementById('visaFields');
-                var onBtn = document.getElementById('visaOnBtn');
-                var offBtn = document.getElementById('visaOffBtn');
-                if (!input || !fields || !onBtn || !offBtn) return;
-                input.value = on ? '1' : '0';
-                fields.style.display = on ? 'block' : 'none';
-                onBtn.className = 'btn ' + (on ? 'btn-primary' : 'btn-outline');
-                offBtn.className = 'btn ' + (on ? 'btn-outline' : 'btn-primary');
-            }
-            function isVisaMode() {
-                var input = document.getElementById('requiresVisaInput');
-                return !!(input && input.value === '1');
-            }
-
             document.addEventListener('DOMContentLoaded', function() {
                 // Başlangıç: eski (validasyon hatası) girdileri tarih satırlarına genişlet
                 var initial = [];
@@ -932,9 +893,6 @@
                 renderMasterCalendar();
 
                 setItinerary(@json(old('itinerary', $tour->itinerary ?? [])));
-
-                // Vizeli/vizesiz: mevcut kayıt (veya doğrulama hatası sonrası old()) durumunu uygula
-                setVisaMode(isVisaMode());
 
                 document.getElementById('durationDaysInput').addEventListener('input', renderPricingOptions);
                 var currencySelect = document.getElementById('currencySelect');

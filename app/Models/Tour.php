@@ -52,7 +52,6 @@ class Tour extends Model
         'departure_points', 'itinerary', 'hotel_info', 'extras',
         'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
         'departure_city', 'stop_cities',
-        'visa_general', 'visa_documents', 'visa_fees', 'visa_notes',
     ];
 
     protected $casts = [
