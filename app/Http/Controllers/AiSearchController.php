@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use OpenAI\Laravel\Facades\OpenAI;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -309,19 +310,28 @@ class AiSearchController extends Controller
                 $systemPrompt .= "\n\nÖnceki konuşma niyeti (kullanıcı bunu güncelliyor olabilir, eski değerleri koru ama kullanıcı açıkça değiştirdiyse güncelle): ".json_encode($previousIntent, JSON_UNESCAPED_UNICODE);
             }
 
-            $analysisResponse = OpenAI::chat()->create([
-                'model' => config('ai.intent_model', 'gpt-4o-mini'),
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $this->wrapUserInputSafely($query)],
-                ],
-                'response_format' => ['type' => 'json_object'],
-            ]);
+            // Niyet önbelleği: aynı sorgu + aynı önceki-niyet bağlamı deterministik
+            // olarak aynı intent'i üretir — popüler sorgular ("vizesiz turlar" vb.)
+            // 24 saat boyunca API'ye gitmeden cevaplanır.
+            $intentModel = config('ai.intent_model', 'gpt-4o');
+            $intentCacheKey = 'ai:intent:'.md5($intentModel.'|'.$query.'|'.json_encode($previousIntent ?? []));
 
-            $analysis = json_decode($analysisResponse->choices[0]->message->content, true) ?: [];
+            $analysis = Cache::remember($intentCacheKey, 86400, function () use ($intentModel, $systemPrompt, $query) {
+                $analysisResponse = OpenAI::chat()->create([
+                    'model' => $intentModel,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $this->wrapUserInputSafely($query)],
+                    ],
+                    'response_format' => ['type' => 'json_object'],
+                    'max_tokens' => 600, // intent JSON'u kompakt — kaçak uzun çıktıya tavan
+                ]);
+
+                return json_decode($analysisResponse->choices[0]->message->content, true) ?: [];
+            });
 
             // A/B test ve maliyet analizi için: hangi modelin çıkardığı log'a yazılsın
-            $analysis['_model'] = config('ai.intent_model', 'gpt-4o-mini');
+            $analysis['_model'] = $intentModel;
 
             // Önceki niyetle merge — yeni cevap null bıraktıysa eski değer korunur
             if (! empty($previousIntent)) {
@@ -369,12 +379,8 @@ class AiSearchController extends Controller
                 }
             }
 
-            // 2. Vektör Oluşturma
-            $embeddingResponse = OpenAI::embeddings()->create([
-                'model' => config('ai.embedding_model', 'text-embedding-3-small'),
-                'input' => $cleanQuery,
-            ]);
-            $queryVector = $embeddingResponse->embeddings[0]->embedding;
+            // 2. Vektör Oluşturma (önbellekli — tekrar eden sorgular API'ye gitmez)
+            $queryVector = app(\App\Services\AiSearch\QueryEmbeddingCache::class)->vector($cleanQuery);
 
             // 3. Veritabanı Filtreleme
             $toursQuery = Tour::whereNotNull('embedding')

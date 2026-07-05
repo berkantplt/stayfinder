@@ -5,6 +5,7 @@ namespace App\Services\TourImport;
 use App\Models\Tour;
 use App\Support\TurkishCities;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -34,6 +35,18 @@ class TourUrlImporter
     public function import(string $url, bool $deep = false, bool $withVisa = false): array
     {
         $url = trim($url);
+
+        // Sonuç önbelleği: aynı URL + aynı mod için 30 dk içinde tekrar istek
+        // (çift tıklama, doğrulama hatası sonrası yeniden deneme) LLM + Firecrawl
+        // maliyetini yeniden ödemesin. Hatalar cache'lenmez (exception geçer).
+        $cacheKey = 'tour_import:'.md5($url.'|'.($deep ? 1 : 0).'|'.($withVisa ? 1 : 0));
+
+        return Cache::remember($cacheKey, 1800, fn () => $this->doImport($url, $deep, $withVisa));
+    }
+
+    /** @return array<string, mixed> */
+    private function doImport(string $url, bool $deep, bool $withVisa): array
+    {
         $this->assertSafeUrl($url);
         $this->lastHtml = null;
 
@@ -1022,7 +1035,7 @@ class TourUrlImporter
 
         try {
             $response = $this->llmChat([
-                'model' => config('ai.import_model', 'gpt-4o'),
+                'model' => config('ai.import_pricing_model', 'gpt-4o'),
                 'messages' => [
                     ['role' => 'system', 'content' => $system],
                     ['role' => 'user', 'content' => $this->wrapInput($priceText)],

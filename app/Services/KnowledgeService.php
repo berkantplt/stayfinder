@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\KnowledgeChunk;
-use OpenAI\Laravel\Facades\OpenAI;
+use App\Services\AiSearch\QueryEmbeddingCache;
 use Illuminate\Support\Facades\Log;
 
 class KnowledgeService
@@ -14,13 +14,8 @@ class KnowledgeService
     public function findRelevantChunks(string $query, int $limit = 5): array
     {
         try {
-            // 1. Sorunun embedding'ini al
-            $response = OpenAI::embeddings()->create([
-                'model' => config('ai.embedding_model', 'text-embedding-3-small'),
-                'input' => $query,
-            ]);
-
-            $queryVector = $response->embeddings[0]->embedding;
+            // 1. Sorunun embedding'ini al (önbellekli — tekrar eden sorgular API'ye gitmez)
+            $queryVector = app(QueryEmbeddingCache::class)->vector($query);
 
             // 2. Tüm vektörlü chunk'ları getir (Şu an sayı az olduğu için PHP ile dot product yapıyoruz)
             $chunks = KnowledgeChunk::whereNotNull('embedding')->get();

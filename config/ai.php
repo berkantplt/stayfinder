@@ -35,6 +35,11 @@ return [
     // doğruluk için gpt-4o.
     'import_model' => env('AI_IMPORT_MODEL', 'gpt-4o'),
 
+    // Fiyat matrisi fallback çağrısı (deterministik parser boş dönerse) — sayısal
+    // hassasiyet kritik (eski/yeni fiyat eşleşmesi); genel import modeli ucuza
+    // indirilse bile bu çağrı güçlü modelde kalır.
+    'import_pricing_model' => env('AI_IMPORT_PRICING_MODEL', 'gpt-4o'),
+
     // Tur URL içe aktarma — okuyucu servisi: sayfayı gerçek tarayıcıyla render edip
     // temiz Markdown döndürür (JS-render + gürültü temizliği → daha doğru çıkarım).
     // Boş bırakılırsa okuyucu atlanır, doğrudan fetch kullanılır.
