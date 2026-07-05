@@ -447,7 +447,11 @@ class ConversationService
                 }
             );
 
-            // Streaming tamamlandı — asistan mesajının final content'ini DB'ye yaz (atomik update)
+            // Streaming tamamlandı — asistan mesajının final content'ini DB'ye yaz (atomik update).
+            // Akış hiç içerik üretmeden koptuysa placeholder boş kalmasın.
+            if (trim($fullContent) === '') {
+                $fullContent = 'Sonuçlar yukarıda — detaylara kartlardan ulaşabilirsin.';
+            }
             $turnState['assistant']->update(['content' => $fullContent]);
 
             $emit('done', [

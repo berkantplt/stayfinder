@@ -29,8 +29,10 @@ class KnowledgeService
                 ];
             }
 
-            // 3. Skora göre sırala ve limitli dön
+            // 3. Skora göre sırala ve limitli dön. Benzerlik eşiği: sorguyla ilgisi
+            // olmayan chunk'lar (düşük cosine) prompta girip yorumu saptırmasın.
             usort($results, fn($a, $b) => $b['score'] <=> $a['score']);
+            $results = array_values(array_filter($results, fn ($item) => $item['score'] >= 0.25));
 
             return array_slice($results, 0, $limit);
 

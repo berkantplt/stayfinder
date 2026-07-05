@@ -36,7 +36,22 @@ class SyncKnowledgeBase extends Command
         // Statik politikalar her sync'te yenilenir (sayı çok az)
         $this->syncStaticFacts();
 
+        // Güvenlik ağı: observer'ı atlayarak silinen/pasifleşen turların chunk'ları
+        // RAG'de kalmasın — asistan var olmayan turu önermesin.
+        $this->pruneStaleTourChunks();
+
         $this->info('Senkronizasyon tamamlandı.');
+    }
+
+    private function pruneStaleTourChunks(): void
+    {
+        $pruned = \App\Models\KnowledgeChunk::where('source_type', 'tour')
+            ->whereNotIn('source_id', Tour::where('is_active', true)->pluck('id'))
+            ->delete();
+
+        if ($pruned > 0) {
+            $this->comment("Bayat tur chunk'ları temizlendi: {$pruned}");
+        }
     }
 
     private function resolveSince(): ?Carbon

@@ -111,12 +111,14 @@ class TourObserver
     }
 
     /**
-     * Tur silindiğinde embedding cache'ini temizle.
+     * Tur silindiğinde embedding cache'ini ve RAG bilgi bankası kaydını temizle —
+     * yoksa asistan artık var olmayan turu bilgi bankasından önermeye devam ediyor.
      */
     public function deleted(Tour $tour): void
     {
-        Log::info("[TourObserver] Tur silindi: #{$tour->id} ({$tour->title}). Destinasyon cache temizleniyor...");
+        Log::info("[TourObserver] Tur silindi: #{$tour->id} ({$tour->title}). Destinasyon cache + RAG chunk temizleniyor...");
         cache()->forget('ai_search_known_destinations_v1');
+        \App\Models\KnowledgeChunk::where('source_type', 'tour')->where('source_id', $tour->id)->delete();
     }
 
     /**
@@ -127,7 +129,11 @@ class TourObserver
     private function syncKnowledgeChunkFor(Tour $tour): void
     {
         if (! $tour->is_active) {
-            return; // Pasif turlar RAG'a girmesin
+            // Pasif turlar RAG'a girmesin — VE pasifleşen turun mevcut chunk'ı da
+            // silinsin (asistan satıştan kalkan turu önermeye devam etmesin)
+            \App\Models\KnowledgeChunk::where('source_type', 'tour')->where('source_id', $tour->id)->delete();
+
+            return;
         }
 
         $tour->loadMissing('agency', 'category');
