@@ -414,7 +414,7 @@
     {{-- AI Chatbot Trigger & Window (PREMIUM V2 - DARK GLASS) --}}
     <div id="ai-chat-container" style="position:fixed; bottom:24px; right:24px; z-index:2000; font-family:var(--font); width:max-content; max-width:calc(100vw - 48px);">
         {{-- Floating Glass Bar --}}
-        <div id="ai-chat-trigger" onclick="toggleAIChat()" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); color:white; padding:10px 20px; border-radius:100px; cursor:pointer; display:flex; align-items:center; gap:12px; box-shadow:0 10px 40px rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.15); transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); white-space:nowrap; flex-wrap:nowrap; user-select:none;">
+        <div id="ai-chat-trigger" onclick="toggleAIChat()" role="button" tabindex="0" aria-label="AI tatil asistanını aç" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAIChat();}" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); color:white; padding:10px 20px; border-radius:100px; cursor:pointer; display:flex; align-items:center; gap:12px; box-shadow:0 10px 40px rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.15); transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); white-space:nowrap; flex-wrap:nowrap; user-select:none;">
             <div style="width:32px; height:32px; background:linear-gradient(135deg, #0d9488, #2dd4bf); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 12px rgba(13,148,136,0.3);">🤖</div>
             <div style="font-size:13px; font-weight:700; letter-spacing:-0.2px; color:#f1f5f9;">Hayalindeki tatili anlat...</div>
         </div>
@@ -602,6 +602,8 @@
             const messages = document.getElementById('ai-chat-messages');
             const text = input.value.trim();
             if (!text) return;
+            if (window._aiWidgetSending) return; // çift gönderim koruması
+            window._aiWidgetSending = true;
 
             // 1. User Message
             const userMsg = document.createElement('div');
@@ -771,14 +773,29 @@
                         }
                     }
                 }
+
+                // SESSİZ ÖLÜM koruması: akış hiçbir olay üretmeden bittiyse
+                // "analiz ediyorum" balonu sonsuza dek kalmasın
+                if (!loadingRemoved) {
+                    if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
+                    const silentMsg = document.createElement('div');
+                    silentMsg.className = 'ai-msg-ai';
+                    silentMsg.textContent = '⚠️ Bağlantı beklenmedik şekilde kesildi — mesajını tekrar gönderebilirsin.';
+                    messages.appendChild(silentMsg);
+                    messages.scrollTop = messages.scrollHeight;
+                }
             } catch (err) {
                 console.error('AI Error:', err);
                 if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
                 var errorMsg = document.createElement('div');
                 errorMsg.className = 'ai-msg-ai';
-                errorMsg.textContent = '⚠️ Turlar listelenirken hata oluştu: ' + err.message;
+                errorMsg.textContent = (err && String(err.message || '').includes('429'))
+                    ? '⚠️ Biraz hızlı gidiyoruz 🙂 Birkaç saniye bekleyip tekrar dener misin?'
+                    : '⚠️ Bir bağlantı sorunu oluştu — lütfen tekrar dene.';
                 messages.appendChild(errorMsg);
                 messages.scrollTop = messages.scrollHeight;
+            } finally {
+                window._aiWidgetSending = false;
             }
         }
 

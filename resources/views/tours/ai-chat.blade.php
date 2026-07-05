@@ -2,10 +2,20 @@
 @section('title', 'AI Tatil Danışmanı')
 
 @section('content')
+<style>
+    .ai-chat-layout { display:grid; grid-template-columns:260px 1fr; gap:24px; align-items:start; }
+    /* Mobil: sabit 260px sidebar ekranı kullanılmaz hale getiriyordu — tek kolon,
+       konuşma listesi gizli (Yeni Konuşma butonu sohbet başlığından erişilir) */
+    @media (max-width: 900px) {
+        .ai-chat-layout { grid-template-columns: 1fr; }
+        .ai-chat-sidebar { display: none; }
+        .ai-chat-panel { height: calc(100vh - 120px) !important; min-height: 480px !important; }
+    }
+</style>
 <div class="container" style="padding-top:90px;padding-bottom:60px;">
-    <div style="display:grid;grid-template-columns:260px 1fr;gap:24px;align-items:start;">
+    <div class="ai-chat-layout">
 
-        <aside style="position:sticky;top:90px;">
+        <aside class="ai-chat-sidebar" style="position:sticky;top:90px;">
             <div class="stat-card" style="padding:18px;">
                 <div style="font-size:13px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Konuşmalar</div>
                 <a href="{{ route('ai.search') }}" class="btn btn-outline" style="width:100%;justify-content:center;margin-bottom:14px;">+ Yeni Konuşma</a>
@@ -25,7 +35,7 @@
             </div>
         </aside>
 
-        <div class="stat-card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - 140px);min-height:600px;">
+        <div class="stat-card ai-chat-panel" style="padding:0;overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - 140px);min-height:600px;">
             <div style="padding:16px 24px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;">
                 <div style="font-size:22px;">🤖</div>
                 <div>
@@ -34,7 +44,7 @@
                 </div>
             </div>
 
-            <div id="chat-messages" style="flex:1;overflow-y:auto;padding:24px;background:#fafafa;">
+            <div id="chat-messages" aria-live="polite" style="flex:1;overflow-y:auto;padding:24px;background:#fafafa;">
                 @if($messages->isEmpty())
                     <div style="max-width:540px;margin:32px auto;text-align:center;">
                         <div style="font-size:42px;margin-bottom:8px;">✨</div>
@@ -56,9 +66,9 @@
             <div style="padding:16px 24px;border-top:1px solid #e2e8f0;background:#fff;">
                 <form id="chat-form" style="display:flex;gap:10px;align-items:flex-end;">
                     <input type="hidden" id="conversation-uuid" value="{{ $conversation?->uuid }}">
-                    <textarea id="chat-input" rows="1" placeholder="Mesajını yaz..." required
+                    <textarea id="chat-input" rows="1" placeholder="Mesajını yaz..." required aria-label="Mesajınız"
                         style="flex:1;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;resize:none;outline:none;font-family:inherit;line-height:1.4;max-height:120px;"></textarea>
-                    <button type="submit" class="btn btn-primary" style="padding:12px 20px;flex-shrink:0;">Gönder</button>
+                    <button type="submit" id="chat-send" class="btn btn-primary" aria-label="Mesajı gönder" style="padding:12px 20px;flex-shrink:0;">Gönder</button>
                 </form>
                 <div style="font-size:11px;color:#94a3b8;margin-top:8px;">Enter ile gönder, Shift+Enter ile yeni satır.</div>
             </div>
@@ -68,7 +78,7 @@
 
 <template id="msg-template-user">
     <div class="msg msg-user" style="display:flex;justify-content:flex-end;margin-bottom:18px;">
-        <div style="max-width:75%;background:#6366f1;color:#fff;padding:12px 16px;border-radius:18px 18px 4px 18px;font-size:14px;line-height:1.5;white-space:pre-wrap;"></div>
+        <div style="max-width:75%;background:#6366f1;color:#fff;padding:12px 16px;border-radius:18px 18px 4px 18px;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;"></div>
     </div>
 </template>
 
@@ -76,7 +86,7 @@
     <div class="msg msg-assistant" style="margin-bottom:24px;">
         <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;">
             <div style="width:32px;height:32px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🤖</div>
-            <div style="flex:1;background:#fff;border:1px solid #e2e8f0;padding:14px 16px;border-radius:18px 18px 18px 4px;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap;" data-comment></div>
+            <div style="flex:1;background:#fff;border:1px solid #e2e8f0;padding:14px 16px;border-radius:18px 18px 18px 4px;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap;overflow-wrap:anywhere;" data-comment></div>
         </div>
         <div data-tours style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-left:42px;"></div>
     </div>
@@ -230,15 +240,16 @@
             link.onmouseleave = () => { wrap.style.transform = 'none'; wrap.style.boxShadow = 'none'; };
             const img = t.image ? `<img src="${escapeHtml(t.image)}" style="width:100%;height:120px;object-fit:cover;">` : '<div style="width:100%;height:120px;background:#f1f5f9;"></div>';
             const compat = t.compatibility_score != null ? `<div style="font-size:11px;color:#0f766e;font-weight:700;background:#ecfdf5;padding:2px 8px;border-radius:8px;display:inline-block;">%${Math.round(t.compatibility_score * 100)} uyumlu</div>` : '';
+            const overBudget = t.over_budget ? '<div style="font-size:11px;color:#92400e;font-weight:700;background:#fffbeb;border:1px solid #fde68a;padding:2px 8px;border-radius:8px;display:inline-block;">bütçe üstü</div>' : '';
             link.innerHTML = `
                 ${img}
                 <div style="padding:12px;display:flex;flex-direction:column;gap:6px;">
                     <div style="font-size:11px;color:#6366f1;font-weight:700;text-transform:uppercase;">${escapeHtml(t.destination || '-')}</div>
                     <div style="font-size:14px;font-weight:700;color:#0f172a;line-height:1.3;">${escapeHtml(t.title || 'Tur')}</div>
                     <div style="font-size:12px;color:#64748b;">${escapeHtml(t.agency_name || '')} ${t.duration_days ? '· ' + t.duration_days + ' gün' : ''}</div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;gap:6px;flex-wrap:wrap;">
                         <div style="font-size:15px;font-weight:800;color:#0f172a;">${Number(t.price || 0).toLocaleString('tr-TR')} ${escapeHtml(t.currency || 'TL')}</div>
-                        ${compat}
+                        <div style="display:flex;gap:4px;">${overBudget}${compat}</div>
                     </div>
                 </div>
             `;
@@ -321,8 +332,38 @@
         }
     }
 
+    // Akıllı kaydırma: kullanıcı yukarıda eski mesajları okuyorsa akış onu
+    // zorla en alta çekmesin; dibe yakınsa takip etsin.
+    function scrollIfNearBottom() {
+        const nearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 140;
+        if (nearBottom) messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Hafif markdown: LLM yorumundaki **kalın** ham yıldızlarla görünmesin
+    // (önce escape edilir — XSS güvenli)
+    function mdLite(text) {
+        return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    function friendlyHttpError(status) {
+        if (status === 429) return 'Biraz hızlı gidiyoruz 🙂 Birkaç saniye bekleyip tekrar gönderir misin?';
+        if (status === 419) return 'Oturumun yenilenmiş — sayfayı yenileyip (F5) tekrar dener misin?';
+        return 'Sunucuda bir sorun oluştu (HTTP ' + status + ') — lütfen tekrar dene.';
+    }
+
+    let sending = false;
+    const sendBtn = document.getElementById('chat-send');
+
+    function setSending(on) {
+        sending = on;
+        input.disabled = on;
+        if (sendBtn) { sendBtn.disabled = on; sendBtn.textContent = on ? '...' : 'Gönder'; }
+        if (!on) input.focus();
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (sending) return; // çift gönderim koruması
         const text = input.value.trim();
         if (!text) return;
 
@@ -330,10 +371,21 @@
         input.value = '';
         autoResize();
         showLoading();
+        setSending(true);
+
+        // İstemci bekçisi: 75 sn boyunca hiç veri gelmezse isteği iptal et —
+        // sonsuz "Düşünüyorum..." asılı kalmasın
+        const controller = new AbortController();
+        let watchdog = setTimeout(() => controller.abort(), 75000);
+        const resetWatchdog = () => {
+            clearTimeout(watchdog);
+            watchdog = setTimeout(() => controller.abort(), 75000);
+        };
 
         try {
             const res = await fetch(streamRoute, {
                 method: 'POST',
+                signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
@@ -347,7 +399,7 @@
 
             if (!res.ok) {
                 hideLoading();
-                appendAssistant('Sunucu hatası: HTTP ' + res.status, []);
+                appendAssistant('⚠️ ' + friendlyHttpError(res.status), []);
                 return;
             }
 
@@ -357,6 +409,8 @@
             let assistant = null;
             let isClarification = false;
             let loadingHidden = false;
+            let doneReceived = false;
+            let errorShown = false;
             const ensure = () => {
                 if (!loadingHidden) { hideLoading(); loadingHidden = true; }
                 if (!assistant) assistant = startStreamingAssistant(isClarification);
@@ -376,16 +430,24 @@
                     // Yeni format: {log_id, items}. Eski format: array (backward compat)
                     const items = Array.isArray(data) ? data : (data.items || []);
                     const logId = (data && typeof data === 'object' && !Array.isArray(data)) ? data.log_id : null;
+                    // Gevşetme notu: sonuçlar neden birebir eşleşme değil, kullanıcı görsün
+                    if (data && data.relaxation_note) {
+                        const note = document.createElement('div');
+                        note.style.cssText = 'margin-left:42px;margin-bottom:8px;font-size:12.5px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;';
+                        note.textContent = 'ℹ️ ' + data.relaxation_note;
+                        assistant.grid.parentElement.insertBefore(note, assistant.grid);
+                    }
                     renderTourCards(assistant.grid, items, logId);
-                    messages.scrollTop = messages.scrollHeight;
+                    scrollIfNearBottom();
                 } else if (eventName === 'comment') {
                     if (data.is_clarification === true) isClarification = true;
                     ensure();
                     if (data.delta) {
                         assistant.commentEl.textContent += data.delta;
-                        messages.scrollTop = messages.scrollHeight;
+                        scrollIfNearBottom();
                     }
                 } else if (eventName === 'done') {
+                    doneReceived = true;
                     if (data.is_clarification) {
                         // Geç gelen clarification flag, varsa stilini güncelle
                         if (assistant && !assistant.commentEl.style.background) {
@@ -394,8 +456,13 @@
                             assistant.commentEl.style.color = '#78350f';
                         }
                     }
+                    // Akış bitti: **kalın** işaretlerini görsel kalına çevir (escape'li, güvenli)
+                    if (assistant && assistant.commentEl.textContent.includes('**')) {
+                        assistant.commentEl.innerHTML = mdLite(assistant.commentEl.textContent);
+                    }
                     if (!loadingHidden) { hideLoading(); loadingHidden = true; }
                 } else if (eventName === 'error') {
+                    errorShown = true;
                     if (!loadingHidden) { hideLoading(); loadingHidden = true; }
                     appendAssistant('⚠️ ' + (data.message || 'Bir hata oluştu'), []);
                 }
@@ -404,6 +471,7 @@
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
+                resetWatchdog();
                 buffer += decoder.decode(value, { stream: true });
                 let sepIdx;
                 while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
@@ -421,9 +489,22 @@
             }
 
             if (!loadingHidden) hideLoading();
+
+            // SESSİZ ÖLÜM koruması: akış 'done' olmadan bittiyse kullanıcı boşlukta
+            // kalmasın — durumu söyle ve tekrar denemesini iste
+            if (!doneReceived && !errorShown) {
+                appendAssistant('⚠️ Bağlantı beklenmedik şekilde kesildi — yanıt eksik kalmış olabilir. Mesajını tekrar gönderebilirsin.', []);
+            }
         } catch (err) {
             hideLoading();
-            appendAssistant('Bağlantı hatası: ' + err.message, []);
+            if (err && err.name === 'AbortError') {
+                appendAssistant('⚠️ Yanıt çok uzun sürdü, isteği durdurdum — lütfen tekrar dene.', []);
+            } else {
+                appendAssistant('⚠️ Bağlantı hatası — internetini kontrol edip tekrar dener misin?', []);
+            }
+        } finally {
+            clearTimeout(watchdog);
+            setSending(false);
         }
     });
 
