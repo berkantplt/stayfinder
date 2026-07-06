@@ -540,6 +540,12 @@ class ConversationService
             if ($clarificationsAsked < self::MAX_CLARIFICATIONS) {
                 $question = $this->maybeAskClarification($searchQuery, $previousIntent);
 
+                // Aynı soru tekrar oluştuysa kullanıcının cevabı yeni eksen
+                // eklememiş demektir — tekrarlamak yerine eldekiyle ara
+                if ($question !== null && $this->isSameAsLastAssistantQuestion($conversation, $question)) {
+                    $question = null;
+                }
+
                 if ($question !== null) {
                     $assistantMsg = AiSearchMessage::create([
                         'conversation_id' => $conversation->id,
@@ -690,6 +696,11 @@ class ConversationService
                 // bilgi tekrar sorulmaz)
                 if ($clarificationsAsked < self::MAX_CLARIFICATIONS) {
                     $question = $this->maybeAskClarification($searchQuery, $previousIntent);
+
+                    // Aynı soru tekrar oluştuysa tekrarlamak yerine eldekiyle ara
+                    if ($question !== null && $this->isSameAsLastAssistantQuestion($conversation, $question)) {
+                        $question = null;
+                    }
 
                     if ($question !== null) {
                         $assistantMsg = AiSearchMessage::create([
@@ -908,6 +919,12 @@ class ConversationService
      */
     public function maybeAskClarification(string $userMessage, array $previousIntent): ?string
     {
+        // "Farketmez / önemli değil / sen seç" → kullanıcı kısıt vermek istemiyor.
+        // Soruyu tekrarlamak saçma diyaloglar üretir; eldekiyle arama yapılır.
+        if ($this->userDismissesClarification($userMessage)) {
+            return null;
+        }
+
         $cleanIntent = collect($previousIntent)
             ->reject(fn($_, $key) => str_starts_with($key, '_'))
             ->all();
@@ -930,6 +947,43 @@ class ConversationService
         $missing = array_keys(array_filter($signals, fn($v) => !$v));
 
         return $this->buildClarificationQuestion($missing, $present);
+    }
+
+    /**
+     * Kullanıcı netleştirme sorusunu geçiştiriyor mu? ("farketmez", "sen seç",
+     * "hepsi olur"...) — bu cevaba yeni soru sormak diyaloğu kilitler.
+     */
+    private function userDismissesClarification(string $userMessage): bool
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach ([
+            'farketmez', 'fark etmez', 'farketmiyor', 'fark etmiyor', 'farketmes',
+            'onemli degil', 'onemi yok', 'hepsi olur', 'her sey olur', 'herhangi',
+            'sen sec', 'sen oner', 'sen karar', 'sana birakiyorum', 'size birakiyorum',
+            'ne olursa', 'bilmiyorum sen', 'bilmem sen', 'olsun yeter', 'yeter ki',
+        ] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Üretilen netleştirme sorusu, asistanın SON mesajıyla birebir aynıysa true —
+     * kullanıcının cevabı yeni eksen eklememiş demektir; aynı soruyu tekrarlamak
+     * yerine eldekiyle arama yapılmalı.
+     */
+    private function isSameAsLastAssistantQuestion(AiSearchConversation $conversation, string $question): bool
+    {
+        $last = AiSearchMessage::where('conversation_id', $conversation->id)
+            ->where('role', AiSearchMessage::ROLE_ASSISTANT)
+            ->orderByDesc('id')
+            ->value('content');
+
+        return $last !== null && trim($last) === trim($question);
     }
 
     private function hasBudgetSignal(array $intent, string $message): bool

@@ -358,14 +358,22 @@ class AiSearchController extends Controller
         // yeni bir netleştirme sorusuyla karşılanıyor ve arama hiç çalışmıyordu.
         $askedCount = (int) $request->session()->get('ai_widget_clarifications', 0);
         $context = trim((string) $request->session()->get('ai_widget_context', ''));
+        $lastQuestion = trim((string) $request->session()->get('ai_widget_last_question', ''));
         $combinedQuery = trim($context.' '.$query);
 
         if (trim($query) !== '' && $askedCount < ConversationService::MAX_CLARIFICATIONS) {
             $clarification = app(ConversationService::class)->maybeAskClarification($combinedQuery, []);
 
+            // Aynı soru tekrar oluştuysa kullanıcının cevabı yeni eksen eklememiş
+            // demektir ("farketmez", "bilmem") — tekrarlamak yerine eldekiyle ara
+            if ($clarification !== null && trim($clarification) === $lastQuestion) {
+                $clarification = null;
+            }
+
             if ($clarification !== null) {
                 $request->session()->put('ai_widget_clarifications', $askedCount + 1);
                 $request->session()->put('ai_widget_context', \Illuminate\Support\Str::limit($combinedQuery, 500, ''));
+                $request->session()->put('ai_widget_last_question', trim($clarification));
 
                 return response()->json([
                     'aiComment' => $clarification,
@@ -377,7 +385,7 @@ class AiSearchController extends Controller
         }
 
         // Arama yapılıyor: sayaç ve bağlam sıfırlanır (soru-cevap bilgisi sorguya taşındı)
-        $request->session()->forget(['ai_widget_clarifications', 'ai_widget_context']);
+        $request->session()->forget(['ai_widget_clarifications', 'ai_widget_context', 'ai_widget_last_question']);
 
         $data = $this->performAiSearch($request, $combinedQuery !== '' ? $combinedQuery : $query);
         if (isset($data['error'])) {
