@@ -478,12 +478,13 @@ class AiSearchController extends Controller
             // nedeni relaxation_note ile kullanıcıya açıklanır.
             $relaxDestination = false;
             $relaxBudget = false;
+            $relaxAll = false;
             $relaxationNote = null;
             $results = collect();
             $rankedTours = collect();
             $candidateCount = 0;
 
-            for ($relaxPass = 0; $relaxPass < 3; $relaxPass++) {
+            for ($relaxPass = 0; $relaxPass < 4; $relaxPass++) {
 
             $toursQuery = Tour::whereNotNull('embedding')
                 ->active()
@@ -507,16 +508,16 @@ class AiSearchController extends Controller
                 // Kullanıcının bütçesi TL — kur-normalize price_try ile karşılaştır.
                 $toursQuery->where('price_try', '<=', $maxBudget * 1.8);
             }
-            if ($isInternational !== null) {
+            if (! $relaxAll && $isInternational !== null) {
                 $toursQuery->where('is_international', $isInternational);
             }
-            if ($requiresVisa !== null) {
+            if (! $relaxAll && $requiresVisa !== null) {
                 $toursQuery->where('requires_visa', $requiresVisa);
             }
-            if ($minDays && $minDays > 0) {
+            if (! $relaxAll && $minDays && $minDays > 0) {
                 $toursQuery->where('duration_days', '>=', max(1, $minDays - 1));
             }
-            if ($maxDays && $maxDays > 0) {
+            if (! $relaxAll && $maxDays && $maxDays > 0) {
                 $toursQuery->where('duration_days', '<=', $maxDays + 1);
             }
             if (! $relaxDestination && $preferredDestination !== null) {
@@ -708,7 +709,20 @@ class AiSearchController extends Controller
                 continue;
             }
 
-            $relaxationNote = null; // gevşetmeler de sonuç vermedi → gerçek 0 sonuç
+            // SON BASAMAK: yapılandırılmış filtrelerin (yurt içi/dışı, vize, süre,
+            // miras kriterler) tamamını bırak, salt semantik yakınlıkla en iyi
+            // seçenekleri getir. Aktif tek tur bile varsa kullanıcı asla çıplak
+            // "bulunamadı" ile bırakılmaz — kullanıcıyı çıldırtan döngü buydu.
+            if (! $relaxAll) {
+                $relaxAll = true;
+                $relaxDestination = true;
+                $relaxBudget = true;
+                $relaxationNote = 'Kriterlerinin tamamına birebir uyan tur bulamadım — sana en yakın seçenekleri gösteriyorum.';
+
+                continue;
+            }
+
+            $relaxationNote = null; // havuzda hiç aktif tur yok → gerçek 0 sonuç
 
             break;
 
@@ -734,7 +748,7 @@ class AiSearchController extends Controller
             $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 
             // Sadece frontend'in ihtiyacı olan alanları döndür (embedding hariç)
-            $cleanResults = $results->map(function ($tour, $index) {
+            $cleanResults = $results->map(function ($tour, $index) use ($maxBudget) {
                 return [
                     'id' => $tour->id,
                     'title' => $tour->title,
@@ -1172,7 +1186,7 @@ class AiSearchController extends Controller
         // Sezon / göreli tarih ifadeleri (tek ay temsilcisiyle — skorlama tek ay
         // destekliyor; sezon ortası ay seçilir)
         $seasonMap = [
-            'yaz tatil' => 7, 'yaz donem' => 7, 'yaz sezon' => 7, 'yaz aylar' => 7, 'yazin' => 7,
+            'yaz tatil' => 7, 'yaz donem' => 7, 'yaz sezon' => 7, 'yaz aylar' => 7, 'yazin' => 7, 'yazlik' => 7,
             'kis tatil' => 1, 'kis donem' => 1, 'kis sezon' => 1, 'kisin' => 1, 'kayak sezon' => 1,
             'ilkbahar' => 4, 'sonbahar' => 10,
             'somestr' => 2, 'somestir' => 2, 'yariyil tatil' => 2, 'ara tatil' => 11,
