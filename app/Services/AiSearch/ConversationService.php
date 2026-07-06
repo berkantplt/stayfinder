@@ -111,6 +111,118 @@ class ConversationService
         return false;
     }
 
+    /** Kullanıcı insana/acentaya bağlanmak istiyor mu? (LLM'siz kelime kontrolü) */
+    private function wantsHumanHandoff(string $userMessage): bool
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach ([
+            'temsilci', 'yetkiliyle', 'yetkili biri', 'insanla konus', 'gercek biri',
+            'acentayla konus', 'acenta ile konus', 'acentayi ara', 'beni arayin',
+            'beni arasin', 'telefonla gorus', 'whatsapp', 'watsap', 'iletisime gec',
+        ] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Sıcak devir kartı: son gösterilen turun acentası + sohbet özetiyle önceden
+     * doldurulmuş WhatsApp/telefon bağlantıları. Sonuç yoksa null (devir edilemez).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildHandoffPayload(AiSearchConversation $conversation): ?array
+    {
+        $lastIds = array_values(array_filter(array_map('intval', (array) ($conversation->last_result_tour_ids ?? []))));
+        if (empty($lastIds)) {
+            return null;
+        }
+
+        $tour = Tour::with('agency')->find($lastIds[0]);
+        if (! $tour || ! $tour->agency) {
+            return null;
+        }
+
+        $phoneDigits = preg_replace('/\D+/', '', (string) $tour->agency->phone);
+        if ($phoneDigits === '') {
+            return null;
+        }
+        if (str_starts_with($phoneDigits, '0')) {
+            $phoneDigits = '9'.$phoneDigits;
+        } elseif (str_starts_with($phoneDigits, '5')) {
+            $phoneDigits = '90'.$phoneDigits;
+        }
+
+        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        $ci = (array) ($conversation->current_intent ?? []);
+        $bits = array_filter([
+            ! empty($ci['preferred_month']) ? ($monthNames[(int) $ci['preferred_month']] ?? null).' dönemi' : null,
+            ! empty($ci['max_budget']) ? '~'.number_format((int) $ci['max_budget'], 0, ',', '.').' TL bütçe' : null,
+            ! empty($ci['traveler_profile']) ? str_replace('_', ' ', (string) $ci['traveler_profile']) : null,
+        ]);
+        $prefill = 'Merhaba, StayFinder\'da "'.$tour->title.'" turunu inceledim.'
+            .(! empty($bits) ? ' '.implode(', ', $bits).'.' : '')
+            .' Müsaitlik ve detayları öğrenebilir miyim?';
+
+        return [
+            'agency_name' => $tour->agency->name,
+            'tour_id' => $tour->id,
+            'tour_title' => $tour->title,
+            'phone' => (string) $tour->agency->phone,
+            'phone_link' => 'tel:+'.$phoneDigits,
+            'whatsapp_link' => 'https://wa.me/'.$phoneDigits.'?text='.rawurlencode($prefill),
+        ];
+    }
+
+    /**
+     * İnsan devri akışı (streaming): sohbet özeti hazır WhatsApp/telefon kartı
+     * basılır, devir conversation'a işlenir (acentaya "AI'dan sıcak lead").
+     *
+     * @return array{type: string, user: AiSearchMessage, assistant: AiSearchMessage}
+     */
+    private function respondHandoffStreamed(AiSearchConversation $conversation, string $userMessage, \Closure $emit, array $handoff): array
+    {
+        $content = 'Tabii — seni '.$handoff['agency_name'].' ile buluşturayım. "'.$handoff['tour_title'].'" turu için konuşmamızın özetini hazırladım; aşağıdaki bağlantıyla tek dokunuşta iletebilirsin. Telefon: '.$handoff['phone'];
+
+        [$userMsg, $assistantMsg] = DB::transaction(function () use ($conversation, $userMessage, $content, $handoff) {
+            $u = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_USER,
+                'content' => $userMessage,
+            ]);
+            $a = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_ASSISTANT,
+                'content' => $content,
+            ]);
+            $conversation->forceFill([
+                'handoff_at' => now(),
+                'handoff_tour_id' => $handoff['tour_id'],
+            ])->save();
+            $conversation->update(['last_message_at' => now()]);
+
+            return [$u, $a];
+        });
+
+        $emit('search', [
+            'conversation_uuid' => $conversation->uuid,
+            'user_message' => [
+                'id' => $userMsg->id, 'role' => $userMsg->role,
+                'content' => $userMsg->content,
+                'created_at' => $userMsg->created_at?->toIso8601String(),
+            ],
+        ]);
+        $emit('comment', ['delta' => $content]);
+        $emit('handoff', $handoff);
+        $emit('done', ['is_clarification' => false, 'assistant_message_id' => $assistantMsg->id]);
+
+        return ['type' => 'handoff', 'user' => $userMsg, 'assistant' => $assistantMsg];
+    }
+
     private function wantsDifferentResults(string $userMessage): bool
     {
         $text = $this->normalizeTr($userMessage);
@@ -381,6 +493,24 @@ class ConversationService
             // tamamlanmış olabilir, intent değişmiş olabilir.
             $conversation->refresh();
 
+            // İnsan devri (streaming yoldakiyle aynı)
+            if ($this->wantsHumanHandoff($userMessage)) {
+                $handoff = $this->buildHandoffPayload($conversation);
+                if ($handoff !== null) {
+                    $turn = $this->respondHandoffStreamed($conversation, $userMessage, function () {}, $handoff);
+
+                    return [
+                        'user' => $turn['user'],
+                        'assistant' => $turn['assistant'],
+                        'payload' => [
+                            'aiComment' => $turn['assistant']->content,
+                            'results' => [],
+                            'handoff' => $handoff,
+                        ],
+                    ];
+                }
+            }
+
             // Mesaj yönlendirici (streaming yoldakiyle aynı): arama-dışı mesajlar
             // arama pipeline'ına girmeden yanıtlanır
             $route = $this->routeMessage($conversation, $userMessage);
@@ -529,7 +659,16 @@ class ConversationService
         return $lock->block(self::LOCK_BLOCK_SECONDS, function () use ($request, $conversation, $userMessage, $emit) {
             $conversation->refresh();
 
-            // Phase 0: mesaj yönlendirici — arama-dışı mesajlar (tur sorusu/kıyas/
+            // Phase 0a: insan devri — kullanıcı acenta/temsilci istiyorsa sohbet
+            // özetiyle dolu WhatsApp/telefon köprüsü kur (LLM'siz)
+            if ($this->wantsHumanHandoff($userMessage)) {
+                $handoff = $this->buildHandoffPayload($conversation);
+                if ($handoff !== null) {
+                    return $this->respondHandoffStreamed($conversation, $userMessage, $emit, $handoff);
+                }
+            }
+
+            // Phase 0b: mesaj yönlendirici — arama-dışı mesajlar (tur sorusu/kıyas/
             // site sorusu/sohbet) arama pipeline'ına girmeden ucuz yoldan yanıtlanır
             $route = $this->routeMessage($conversation, $userMessage);
             if ($route['action'] !== 'search') {

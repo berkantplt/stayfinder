@@ -70,9 +70,76 @@ class DashboardController extends Controller
             $hourData[] = $hourlyClicks[$h] ?? 0;
         }
 
+        [$unmetDemand, $missedMatches] = $this->buildDemandRadar($agency->id);
+
         return view('agency.dashboard', compact(
             'agency', 'totalClicks', 'todayClicks', 'weekClicks', 'monthClicks',
-            'tourClicks', 'chartLabels', 'chartData', 'hourLabels', 'hourData'
+            'tourClicks', 'chartLabels', 'chartData', 'hourLabels', 'hourData',
+            'unmetDemand', 'missedMatches'
         ));
+    }
+
+    /**
+     * Talep Radarı: AI aramanın gördüğü ama karşılayamadığı talep + acentanın
+     * turlarının eşiğin altında kaldığı aramalar. Arz tarafı, gerçek kullanıcı
+     * talebiyle beslenir ("Bu ay 9 kişi Eylül'de vizesiz Balkan aradı").
+     *
+     * @return array{0: array, 1: array}
+     */
+    private function buildDemandRadar(int $agencyId): array
+    {
+        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        $logs = \App\Models\AiSearchLog::where('created_at', '>=', now()->subDays(30))
+            ->get(['intent', 'applied_filters', 'result_tour_ids', 'near_misses']);
+
+        // 1) Karşılanamayan talep: 0 sonuç veya gevşetilmiş aramaların niyet kümeleri
+        $unmetGroups = [];
+        foreach ($logs as $log) {
+            $relaxed = ! empty(($log->applied_filters ?? [])['relaxation'] ?? null);
+            if (! $relaxed && ! empty($log->result_tour_ids)) {
+                continue;
+            }
+            $intent = (array) ($log->intent ?? []);
+            $key = implode(' · ', array_filter([
+                $intent['preferred_destination'] ?? null,
+                ! empty($intent['preferred_month']) ? ($monthNames[(int) $intent['preferred_month']] ?? null) : null,
+                ($intent['is_international'] ?? null) === true ? 'yurt dışı' : (($intent['is_international'] ?? null) === false ? 'yurt içi' : null),
+                ! empty($intent['max_budget']) ? '≤'.number_format((int) $intent['max_budget'], 0, ',', '.').' TL' : null,
+            ]));
+            if ($key === '') {
+                continue;
+            }
+            $unmetGroups[$key] = ($unmetGroups[$key] ?? 0) + 1;
+        }
+        arsort($unmetGroups);
+        // İstatistiksel dürüstlük: n≥3 kümeler gösterilir
+        $unmetDemand = collect($unmetGroups)->filter(fn ($n) => $n >= 3)->take(5)
+            ->map(fn ($n, $k) => ['criteria' => $k, 'count' => $n])->values()->all();
+
+        // 2) "Turun neden kaçırdı": acentanın eşik altında kalan turları
+        $missed = [];
+        foreach ($logs as $log) {
+            foreach ((array) ($log->near_misses ?? []) as $miss) {
+                if ((int) ($miss['agency_id'] ?? 0) !== $agencyId) {
+                    continue;
+                }
+                $k = $miss['tour_id'].'|'.($miss['weakest'] ?? '');
+                $missed[$k] = ($missed[$k] ?? 0) + 1;
+            }
+        }
+        arsort($missed);
+        $tourTitles = Tour::whereIn('id', collect(array_keys($missed))->map(fn ($k) => (int) explode('|', $k)[0])->unique())
+            ->pluck('title', 'id');
+        $missedMatches = collect($missed)->take(5)->map(function ($count, $key) use ($tourTitles) {
+            [$tourId, $weakest] = explode('|', $key);
+
+            return [
+                'tour_title' => $tourTitles[(int) $tourId] ?? 'Tur',
+                'weakest' => $weakest,
+                'count' => $count,
+            ];
+        })->values()->all();
+
+        return [$unmetDemand, $missedMatches];
     }
 }

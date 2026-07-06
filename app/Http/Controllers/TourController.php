@@ -111,7 +111,7 @@ class TourController extends Controller
     {
         abort_unless($tour->isPubliclyVisible() && $tour->agency?->is_active, 404);
 
-        $this->captureAiSelection($request, $tour);
+        $aiContext = $this->captureAiSelection($request, $tour);
         $tour->load('agency', 'dates', 'category');
 
         // Record view
@@ -173,40 +173,49 @@ class TourController extends Controller
 
         return view('tours.show', compact(
             'tour', 'otherOffers', 'similarTours', 'reviews', 'avgRating', 'userReview',
-            'priceLabels', 'priceData'
+            'priceLabels', 'priceData', 'aiContext'
         ));
     }
 
-    private function captureAiSelection(Request $request, Tour $tour): void
+    /**
+     * AI aramadan gelen tıklamayı loglar VE tur sayfasında gösterilecek
+     * "danışman barı" bağlamını döner — kullanıcı 5 sekme açsa da aradığı
+     * kriterlerle bu turun ilişkisini görür, sohbete dönüş kopmaz.
+     *
+     * @return array{query: string, compatibility: ?float, checks: array<int, string>}|null
+     */
+    private function captureAiSelection(Request $request, Tour $tour): ?array
     {
         if (! $request->filled('ai_log_id')) {
-            return;
+            return null;
         }
 
         $log = AiSearchLog::find((int) $request->query('ai_log_id'));
         if (! $log) {
-            return;
+            return null;
         }
 
         // Basic ownership checks: user and/or session should match.
         if ($log->user_id !== null && $log->user_id !== auth()->id()) {
-            return;
+            return null;
         }
 
         $sessionId = $request->session()->getId();
         if ($log->session_id && $log->session_id !== $sessionId) {
-            return;
+            return null;
         }
 
         $resultIds = is_array($log->result_tour_ids)
             ? array_map('intval', $log->result_tour_ids)
             : [];
         if (! empty($resultIds) && ! in_array((int) $tour->id, $resultIds, true)) {
-            return;
+            return null;
         }
 
+        $aiContext = $this->buildAiContextBar($log, $tour);
+
         if ($log->selected_tour_id) {
-            return;
+            return $aiContext; // tıklama zaten kayıtlı — barı yine göster
         }
 
         $rank = (int) $request->query('ai_rank', 0);
@@ -215,6 +224,49 @@ class TourController extends Controller
             'selected_rank' => $rank > 0 ? $rank : null,
             'selected_at' => now(),
         ]);
+
+        return $aiContext;
+    }
+
+    /**
+     * Danışman barı içeriği: aramadaki kriterler + bu turun onlarla ilişkisi
+     * (✅/⚠️ işaretleri) — tamamen logdan/DB'den, LLM'siz.
+     *
+     * @return array{query: string, compatibility: ?float, checks: array<int, string>}
+     */
+    private function buildAiContextBar(AiSearchLog $log, Tour $tour): array
+    {
+        $intent = (array) ($log->intent ?? []);
+        $scoreEntry = collect($log->result_scores ?? [])->firstWhere('tour_id', $tour->id);
+        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+        $checks = [];
+
+        if (! empty($intent['max_budget'])) {
+            $inBudget = (float) ($tour->price_try ?? $tour->price) <= (int) $intent['max_budget'];
+            $checks[] = ($inBudget ? '✅' : '⚠️').' '.number_format((int) $intent['max_budget'], 0, ',', '.').' TL bütçe'.($inBudget ? '' : ' (üstünde)');
+        }
+        if (! empty($intent['preferred_month'])) {
+            $month = (int) $intent['preferred_month'];
+            $tour->loadMissing('dates');
+            $hasMonth = $tour->dates->contains(fn ($d) => $d->departure_date
+                && (int) $d->departure_date->format('n') === $month
+                && $d->departure_date->isFuture())
+                || ($tour->departure_date && (int) $tour->departure_date->format('n') === $month);
+            $checks[] = ($hasMonth ? '✅' : '⚠️').' '.($monthNames[$month] ?? '').' kalkışı';
+        }
+        if (($intent['is_international'] ?? null) !== null) {
+            $checks[] = '✅ '.($tour->is_international ? 'yurt dışı' : 'yurt içi');
+        }
+        if (! empty($intent['preferred_min_days']) || ! empty($intent['preferred_max_days'])) {
+            $checks[] = '📅 '.$tour->duration_days.' gün';
+        }
+
+        return [
+            'query' => (string) $log->raw_query,
+            'compatibility' => $scoreEntry['compatibility_score'] ?? null,
+            'checks' => $checks,
+        ];
     }
 
     public function compare(Request $request)

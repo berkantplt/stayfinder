@@ -71,7 +71,59 @@ class AiSearchController extends Controller
             'tours' => $tours,
             'recentConversations' => $recentConversations,
             'initialQuery' => (string) $request->input('q', ''),
+            'welcomeSignals' => $messages->isEmpty() ? $this->buildWelcomeSignals($request, $recentConversations) : [],
         ]);
+    }
+
+    /**
+     * Dönen kullanıcıya hafızalı karşılama sinyalleri (boş sohbet ekranı):
+     * son aramanın özeti + favori fiyat düşüşü. Tamamen SQL/şablon — LLM'siz.
+     *
+     * @return array<int, array{label: string, url: string}>
+     */
+    private function buildWelcomeSignals(Request $request, $recentConversations): array
+    {
+        $signals = [];
+        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+        // 1) Son konuşmanın niyeti → "kaldığın yerden devam"
+        $lastConversation = $recentConversations->first();
+        if ($lastConversation && ! empty($lastConversation->current_intent)) {
+            $ci = (array) $lastConversation->current_intent;
+            $bits = array_filter([
+                $ci['preferred_destination'] ?? null,
+                ! empty($ci['preferred_month']) ? ($monthNames[(int) $ci['preferred_month']] ?? null) : null,
+                ! empty($ci['max_budget']) ? number_format((int) $ci['max_budget'], 0, ',', '.').' TL' : null,
+            ]);
+            if (! empty($bits)) {
+                $signals[] = [
+                    'label' => '⏪ Kaldığın yerden devam: '.implode(' · ', array_slice($bits, 0, 3)),
+                    'url' => route('ai.search.show', $lastConversation->uuid),
+                ];
+            }
+        }
+
+        // 2) Favori turda fiyat düşüşü (favorilendiği günkü fiyata göre)
+        $user = $request->user();
+        if ($user && method_exists($user, 'favorites')) {
+            foreach ($user->favorites()->with('priceHistories')->limit(10)->get() as $favorite) {
+                $favoritedAt = $favorite->pivot?->created_at;
+                $baseline = $favorite->priceHistories
+                    ->when($favoritedAt, fn ($c) => $c->filter(fn ($h) => $h->recorded_at <= $favoritedAt))
+                    ->sortByDesc('recorded_at')
+                    ->first()?->price;
+                if ($baseline !== null && (float) $favorite->price < (float) $baseline) {
+                    $drop = number_format((float) $baseline - (float) $favorite->price, 0, ',', '.');
+                    $signals[] = [
+                        'label' => '💸 Favorindeki "'.Str::limit($favorite->title, 32).'" '.$drop.' '.$favorite->currency_symbol.' ucuzladı',
+                        'url' => route('tours.show', $favorite->id),
+                    ];
+                    break; // tek fiyat kartı yeter
+                }
+            }
+        }
+
+        return array_slice($signals, 0, 2);
     }
 
     /**
@@ -838,6 +890,20 @@ class AiSearchController extends Controller
 
             } // gevşetme merdiveni sonu
 
+            // Eşiğin ALTINDA kalan adayların kısa dökümü — acenta talep radarının
+            // "turun neden kaçırdı" içgörüsünün ham verisi (loglanır)
+            $nearMisses = $rankedTours
+                ->filter(fn ($t) => (float) $t->compatibility_score < self::COMPATIBILITY_THRESHOLD)
+                ->take(10)
+                ->map(fn ($t) => [
+                    'tour_id' => $t->id,
+                    'agency_id' => $t->agency_id,
+                    'score' => round((float) $t->compatibility_score, 4),
+                    'weakest' => $this->weakestAxis($t),
+                ])
+                ->values()
+                ->all();
+
             // 4.5. LLM re-ranker: en iyi 15 adayı mini model niyete göre yeniden
             // puanlar — "yaşlı annemle rahat tempolu" gibi nüansları program
             // metninden okur. Hata/kapalıysa hibrit sıra aynen kalır.
@@ -951,6 +1017,7 @@ class AiSearchController extends Controller
                     'relaxation' => $relaxationNote, // kalite raporu: gevşetilmiş aramalar
                 ],
                 'candidate_count' => $candidateCount,
+                'near_misses' => $nearMisses ?: null,
                 // TAM eşleşme listesi loglanır (sohbette 7'si gösterilse bile):
                 // "tüm eşleşen turlar" sayfası ve eğitim verisi bunu kullanır
                 'result_tour_ids' => $results->pluck('id')->values()->all(),
@@ -1811,6 +1878,28 @@ class AiSearchController extends Controller
         })->sortByDesc('compatibility_score')->values();
 
         return $reranked->concat($rest);
+    }
+
+    /** Turun en zayıf skor ekseni (acenta radarı: "turun neden kaçırdı"). */
+    private function weakestAxis($tour): string
+    {
+        $axes = array_filter([
+            'içerik uyumu' => $tour->similarity ?? null,
+            'bütçe' => $tour->budget_score ?? null,
+            'süre' => $tour->duration_score ?? null,
+            'doğa' => $tour->nature_score ?? null,
+            'sakinlik' => $tour->city_escape_score ?? null,
+            'hareketlilik' => $tour->lively_score ?? null,
+            'ay uygunluğu' => $tour->month_score ?? null,
+            'destinasyon' => $tour->destination_score ?? null,
+        ], fn ($v) => $v !== null);
+
+        if (empty($axes)) {
+            return 'içerik uyumu';
+        }
+        asort($axes);
+
+        return (string) array_key_first($axes);
     }
 
     /** Turun en yakın gelecek kalkış tarihi etiketi (kart için, d.m.Y). */

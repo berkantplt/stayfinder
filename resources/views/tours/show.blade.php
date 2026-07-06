@@ -61,6 +61,20 @@
                     </div>
                 @endif
 
+                {{-- AI danışman barı: aramadan gelen kullanıcı bağlamını kaybetmesin --}}
+                @if(!empty($aiContext))
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#3730a3;">
+                        <span>🤖 Aradığın: “{{ \Illuminate\Support\Str::limit($aiContext['query'], 60) }}”</span>
+                        @if($aiContext['compatibility'] !== null)
+                            <span style="font-weight:700;">· %{{ round($aiContext['compatibility'] * 100) }} uyumlu</span>
+                        @endif
+                        @foreach($aiContext['checks'] as $check)
+                            <span>· {{ $check }}</span>
+                        @endforeach
+                        <a href="{{ route('ai.search') }}" style="margin-left:auto;font-weight:700;color:#4338ca;text-decoration:none;white-space:nowrap;">← Sohbete dön</a>
+                    </div>
+                @endif
+
                 <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-bottom:10px;line-height:1.3;">{{ $tour->title }}</h1>
 
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">

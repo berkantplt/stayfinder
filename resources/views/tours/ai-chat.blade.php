@@ -50,6 +50,14 @@
                         <div style="font-size:42px;margin-bottom:8px;">✨</div>
                         <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px;">Sana özel bir tatil bulalım</h2>
                         <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:20px;">Aşağıya tatilden ne beklediğini yaz; bütçe, ruh hali, ay, ülke - hepsini birden veya parça parça söyleyebilirsin. Mesaj geldikçe seçimi daraltırım.</p>
+                        @if(!empty($welcomeSignals))
+                            {{-- Hafızalı karşılama: dönen kullanıcı kaldığı yerden devam edebilsin --}}
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px;">
+                                @foreach($welcomeSignals as $signal)
+                                    <a href="{{ $signal['url'] }}" class="btn btn-primary btn-sm" style="text-decoration:none;">{{ $signal['label'] }}</a>
+                                @endforeach
+                            </div>
+                        @endif
                         <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
                             <button type="button" class="btn btn-outline btn-sm" data-suggest>Eylül'de Avrupa'da kültür turu, 30K bütçe</button>
                             <button type="button" class="btn btn-outline btn-sm" data-suggest>Kalabalıktan kaçayım, doğa olsun, 5 gün</button>
@@ -477,6 +485,31 @@
                     html += '</table>';
                     tbl.innerHTML = html;
                     assistant.grid.parentElement.insertBefore(tbl, assistant.grid);
+                    scrollIfNearBottom();
+                } else if (eventName === 'handoff') {
+                    ensure();
+                    // Acentaya sıcak devir kartı: özet dolu WhatsApp + telefon
+                    const card = document.createElement('div');
+                    card.style.cssText = 'margin:10px 0 0 42px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;';
+                    const info = document.createElement('div');
+                    info.style.cssText = 'font-size:13px;color:#166534;font-weight:600;flex:1;min-width:180px;';
+                    info.textContent = '📞 ' + (data.agency_name || 'Acenta') + ' — "' + (data.tour_title || '') + '"';
+                    card.appendChild(info);
+                    if (data.whatsapp_link) {
+                        const wa = document.createElement('a');
+                        wa.href = data.whatsapp_link; wa.target = '_blank'; wa.rel = 'noopener';
+                        wa.className = 'btn btn-primary btn-sm';
+                        wa.textContent = '📱 WhatsApp\'tan yaz';
+                        card.appendChild(wa);
+                    }
+                    if (data.phone_link) {
+                        const tel = document.createElement('a');
+                        tel.href = data.phone_link;
+                        tel.className = 'btn btn-outline btn-sm';
+                        tel.textContent = '📞 Ara';
+                        card.appendChild(tel);
+                    }
+                    assistant.wrapper.parentElement ? assistant.wrapper.parentElement.appendChild(card) : messages.appendChild(card);
                     scrollIfNearBottom();
                 } else if (eventName === 'suggestions') {
                     ensure();

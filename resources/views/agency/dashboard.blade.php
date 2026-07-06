@@ -179,6 +179,34 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- AI Talep Radarı: aramaların gördüğü ama karşılanamayan talep --}}
+                @if(!empty($unmetDemand) || !empty($missedMatches))
+                <div class="stat-card" style="padding:24px;margin-top:24px;">
+                    <h3 style="font-size:16px;font-weight:700;margin-bottom:6px;color:#0f172a;">🤖 AI Talep Radarı</h3>
+                    <div style="font-size:12px;color:#94a3b8;margin-bottom:16px;">Son 30 günün AI aramalarından — gerçek kullanıcı talebi</div>
+
+                    @if(!empty($unmetDemand))
+                        <div style="font-size:13px;font-weight:700;color:#b45309;margin-bottom:8px;">Karşılanamayan aramalar</div>
+                        @foreach($unmetDemand as $item)
+                            <div style="font-size:13px;color:#475569;padding:6px 0;border-bottom:1px solid #f8fafc;">
+                                <strong>{{ $item['count'] }} arama:</strong> {{ $item['criteria'] }}
+                            </div>
+                        @endforeach
+                        <div style="font-size:11px;color:#94a3b8;margin-top:6px;margin-bottom:14px;">Bu kriterlere uyan tur eklersen bu aramalarda görünürsün.</div>
+                    @endif
+
+                    @if(!empty($missedMatches))
+                        <div style="font-size:13px;font-weight:700;color:#b45309;margin-bottom:8px;">Turların ramak kala kaçırdığı aramalar</div>
+                        @foreach($missedMatches as $item)
+                            <div style="font-size:13px;color:#475569;padding:6px 0;border-bottom:1px solid #f8fafc;">
+                                <strong>{{ \Illuminate\Support\Str::limit($item['tour_title'], 34) }}</strong> — {{ $item['count'] }} aramada eşiğin altında kaldı (en zayıf yön: {{ $item['weakest'] }})
+                            </div>
+                        @endforeach
+                        <div style="font-size:11px;color:#94a3b8;margin-top:6px;">İpucu: turun ilgili alanını (program metni, tarih, fiyat) güçlendirmek görünürlüğü artırır.</div>
+                    @endif
+                </div>
+                @endif
             </div>
         </div>
         </div>
