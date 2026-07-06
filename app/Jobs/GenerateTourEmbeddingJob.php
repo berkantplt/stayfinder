@@ -42,9 +42,14 @@ class GenerateTourEmbeddingJob implements ShouldQueue
 
             $embedding = $response->embeddings[0]->embedding;
 
-            // Observer'ın tekrar tetiklenmesini engellemek için quietly güncelle
-            Tour::withoutEvents(function () use ($tour, $embedding) {
-                $tour->update(['embedding' => $embedding]);
+            // Observer'ın tekrar tetiklenmesini engellemek için quietly güncelle.
+            // search_text: hibrit aramanın anahtar kelime kanalı — aynı temsilin
+            // normalize edilmiş hali (tek kaynaktan, embedding ile senkron kalır).
+            Tour::withoutEvents(function () use ($tour, $embedding, $inputText) {
+                $tour->update([
+                    'embedding' => $embedding,
+                    'search_text' => \App\Support\SearchText::normalize($inputText),
+                ]);
             });
 
             Log::info("[EmbeddingJob] Tour #{$tour->id} ({$tour->title}) başarıyla vektörleştirildi.");

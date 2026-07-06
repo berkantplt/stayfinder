@@ -395,7 +395,9 @@ class AiSearchController extends Controller
             // olarak aynı intent'i üretir — popüler sorgular ("vizesiz turlar" vb.)
             // 24 saat boyunca API'ye gitmeden cevaplanır.
             $intentModel = config('ai.intent_model', 'gpt-4o');
-            $intentCacheKey = 'ai:intent:'.md5($intentModel.'|'.$query.'|'.json_encode($previousIntent ?? []));
+            // Cache anahtarı normalize sorgudan: "Kapadokya Turu" ile "kapadokya turu"
+            // aynı 24 saatlik girdiye düşer → isabet artar, gpt-4o maliyeti düşer
+            $intentCacheKey = 'ai:intent:'.md5($intentModel.'|'.$this->normalizeText($query).'|'.json_encode($previousIntent ?? []));
 
             $analysis = Cache::remember($intentCacheKey, 86400, function () use ($intentModel, $systemPrompt, $query) {
                 $analysisResponse = OpenAI::chat()->create([
@@ -533,6 +535,7 @@ class AiSearchController extends Controller
             // birebir sonuç yoksa körce "bulamadım" demek yerine kademeli gevşetilir
             // (eşik altı en iyi 3 → destinasyonu bırak → bütçe tavanını bırak) ve
             // nedeni relaxation_note ile kullanıcıya açıklanır.
+            $relaxMonth = false;
             $relaxDestination = false;
             $relaxBudget = false;
             $relaxAll = false;
@@ -541,7 +544,7 @@ class AiSearchController extends Controller
             $rankedTours = collect();
             $candidateCount = 0;
 
-            for ($relaxPass = 0; $relaxPass < 4; $relaxPass++) {
+            for ($relaxPass = 0; $relaxPass < 5; $relaxPass++) {
 
             $toursQuery = Tour::whereNotNull('embedding')
                 ->active()
@@ -580,6 +583,16 @@ class AiSearchController extends Controller
             if (! $relaxAll && $maxDays && $maxDays > 0) {
                 $toursQuery->where('duration_days', '<=', $maxDays + 1);
             }
+            // Ay tercihi SERT filtre: "Eylül'de" diyen kullanıcıya o ayda kalkışı
+            // olmayan tur gösterilmez (yumuşak 0.06 skor sessizce sızdırıyordu).
+            // Envanterde o ay yoksa gevşetme basamağı nedeni söyleyerek açar.
+            if (! $relaxMonth && ! $relaxAll && $preferredMonth !== null) {
+                $today = now()->toDateString();
+                $toursQuery->where(function ($mq) use ($preferredMonth, $today) {
+                    $mq->whereHas('dates', fn ($d) => $d->whereMonth('departure_date', $preferredMonth)->whereDate('departure_date', '>=', $today))
+                        ->orWhere(fn ($q) => $q->whereMonth('departure_date', $preferredMonth)->whereDate('departure_date', '>=', $today));
+                });
+            }
             if (! $relaxDestination && $preferredDestination !== null) {
                 $this->applyDestinationConstraint($toursQuery, $preferredDestination);
             }
@@ -594,13 +607,19 @@ class AiSearchController extends Controller
             // cursor ile sadece id+embedding stream et, top-K cosine ID'lerini bul,
             // sonra sadece top-K için full hydrate. 2000+ turda memory'i ~25MB → ~1MB.
             $candidateCount = (clone $toursQuery)->count();
-            $tours = $this->topKByCosine($toursQuery, $queryVector, 100);
+            $tours = $this->topKByCosine($toursQuery, $queryVector, 100, $cleanQuery);
 
             // 4. Hibrit skor: semantic + kullanıcı niyeti odaklı kriterler
             $rankedTours = $tours->map(function ($tour) use ($queryVector, $maxBudget, $isInternational, $requiresVisa, $minDays, $maxDays, $wantsNature, $avoidCrowdedCity, $wantsLively, $preferredMonth, $preferredDestination, $excludedDestinations, $rejectionAvgEmbedding) {
                 // Pre-computed similarity varsa onu kullan (topKByCosine attach etti),
                 // yoksa fallback olarak yeniden hesapla.
                 $semanticScore = $tour->similarity ?? $this->cosineSimilarity($queryVector, $tour->embedding);
+
+                // Anahtar kelime kanalından güçlü gelen turlar (birebir ifade eşleşmesi)
+                // salt cosine düşük diye 0.51 eşiğinin altında kalmasın
+                if (($tour->keyword_rank ?? null) !== null) {
+                    $semanticScore = max($semanticScore, $tour->keyword_rank <= 3 ? 0.66 : 0.56);
+                }
                 $budgetScore = $this->scoreBudget((float) ($tour->price_try ?? $tour->price), $maxBudget);
                 $internationalScore = $this->scoreExactBool($tour->is_international, $isInternational);
                 $visaScore = $this->scoreExactBool($tour->requires_visa, $requiresVisa);
@@ -755,7 +774,14 @@ class AiSearchController extends Controller
                 break;
             }
 
-            // Hiç aday yok: önce destinasyonu, sonra bütçe tavanını gevşet
+            // Hiç aday yok: önce ayı, sonra destinasyonu, sonra bütçe tavanını gevşet
+            if (! $relaxMonth && $preferredMonth !== null) {
+                $relaxMonth = true;
+                $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+                $relaxationNote = ($monthNames[$preferredMonth] ?? 'İstediğin ay').' kalkışlı uygun tur bulamadım — diğer aylardaki benzer seçenekleri gösteriyorum.';
+
+                continue;
+            }
             if (! $relaxDestination && $preferredDestination !== null) {
                 $relaxDestination = true;
                 $relaxationNote = '"'.$preferredDestination.'" için uygun tur bulamadım — diğer kriterlerine uyan alternatifleri gösteriyorum.';
@@ -787,6 +813,13 @@ class AiSearchController extends Controller
             break;
 
             } // gevşetme merdiveni sonu
+
+            // 4.5. LLM re-ranker: en iyi 15 adayı mini model niyete göre yeniden
+            // puanlar — "yaşlı annemle rahat tempolu" gibi nüansları program
+            // metninden okur. Hata/kapalıysa hibrit sıra aynen kalır.
+            if (config('ai.rerank_enabled', true) && $results->count() >= 3) {
+                $results = $this->rerankResults($results, $analysis, $query);
+            }
 
             // 5. RAG (Bilgi Bankası) Entegrasyonu
             $knowledgeService = new KnowledgeService;
@@ -850,7 +883,15 @@ class AiSearchController extends Controller
                         : false,
                     // "Neden bu tur?" — skor bileşenlerinden deterministik tek cümle
                     // (LLM'siz: 7 kart × LLM çağrısı maliyet tuzağı olurdu)
-                    'reason' => $this->buildTourReason($tour, $maxBudget, $preferredMonth, $preferredDestination, $wantsNature, $wantsLively, $avoidCrowdedCity),
+                    'reason' => $tour->rerank_reason
+                        ?? $this->buildTourReason($tour, $maxBudget, $preferredMonth, $preferredDestination, $wantsNature, $wantsLively, $avoidCrowdedCity),
+                    // En yakın gelecek kalkış — kullanıcı kartta tarihi hemen görsün
+                    'next_departure' => $this->nextDepartureLabel($tour),
+                    // Bütçe kurtarıcı: tur bütçe üstüyse ama başka bir tarihte bütçeye
+                    // giren fiyat varsa çip olarak sun ("19 Eki — 34.500 TL bütçende")
+                    'flex_date' => ($maxBudget && $maxBudget > 0)
+                        ? $this->findBudgetFriendlyDate($tour, $maxBudget)
+                        : null,
                     'similarity' => round((float) $tour->similarity, 6),
                     'compatibility_score' => round((float) $tour->compatibility_score, 6),
                     'nature_score' => round((float) ($tour->nature_score ?? 1.0), 6),
@@ -1025,7 +1066,59 @@ class AiSearchController extends Controller
         return array_map(fn ($v) => $v / $count, $sum);
     }
 
-    private function topKByCosine($query, array $queryVector, int $topK = 100)
+    /**
+     * Anahtar kelime kanalı: sorgu kelimelerinin search_text'te geçme sıklığına
+     * göre aday sıralaması. MySQL'de FULLTEXT (doğal dil), test/sqlite'ta LIKE
+     * tabanlı sayım. "Yüzme molalı" gibi birebir ifadeler vektörde sıralamada
+     * kaybolsa bile bu kanaldan yüzeye çıkar.
+     *
+     * @return array<int, int> [tourId => rank] (1'den başlar)
+     */
+    private function keywordRanks($query, string $searchQueryText, int $topK = 50): array
+    {
+        $keywords = \App\Support\SearchText::keywords($searchQueryText);
+        if (empty($keywords)) {
+            return [];
+        }
+
+        $builder = (clone $query)->whereNotNull('search_text');
+
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            $rows = $builder
+                ->selectRaw('id, MATCH(search_text) AGAINST (? IN NATURAL LANGUAGE MODE) AS kw_score', [implode(' ', $keywords)])
+                ->havingRaw('kw_score > 0')
+                ->orderByDesc('kw_score')
+                ->limit($topK)
+                ->pluck('kw_score', 'id')
+                ->all();
+        } else {
+            // Fallback (sqlite/test): kelime başına LIKE isabeti say
+            $scores = [];
+            $builder->select(['id', 'search_text'])->cursor()->each(function ($tour) use (&$scores, $keywords) {
+                $hits = 0;
+                foreach ($keywords as $kw) {
+                    if (str_contains((string) $tour->search_text, $kw)) {
+                        $hits++;
+                    }
+                }
+                if ($hits > 0) {
+                    $scores[$tour->id] = $hits;
+                }
+            });
+            arsort($scores);
+            $rows = array_slice($scores, 0, $topK, true);
+        }
+
+        $ranks = [];
+        $rank = 1;
+        foreach (array_keys($rows) as $id) {
+            $ranks[(int) $id] = $rank++;
+        }
+
+        return $ranks;
+    }
+
+    private function topKByCosine($query, array $queryVector, int $topK = 100, string $searchQueryText = '')
     {
         $similarities = [];
 
@@ -1046,8 +1139,25 @@ class AiSearchController extends Controller
             return collect();
         }
 
+        // HİBRİT FÜZYON (RRF): vektör sırası + anahtar kelime sırası birleşir.
+        // Birebir ifade eşleşmeleri ("yüzme molalı") cosine'da geride kalsa bile
+        // top-K'ye girer; iki kanalda da iyi olan tur en üste çıkar.
         arsort($similarities);
-        $topIds = array_keys(array_slice($similarities, 0, $topK, true));
+        $cosineRanks = [];
+        $rank = 1;
+        foreach (array_keys($similarities) as $id) {
+            $cosineRanks[$id] = $rank++;
+        }
+
+        $kwRanks = $searchQueryText !== '' ? $this->keywordRanks($query, $searchQueryText) : [];
+
+        $fused = [];
+        foreach ($cosineRanks as $id => $cRank) {
+            $fused[$id] = 1 / (60 + $cRank) + (isset($kwRanks[$id]) ? 1 / (60 + $kwRanks[$id]) : 0);
+        }
+        arsort($fused);
+
+        $topIds = array_keys(array_slice($fused, 0, $topK, true));
 
         // Top-K full hydrate (eager load agency + tarihler — ay skoru tüm kalkışlara bakar)
         $hydrated = Tour::with(['agency', 'dates'])
@@ -1055,12 +1165,13 @@ class AiSearchController extends Controller
             ->get()
             ->keyBy('id');
 
-        // Cosine sırasını koru, similarity attach et
+        // Füzyon sırasını koru; similarity + keyword_rank attach et
         return collect($topIds)
-            ->map(function ($id) use ($hydrated, $similarities) {
+            ->map(function ($id) use ($hydrated, $similarities, $kwRanks) {
                 $tour = $hydrated->get($id);
                 if ($tour) {
                     $tour->similarity = $similarities[$id];
+                    $tour->keyword_rank = $kwRanks[$id] ?? null;
                 }
 
                 return $tour;
@@ -1406,6 +1517,31 @@ class AiSearchController extends Controller
             }
         }
 
+        // Bulanık eşleşme: yazım hatası toleransı ("kapadokia" → Kapadokya).
+        // Yalnızca ≥5 harfli tek kelimelik destinasyonlarda; kısa adlarda
+        // (Van, Ege) yanlış pozitif riski yüksek olduğundan kapalı.
+        $queryWords = array_values(array_filter(
+            explode(' ', $normalizedText),
+            fn ($w) => mb_strlen($w) >= 5
+        ));
+        if (! empty($queryWords)) {
+            foreach ($this->getKnownDestinations() as $destination) {
+                $normalizedDestination = $this->normalizeText($destination);
+                $len = mb_strlen($normalizedDestination);
+                if ($len < 5 || str_contains($normalizedDestination, ' ')) {
+                    continue;
+                }
+                $maxDistance = $len >= 7 ? 2 : 1;
+                foreach ($queryWords as $word) {
+                    // Türkçe ekler için kelimenin destinasyon uzunluğundaki ön eki karşılaştırılır
+                    $prefix = mb_substr($word, 0, $len);
+                    if (levenshtein($prefix, $normalizedDestination) <= $maxDistance) {
+                        return $destination;
+                    }
+                }
+            }
+        }
+
         return null;
     }
 
@@ -1618,6 +1754,132 @@ class AiSearchController extends Controller
 
             return 'Şu an senin için en iyi seçenekleri araştırıyorum. İşte bulduğum turlar:';
         }
+    }
+
+    /**
+     * LLM re-ranker: eşiği geçen ilk 15 adayı kompakt kartlarla gpt-4o-mini'ye
+     * verir, 0-10 uygunluk puanı + tek cümle gerekçe alır. Nihai skor =
+     * 0.65×hibrit + 0.35×(puan/10). 24 sa önbellekli; hatada sıra değişmez.
+     */
+    private function rerankResults(Collection $results, array $analysis, string $query): Collection
+    {
+        $top = $results->take(15)->values();
+        $rest = $results->slice(15)->values();
+
+        $cards = $top->map(fn ($t) => [
+            'id' => $t->id,
+            'baslik' => $t->title,
+            'destinasyon' => $t->destination,
+            'fiyat' => (int) $t->price.' '.$t->currency,
+            'gun' => (int) $t->duration_days,
+            'ozet' => Str::limit((string) ($t->description ?? ''), 150),
+            'program' => Str::limit(collect(is_array($t->itinerary) ? $t->itinerary : [])->pluck('title')->implode(' / '), 120),
+        ])->all();
+
+        $intentSummary = json_encode(array_filter([
+            'butce_tl' => $analysis['max_budget'] ?? null,
+            'ay' => $analysis['preferred_month'] ?? null,
+            'profil' => $analysis['traveler_profile'] ?? null,
+            'doga' => $analysis['wants_nature'] ?? null,
+            'hareketli' => $analysis['wants_lively'] ?? null,
+            'sakin' => $analysis['avoid_crowded_city'] ?? null,
+        ], fn ($v) => $v !== null), JSON_UNESCAPED_UNICODE);
+
+        $cacheKey = 'ai:rerank:'.md5($this->normalizeText($query).'|'.$intentSummary.'|'.$top->pluck('id')->implode(','));
+
+        try {
+            $scores = Cache::remember($cacheKey, 86400, function () use ($cards, $intentSummary, $query) {
+                $response = OpenAI::chat()->create([
+                    'model' => config('ai.router_model', 'gpt-4o-mini'),
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'Tur adaylarını kullanıcının isteğine uygunluğa göre 0-10 puanla. SADECE şu JSON: {"scores":[{"id":sayı,"score":0-10,"reason":"tek KISA Türkçe cümle — yalnızca verilen alanlardan, uydurma yok"}]}. Tüm adayları puanla.'
+                            ."\nKullanıcı tercihleri: ".$intentSummary
+                            ."\nADAYLAR:\n".json_encode($cards, JSON_UNESCAPED_UNICODE)],
+                        ['role' => 'user', 'content' => $this->wrapUserInputSafely($query)],
+                    ],
+                    'response_format' => ['type' => 'json_object'],
+                    'max_tokens' => 900,
+                ]);
+
+                $data = json_decode($response->choices[0]->message->content ?? '{}', true) ?: [];
+
+                return is_array($data['scores'] ?? null) ? $data['scores'] : [];
+            });
+        } catch (\Throwable $e) {
+            Log::info('[AiRerank] hata, hibrit sıra korunuyor', ['message' => $e->getMessage()]);
+
+            return $results;
+        }
+
+        if (empty($scores)) {
+            return $results;
+        }
+
+        $byId = collect($scores)->filter(fn ($s) => isset($s['id']))->keyBy(fn ($s) => (int) $s['id']);
+
+        $reranked = $top->map(function ($t) use ($byId) {
+            $s = $byId->get($t->id);
+            if ($s !== null) {
+                $llmScore = max(0.0, min(10.0, (float) ($s['score'] ?? 5))) / 10;
+                $t->compatibility_score = max(0.0, min(1.0, 0.65 * (float) $t->compatibility_score + 0.35 * $llmScore));
+                if (! empty($s['reason']) && is_string($s['reason'])) {
+                    $t->rerank_reason = Str::limit(trim($s['reason']), 140);
+                }
+            }
+
+            return $t;
+        })->sortByDesc('compatibility_score')->values();
+
+        return $reranked->concat($rest);
+    }
+
+    /** Turun en yakın gelecek kalkış tarihi etiketi (kart için, d.m.Y). */
+    private function nextDepartureLabel($tour): ?string
+    {
+        $next = null;
+        if ($tour->relationLoaded('dates')) {
+            $next = $tour->dates
+                ->filter(fn ($d) => $d->departure_date && $d->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
+                ->sortBy('departure_date')
+                ->first()?->departure_date;
+        }
+        $next ??= ($tour->departure_date && $tour->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
+            ? $tour->departure_date
+            : null;
+
+        return $next?->format('d.m.Y');
+    }
+
+    /**
+     * Bütçe kurtarıcı: turun ana fiyatı bütçe üstündeyken, bütçeye giren
+     * GELECEK tarihli bir kalkış varsa onu döner — kullanıcı "tarihinde
+     * esnersen bütçene giriyor" çipini görür. Tur zaten bütçedeyse null.
+     *
+     * @return array{date: string, price: string}|null
+     */
+    private function findBudgetFriendlyDate($tour, int $maxBudget): ?array
+    {
+        $mainPrice = (float) ($tour->price_try ?? $tour->price);
+        if ($mainPrice <= $maxBudget || ! $tour->relationLoaded('dates')) {
+            return null;
+        }
+
+        $cheapest = $tour->dates
+            ->filter(fn ($d) => $d->departure_date
+                && $d->departure_date->greaterThanOrEqualTo(now()->startOfDay())
+                && $d->price !== null
+                && \App\Models\CurrencyRate::toTry((float) $d->price, $tour->currency) <= $maxBudget)
+            ->sortBy(fn ($d) => (float) $d->price)
+            ->first();
+
+        if (! $cheapest) {
+            return null;
+        }
+
+        return [
+            'date' => $cheapest->departure_date->format('d.m.Y'),
+            'price' => number_format((float) $cheapest->price, 0, ',', '.').' '.$tour->currency_symbol,
+        ];
     }
 
     /**

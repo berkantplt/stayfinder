@@ -30,6 +30,9 @@
         <env name="OPENAI_API_KEY" value="sk-test-suite-fake-key"/>
         <env name="FIRECRAWL_API_KEY" value=""/>
         <env name="JINA_API_KEY" value=""/>
+        <!-- Re-ranker testlerde varsayılan kapalı (fake yanıt dizilerini kaydırmasın);
+             kendi testi config ile açar -->
+        <env name="AI_RERANK" value="false"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

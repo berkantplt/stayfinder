@@ -753,6 +753,8 @@ class ConversationService
                 'compatibility_score' => $get('compatibility_score'),
                 'over_budget' => (bool) $get('over_budget'),
                 'reason' => $get('reason'),
+                'next_departure' => $get('next_departure'),
+                'flex_date' => $get('flex_date'),
             ];
         })->values()->all();
     }

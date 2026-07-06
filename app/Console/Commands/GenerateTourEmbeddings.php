@@ -13,9 +13,11 @@ class GenerateTourEmbeddings extends Command
     public function handle()
     {
         $query = \App\Models\Tour::query();
-        
+
         if (!$this->option('force')) {
-            $query->whereNull('embedding');
+            // search_text hibrit aramanın anahtar kelime kanalı — eksikse
+            // (yeni kolon / kaçmış tur) embedding'le birlikte doldurulur
+            $query->where(fn ($q) => $q->whereNull('embedding')->orWhereNull('search_text'));
         }
 
         $tours = $query->with('category')->get();
@@ -40,7 +42,10 @@ class GenerateTourEmbeddings extends Command
 
                 $embedding = $response->embeddings[0]->embedding;
 
-                $tour->update(['embedding' => $embedding]);
+                $tour->update([
+                    'embedding' => $embedding,
+                    'search_text' => \App\Support\SearchText::normalize($inputText),
+                ]);
                 $bar->advance();
             } catch (\Exception $e) {
                 $this->error("\nTur #{$tour->id} işlenirken hata oluştu: " . $e->getMessage());

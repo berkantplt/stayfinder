@@ -48,7 +48,7 @@ class Tour extends Model
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
         'price', 'currency', 'duration_days', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'images', 'tour_url', 'is_active',
-        'views_count', 'clicks_count', 'embedding', 'is_international', 'requires_visa',
+        'views_count', 'clicks_count', 'embedding', 'search_text', 'is_international', 'requires_visa',
         'departure_points', 'itinerary', 'hotel_info', 'extras',
         'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
         'departure_city', 'stop_cities',

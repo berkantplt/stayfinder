@@ -29,6 +29,10 @@ return [
     // sınıflandırma ve topraklanmış QA görevleri; mini yeterli ve ucuz.
     'router_model' => env('AI_ROUTER_MODEL', 'gpt-4o-mini'),
 
+    // LLM re-ranker: eşik üstü ilk 15 adayı niyete göre yeniden puanlar (mini).
+    // Kapatmak için AI_RERANK=false.
+    'rerank_enabled' => env('AI_RERANK', true),
+
     // Tur embedding'i — embeddings ayrı model ailesi.
     'embedding_model' => env('AI_EMBEDDING_MODEL', 'text-embedding-3-small'),
 
