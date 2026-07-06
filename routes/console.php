@@ -45,6 +45,30 @@ Schedule::command('app:generate-tour-embeddings')
 
 /*
 |--------------------------------------------------------------------------
+| AI Öğrenme Çarkı
+|--------------------------------------------------------------------------
+|
+| Gece: tıklama önceliklerini (±0.03 sınırlı) ve girişli kullanıcı tercih
+| profillerini tazele. Haftalık: kalite raporu (0-sonuç/gevşetme/tıklama
+| oranları) — sorunlar kullanıcı sessizce terk etmeden görünür olsun.
+| Ağırlık kalibrasyonu KASITLI olarak zamanlanmadı: ai:calibrate-weights
+| insan gözetiminde elle çalıştırılır (--apply ile onaylanır).
+|
+*/
+Schedule::command('ai:update-ctr-priors')
+    ->dailyAt('03:40')->onOneServer()->withoutOverlapping(30)->runInBackground()
+    ->name('ai-ctr-priors');
+
+Schedule::command('ai:build-user-profiles')
+    ->dailyAt('03:50')->onOneServer()->withoutOverlapping(30)->runInBackground()
+    ->name('ai-user-profiles');
+
+Schedule::command('ai:quality-report')
+    ->weeklyOn(1, '08:30')->onOneServer()->withoutOverlapping(30)->runInBackground()
+    ->name('ai-quality-report');
+
+/*
+|--------------------------------------------------------------------------
 | Bildirim & Duyuru Temizliği
 |--------------------------------------------------------------------------
 |

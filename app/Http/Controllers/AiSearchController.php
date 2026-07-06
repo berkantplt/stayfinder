@@ -531,6 +531,14 @@ class AiSearchController extends Controller
             $rejectedIds = $this->collectRejectedTourIds($request);
             $rejectionAvgEmbedding = $this->computeRejectionAvgEmbedding($rejectedIds);
 
+            // Girişli kullanıcının tercih profili vektörü (gece ai:build-user-profiles
+            // üretir) — geçmiş beğenilere yakın turlara küçük kişiselleştirme bonusu
+            $profileVector = null;
+            $preference = $request->user()?->ai_preference;
+            if (is_array($preference) && ! empty($preference['embedding']) && is_array($preference['embedding'])) {
+                $profileVector = $preference['embedding'];
+            }
+
             // 3. Veritabanı Filtreleme + 0-SONUÇ GEVŞETME MERDİVENİ:
             // birebir sonuç yoksa körce "bulamadım" demek yerine kademeli gevşetilir
             // (eşik altı en iyi 3 → destinasyonu bırak → bütçe tavanını bırak) ve
@@ -610,7 +618,7 @@ class AiSearchController extends Controller
             $tours = $this->topKByCosine($toursQuery, $queryVector, 100, $cleanQuery);
 
             // 4. Hibrit skor: semantic + kullanıcı niyeti odaklı kriterler
-            $rankedTours = $tours->map(function ($tour) use ($queryVector, $maxBudget, $isInternational, $requiresVisa, $minDays, $maxDays, $wantsNature, $avoidCrowdedCity, $wantsLively, $preferredMonth, $preferredDestination, $excludedDestinations, $rejectionAvgEmbedding) {
+            $rankedTours = $tours->map(function ($tour) use ($queryVector, $maxBudget, $isInternational, $requiresVisa, $minDays, $maxDays, $wantsNature, $avoidCrowdedCity, $wantsLively, $preferredMonth, $preferredDestination, $excludedDestinations, $rejectionAvgEmbedding, $profileVector) {
                 // Pre-computed similarity varsa onu kullan (topKByCosine attach etti),
                 // yoksa fallback olarak yeniden hesapla.
                 $semanticScore = $tour->similarity ?? $this->cosineSimilarity($queryVector, $tour->embedding);
@@ -649,6 +657,11 @@ class AiSearchController extends Controller
                 $monthScore = $this->scoreMonthForTour($tour, $preferredMonth);
 
                 $tour->similarity = $semanticScore;
+                // Replay/kalibrasyon için TÜM eksen skorları saklanır (loglara yazılır)
+                $tour->budget_score = $budgetScore;
+                $tour->international_score = $internationalScore;
+                $tour->visa_score = $visaScore;
+                $tour->duration_score = $durationScore;
                 $tour->nature_score = $natureScore;
                 $tour->city_escape_score = $cityEscapeScore;
                 $tour->lively_score = $livelyScore;
@@ -726,11 +739,22 @@ class AiSearchController extends Controller
                     }
                 }
 
+                // Kişisel tercih bonusu: kullanıcının geçmişte tıkladığı/favorilediği
+                // turların ortalama vektörüne yakın turlara küçük artı (±0.04 sınırlı)
+                $tour->profile_bonus = 0.0;
+                if ($profileVector !== null && ! empty($tour->embedding)
+                    && $this->cosineSimilarity($tour->embedding, $profileVector) > 0.75) {
+                    $tour->profile_bonus = 0.04;
+                }
+
                 $tour->compatibility_score = max(0.0, min(1.0,
                     (float) $tour->compatibility_score
                     + $tour->seasonal_bonus
                     + $tour->vibe_score
                     + $tour->rejection_penalty
+                    + $tour->profile_bonus
+                    // "Gösterildi ama tıklanmadı" öğrenimi (gece hesaplanır, ±0.03 sınırlı)
+                    + max(-0.03, min(0.03, (float) ($tour->ai_ctr_bonus ?? 0)))
                 ));
 
                 return $tour;
@@ -924,6 +948,7 @@ class AiSearchController extends Controller
                     'wants_lively' => $wantsLively,
                     'preferred_destination' => $preferredDestination,
                     'exclude_destinations' => $excludedDestinations,
+                    'relaxation' => $relaxationNote, // kalite raporu: gevşetilmiş aramalar
                 ],
                 'candidate_count' => $candidateCount,
                 // TAM eşleşme listesi loglanır (sohbette 7'si gösterilse bile):
@@ -935,6 +960,10 @@ class AiSearchController extends Controller
                         'rank' => $index + 1,
                         'compatibility_score' => round((float) $tour->compatibility_score, 6),
                         'semantic_score' => round((float) $tour->similarity, 6),
+                        'budget_score' => round((float) ($tour->budget_score ?? 1.0), 6),
+                        'international_score' => round((float) ($tour->international_score ?? 1.0), 6),
+                        'visa_score' => round((float) ($tour->visa_score ?? 1.0), 6),
+                        'duration_score' => round((float) ($tour->duration_score ?? 1.0), 6),
                         'nature_score' => round((float) ($tour->nature_score ?? 1.0), 6),
                         'city_escape_score' => round((float) ($tour->city_escape_score ?? 1.0), 6),
                         'lively_score' => round((float) ($tour->lively_score ?? 1.0), 6),
@@ -1300,59 +1329,10 @@ class AiSearchController extends Controller
 
     private function computeCompatibilityScore(array $scores, array $criteria): float
     {
-        $weights = [
-            'budget' => 0.16,
-            'international' => 0.08,
-            'visa' => 0.07,
-            'duration' => 0.10,
-            'nature' => 0.09,
-            'city_escape' => 0.12,
-            'lively' => 0.14,
-            'month' => 0.06,
-            'destination' => 0.16,
-        ];
-
-        $active = [
-            'budget' => ! empty($criteria['max_budget']) && (int) $criteria['max_budget'] > 0,
-            'international' => $criteria['is_international'] !== null,
-            'visa' => $criteria['requires_visa'] !== null,
-            'duration' => ((int) ($criteria['preferred_min_days'] ?? 0) > 0) || ((int) ($criteria['preferred_max_days'] ?? 0) > 0),
-            'nature' => $criteria['wants_nature'] === true,
-            'city_escape' => $criteria['avoid_crowded_city'] === true,
-            'lively' => $criteria['wants_lively'] !== null,
-            'month' => (int) ($criteria['preferred_month'] ?? 0) > 0,
-            'destination' => ! empty($criteria['preferred_destination']),
-        ];
-
-        $activeCount = count(array_filter($active, fn ($isActive) => $isActive === true));
-        $baseWeight = max(0.30, 0.56 - ($activeCount * 0.06));
-
-        if (($criteria['wants_lively'] ?? null) === true && ($criteria['avoid_crowded_city'] ?? null) === true) {
-            $weights['lively'] = 0.22;
-            $weights['city_escape'] = 0.10;
-        }
-
-        if (! empty($criteria['preferred_destination'])) {
-            $weights['destination'] = 0.22;
-        }
-
-        $weighted = $baseWeight * (float) ($scores['semantic'] ?? 0.0);
-        $totalWeight = $baseWeight;
-
-        foreach ($weights as $key => $weight) {
-            if (! ($active[$key] ?? false)) {
-                continue;
-            }
-
-            $weighted += $weight * (float) ($scores[$key] ?? 0.0);
-            $totalWeight += $weight;
-        }
-
-        if ($totalWeight <= 0) {
-            return $this->clamp01((float) ($scores['semantic'] ?? 0.0));
-        }
-
-        return $this->clamp01($weighted / $totalWeight);
+        // Skor matematiği TEK KAYNAK'ta: canlı arama, replay değerlendirme ve
+        // ağırlık kalibrasyonu aynı fonksiyonu kullanır. Kalibre edilmiş
+        // ağırlıklar Cache override'ı ile devreye girer.
+        return \App\Support\AiWeightEvaluator::score($scores, $criteria);
     }
 
     private function extractPreferredMonth(array $analysis, string $query): ?int
