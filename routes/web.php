@@ -51,6 +51,9 @@ Route::get('/destinasyonlar/{destination:slug}', [DestinationController::class, 
 Route::get('/blog', [PostController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('blog.show');
 Route::get('/yapay-zeka-arama', [AiSearchController::class, 'chat'])->name('ai.search');
+Route::get('/yapay-zeka-arama/{log}/turlar', [AiSearchController::class, 'showResults'])
+    ->whereNumber('log')
+    ->name('ai.search.results');
 Route::get('/yapay-zeka-arama/{uuid}', [AiSearchController::class, 'chat'])->name('ai.search.show')->whereUuid('uuid');
 Route::middleware('throttle:ai_search')->group(function () {
     Route::post('/yapay-zeka-arama/mesaj', [AiSearchController::class, 'sendMessage'])->name('ai.search.message');

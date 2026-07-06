@@ -28,6 +28,23 @@ Schedule::command('app:sync-knowledge-base --since='.now()->subDay()->format('Y-
 
 /*
 |--------------------------------------------------------------------------
+| Embedding Güvenlik Ağı
+|--------------------------------------------------------------------------
+|
+| AI, envanterdeki TÜM turları tanımalı: embedding'i olmayan tur aramada hiç
+| görünmez. Observer job'ı kaçarsa (kuyruk aksaması, hata) saatlik tarama
+| yalnızca EKSİK olanları doldurur — dolu embedding'e dokunmaz, maliyeti ~sıfır.
+|
+*/
+Schedule::command('app:generate-tour-embeddings')
+    ->hourly()
+    ->onOneServer()
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->name('tour-embedding-safety-net');
+
+/*
+|--------------------------------------------------------------------------
 | Bildirim & Duyuru Temizliği
 |--------------------------------------------------------------------------
 |

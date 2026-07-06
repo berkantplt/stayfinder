@@ -438,6 +438,14 @@
                         assistant.grid.parentElement.insertBefore(note, assistant.grid);
                     }
                     renderTourCards(assistant.grid, items, logId);
+                    // 7'den fazla eşleşme varsa tam listeye bağlantı ver
+                    if (data && data.all_results_url) {
+                        const more = document.createElement('a');
+                        more.href = data.all_results_url;
+                        more.style.cssText = 'display:block;margin:10px 0 0 42px;font-size:13px;font-weight:700;color:#6366f1;text-decoration:none;';
+                        more.textContent = '→ Eşleşen ' + (data.total_matches || 'tüm') + ' turun tamamını gör';
+                        assistant.grid.parentElement.appendChild(more);
+                    }
                     scrollIfNearBottom();
                 } else if (eventName === 'comment') {
                     if (data.is_clarification === true) isClarification = true;

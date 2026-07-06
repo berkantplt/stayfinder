@@ -713,6 +713,14 @@
                                 carousel.appendChild(buildTourCard(tour, idx, lastLogId));
                             });
                             messages.appendChild(carousel);
+                            // 7'den fazla eşleşme varsa tam listeye bağlantı ver
+                            if (data && !Array.isArray(data) && data.all_results_url) {
+                                const more = document.createElement('a');
+                                more.href = data.all_results_url;
+                                more.style.cssText = 'display:block;margin:2px 0 10px 0;font-size:13px;font-weight:700;color:#2dd4bf;text-decoration:none;';
+                                more.textContent = '→ Eşleşen ' + (data.total_matches || 'tüm') + ' turun tamamını gör';
+                                messages.appendChild(more);
+                            }
                             requestAnimationFrame(scrollBottom);
                         }
                     } else if (eventName === 'comment') {

@@ -25,6 +25,9 @@ class AiSearchController extends Controller
      */
     public const COMPATIBILITY_THRESHOLD = 0.51;
 
+    /** Sohbette gösterilen tur sayısı — en isabetli N; kalanı "tümünü gör" sayfasında. */
+    public const CHAT_RESULT_LIMIT = 7;
+
     /**
      * Chat sayfası — mevcut konuşmayı yükler veya boş başlatır.
      */
@@ -142,6 +145,51 @@ class AiSearchController extends Controller
      * Log'a tour_id + reason eklenir; performAiSearch sonraki aramalarda bu turu
      * filtreler ve embedding olarak benzer turları cezalandırır.
      */
+    /**
+     * "Tüm eşleşen turları gör" sayfası: sohbette en isabetli 7 tur gösterilir,
+     * bu sayfa aramanın eşleştirdiği TÜM turları uyum sırasıyla listeler.
+     */
+    public function showResults(Request $request, AiSearchLog $log)
+    {
+        // Ownership: auth user için user_id, anonim için session_id eşleşmeli
+        $userId = $request->user()?->id;
+        if ($log->user_id !== null) {
+            abort_if($log->user_id !== $userId, 403);
+        } else {
+            abort_if((string) $log->session_id !== (string) $request->session()->getId(), 403);
+        }
+
+        $ids = collect($log->result_tour_ids ?? [])->map(fn ($v) => (int) $v)->values();
+        abort_if($ids->isEmpty(), 404);
+
+        // Skor haritası: uyum yüzdesi kartlarda gösterilir, sıralama korunur
+        $scores = collect($log->result_scores ?? [])->keyBy('tour_id');
+
+        $tours = Tour::with('agency')
+            ->whereIn('id', $ids)
+            ->active()
+            ->get()
+            ->keyBy('id');
+
+        $orderedTours = $ids
+            ->map(fn ($id) => $tours->get($id))
+            ->filter()
+            ->values()
+            ->map(function ($tour, $index) use ($scores) {
+                $tour->compatibility_score = $scores[$tour->id]['compatibility_score'] ?? null;
+                $tour->rank = $index + 1;
+
+                return $tour;
+            });
+
+        return view('tours.ai-results', [
+            'results' => $orderedTours,
+            'aiComment' => null,
+            'logId' => $log->id,
+            'query' => $log->raw_query,
+        ]);
+    }
+
     public function rejectTour(Request $request, AiSearchLog $log): JsonResponse
     {
         // Ownership: auth user için user_id, anonim için session_id eşleşmeli
@@ -739,16 +787,26 @@ class AiSearchController extends Controller
                 $knowledgeContext .= "\n\nARAMA NOTU: ".$relaxationNote.' Yorumunda bu durumu kullanıcıya kısaca ve kibarca belirt.';
             }
 
-            // 6. Akıllı, "Mekan Sahibi" Yorumu (RAG + Turlar)
+            // Sohbette yalnızca EN İSABETLİ 7 tur gösterilir (results zaten uyum
+            // skoruna göre sıralı); eşleşmelerin TAMAMI log'a yazılır ve
+            // "tüm eşleşen turları gör" sayfasından erişilir.
+            $totalMatches = $results->count();
+            $displayResults = $results->take(self::CHAT_RESULT_LIMIT)->values();
+
+            // 6. Akıllı, "Mekan Sahibi" Yorumu (RAG + Turlar) — yorum yalnızca
+            // GÖSTERİLEN turlardan bahseder (liste dışı tur önerme kuralıyla tutarlı)
             // Streaming endpoint $skipComment=true geçer, kendi streamComment'i çağırır
+            if ($totalMatches > self::CHAT_RESULT_LIMIT) {
+                $knowledgeContext .= "\n\nEK BİLGİ: Toplam {$totalMatches} eşleşen tur bulundu; kullanıcıya en isabetli ".self::CHAT_RESULT_LIMIT." tanesi gösteriliyor ve tamamını görebileceği bağlantı sunuluyor.";
+            }
             $aiComment = $skipComment
                 ? null
-                : $this->buildAiComment($query, $results, $knowledgeContext, $preferredDestination);
+                : $this->buildAiComment($query, $displayResults, $knowledgeContext, $preferredDestination);
 
             $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 
             // Sadece frontend'in ihtiyacı olan alanları döndür (embedding hariç)
-            $cleanResults = $results->map(function ($tour, $index) use ($maxBudget) {
+            $cleanResults = $displayResults->map(function ($tour, $index) use ($maxBudget) {
                 return [
                     'id' => $tour->id,
                     'title' => $tour->title,
@@ -800,21 +858,23 @@ class AiSearchController extends Controller
                     'exclude_destinations' => $excludedDestinations,
                 ],
                 'candidate_count' => $candidateCount,
-                'result_tour_ids' => $cleanResults->pluck('id')->values()->all(),
-                'result_scores' => $cleanResults->map(function ($item) {
+                // TAM eşleşme listesi loglanır (sohbette 7'si gösterilse bile):
+                // "tüm eşleşen turlar" sayfası ve eğitim verisi bunu kullanır
+                'result_tour_ids' => $results->pluck('id')->values()->all(),
+                'result_scores' => $results->map(function ($tour, $index) {
                     return [
-                        'tour_id' => $item['id'],
-                        'rank' => $item['rank'],
-                        'compatibility_score' => $item['compatibility_score'],
-                        'semantic_score' => $item['similarity'],
-                        'nature_score' => $item['nature_score'],
-                        'city_escape_score' => $item['city_escape_score'],
-                        'lively_score' => $item['lively_score'],
-                        'destination_score' => $item['destination_score'],
-                        'month_score' => $item['month_score'],
-                        'vibe_score' => $item['vibe_score'],
-                        'seasonal_bonus' => $item['seasonal_bonus'],
-                        'rejection_penalty' => $item['rejection_penalty'],
+                        'tour_id' => $tour->id,
+                        'rank' => $index + 1,
+                        'compatibility_score' => round((float) $tour->compatibility_score, 6),
+                        'semantic_score' => round((float) $tour->similarity, 6),
+                        'nature_score' => round((float) ($tour->nature_score ?? 1.0), 6),
+                        'city_escape_score' => round((float) ($tour->city_escape_score ?? 1.0), 6),
+                        'lively_score' => round((float) ($tour->lively_score ?? 1.0), 6),
+                        'destination_score' => round((float) ($tour->destination_score ?? 1.0), 6),
+                        'month_score' => round((float) ($tour->month_score ?? 1.0), 6),
+                        'vibe_score' => round((float) ($tour->vibe_score ?? 0.0), 6),
+                        'seasonal_bonus' => round((float) ($tour->seasonal_bonus ?? 0.0), 6),
+                        'rejection_penalty' => round((float) ($tour->rejection_penalty ?? 0.0), 6),
                     ];
                 })->values()->all(),
                 'latency_ms' => $latencyMs,
@@ -825,6 +885,10 @@ class AiSearchController extends Controller
                 'aiComment' => $aiComment,
                 'log_id' => $log->id,
                 'relaxation_note' => $relaxationNote,
+                'total_matches' => $totalMatches,
+                'all_results_url' => $totalMatches > self::CHAT_RESULT_LIMIT
+                    ? route('ai.search.results', $log)
+                    : null,
                 'intent' => $analysis,
                 'applied_filters' => [
                     'max_budget' => $maxBudget,
@@ -842,7 +906,7 @@ class AiSearchController extends Controller
                 'latency_ms' => $latencyMs,
                 '_comment_context' => [
                     'query' => $query,
-                    'results' => $results, // Eloquent collection (full tour models, summary attached)
+                    'results' => $displayResults, // gösterilen turlar (yorum yalnızca bunlardan bahseder)
                     'knowledge_context' => $knowledgeContext,
                     'preferred_destination' => $preferredDestination,
                 ],

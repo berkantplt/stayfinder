@@ -267,6 +267,8 @@ class ConversationService
                     'applied_filters' => $searchResult['applied_filters'] ?? [],
                     'log_id' => $searchResult['log_id'] ?? null,
                     'relaxation_note' => $searchResult['relaxation_note'] ?? null,
+                    'total_matches' => $searchResult['total_matches'] ?? null,
+                    'all_results_url' => $searchResult['all_results_url'] ?? null,
                 ],
             ];
         });
@@ -433,6 +435,8 @@ class ConversationService
             $emit('tours', [
                 'log_id' => $turnState['searchResult']['log_id'] ?? null,
                 'relaxation_note' => $turnState['searchResult']['relaxation_note'] ?? null,
+                'total_matches' => $turnState['searchResult']['total_matches'] ?? null,
+                'all_results_url' => $turnState['searchResult']['all_results_url'] ?? null,
                 'items' => $this->mapToursToCards($turnState['searchResult']['results']),
             ]);
 

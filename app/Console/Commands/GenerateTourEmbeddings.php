@@ -30,27 +30,9 @@ class GenerateTourEmbeddings extends Command
 
         foreach ($tours as $tour) {
             try {
-                // OpenAI vektör API'sine gönderilecek metni oluştur
-                $priceBand = match (true) {
-                    $tour->price < 7500 => 'ekonomik',
-                    $tour->price < 15000 => 'orta',
-                    default => 'premium',
-                };
+                // TEK KAYNAK: job ile birebir aynı temsil (iki kopya ayrışmasın)
+                $inputText = \App\Jobs\GenerateTourEmbeddingJob::textFor($tour);
 
-                $inputText = implode("\n", array_filter([
-                    "Tur başlığı: {$tour->title}",
-                    "Kategori: " . ($tour->category?->name ?? 'belirtilmemiş'),
-                    "Destinasyon: {$tour->destination}",
-                    "Süre (gün): {$tour->duration_days}",
-                    "Fiyat: {$tour->price} {$tour->currency}",
-                    "Fiyat bandı: {$priceBand}",
-                    "Yurt dışı mı: " . ($tour->is_international ? 'evet' : 'hayır'),
-                    "Vize gerekir mi: " . ($tour->requires_visa ? 'evet' : 'hayır'),
-                    "Dahil olanlar: " . Str::limit((string) $tour->included, 300, '...'),
-                    "Hariç olanlar: " . Str::limit((string) $tour->excluded, 200, '...'),
-                    "Açıklama: " . Str::limit((string) $tour->description, 500, '...'),
-                ]));
-                
                 $response = \OpenAI\Laravel\Facades\OpenAI::embeddings()->create([
                     'model' => config('ai.embedding_model', 'text-embedding-3-small'),
                     'input' => $inputText,

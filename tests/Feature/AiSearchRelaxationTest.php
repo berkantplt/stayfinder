@@ -87,4 +87,69 @@ class AiSearchRelaxationTest extends TestCase
 
         $this->assertSame(7, $reflection->invoke($controller, [], 'yazlık bir tur istiyorum'));
     }
+
+    public function test_sohbette_en_iyi_7_gosterilir_tamami_loglanir_ve_sayfada_acilir(): void
+    {
+        $agency = Agency::create([
+            'name' => 'Top7 Acenta',
+            'slug' => 'top7-acenta',
+            'email' => 'top7@example.com',
+            'is_active' => true,
+            'approval_status' => Agency::STATUS_APPROVED,
+            'approved_at' => now(),
+            'legacy_category_access' => true,
+        ]);
+
+        for ($i = 1; $i <= 10; $i++) {
+            Tour::create([
+                'agency_id' => $agency->id,
+                'title' => "Ege Turu {$i}",
+                'destination' => 'Ege',
+                'departure_city' => 'İstanbul',
+                'duration_days' => 5,
+                'currency' => 'TRY',
+                'price' => 9000 + $i,
+                'is_active' => true,
+                'is_international' => false,
+                'departure_date' => today()->addDays(20),
+                'embedding' => self::VECTOR,
+            ]);
+        }
+
+        OpenAI::fake([
+            ChatResponse::fake(['choices' => [['index' => 0, 'message' => ['role' => 'assistant', 'content' => '{}']]]]),
+            EmbeddingResponse::fake(['data' => [['object' => 'embedding', 'index' => 0, 'embedding' => self::VECTOR]]]),
+            ChatResponse::fake(['choices' => [['index' => 0, 'message' => ['role' => 'assistant', 'content' => 'İşte seçenekler.']]]]),
+        ]);
+
+        $user = \App\Models\User::factory()->create(['role' => 'visitor']);
+        $this->actingAs($user);
+
+        $request = Request::create('/test', 'GET');
+        $request->setLaravelSession(app('session.store'));
+        $request->setUserResolver(fn () => $user);
+
+        $result = app(AiSearchController::class)->performAiSearch($request, 'ege turu istiyorum');
+
+        $this->assertIsArray($result);
+        // Sohbette en isabetli 7 tur
+        $this->assertCount(7, $result['results']);
+        $this->assertSame(10, $result['total_matches']);
+        $this->assertNotNull($result['all_results_url']);
+
+        // Log TAM listeyi tutar
+        $log = \App\Models\AiSearchLog::findOrFail($result['log_id']);
+        $this->assertCount(10, $log->result_tour_ids);
+
+        // "Tümünü gör" sayfası sahibine açılır ve 10 turu listeler
+        $response = $this->get($result['all_results_url']);
+        $response->assertOk();
+        $response->assertSee('Ege Turu 1');
+        $response->assertSee('Ege Turu 10');
+
+        // Başkası erişemez
+        $other = \App\Models\User::factory()->create(['role' => 'visitor']);
+        $this->actingAs($other);
+        $this->get($result['all_results_url'])->assertForbidden();
+    }
 }
