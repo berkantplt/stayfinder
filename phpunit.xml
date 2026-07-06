@@ -25,6 +25,11 @@
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Hermetik testler: gözden kaçan gerçek API çağrısı sessizce para
+             harcamak yerine anında ve tutarlı şekilde patlasın -->
+        <env name="OPENAI_API_KEY" value="sk-test-suite-fake-key"/>
+        <env name="FIRECRAWL_API_KEY" value=""/>
+        <env name="JINA_API_KEY" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

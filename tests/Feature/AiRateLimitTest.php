@@ -47,6 +47,18 @@ class AiRateLimitTest extends TestCase
 
     public function test_widget_searchapi_endpoint_is_also_rate_limited(): void
     {
+        // İlk 2 istek netleştirme sorusuyla döner (OpenAI'sız); session sayacı
+        // dolunca kalan istekler gerçek arama hattına girer — her arama sırayla
+        // intent(chat) + embedding + yorum(chat) tüketir (RAG embedding'i aynı
+        // metni sorduğundan QueryEmbeddingCache'ten gelir, API'ye gitmez).
+        $responses = [];
+        for ($i = 0; $i < 10; $i++) {
+            $responses[] = \OpenAI\Responses\Chat\CreateResponse::fake();
+            $responses[] = \OpenAI\Responses\Embeddings\CreateResponse::fake();
+            $responses[] = \OpenAI\Responses\Chat\CreateResponse::fake();
+        }
+        \OpenAI\Laravel\Facades\OpenAI::fake($responses);
+
         for ($i = 1; $i <= 10; $i++) {
             $this->getJson(route('ai.search.api', ['q' => 'tatil ' . $i]))
                 ->assertStatus(200);
