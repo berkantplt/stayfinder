@@ -124,6 +124,12 @@ class TourController extends Controller
         $validated['image'] = $gallery[0] ?? null;
 
         $validated['stop_cities'] = $this->normalizeStopCities($validated['stop_cities'] ?? null, $validated['departure_city']);
+        // Yurt içi/dışı bayrağı destinasyondan otomatik türetilir — AI aramanın
+        // "yurt dışı" filtresi bu bayrağa dayanır; İspanya turu yurt içi görünmesin
+        $classified = \App\Support\DestinationClassifier::isInternational($validated['destination']);
+        if ($classified !== null) {
+            $validated['is_international'] = $classified;
+        }
         $validated['agency_id'] = $agency->id;
         $validated['price'] = $this->resolveBasePrice($dates);
         $primaryDate = $this->resolvePrimaryDate($dates);
@@ -187,6 +193,11 @@ class TourController extends Controller
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
         $validated['stop_cities'] = $this->normalizeStopCities($validated['stop_cities'] ?? null, $validated['departure_city']);
+        // Yurt içi/dışı bayrağı destinasyondan otomatik türetilir (store ile aynı kural)
+        $classified = \App\Support\DestinationClassifier::isInternational($validated['destination']);
+        if ($classified !== null) {
+            $validated['is_international'] = $classified;
+        }
 
         $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
         $dates = $this->prepareValidatedDatePrices(

@@ -60,15 +60,15 @@ class AiSearchRelaxationTest extends TestCase
             ChatResponse::fake(['choices' => [['index' => 0, 'message' => ['role' => 'assistant', 'content' => 'En yakın seçenekler bunlar.']]]]),
         ]);
 
-        // Önceki turdan miras kalan is_international=true, DB'deki tek (yurt içi)
-        // turu sıfırlıyor — son basamak tüm filtreleri bırakıp turu göstermeli
+        // Önceki turdan miras kalan minicik bütçe DB'deki tek turu sıfırlıyor —
+        // gevşetme merdiveni bütçeyi bırakıp turu göstermeli
         $request = Request::create('/test', 'GET');
         $request->setLaravelSession(app('session.store'));
 
         $result = app(AiSearchController::class)->performAiSearch(
             $request,
             'yazlık bir tur istiyorum denize gireyim',
-            ['is_international' => true]
+            ['max_budget' => 100]
         );
 
         $this->assertIsArray($result);
@@ -78,6 +78,82 @@ class AiSearchRelaxationTest extends TestCase
         $this->assertGreaterThan(0, count($result['results']), 'Gevşetme merdiveni sonuç üretmeliydi');
         $this->assertNotNull($result['relaxation_note'], 'Kullanıcıya gevşetme nedeni söylenmeli');
         $this->assertSame('Yüzme Molalı Ege Turu', $result['results'][0]['title']);
+    }
+
+    public function test_yon_asla_gevsetilmez_yurt_disi_isteyene_yurt_ici_onerilmez(): void
+    {
+        $this->makeActiveTour(); // yurt içi Ege turu
+
+        OpenAI::fake([
+            ChatResponse::fake(['choices' => [['index' => 0, 'message' => ['role' => 'assistant', 'content' => '{}']]]]),
+            EmbeddingResponse::fake(['data' => [['object' => 'embedding', 'index' => 0, 'embedding' => self::VECTOR]]]),
+            ChatResponse::fake(['choices' => [['index' => 0, 'message' => ['role' => 'assistant', 'content' => 'Maalesef yurt dışı tur yok.']]]]),
+        ]);
+
+        $request = Request::create('/test', 'GET');
+        $request->setLaravelSession(app('session.store'));
+
+        $result = app(AiSearchController::class)->performAiSearch($request, 'yurt dışı istiyorum');
+
+        $this->assertIsArray($result);
+        // Envanterde yurt dışı tur yok → yurt içi Ege turu ASLA önerilmez, dürüst 0
+        $this->assertCount(0, $result['results']);
+    }
+
+    public function test_destinasyon_siniflandirici(): void
+    {
+        $cases = [
+            ['İtalya', true],
+            ['İspanya', true],
+            ['Barselona, Valencia, Granada, Madrid', true],
+            ['Kuzey İtalya', true],
+            ['Balkanlar', true],
+            ['Dubai', true],
+            ['Ege', false],
+            ['Kapadokya', false],
+            ['Antalya', false],
+            ['Salda Gölü, Pamukkale, Çeşme', false],
+            ['İstanbul', false],
+        ];
+
+        foreach ($cases as [$destination, $expected]) {
+            $this->assertSame(
+                $expected,
+                \App\Support\DestinationClassifier::isInternational($destination),
+                "Sınıflandırma hatalı: {$destination}"
+            );
+        }
+
+        $this->assertNull(\App\Support\DestinationClassifier::isInternational('Bilinmeyen Yer'));
+    }
+
+    public function test_kayitta_yurt_disi_bayragi_destinasyondan_turetilir(): void
+    {
+        $agency = Agency::create([
+            'name' => 'Sınıf Acenta',
+            'slug' => 'sinif-acenta',
+            'email' => 'sinif@example.com',
+            'is_active' => true,
+            'approval_status' => Agency::STATUS_APPROVED,
+            'approved_at' => now(),
+            'legacy_category_access' => true,
+        ]);
+        $category = \App\Models\Category::create(['name' => 'Yurt Dışı', 'slug' => 'yurt-disi-k', 'is_active' => true]);
+        $user = \App\Models\User::factory()->create(['role' => 'agency', 'agency_id' => $agency->id]);
+
+        $this->actingAs($user)->post(route('agency.tours.store'), [
+            'category_id' => $category->id,
+            'title' => 'Klasik İspanya Turu',
+            'destination' => 'Barselona, Valencia, Granada',
+            'departure_city' => 'İstanbul',
+            'duration_days' => 7,
+            'currency' => 'EUR',
+            'pricing_options' => [['price' => '899', 'departure_dates' => [today()->addDays(30)->toDateString()]]],
+        ])->assertRedirect(route('agency.tours.index'));
+
+        $tour = Tour::firstWhere('title', 'Klasik İspanya Turu');
+        $this->assertNotNull($tour);
+        $this->assertTrue($tour->is_international, 'İspanya turu yurt dışı olarak işaretlenmeliydi');
     }
 
     public function test_yazlik_kelimesi_temmuza_eslenir(): void

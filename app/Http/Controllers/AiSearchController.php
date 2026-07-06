@@ -556,10 +556,13 @@ class AiSearchController extends Controller
                 // Kullanıcının bütçesi TL — kur-normalize price_try ile karşılaştır.
                 $toursQuery->where('price_try', '<=', $maxBudget * 1.8);
             }
-            if (! $relaxAll && $isInternational !== null) {
+            // Yurt içi/dışı YÖNÜ asla gevşetilmez: "yurt dışı istiyorum" diyen
+            // kullanıcıya yurt içi tur önermek güveni bitirir — yönde sonuç yoksa
+            // dürüstçe bulunamadı denir.
+            if ($isInternational !== null) {
                 $toursQuery->where('is_international', $isInternational);
             }
-            if (! $relaxAll && $requiresVisa !== null) {
+            if ($requiresVisa !== null) {
                 $toursQuery->where('requires_visa', $requiresVisa);
             }
             if (! $relaxAll && $minDays && $minDays > 0) {
@@ -757,10 +760,10 @@ class AiSearchController extends Controller
                 continue;
             }
 
-            // SON BASAMAK: yapılandırılmış filtrelerin (yurt içi/dışı, vize, süre,
-            // miras kriterler) tamamını bırak, salt semantik yakınlıkla en iyi
-            // seçenekleri getir. Aktif tek tur bile varsa kullanıcı asla çıplak
-            // "bulunamadı" ile bırakılmaz — kullanıcıyı çıldırtan döngü buydu.
+            // SON BASAMAK: süre ve miras kriterler de bırakılır, salt semantik
+            // yakınlıkla en iyi seçenekler getirilir. Yurt içi/dışı YÖNÜ ve vize
+            // şartı korunur (yön ihlali önermek kullanıcıyı çıldırtıyor) — yön
+            // uyuşan tek tur bile varsa kullanıcı çıplak "bulunamadı" görmez.
             if (! $relaxAll) {
                 $relaxAll = true;
                 $relaxDestination = true;
