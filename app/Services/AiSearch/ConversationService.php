@@ -5,11 +5,14 @@ namespace App\Services\AiSearch;
 use App\Http\Controllers\AiSearchController;
 use App\Models\AiSearchConversation;
 use App\Models\AiSearchMessage;
+use App\Models\Tour;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class ConversationService
 {
@@ -134,6 +137,228 @@ class ConversationService
     }
 
     /**
+     * Mesaj yönlendirici: her mesajı arama sanma. Önceki turda sonuç
+     * gösterildiyse mini modelle mesajın türü belirlenir — "bu turun oteli
+     * nasıl?" sorusu yeni arama + 7 alakasız kart yerine turun kendi verisinden
+     * cevaplanır. Belirsizlik/hata → 'search' (mevcut davranış, güvenli varsayılan).
+     *
+     * @return array{action: string, tour_ids: array<int, int>}
+     */
+    private function routeMessage(AiSearchConversation $conversation, string $userMessage): array
+    {
+        $lastIds = array_values(array_filter(array_map('intval', (array) ($conversation->last_result_tour_ids ?? []))));
+
+        // İlk mesaj / henüz sonuç gösterilmemiş → router'a gerek yok (maliyet 0)
+        if (empty($lastIds)) {
+            return ['action' => 'search', 'tour_ids' => []];
+        }
+
+        // Bariz arama/yenileme kalıplarında LLM'e gitme
+        if ($this->wantsDifferentResults($userMessage) || $this->wantsReset($userMessage)) {
+            return ['action' => 'search', 'tour_ids' => []];
+        }
+
+        $shownIds = array_slice($lastIds, 0, AiSearchController::CHAT_RESULT_LIMIT);
+        $titles = Tour::whereIn('id', $shownIds)->pluck('title', 'id');
+        $numbered = collect($shownIds)
+            ->map(fn ($id, $i) => ($i + 1).'. '.($titles[$id] ?? 'Tur'))
+            ->implode("\n");
+
+        $recentMessages = AiSearchMessage::where('conversation_id', $conversation->id)
+            ->orderByDesc('id')->limit(3)->get()->reverse()
+            ->map(fn ($m) => ($m->role === AiSearchMessage::ROLE_USER ? 'Kullanıcı' : 'Asistan').': '.Str::limit((string) $m->content, 160))
+            ->implode("\n");
+
+        $system = 'Bir tur arama sohbetinde kullanıcının SON mesajının türünü belirle. SADECE şu JSON\'u dön: {"action": "...", "tour_numbers": [sayılar]}'
+            ."\naction değerleri:"
+            ."\n- search: yeni tur arama isteği veya kriter değişikliği ('daha ucuz olsun', 'eylülde olsun', yeni bir yer)"
+            ."\n- tour_question: GÖSTERİLEN turlardan biri hakkında soru ('otel nasıl', 'programın 3. günü ne', '2. turda neler dahil')"
+            ."\n- compare: gösterilen iki+ turu karşılaştırma isteği ('hangisi daha iyi', 'ilkiyle üçüncüyü kıyasla')"
+            ."\n- site_question: site/işleyiş sorusu (iptal politikası, ödeme, rezervasyon süreci)"
+            ."\n- chitchat: selamlaşma/teşekkür/geyik"
+            ."\ntour_numbers: bahsedilen turların listedeki numaraları ('ilki'→[1], 'son ikisi'→son iki numara, tur adı geçiyorsa adıyla eşleştir); yoksa []."
+            ."\nEmin değilsen action=search."
+            ."\n\nGÖSTERİLEN TURLAR:\n".$numbered
+            ."\n\nSON MESAJLAR:\n".$recentMessages;
+
+        try {
+            $response = OpenAI::chat()->create([
+                'model' => config('ai.router_model', 'gpt-4o-mini'),
+                'messages' => [
+                    ['role' => 'system', 'content' => $system],
+                    ['role' => 'user', 'content' => $this->searchController->wrapUserInputSafely($userMessage, 500)],
+                ],
+                'response_format' => ['type' => 'json_object'],
+                'max_tokens' => 80,
+            ]);
+            $data = json_decode($response->choices[0]->message->content ?? '{}', true) ?: [];
+        } catch (\Throwable $e) {
+            Log::info('[AiRouter] hata, search varsayılanına düşüldü', ['message' => $e->getMessage()]);
+
+            return ['action' => 'search', 'tour_ids' => []];
+        }
+
+        $action = in_array($data['action'] ?? '', ['search', 'tour_question', 'compare', 'site_question', 'chitchat'], true)
+            ? $data['action']
+            : 'search';
+
+        $tourIds = collect((array) ($data['tour_numbers'] ?? []))
+            ->map(fn ($n) => $shownIds[(int) $n - 1] ?? null)
+            ->filter()
+            ->map(fn ($v) => (int) $v)
+            ->unique()
+            ->values()
+            ->all();
+
+        // Tur gerektiren aksiyonda referans çözülemediyse güvenli varsayılanlar
+        if ($action === 'tour_question' && empty($tourIds)) {
+            $tourIds = [$shownIds[0]];
+        }
+        if ($action === 'compare') {
+            if (count($tourIds) < 2) {
+                $tourIds = array_slice($shownIds, 0, 2);
+            }
+            $tourIds = array_slice($tourIds, 0, 3);
+        }
+
+        return ['action' => $action, 'tour_ids' => $tourIds];
+    }
+
+    /**
+     * respondNonSearchStreamed'in senkron (JSON) karşılığı — sendMessage yolu.
+     *
+     * @return array{user: AiSearchMessage, assistant: AiSearchMessage, payload: array<string, mixed>}
+     */
+    private function respondNonSearch(AiSearchConversation $conversation, string $userMessage, array $route): array
+    {
+        $tours = empty($route['tour_ids'])
+            ? collect()
+            : Tour::with(['agency', 'dates'])->whereIn('id', $route['tour_ids'])->get();
+
+        $comparison = ($route['action'] === 'compare' && $tours->count() >= 2)
+            ? $this->searchController->buildComparisonTable($tours)
+            : null;
+
+        $fullContent = $this->searchController->streamContextualAnswer(
+            $route['action'],
+            $tours,
+            $userMessage,
+            $conversation->current_intent ?? [],
+            function () {} // senkron: delta biriktirilir, akıtılmaz
+        );
+        if (trim($fullContent) === '') {
+            $fullContent = 'Sorunu tam yakalayamadım — bir daha yazar mısın?';
+        }
+
+        [$userMsg, $assistantMsg] = DB::transaction(function () use ($conversation, $userMessage, $fullContent) {
+            $u = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_USER,
+                'content' => $userMessage,
+            ]);
+            $a = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_ASSISTANT,
+                'content' => $fullContent,
+            ]);
+            $conversation->update([
+                'last_message_at' => now(),
+                'title' => $conversation->title ?: Str::limit($userMessage, 60),
+            ]);
+
+            return [$u, $a];
+        });
+
+        return [
+            'user' => $userMsg,
+            'assistant' => $assistantMsg,
+            'payload' => [
+                'aiComment' => $fullContent,
+                'results' => [],
+                'comparison' => $comparison,
+                'is_answer' => true, // arama değil, bağlamsal cevap
+            ],
+        ];
+    }
+
+    /**
+     * Arama-dışı mesaj akışı (tur sorusu / kıyas / site sorusu / sohbet):
+     * arama pipeline'ı hiç çalışmaz; cevap tur fişlerinden/bilgi bankasından
+     * topraklanmış şekilde akıtılır. Kıyasta deterministik tablo da basılır.
+     *
+     * @return array{type: string, user: AiSearchMessage, assistant: AiSearchMessage}
+     */
+    private function respondNonSearchStreamed(AiSearchConversation $conversation, string $userMessage, \Closure $emit, array $route): array
+    {
+        [$userMsg, $assistantMsg] = DB::transaction(function () use ($conversation, $userMessage) {
+            $u = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_USER,
+                'content' => $userMessage,
+            ]);
+            $a = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_ASSISTANT,
+                'content' => '',
+            ]);
+            $conversation->update([
+                'last_message_at' => now(),
+                'title' => $conversation->title ?: Str::limit($userMessage, 60),
+            ]);
+
+            return [$u, $a];
+        });
+
+        $emit('search', [
+            'conversation_uuid' => $conversation->uuid,
+            'user_message' => [
+                'id' => $userMsg->id,
+                'role' => $userMsg->role,
+                'content' => $userMsg->content,
+                'created_at' => $userMsg->created_at?->toIso8601String(),
+            ],
+        ]);
+
+        $tours = empty($route['tour_ids'])
+            ? collect()
+            : Tour::with(['agency', 'dates'])->whereIn('id', $route['tour_ids'])->get();
+
+        if ($route['action'] === 'compare' && $tours->count() >= 2) {
+            $emit('compare', $this->searchController->buildComparisonTable($tours));
+        }
+
+        $fullContent = $this->searchController->streamContextualAnswer(
+            $route['action'],
+            $tours,
+            $userMessage,
+            $conversation->current_intent ?? [],
+            fn (string $delta) => $emit('comment', ['delta' => $delta])
+        );
+
+        if (trim($fullContent) === '') {
+            $fullContent = 'Sorunu tam yakalayamadım — bir daha yazar mısın?';
+        }
+        $assistantMsg->update(['content' => $fullContent]);
+
+        // Devam önerileri: yeni yetenekleri kullanıcıya keşfettir
+        $suggestions = match ($route['action']) {
+            'tour_question' => ['Bu turu diğerleriyle kıyasla', 'Benzer başka turlar öner'],
+            'compare' => ['Başka iki turu kıyasla', 'Farklı seçenekler göster'],
+            default => [],
+        };
+        if (! empty($suggestions)) {
+            $emit('suggestions', ['items' => $suggestions]);
+        }
+
+        $emit('done', [
+            'is_clarification' => false,
+            'assistant_message_id' => $assistantMsg->id,
+        ]);
+
+        return ['type' => $route['action'], 'user' => $userMsg, 'assistant' => $assistantMsg];
+    }
+
+    /**
      * Kullanıcı mesajını işler: niyet merge + arama + asistan cevabı kaydeder.
      *
      * Aynı conversation_id'ye paralel istek gelirse atomic lock ile sıraya alınır.
@@ -155,6 +380,13 @@ class ConversationService
             // Lock altında çalışırken conversation'ın güncel halini al — diğer paralel istek
             // tamamlanmış olabilir, intent değişmiş olabilir.
             $conversation->refresh();
+
+            // Mesaj yönlendirici (streaming yoldakiyle aynı): arama-dışı mesajlar
+            // arama pipeline'ına girmeden yanıtlanır
+            $route = $this->routeMessage($conversation, $userMessage);
+            if ($route['action'] !== 'search') {
+                return $this->respondNonSearch($conversation, $userMessage, $route);
+            }
 
             return $this->respondInTransaction($request, $conversation, $userMessage);
         });
@@ -296,6 +528,13 @@ class ConversationService
 
         return $lock->block(self::LOCK_BLOCK_SECONDS, function () use ($request, $conversation, $userMessage, $emit) {
             $conversation->refresh();
+
+            // Phase 0: mesaj yönlendirici — arama-dışı mesajlar (tur sorusu/kıyas/
+            // site sorusu/sohbet) arama pipeline'ına girmeden ucuz yoldan yanıtlanır
+            $route = $this->routeMessage($conversation, $userMessage);
+            if ($route['action'] !== 'search') {
+                return $this->respondNonSearchStreamed($conversation, $userMessage, $emit, $route);
+            }
 
             // Phase 1: DB transaction içinde atomic yazımlar + arama
             $turnState = DB::transaction(function () use ($request, $conversation, $userMessage) {
@@ -458,6 +697,22 @@ class ConversationService
             }
             $turnState['assistant']->update(['content' => $fullContent]);
 
+            // Devam önerisi çipleri: kıyas ve tur-içi soru yeteneklerini keşfettirir
+            $shown = collect($turnState['searchResult']['results'] ?? []);
+            $chips = [];
+            if ($shown->count() >= 2) {
+                $chips[] = 'İlk iki turu kıyasla';
+            }
+            if ($shown->count() >= 1) {
+                $chips[] = '1. turun programını anlat';
+            }
+            if ($shown->contains(fn ($r) => (bool) (is_array($r) ? ($r['over_budget'] ?? false) : ($r->over_budget ?? false)))) {
+                $chips[] = 'Sadece bütçeme uyanları göster';
+            }
+            if (! empty($chips)) {
+                $emit('suggestions', ['items' => array_slice($chips, 0, 3)]);
+            }
+
             $emit('done', [
                 'is_clarification' => false,
                 'assistant_message_id' => $turnState['assistant']->id,
@@ -497,6 +752,7 @@ class ConversationService
                 'agency_name' => $tour?->agency?->name,
                 'compatibility_score' => $get('compatibility_score'),
                 'over_budget' => (bool) $get('over_budget'),
+                'reason' => $get('reason'),
             ];
         })->values()->all();
     }

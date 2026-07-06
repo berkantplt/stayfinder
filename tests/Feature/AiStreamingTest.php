@@ -63,8 +63,8 @@ class AiStreamingTest extends TestCase
 
         $eventNames = array_column($events, 'event');
 
-        // Beklenen sıra: search → tours → comment (3 chunk) → done
-        $this->assertSame(['search', 'tours', 'comment', 'comment', 'comment', 'done'], $eventNames);
+        // Beklenen sıra: search → tours → comment (3 chunk) → suggestions (devam çipleri) → done
+        $this->assertSame(['search', 'tours', 'comment', 'comment', 'comment', 'suggestions', 'done'], $eventNames);
 
         // Search event'i conversation uuid ve user_message içermeli
         $this->assertSame($conversation->uuid, $events[0]['data']['conversation_uuid']);
@@ -83,12 +83,12 @@ class AiStreamingTest extends TestCase
         $this->assertSame('ki ', $events[3]['data']['delta']);
         $this->assertSame('yardımcı olayım.', $events[4]['data']['delta']);
 
-        // Done event'i meta bilgi içermeli
-        $this->assertArrayHasKey('assistant_message_id', $events[5]['data']);
-        $this->assertFalse($events[5]['data']['is_clarification']);
+        // Done event'i meta bilgi içermeli (events[5] = suggestions çipleri)
+        $this->assertArrayHasKey('assistant_message_id', $events[6]['data']);
+        $this->assertFalse($events[6]['data']['is_clarification']);
 
         // Asistan mesajının final content'i DB'ye yazılmış olmalı
-        $assistantMsg = AiSearchMessage::find($events[5]['data']['assistant_message_id']);
+        $assistantMsg = AiSearchMessage::find($events[6]['data']['assistant_message_id']);
         $this->assertNotNull($assistantMsg);
         $this->assertSame('Tabii ki yardımcı olayım.', $assistantMsg->content);
     }

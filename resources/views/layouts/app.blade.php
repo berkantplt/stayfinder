@@ -888,6 +888,14 @@
             titleEl.textContent = title;
             content.appendChild(titleEl);
 
+            // "Neden bu tur?" — kişiye özel tek cümle gerekçe (sunucudan deterministik)
+            if (tour.reason) {
+                var reasonEl = document.createElement('div');
+                reasonEl.style.cssText = 'font-size:11px; color:#5eead4; font-style:italic; margin-top:4px; line-height:1.4;';
+                reasonEl.textContent = '✨ ' + tour.reason;
+                content.appendChild(reasonEl);
+            }
+
             // Alt satır: fiyat + incele butonu
             var bottom = document.createElement('div');
             bottom.className = 'ai-tour-card-bottom';

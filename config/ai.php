@@ -25,6 +25,10 @@ return [
     // AI yorum üretimi — RAG bağlamı yeterince güçlü olduğu için gpt-4o-mini yeterli.
     'comment_model' => env('AI_COMMENT_MODEL', 'gpt-4o-mini'),
 
+    // Mesaj yönlendirici + arama-dışı cevaplar (tur sorusu/kıyas/site/sohbet) —
+    // sınıflandırma ve topraklanmış QA görevleri; mini yeterli ve ucuz.
+    'router_model' => env('AI_ROUTER_MODEL', 'gpt-4o-mini'),
+
     // Tur embedding'i — embeddings ayrı model ailesi.
     'embedding_model' => env('AI_EMBEDDING_MODEL', 'text-embedding-3-small'),
 

@@ -241,12 +241,14 @@
             const img = t.image ? `<img src="${escapeHtml(t.image)}" style="width:100%;height:120px;object-fit:cover;">` : '<div style="width:100%;height:120px;background:#f1f5f9;"></div>';
             const compat = t.compatibility_score != null ? `<div style="font-size:11px;color:#0f766e;font-weight:700;background:#ecfdf5;padding:2px 8px;border-radius:8px;display:inline-block;">%${Math.round(t.compatibility_score * 100)} uyumlu</div>` : '';
             const overBudget = t.over_budget ? '<div style="font-size:11px;color:#92400e;font-weight:700;background:#fffbeb;border:1px solid #fde68a;padding:2px 8px;border-radius:8px;display:inline-block;">bütçe üstü</div>' : '';
+            const reason = t.reason ? `<div style="font-size:11.5px;color:#0f766e;font-style:italic;line-height:1.4;">✨ ${escapeHtml(t.reason)}</div>` : '';
             link.innerHTML = `
                 ${img}
                 <div style="padding:12px;display:flex;flex-direction:column;gap:6px;">
                     <div style="font-size:11px;color:#6366f1;font-weight:700;text-transform:uppercase;">${escapeHtml(t.destination || '-')}</div>
                     <div style="font-size:14px;font-weight:700;color:#0f172a;line-height:1.3;">${escapeHtml(t.title || 'Tur')}</div>
                     <div style="font-size:12px;color:#64748b;">${escapeHtml(t.agency_name || '')} ${t.duration_days ? '· ' + t.duration_days + ' gün' : ''}</div>
+                    ${reason}
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;gap:6px;flex-wrap:wrap;">
                         <div style="font-size:15px;font-weight:800;color:#0f172a;">${Number(t.price || 0).toLocaleString('tr-TR')} ${escapeHtml(t.currency || 'TL')}</div>
                         <div style="display:flex;gap:4px;">${overBudget}${compat}</div>
@@ -454,6 +456,42 @@
                         assistant.commentEl.textContent += data.delta;
                         scrollIfNearBottom();
                     }
+                } else if (eventName === 'compare') {
+                    ensure();
+                    // Deterministik kıyas tablosu (sayılar sunucudan, LLM üretmedi)
+                    const tbl = document.createElement('div');
+                    tbl.style.cssText = 'margin:0 0 10px 42px;overflow-x:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;';
+                    let html = '<table style="border-collapse:collapse;font-size:13px;min-width:420px;width:100%;">';
+                    html += '<tr><th style="padding:10px 12px;"></th>' + (data.columns || []).map(c =>
+                        `<th style="padding:10px 12px;text-align:left;"><a href="${escapeHtml(c.url)}" style="color:#6366f1;text-decoration:none;font-weight:700;">${escapeHtml(c.title)}</a></th>`
+                    ).join('') + '</tr>';
+                    (data.rows || []).forEach(row => {
+                        html += `<tr style="border-top:1px solid #f1f5f9;"><td style="padding:8px 12px;color:#64748b;font-weight:600;white-space:nowrap;">${escapeHtml(row.label)}</td>` +
+                            (row.values || []).map(v => `<td style="padding:8px 12px;color:#0f172a;">${escapeHtml(v)}</td>`).join('') + '</tr>';
+                    });
+                    html += '</table>';
+                    tbl.innerHTML = html;
+                    assistant.grid.parentElement.insertBefore(tbl, assistant.grid);
+                    scrollIfNearBottom();
+                } else if (eventName === 'suggestions') {
+                    ensure();
+                    // Devam önerisi çipleri — tıklayınca mesaj olarak gönderilir
+                    const wrap = document.createElement('div');
+                    wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0 42px;';
+                    (data.items || []).forEach(text => {
+                        const chip = document.createElement('button');
+                        chip.type = 'button';
+                        chip.className = 'btn btn-outline btn-sm';
+                        chip.textContent = text;
+                        chip.onclick = () => {
+                            input.value = text;
+                            form.requestSubmit();
+                            wrap.remove();
+                        };
+                        wrap.appendChild(chip);
+                    });
+                    assistant.wrapper.parentElement ? assistant.wrapper.parentElement.appendChild(wrap) : messages.appendChild(wrap);
+                    scrollIfNearBottom();
                 } else if (eventName === 'done') {
                     doneReceived = true;
                     if (data.is_clarification) {
