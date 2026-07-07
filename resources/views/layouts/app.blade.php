@@ -48,10 +48,14 @@
 
         /* ── Navbar ── */
         .nav { background:var(--white); border-bottom:1px solid var(--border-light); padding:0 32px; position:sticky; top:0; z-index:100; height:70px; display:flex; align-items:center; }
-        .nav-inner { display:flex; align-items:center; width:100%; max-width:none !important; margin:0; }
-        .nav-logo { font-size:20px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; letter-spacing:-0.5px; flex-shrink:0; }
+        /* Logo tam ortada: 1fr auto 1fr — yan içerikler farklı genişlikte olsa da merkez sabit */
+        .nav-inner { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; width:100%; max-width:none !important; margin:0; }
+        .nav-logo { font-size:20px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; letter-spacing:-0.5px; flex-shrink:0; grid-column:2; grid-row:1; justify-self:center; }
         .nav-logo span { color:var(--accent); }
-        .nav-links { display:flex; align-items:center; gap:20px; margin-left:auto; } 
+        .nav-links { display:flex; align-items:center; gap:20px; }
+        .nav-links-left { grid-column:1; grid-row:1; justify-self:start; }
+        .nav-links-right { grid-column:3; grid-row:1; justify-self:end; }
+        .nav-bell-mobile { display:none; grid-column:3; grid-row:1; justify-self:end; position:relative; font-size:20px; text-decoration:none; align-items:center; }
         .nav-links a:not(.nav-btn) { color:#475569; font-weight:600; font-size:14.5px; transition:all 0.2s; display:flex; align-items:center; gap:6px; letter-spacing:0.1px; padding:6px 0; border-bottom:2px solid transparent; }
         .nav-links a:not(.nav-btn):hover { color:var(--accent); }
         .nav-links a.nav-active:not(.nav-btn) { color:var(--accent); border-bottom-color:var(--accent); }
@@ -71,6 +75,7 @@
         .mobile-menu-btn {
             display:none; width:40px; height:40px; align-items:center; justify-content:center;
             border:1.5px solid var(--border); border-radius:10px; background:var(--white); cursor:pointer; font-size:18px;
+            grid-column:1; grid-row:1; justify-self:start;
         }
         .mobile-nav {
             display:none; flex-direction:column; gap:4px; padding:12px 20px 16px;
@@ -214,7 +219,7 @@
             background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%) !important; 
         }
         body.panel-layout-active .nav { position:fixed; top:0; left:0; right:0; z-index:1001; height:70px; display:flex; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); box-shadow:0 1px 3px rgba(0,0,0,0.02); padding:0 32px; background:var(--white);}
-        body.panel-layout-active .nav .nav-inner { max-width:100% !important; padding:0 !important; width:100%; display:flex !important; align-items:center; }
+        body.panel-layout-active .nav .nav-inner { max-width:100% !important; padding:0 !important; width:100%; display:grid !important; grid-template-columns:1fr auto 1fr; align-items:center; }
         body.panel-layout-active .nav-logo { font-size: 20px; color:#0f172a; font-weight:800; }
         
         /* Remove default container constraints entirely for panel */
@@ -271,6 +276,7 @@
             .footer-grid { grid-template-columns:1fr 1fr; }
             .nav-links { display:none; }
             .mobile-menu-btn { display:flex!important; }
+            .nav-bell-mobile { display:flex; }
             .mobile-nav.open { display:flex!important; }
             .detail-grid { grid-template-columns:1fr; }
             .detail-sidebar { position:static; }
@@ -289,17 +295,34 @@
 <body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }}">
     <nav class="nav">
         <div class="container nav-inner">
-            <a href="{{ route('home') }}" class="nav-logo">@include('partials.logo', ['height' => 30])</a>
-            <div class="nav-links">
+            @auth
+                @php
+                    // SQL COUNT (satırları belleğe yüklemeden) + görülmemiş duyuru sayısı
+                    $unreadCount = auth()->user()->unreadNotifications()->count()
+                        + \App\Models\Announcement::unseenBy(auth()->user())->count();
+                @endphp
+            @endauth
+
+            <button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">☰</button>
+
+            {{-- Sol grup: gezinme --}}
+            <div class="nav-links nav-links-left">
                 <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar') ? 'nav-active' : '' }}">Turlar</a>
                 <a href="{{ route('blog.index') }}" class="{{ request()->is('blog*') ? 'nav-active' : '' }}">Blog</a>
                 @auth
-                    @php
-                        // SQL COUNT (satırları belleğe yüklemeden) + görülmemiş duyuru sayısı
-                        $unreadCount = auth()->user()->unreadNotifications()->count()
-                            + \App\Models\Announcement::unseenBy(auth()->user())->count();
-                    @endphp
-                    <a href="{{ route('notifications.index') }}" class="nav-notification-icon {{ request()->routeIs('notifications.index') ? 'active' : '' }}" style="position:relative; margin-right:15px; font-size:20px; text-decoration:none;">
+                    @if(! auth()->user()->isAdmin() && ! auth()->user()->isAgency())
+                        <a href="{{ route('favorites.index') }}">Favorilerim</a>
+                        <a href="{{ route('customer.coupons.index') }}">Kuponlarım</a>
+                    @endif
+                @endauth
+            </div>
+
+            <a href="{{ route('home') }}" class="nav-logo">@include('partials.logo', ['height' => 30])</a>
+
+            {{-- Sağ grup: hesap --}}
+            <div class="nav-links nav-links-right">
+                @auth
+                    <a href="{{ route('notifications.index') }}" class="nav-notification-icon {{ request()->routeIs('notifications.index') ? 'active' : '' }}" style="position:relative; font-size:20px; text-decoration:none;">
                         🔔
                         @if($unreadCount > 0)
                         <span style="position:absolute; top:-5px; right:-8px; background:#ef4444; color:white; font-size:10px; font-weight:800; padding:2px 5px; border-radius:100px; line-height:1; min-width:14px; text-align:center; border:2px solid white;">{{ $unreadCount }}</span>
@@ -313,8 +336,6 @@
                             {{ auth()->user()->agencyApproved() ? 'Panelim' : 'Başvuru Durumu' }}
                         </a>
                     @else
-                        <a href="{{ route('favorites.index') }}">Favorilerim</a>
-                        <a href="{{ route('customer.coupons.index') }}">Kuponlarım</a>
                         <a href="{{ route('profile.show') }}">Profilim</a>
                     @endif
 
@@ -336,7 +357,16 @@
                     <a href="{{ route('register') }}" class="nav-btn nav-btn-primary">Kayıt Ol</a>
                 @endauth
             </div>
-            <button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">☰</button>
+
+            {{-- Mobil: sağ köşede zil (menü linkleri hamburgerde) --}}
+            @auth
+                <a href="{{ route('notifications.index') }}" class="nav-bell-mobile">
+                    🔔
+                    @if($unreadCount > 0)
+                    <span style="position:absolute; top:-5px; right:-8px; background:#ef4444; color:white; font-size:10px; font-weight:800; padding:2px 5px; border-radius:100px; line-height:1; min-width:14px; text-align:center; border:2px solid white;">{{ $unreadCount }}</span>
+                    @endif
+                </a>
+            @endauth
         </div>
         <div id="mobileNav" class="mobile-nav">
             <a href="{{ route('tours.index') }}">🧭 Turlar</a>
