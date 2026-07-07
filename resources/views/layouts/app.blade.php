@@ -53,8 +53,9 @@
         .nav-logo { font-size:20px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; letter-spacing:-0.5px; flex-shrink:0; grid-column:2; grid-row:1; justify-self:center; }
         .nav-logo span { color:var(--accent); }
         .nav-links { display:flex; align-items:center; gap:20px; }
-        .nav-links-left { grid-column:1; grid-row:1; justify-self:start; }
-        .nav-links-right { grid-column:3; grid-row:1; justify-self:end; }
+        /* Gruplar logonun iki yanında ortada kümeli — kenarlar boş */
+        .nav-links-left { grid-column:1; grid-row:1; justify-self:end; margin-right:36px; }
+        .nav-links-right { grid-column:3; grid-row:1; justify-self:start; margin-left:36px; }
         .nav-bell-mobile { display:none; grid-column:3; grid-row:1; justify-self:end; position:relative; font-size:20px; text-decoration:none; align-items:center; }
         .nav-links a:not(.nav-btn) { color:#475569; font-weight:600; font-size:14.5px; transition:all 0.2s; display:flex; align-items:center; gap:6px; letter-spacing:0.1px; padding:6px 0; border-bottom:2px solid transparent; }
         .nav-links a:not(.nav-btn):hover { color:var(--accent); }
