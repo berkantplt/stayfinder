@@ -168,7 +168,7 @@
     </div>
 
     {{-- iPhone Style Story Cards --}}
-    <div class="section" style="padding-top: 10px; margin-bottom: 0px;">
+    <div class="section" id="storiesSection" style="padding-top: 10px; margin-bottom: 0px;">
         <div class="stories-container">
             <div class="stories-scroll">
                 @foreach($featuredCities as $index => $city)
@@ -219,7 +219,7 @@
 
     {{-- Destinations --}}
     @if($destinations->count())
-    <div class="section">
+    <div class="section" id="destinationsSection">
         <div class="section-header">
             <h2>Popüler Destinasyonlar</h2>
             <a href="{{ route('tours.index') }}">Tümünü gör →</a>
@@ -430,6 +430,15 @@
 
         /* ── iPhone Style Story Cards ── */
         .stories-container { margin: 0 -20px; padding: 10px 20px; overflow: hidden; }
+        /* Filtre aktifken: storyler mini avatar şeridine büzülür, Popüler
+           Destinasyonlar gizlenir — filtrelenen turlar hemen görünür olur.
+           (.iphone-card'daki transition:all morfu yumuşatır) */
+        body.filters-active #storiesSection { padding-top:4px; }
+        body.filters-active .iphone-card { width:56px; height:56px; border-radius:50%; box-shadow:0 4px 10px rgba(0,0,0,0.18); }
+        body.filters-active .iphone-card-badge,
+        body.filters-active .iphone-card-info { display:none; }
+        body.filters-active .iphone-card:hover { transform:scale(1.1); }
+        body.filters-active #destinationsSection { display:none; }
         .stories-scroll { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0 20px; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory; }
         .stories-scroll::-webkit-scrollbar { display: none; }
         
@@ -581,12 +590,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const categoryInput = document.getElementById('selected-category');
     const tourGridContainer = document.getElementById('tour-grid-container');
     const loadingSpinner = document.getElementById('loading-spinner');
-    const toursSection = document.getElementById('tours-section');
     const subcategoryRow = document.getElementById('subcategoryRow');
     const subcategoryTabs = document.getElementById('subcategoryTabs');
 
+    // Filtre aktif mi? (kategori/destinasyon/acenta — sıralama tek başına sayılmaz)
+    function filtersAreActive() {
+        if (!filterForm) return false;
+        const fd = new FormData(filterForm);
+        return ['category', 'destination', 'agency'].some(k => ((fd.get(k) || '') + '').trim() !== '');
+    }
+
+    // Filtre aktifken storyler mini şeride büzülür, destinasyonlar gizlenir (CSS: body.filters-active)
+    function updateStoriesCompact() {
+        document.body.classList.toggle('filters-active', filtersAreActive());
+    }
+
     function fetchFilteredTours() {
         if (!filterForm || !tourGridContainer) return;
+
+        updateStoriesCompact();
 
         const formData = new FormData(filterForm);
         const params = new URLSearchParams(formData);
@@ -603,18 +625,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tourGridContainer) {
                 tourGridContainer.innerHTML = html;
                 tourGridContainer.style.opacity = '1';
-            }
-            if (toursSection) {
-                // Sonuç bölümü görünür alanda değilse ona kaydır: sayfa tepesinde
-                // filtreleyince sonuçlar storylerin altında kalıyordu (storyler
-                // yerinde kalır, sadece görünüm sonuçlara iner)
-                const rect = toursSection.getBoundingClientRect();
-                if (rect.top < 0 || rect.top > 250) {
-                    window.scrollTo({
-                        top: window.pageYOffset + rect.top - 90,
-                        behavior: 'smooth'
-                    });
-                }
             }
         })
         .catch(err => {
@@ -710,6 +720,9 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchFilteredTours();
         }
     };
+
+    // Sayfa URL parametreleriyle (?destination=...) geldiyse kompakt durumla başla
+    updateStoriesCompact();
 
 // --- Instagram Story Logic ---
 let currentCityIndex = 0;
