@@ -16,13 +16,16 @@ class TourImageService
 {
     private const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
 
+    /** URL'den inen görselde kısa kenar alt sınırı (px) — thumbnail/placeholder savunması */
+    private const MIN_DIMENSION = 300;
+
     private const DISK = 'public';
 
     private const DIR = 'tours';
 
     /** İçerik tipi → uzantı (uzantı URL'den/dosyadan çıkmazsa) */
     private const EXT_BY_MIME = [
-        'image/jpeg' => 'jpg', 'image/pjpeg' => 'jpg', 'image/png' => 'png',
+        'image/jpeg' => 'jpg', 'image/pjpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/png' => 'png',
         'image/webp' => 'webp', 'image/gif' => 'gif', 'image/avif' => 'avif',
         'image/heic' => 'heic', 'image/heif' => 'heif', 'image/bmp' => 'bmp',
         'image/x-ms-bmp' => 'bmp', 'image/tiff' => 'tiff', 'image/svg+xml' => 'svg',
@@ -91,9 +94,24 @@ class TourImageService
             if (! str_starts_with($mime, 'image/')) {
                 return null;
             }
+            // Uzak SVG galeriye girmez: vektör/logo malzemesidir + PHP sürümüne göre
+            // boyut kapısından tutarsız geçerdi (8.5 çözer, 8.2 çözmez) + XSS yüzeyi
+            if ($mime === 'image/svg+xml') {
+                return null;
+            }
 
             $body = $response->body();
             if ($body === '' || strlen($body) > self::MAX_BYTES) {
+                return null;
+            }
+
+            // Boyut kapısı: thumbnail/tema placeholder'ları galeriye giremesin.
+            // getimagesize'ın çözemediği egzotik formatlara (heic/heif/avif) dokunma.
+            $dims = @getimagesizefromstring($body);
+            if ($dims !== false && min($dims[0], $dims[1]) < self::MIN_DIMENSION) {
+                return null;
+            }
+            if ($dims === false && ! in_array($mime, ['image/heic', 'image/heif', 'image/avif'], true)) {
                 return null;
             }
 

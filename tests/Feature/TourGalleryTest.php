@@ -74,8 +74,14 @@ class TourGalleryTest extends TestCase
     {
         Storage::fake('public');
         Storage::disk('public')->put('tours/local-1.jpg', 'localdata');
+        // Gerçek görsel gövdesi: downloadAndStore artık boyut doğruluyor (min 300px)
+        $im = imagecreatetruecolor(800, 500);
+        ob_start();
+        imagepng($im);
+        imagedestroy($im);
+        $remoteBody = (string) ob_get_clean();
         Http::fake([
-            'https://1.1.1.1/*' => Http::response('REMOTEDATA', 200, ['Content-Type' => 'image/jpeg']),
+            'https://1.1.1.1/*' => Http::response($remoteBody, 200, ['Content-Type' => 'image/png']),
         ]);
 
         $this->actingAs($this->agencyUser)

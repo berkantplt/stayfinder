@@ -19,6 +19,18 @@ class TourUrlImporter
 
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
+    /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
+    private const CACHE_VERSION = 2;
+
+    /**
+     * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
+     * Galeri numaraları (kapadokya-001), kamera adları (IMG-1001) ve yıllar
+     * (festival-2024) fotoğraf adının parçasıdır, birleştirilmez.
+     */
+    private const SIZE_SUFFIXES = [100, 120, 150, 160, 200, 240, 250, 300, 320, 350, 400, 450, 480,
+        500, 550, 600, 640, 700, 720, 750, 768, 800, 850, 900, 960, 1000, 1024, 1080, 1100, 1200,
+        1280, 1366, 1440, 1500, 1536, 1600, 1700, 1800, 1920, 2000, 2048, 2400, 2500, 2560, 3000, 3840, 4096];
+
     /** İçerik çekilirken yakalanan ham HTML — görsel çıkarımı için yeniden istek atmayalım */
     private ?string $lastHtml = null;
 
@@ -37,7 +49,7 @@ class TourUrlImporter
         // Sonuç önbelleği: aynı URL + aynı mod için 30 dk içinde tekrar istek
         // (çift tıklama, doğrulama hatası sonrası yeniden deneme) LLM + Firecrawl
         // maliyetini yeniden ödemesin. Hatalar cache'lenmez (exception geçer).
-        $cacheKey = 'tour_import:'.md5($url.'|'.($deep ? 1 : 0));
+        $cacheKey = 'tour_import:v'.self::CACHE_VERSION.':'.md5($url.'|'.($deep ? 1 : 0));
 
         return Cache::remember($cacheKey, 1800, fn () => $this->doImport($url, $deep));
     }
@@ -278,53 +290,218 @@ class TourUrlImporter
         }
 
         $base = $this->baseUrl($url);
+        $pageDir = $this->pageDirUrl($url);
 
         // Hero/öne çıkan görsel: og:image / twitter:image
         $hero = null;
         if (preg_match('/<meta[^>]+(?:property|name)=["\'](?:og:image(?::url)?|twitter:image)["\'][^>]+content=["\']([^"\']+)["\']/i', $html, $m)
             || preg_match('/<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:og:image(?::url)?|twitter:image)["\']/i', $html, $m)) {
-            $hero = $this->absoluteUrl($m[1], $base);
+            $hero = $this->absoluteUrl($m[1], $base, $pageDir);
         }
 
-        // Tüm HTML'de görsel-URL taraması (data-src/src/href/srcset/content/JSON hepsini kapsar)
         $candidates = [];
         $seen = [];
-        $add = function (?string $candidate) use (&$candidates, &$seen, $base) {
-            $abs = $this->absoluteUrl((string) $candidate, $base);
+        $add = function (?string $candidate) use (&$candidates, &$seen, $base, $pageDir) {
+            $abs = $this->absoluteUrl((string) $candidate, $base, $pageDir);
             if ($abs !== null && ! isset($seen[$abs]) && $this->looksLikeTourImage($abs)) {
                 $seen[$abs] = true;
                 $candidates[] = $abs;
             }
         };
-        // Mutlak/protokol-göreli görsel URL'leri
+        // 1) Mutlak/protokol-göreli uzantılı URL'ler (tüm HTML: JSON/script içindekiler dahil)
         if (preg_match_all('#(?:https?:)?//[^\s"\'<>\\\\]+?\.(?:jpe?g|png|webp|gif|avif|bmp|tiff)#i', $html, $mm)) {
             foreach ($mm[0] as $u) {
                 $add($u);
             }
         }
-        // Köke göreli (src/data-src/href içinde)
-        if (preg_match_all('#(?:data-src|data-original|data-lazy-src|src|href)=["\'](/[^"\']+?\.(?:jpe?g|png|webp|gif|avif|bmp|tiff))["\']#i', $html, $mm)) {
+        // 2) Köke göreli uzantılı yollar (imzalı CDN'ler için query string korunur)
+        if (preg_match_all('#(?:data-src|data-original|data-lazy-src|src|href)=["\'](/[^"\']+?\.(?:jpe?g|png|webp|gif|avif|bmp|tiff)(?:\?[^"\']*)?)["\']#i', $html, $mm)) {
             foreach ($mm[1] as $u) {
                 $add($u);
             }
         }
-
-        // Sıralama: hero ile AYNI klasördeki görseller (gerçek tur galerisi) önce;
-        // böylece menü/portal/promosyon görselleri arkaya düşer ve 12 sınırında elenir.
-        if ($hero !== null) {
-            $heroDir = $this->urlDir($hero);
-            usort($candidates, function ($a, $b) use ($heroDir, $hero) {
-                $sa = ($a === $hero ? 2 : ($this->urlDir($a) === $heroDir ? 1 : 0));
-                $sb = ($b === $hero ? 2 : ($this->urlDir($b) === $heroDir ? 1 : 0));
-
-                return $sb <=> $sa; // yüksek skor önce (stable değil ama grup içi sıra korunur yeterince)
-            });
-            if (! in_array($hero, $candidates, true) && $this->looksLikeTourImage($hero)) {
-                array_unshift($candidates, $hero);
+        // 3) <img>/<source> etiketleri: srcset varyantları, uzantısız CDN görselleri
+        //    (Cloudinary/imgix tarzı) ve belge-göreli src'ler yalnızca etiket bağlamında
+        //    toplanır ki script/JSON içindeki alakasız string'ler karışmasın.
+        if (preg_match_all('#<(?:img|source)\b[^>]*>#i', $html, $tags)) {
+            foreach ($tags[0] as $tag) {
+                foreach (['data-src', 'data-original', 'data-lazy-src', 'src'] as $attr) {
+                    if (preg_match('#(?<![\w-])'.$attr.'=["\']([^"\']+)["\']#i', $tag, $am)) {
+                        $add($am[1]);
+                    }
+                }
+                foreach (['data-srcset', 'srcset'] as $attr) {
+                    if (preg_match('#(?<![\w-])'.$attr.'=["\']([^"\']+)["\']#i', $tag, $am)) {
+                        // Virgül + boşluk VEYA virgül + URL başlangıcı ayraçtır; Cloudinary
+                        // transform virgülleri (w_300,c_fill) URL'in parçasıdır, bölünmez.
+                        foreach (preg_split('#,\s+|,(?=(?:https?:)?/)#i', $am[1]) ?: [] as $part) {
+                            $u = trim((string) strtok(trim($part), " \t"));
+                            if ($u !== '') {
+                                $add($u);
+                            }
+                        }
+                    }
+                }
             }
         }
 
+        // Kapak adaylar arasında yoksa başa ekle (collapse onu da kendi grubuna katar)
+        if ($hero !== null && $this->looksLikeTourImage($hero) && ! isset($seen[$hero])) {
+            array_unshift($candidates, $hero);
+        }
+
+        // Aynı fotoğrafın boyut varyantlarını (UUID.jpg + UUID-1024.jpg, foto-150x150.jpg)
+        // tek görsele indir: en büyük/orijinal kopya kalır, 12'lik kotayı varyant yemez.
+        $candidates = $this->collapseSizeVariants($candidates);
+
+        // Kümeleme için sondaki tarih klasörlerini soy: WordPress'in /uploads/2025/05
+        // ile /uploads/2025/06 klasörleri AYNI galerinin parçalarıdır.
+        $clusterDir = fn (string $u): string => (string) preg_replace('#/(?:19|20)\d{2}(?:/\d{1,2})?$#', '', $this->urlDir($u));
+
+        $hintScore = function (string $u): int {
+            $low = strtolower($u);
+            foreach (['gallery', 'galeri', 'photo', 'foto', 'upload', 'media', 'image', 'resim'] as $hint) {
+                if (str_contains($low, $hint)) {
+                    return 15;
+                }
+            }
+
+            return 0;
+        };
+
+        if ($hero !== null && $this->looksLikeTourImage($hero)) {
+            // og:image çoğu sitede fotoğrafın boyut varyantıdır (…-1024.jpg);
+            // collapse sonrası kapağın grubunu temsil eden URL ile devam et.
+            $heroKey = $this->imageVariantKey($hero);
+            foreach ($candidates as $c) {
+                if ($this->imageVariantKey($c) === $heroKey) {
+                    $hero = $c;
+                    break;
+                }
+            }
+            $heroDir = $clusterDir($hero);
+            $heroHost = strtolower((string) parse_url($hero, PHP_URL_HOST));
+
+            // Çok sinyalli skor: kapak > aynı klasör > aynı host > galeri ipucu.
+            // Küme münhasır filtre DEĞİL — galeri birden çok klasöre bölünebilir
+            // (WP aylık klasörleri); sıralama + 12 kota + sinyalsiz-aday elemesi çöpü keser.
+            $score = function (string $u) use ($hero, $heroDir, $heroHost, $clusterDir, $hintScore): int {
+                if ($u === $hero) {
+                    return 100;
+                }
+                $s = 0;
+                if ($clusterDir($u) === $heroDir) {
+                    $s += 40;
+                }
+                if (strtolower((string) parse_url($u, PHP_URL_HOST)) === $heroHost) {
+                    $s += 20;
+                }
+
+                return $s + $hintScore($u);
+            };
+            // Kapak klasöründe yeterli görsel varsa zayıf adaylar kota boş kalsa
+            // bile listeye giremez: salt kelime ipucu (media/img...) yetmez,
+            // kapak klasörü VEYA aynı host gerekir — site geneli banner/vitrin
+            // görselleri (farklı CDN alt-domaini) böylece dışarıda kalır.
+            if (count(array_filter($candidates, fn ($u) => $score($u) >= 40)) >= 3) {
+                $candidates = array_values(array_filter($candidates, fn ($u) => $score($u) >= 20));
+            }
+            // PHP 8 usort stabil: eşit skorda sayfa sırası korunur.
+            usort($candidates, fn ($a, $b) => $score($b) <=> $score($a));
+        } else {
+            // Kapak yok/geçersiz: sayfanın hostu + galeri ipucuyla genel sıralama
+            $pageHost = strtolower((string) parse_url($url, PHP_URL_HOST));
+            $generic = function (string $u) use ($pageHost, $hintScore): int {
+                $s = strtolower((string) parse_url($u, PHP_URL_HOST)) === $pageHost ? 20 : 0;
+
+                return $s + $hintScore($u);
+            };
+            usort($candidates, fn ($a, $b) => $generic($b) <=> $generic($a));
+        }
+
         return array_slice(array_values(array_unique($candidates)), 0, 12);
+    }
+
+    /**
+     * Aynı fotoğrafın boyut varyantlarını gruplar, her gruptan en iyi (orijinal
+     * veya en büyük) kopyayı döner. Sıra korunur (ilk görülme sırası).
+     *
+     * @param  array<int, string>  $urls
+     * @return array<int, string>
+     */
+    private function collapseSizeVariants(array $urls): array
+    {
+        $groups = [];
+        foreach ($urls as $u) {
+            $groups[$this->imageVariantKey($u)][] = $u;
+        }
+
+        $out = [];
+        foreach ($groups as $variants) {
+            $out[] = count($variants) === 1 ? $variants[0] : $this->bestVariant($variants);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Varyant anahtarı: host + klasör + boyut eklerinden arındırılmış dosya adı.
+     * "-800x600" ve "-thumb/-small" tarzı ekler her zaman soyulur; "-1024" tarzı
+     * sayısal ek YALNIZCA bilinen boyut değerlerinde (SIZE_SUFFIXES) soyulur —
+     * kapadokya-001, IMG-1001, festival-2024 gibi adlar farklı fotoğraflardır.
+     * Görsel uzantısı olmayan dinamik URL'lerde (getimage.php?img=101) query
+     * kimliğin parçasıdır, anahtara dahil edilir.
+     */
+    private function imageVariantKey(string $url): string
+    {
+        $p = parse_url($url);
+        $path = (string) ($p['path'] ?? '');
+        $dir = rtrim(str_replace('\\', '/', dirname($path)), '/');
+        $name = pathinfo($path, PATHINFO_FILENAME);
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        $name = preg_replace('/[-_](?:scaled|thumb|thumbnail|small|mini|medium|large)$/i', '', $name);
+        $name = preg_replace('/-\d{2,4}x\d{2,4}$/', '', (string) $name);
+        if (preg_match('/^(.*)-(\d{3,4})$/', (string) $name, $m) && in_array((int) $m[2], self::SIZE_SUFFIXES, true)) {
+            $name = $m[1];
+        }
+
+        $key = strtolower((string) ($p['host'] ?? '')).$dir.'/'.strtolower((string) $name).'.'.$ext;
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp', 'tiff'], true) && isset($p['query'])) {
+            $key .= '?'.strtolower($p['query']);
+        }
+
+        return $key;
+    }
+
+    /**
+     * Varyant grubundan en iyisi: eksiz orijinal > en büyük boyut eki > küçük kopya.
+     * Skor eşitse query string'li kopya tercih edilir (imzalı CDN URL'lerinde
+     * imzasız kopya 403 döner; imzasız CDN'de fazladan query zararsızdır).
+     */
+    private function bestVariant(array $variants): string
+    {
+        $best = $variants[0];
+        $bestRank = [-1, -1];
+        foreach ($variants as $u) {
+            $name = pathinfo((string) parse_url($u, PHP_URL_PATH), PATHINFO_FILENAME);
+            if (preg_match('/[-_](?:thumb|thumbnail|small|mini)$/i', $name)) {
+                $score = 50;
+            } elseif (preg_match('/-(\d{2,4})x(\d{2,4})$/', $name, $m)) {
+                $score = min((int) $m[1], (int) $m[2]);
+            } elseif (preg_match('/-(\d{3,4})$/', $name, $m) && in_array((int) $m[1], self::SIZE_SUFFIXES, true)) {
+                $score = (int) $m[1];
+            } else {
+                $score = PHP_INT_MAX; // boyut eki yok → orijinal
+            }
+            $rank = [$score, parse_url($u, PHP_URL_QUERY) !== null ? 1 : 0];
+            if (($rank <=> $bestRank) > 0) {
+                $bestRank = $rank;
+                $best = $u;
+            }
+        }
+
+        return $best;
     }
 
     private function urlDir(string $url): string
@@ -347,13 +524,30 @@ class TourUrlImporter
             return false; // genelde logo/ikon
         }
 
-        // Logo/ikon/sosyal/pixel/reklam ele
+        // Görsel olmayan bilinen uzantılar: <video>/<audio> içindeki <source>
+        // etiketleri de tarandığından mp4 vb. buraya düşebilir
+        if (in_array($ext, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mp3', 'wav', 'ogg', 'oga',
+            'pdf', 'js', 'css', 'json', 'xml', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'html', 'htm'], true)) {
+            return false;
+        }
+
+        // Logo/ikon/sosyal/pixel/reklam/tema iskeleti ele
         foreach (['logo', 'icon', 'favicon', 'sprite', 'placeholder', 'blank', 'avatar',
             'flag', 'pixel', '1x1', 'spacer', 'loading', 'whatsapp', 'facebook',
-            'instagram', 'twitter', 'youtube', '/ads/', 'advert', 'banner-'] as $bad) {
+            'instagram', 'twitter', 'youtube', '/ads/', 'advert', 'banner-',
+            'default-', 'dummy', 'sample-', '/theme/', '/themes/', 'lazyload'] as $bad) {
             if (str_contains($low, $bad)) {
                 return false;
             }
+        }
+        // no-image/noimage: kelime sınırıyla — torino-image.jpg masumdur
+        if (preg_match('#(^|[/_.-])no[-_]?images?([/_.-]|$)#', $low)) {
+            return false;
+        }
+
+        // Dosya adı salt boyutsa (470x338.jpg) tema iskeletidir
+        if (preg_match('/^\d{2,4}x\d{2,4}$/', strtolower(pathinfo($path, PATHINFO_FILENAME)))) {
+            return false;
         }
 
         $imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp', 'tiff'];
@@ -377,10 +571,26 @@ class TourUrlImporter
         return ($p['scheme'] ?? 'https').'://'.($p['host'] ?? '').(isset($p['port']) ? ':'.$p['port'] : '');
     }
 
-    private function absoluteUrl(string $candidate, string $base): ?string
+    /** Sayfanın dizin URL'i (belge-göreli src çözümü için): https://site.com/turlar */
+    private function pageDirUrl(string $url): string
+    {
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?? '/');
+        // /turlar/kapadokya-turu/ ile biten URL'de dizin sayfanın KENDİSİdir;
+        // dirname() sondaki slash'ı yok sayıp bir üste çıkar (WP kalıcı bağlantıları!)
+        $dir = str_ends_with($path, '/')
+            ? rtrim($path, '/')
+            : str_replace('\\', '/', dirname($path));
+        if ($dir === '.' || $dir === '') {
+            $dir = '/';
+        }
+
+        return $this->baseUrl($url).rtrim($dir, '/');
+    }
+
+    private function absoluteUrl(string $candidate, string $base, ?string $pageDir = null): ?string
     {
         $candidate = trim(html_entity_decode($candidate, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-        if ($candidate === '' || str_starts_with($candidate, 'data:')) {
+        if ($candidate === '' || preg_match('#^(data:|javascript:|mailto:|tel:|about:|\#)#i', $candidate)) {
             return null;
         }
         if (str_starts_with($candidate, 'http://') || str_starts_with($candidate, 'https://')) {
@@ -393,7 +603,32 @@ class TourUrlImporter
             return $base.$candidate;
         }
 
-        return $base.'/'.ltrim($candidate, '/');
+        // Belge-göreli (img/1.jpg, ../foto/2.jpg): sayfanın dizinine göre çöz
+        return $this->normalizeDotSegments(($pageDir ?: $base).'/'.$candidate);
+    }
+
+    /** ../ ve ./ segmentlerini temizler: https://a.com/x/../y → https://a.com/y */
+    private function normalizeDotSegments(string $url): string
+    {
+        $p = parse_url($url);
+        if (empty($p['host'])) {
+            return $url;
+        }
+        $out = [];
+        foreach (explode('/', (string) ($p['path'] ?? '')) as $seg) {
+            if ($seg === '' || $seg === '.') {
+                continue;
+            }
+            if ($seg === '..') {
+                array_pop($out);
+
+                continue;
+            }
+            $out[] = $seg;
+        }
+
+        return ($p['scheme'] ?? 'https').'://'.$p['host'].(isset($p['port']) ? ':'.$p['port'] : '')
+            .'/'.implode('/', $out).(isset($p['query']) ? '?'.$p['query'] : '');
     }
 
     /**
