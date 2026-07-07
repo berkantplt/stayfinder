@@ -372,7 +372,7 @@
         }
 
         /* ── Hero Carousel ── */
-        .hero-carousel { position:relative; width:100vw; margin-left:calc(-50vw + 50%); height:600px; overflow:hidden; }
+        .hero-carousel { position:relative; width:100vw; margin-left:calc(-50vw + 50%); height:650px; overflow:hidden; }
         .hero-slides { display:flex; height:100%; transition:transform 0.8s cubic-bezier(0.4,0,0.2,1); }
         .hero-slide { min-width:100%; height:100%; background-size:cover; background-position:center; position:relative; }
         .hero-slide::after { content:''; position:absolute; inset:0; background:linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 100%); }
