@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Blog & Rehber — StayFinder')
+@section('title', 'Blog & Rehber — turXtur')
 @section('description', 'Seyahat rehberleri, destinasyon önerileri ve tur ipuçları.')
 
 @section('content')

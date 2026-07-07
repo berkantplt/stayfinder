@@ -164,7 +164,7 @@ class ConversationService
             ! empty($ci['max_budget']) ? '~'.number_format((int) $ci['max_budget'], 0, ',', '.').' TL bütçe' : null,
             ! empty($ci['traveler_profile']) ? str_replace('_', ' ', (string) $ci['traveler_profile']) : null,
         ]);
-        $prefill = 'Merhaba, StayFinder\'da "'.$tour->title.'" turunu inceledim.'
+        $prefill = 'Merhaba, turXtur\'da "'.$tour->title.'" turunu inceledim.'
             .(! empty($bits) ? ' '.implode(', ', $bits).'.' : '')
             .' Müsaitlik ve detayları öğrenebilir miyim?';
 

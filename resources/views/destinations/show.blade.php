@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $destination->name . ' Turları — StayFinder')
+@section('title', $destination->name . ' Turları — turXtur')
 @section('description', $destination->description ?: $destination->name . ' destinasyonundaki ' . $tourCount . ' tur seçeneğini karşılaştırın. ' . ($minPrice ? number_format($minPrice, 0, ',', '.') . ' ₺\'den başlayan fiyatlar.' : ''))
 @if($destination->image)
     @section('og_image', url($destination->image))

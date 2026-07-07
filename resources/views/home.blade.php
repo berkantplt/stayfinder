@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'StayFinder — Tur Karşılaştırma Platformu')
+@section('title', 'turXtur — Tur Karşılaştırma Platformu')
 
 @push('head')
 <script type="application/ld+json">
@@ -9,7 +9,7 @@
     {
       "@@type": "WebSite",
       "url": "{{ url('/') }}",
-      "name": "StayFinder",
+      "name": "turXtur",
       "potentialAction": {
         "@@type": "SearchAction",
         "target": "{{ route('tours.index') }}?q={search_term_string}",
@@ -18,7 +18,7 @@
     },
     {
       "@@type": "Organization",
-      "name": "StayFinder",
+      "name": "turXtur",
       "url": "{{ url('/') }}",
       "logo": "{{ asset('images/og-default.png') }}"
     }

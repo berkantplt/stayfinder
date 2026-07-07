@@ -160,7 +160,7 @@ class SyncKnowledgeBase extends Command
         $facts = [
             [
                 'title' => 'İptal ve İade Politikası',
-                'content' => 'StayFinder üzerinden alınan turlarda, turun başlamasına 30 gün kala yapılan iptallerde %100 iade yapılır. 15-30 gün kala yapılan iptallerde %50 iade, 15 günden az süre kalan iptallerde iade yapılmaz. Bazı kampanyalı turlarda iade hakkı bulunmayabilir.'
+                'content' => 'turXtur üzerinden alınan turlarda, turun başlamasına 30 gün kala yapılan iptallerde %100 iade yapılır. 15-30 gün kala yapılan iptallerde %50 iade, 15 günden az süre kalan iptallerde iade yapılmaz. Bazı kampanyalı turlarda iade hakkı bulunmayabilir.'
             ],
             [
                 'title' => 'Ödeme Seçenekleri',
@@ -172,7 +172,7 @@ class SyncKnowledgeBase extends Command
             ],
             [
                 'title' => 'İletişim ve Destek',
-                'content' => 'StayFinder destek hattına +90 (212) 555 01 02 numaralı telefondan veya destek@stayfinder.com adresinden 7/24 ulaşabilirsiniz. WhatsApp hattımız üzerinden de anlık destek alabilirsiniz.'
+                'content' => 'turXtur destek hattına +90 (212) 555 01 02 numaralı telefondan veya destek@turxtur.com adresinden 7/24 ulaşabilirsiniz. WhatsApp hattımız üzerinden de anlık destek alabilirsiniz.'
             ],
         ];
 

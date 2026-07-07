@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Profilimi Düzenle — StayFinder')
+@section('title', 'Profilimi Düzenle — turXtur')
 
 @section('content')
 <div class="container" style="max-width:680px;">

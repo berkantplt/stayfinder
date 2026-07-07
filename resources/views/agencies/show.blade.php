@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $agency->name . ' — StayFinder')
+@section('title', $agency->name . ' — turXtur')
 
 @section('content')
 <div class="container">

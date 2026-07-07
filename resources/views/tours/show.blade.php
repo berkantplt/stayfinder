@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $tour->title . ' — StayFinder')
+@section('title', $tour->title . ' — turXtur')
 @section('description', \Illuminate\Support\Str::limit(strip_tags($tour->description), 150))
 @if($tour->image)
     @section('og_image', url($tour->image))
@@ -15,7 +15,7 @@
   "description": "{{ \Illuminate\Support\Str::limit(strip_tags($tour->description), 150) }}",
   "brand": {
     "@@type": "Brand",
-    "name": "{{ $tour->agency->name ?? 'StayFinder' }}"
+    "name": "{{ $tour->agency->name ?? 'turXtur' }}"
   },
   "offers": {
     "@@type": "Offer",

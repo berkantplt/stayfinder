@@ -96,7 +96,7 @@ class PasswordResetTest extends TestCase
 
         $mail = (new ResetPasswordNotification($token))->toMail($user);
 
-        $this->assertSame('Şifre Sıfırlama — StayFinder', $mail->subject);
+        $this->assertSame('Şifre Sıfırlama — turXtur', $mail->subject);
         $this->assertStringContainsString('/sifre-sifirla/'.$token, $mail->actionUrl);
         $this->assertStringContainsString('email='.urlencode($user->email), $mail->actionUrl);
     }

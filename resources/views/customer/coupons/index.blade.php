@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Kuponlarım — StayFinder')
+@section('title', 'Kuponlarım — turXtur')
 
 @section('content')
 <div class="container">
@@ -9,7 +9,7 @@
             <h1 style="font-size:24px;font-weight:800;margin:0;">Kuponlarım</h1>
         </div>
         <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px;">
-            Acentaların ve StayFinder'ın tanımladığı kuponlar burada. "Kuponu Al" ile kodu açın,
+            Acentaların ve turXtur'ın tanımladığı kuponlar burada. "Kuponu Al" ile kodu açın,
             rezervasyon sırasında acenta sitesinde kullanın. Aldığınız kuponlar limit dolsa bile burada kalır.
         </p>
 
@@ -72,7 +72,7 @@
                         <div style="padding:14px 18px;flex:1;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#475569;">
                             <div style="display:flex;align-items:center;gap:6px;">
                                 <span>🏢</span>
-                                <span>{{ $coupon->agency?->name ?? 'StayFinder' }}</span>
+                                <span>{{ $coupon->agency?->name ?? 'turXtur' }}</span>
                             </div>
                             @if($coupon->min_purchase_amount)
                                 <div style="display:flex;align-items:center;gap:6px;">
@@ -107,7 +107,7 @@
             <div style="text-align:center;padding:48px 24px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;">
                 <div style="font-size:48px;margin-bottom:12px;">🎟️</div>
                 <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:4px;">Şu an kullanılabilir kupon yok</div>
-                <div style="font-size:13px;color:#64748b;">Acentalar ve StayFinder yeni kampanya tanımladığında burada görürsün.</div>
+                <div style="font-size:13px;color:#64748b;">Acentalar ve turXtur yeni kampanya tanımladığında burada görürsün.</div>
             </div>
         @endif
     </div>

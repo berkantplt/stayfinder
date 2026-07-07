@@ -15,7 +15,7 @@ class DemoSeeder extends Seeder
         // Admin user
         User::create([
             'name'     => 'Admin',
-            'email'    => 'admin@stayfinder.com',
+            'email'    => 'admin@turxtur.com',
             'password' => Hash::make('password'),
             'role'     => 'admin',
         ]);

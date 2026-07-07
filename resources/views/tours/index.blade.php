@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Turlar — StayFinder')
+@section('title', 'Turlar — turXtur')
 
 @section('content')
 <style>

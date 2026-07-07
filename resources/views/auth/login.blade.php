@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Giriş Yap — StayFinder')
+@section('title', 'Giriş Yap — turXtur')
 
 @section('content')
 @include('partials.auth-background')
@@ -44,7 +44,7 @@
         </div>
 
         <div style="text-align:center;margin-top:20px;font-size:13px;color:#64748b;padding-top:20px;border-top:1px solid #e2e8f0;">
-            Demo: <strong>admin@stayfinder.com</strong> / password
+            Demo: <strong>admin@turxtur.com</strong> / password
         </div>
     </div>
 </div>

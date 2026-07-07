@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $post->title . ' — StayFinder Blog')
+@section('title', $post->title . ' — turXtur Blog')
 @section('description', $post->meta_description ?: $post->excerpt)
 @if($post->image)
     @section('og_image', url($post->image))
@@ -18,7 +18,7 @@
   "dateModified": "{{ $post->updated_at->toIso8601String() }}",
   "author": [{
       "@@type": "Person",
-      "name": "StayFinder Editör",
+      "name": "turXtur Editör",
       "url": "{{ url('/') }}"
     }]
 }

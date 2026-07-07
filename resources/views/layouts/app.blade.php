@@ -4,24 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'StayFinder — Tur Karşılaştırma')</title>
+    <title>@yield('title', 'turXtur — Tur Karşılaştırma')</title>
     <meta name="description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
     <link rel="canonical" href="{{ url()->current() }}">
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
-    <meta property="og:title" content="@yield('title', 'StayFinder — Tur Karşılaştırma')">
+    <meta property="og:title" content="@yield('title', 'turXtur — Tur Karşılaştırma')">
     <meta property="og:description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
     <meta property="og:locale" content="tr_TR">
-    <meta property="og:site_name" content="StayFinder">
+    <meta property="og:site_name" content="turXtur">
 
     {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('title', 'StayFinder — Tur Karşılaştırma')">
+    <meta name="twitter:title" content="@yield('title', 'turXtur — Tur Karşılaştırma')">
     <meta name="twitter:description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
     <meta name="twitter:image" content="@yield('og_image', asset('images/og-default.png'))">
+
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -287,7 +289,7 @@
 <body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }}">
     <nav class="nav">
         <div class="container nav-inner">
-            <a href="{{ route('home') }}" class="nav-logo">🏖️ Stay<span>Finder</span></a>
+            <a href="{{ route('home') }}" class="nav-logo">@include('partials.logo', ['height' => 30])</a>
             <div class="nav-links">
                 <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar') ? 'nav-active' : '' }}">Turlar</a>
                 <a href="{{ route('blog.index') }}" class="{{ request()->is('blog*') ? 'nav-active' : '' }}">Blog</a>
@@ -384,7 +386,7 @@
                 <div><h4>Acentalar</h4><ul><li><a href="{{ route('login') }}">Acenta Girişi</a></li><li><a href="{{ route('agency.register') }}">Acenta Ol</a></li></ul></div>
                 <div><h4>Yasal</h4><ul><li><a href="#">Gizlilik</a></li><li><a href="#">Kullanım Koşulları</a></li></ul></div>
             </div>
-            <div class="footer-bottom">StayFinder © 2026 · Tüm hakları saklıdır.</div>
+            <div class="footer-bottom">turXtur © 2026 · Tüm hakları saklıdır.</div>
         </div>
     </footer>
 
@@ -426,7 +428,7 @@
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div style="width:40px; height:40px; background:rgba(255,255,255,0.1); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; border:1px solid rgba(255,255,255,0.05);">🤖</div>
                     <div>
-                        <div style="font-size:16px; font-weight:800; letter-spacing:-0.4px;">StayFinder AI</div>
+                        <div style="font-size:16px; font-weight:800; letter-spacing:-0.4px;">turXtur AI</div>
                         <div style="display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#34d399; margin-top:2px;">
                             <span style="width:6px; height:6px; background:#34d399; border-radius:50%; display:inline-block; animation:pulse 2s infinite;"></span>
                             Sana özel tatil asistanı
@@ -462,7 +464,7 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
                 </div>
-                <div style="font-size:10px; text-align:center; color:rgba(255,255,255,0.4); margin-top:10px; font-weight:600; letter-spacing:0.3px;">Powered by StayFinder AI Engine</div>
+                <div style="font-size:10px; text-align:center; color:rgba(255,255,255,0.4); margin-top:10px; font-weight:600; letter-spacing:0.3px;">Powered by turXtur AI Engine</div>
             </div>
         </div>
     </div>
@@ -587,7 +589,7 @@
         }
 
         function resetAIChat() {
-            try { localStorage.removeItem('stayfinder_ai_conv'); } catch (e) {}
+            try { localStorage.removeItem('turxtur_ai_conv'); } catch (e) {}
             const messages = document.getElementById('ai-chat-messages');
             if (messages) {
                 // İlk welcome mesajı ve suggestion chips'i bırak, geri kalanı temizle
@@ -616,13 +618,13 @@
             // 2. Premium Loading
             const loadingMsg = document.createElement('div');
             loadingMsg.className = "ai-msg-ai";
-            loadingMsg.innerHTML = `<div style="display:flex; gap:5px; align-items:center;"><span style="font-size:13px; font-weight:700;">StayFinder AI</span> <div class="dots-load">...</div></div> <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Senin için seçenekleri analiz ediyorum...</div>`;
+            loadingMsg.innerHTML = `<div style="display:flex; gap:5px; align-items:center;"><span style="font-size:13px; font-weight:700;">turXtur AI</span> <div class="dots-load">...</div></div> <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Senin için seçenekleri analiz ediyorum...</div>`;
             messages.appendChild(loadingMsg);
             messages.scrollTop = messages.scrollHeight;
 
             try {
                 // Multi-turn: conversation_uuid localStorage'da tutulur.
-                const STORAGE_KEY = 'stayfinder_ai_conv';
+                const STORAGE_KEY = 'turxtur_ai_conv';
                 const IDLE_MS = 30 * 60 * 1000;
                 let convData = null;
                 try {

@@ -25,12 +25,12 @@ class ResetPasswordNotification extends Notification
         ]);
 
         return (new MailMessage)
-            ->subject('Şifre Sıfırlama — StayFinder')
+            ->subject('Şifre Sıfırlama — turXtur')
             ->greeting('Merhaba '.$notifiable->name.',')
             ->line('Hesabınız için bir şifre sıfırlama isteği aldık.')
             ->action('Şifremi Sıfırla', $url)
             ->line('Bu bağlantı '.config('auth.passwords.users.expire').' dakika boyunca geçerlidir.')
             ->line('Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz; şifreniz değişmez.')
-            ->salutation('StayFinder Ekibi');
+            ->salutation('turXtur Ekibi');
     }
 }

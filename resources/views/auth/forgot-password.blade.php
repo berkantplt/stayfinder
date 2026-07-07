@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Şifremi Unuttum — StayFinder')
+@section('title', 'Şifremi Unuttum — turXtur')
 
 @section('content')
 @include('partials.auth-background')

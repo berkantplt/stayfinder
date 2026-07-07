@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Admin Panel — StayFinder')
+@section('title', 'Admin Panel — turXtur')
 
 @section('content')
 <div class="container">

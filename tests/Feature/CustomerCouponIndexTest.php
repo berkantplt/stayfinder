@@ -114,7 +114,7 @@ class CustomerCouponIndexTest extends TestCase
             ->assertOk()
             ->assertSee('Kuponu Al')        // kart listede (kod maskeli)
             ->assertDontSee('GLOBAL10')
-            ->assertSee('StayFinder'); // agency yoksa fallback
+            ->assertSee('turXtur'); // agency yoksa fallback
     }
 
     public function test_empty_state_when_no_available_coupons(): void

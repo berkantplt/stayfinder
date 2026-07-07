@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Acentalar — StayFinder')
+@section('title', 'Acentalar — turXtur')
 
 @section('content')
 <div class="container">
