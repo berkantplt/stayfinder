@@ -33,7 +33,7 @@ class ReviewController extends Controller
             'comment' => $validated['comment'],
         ]);
 
-        return back()->with('success', 'Yorumunuz eklendi, teşekkürler!');
+        return back()->withFragment('yorumlar')->with('success', 'Yorumunuz eklendi, teşekkürler!');
     }
 
     public function destroy(Review $review)
@@ -41,6 +41,6 @@ class ReviewController extends Controller
         if ($review->user_id !== auth()->id()) abort(403);
         $tour = $review->tour;
         $review->delete();
-        return redirect()->route('tours.show', $tour)->with('success', 'Yorum silindi.');
+        return redirect()->route('tours.show', $tour)->withFragment('yorumlar')->with('success', 'Yorum silindi.');
     }
 }
