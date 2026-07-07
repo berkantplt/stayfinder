@@ -605,10 +605,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 tourGridContainer.style.opacity = '1';
             }
             if (toursSection) {
+                // Sonuç bölümü görünür alanda değilse ona kaydır: sayfa tepesinde
+                // filtreleyince sonuçlar storylerin altında kalıyordu (storyler
+                // yerinde kalır, sadece görünüm sonuçlara iner)
                 const rect = toursSection.getBoundingClientRect();
-                if (rect.top < 100) {
+                if (rect.top < 0 || rect.top > 250) {
                     window.scrollTo({
-                        top: window.pageYOffset + rect.top - 100,
+                        top: window.pageYOffset + rect.top - 90,
                         behavior: 'smooth'
                     });
                 }
