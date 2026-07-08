@@ -44,7 +44,7 @@
         body { font-family:var(--font); background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
         a { color:inherit; text-decoration:none; }
         img { max-width:100%; }
-        .container { max-width:1120px; margin:0 auto; padding:0 20px; }
+        .container { max-width:1320px; margin:0 auto; padding:0 20px; }
 
         /* ── Navbar ── */
         .nav { background:var(--white); border-bottom:1px solid var(--border-light); padding:0 32px; position:sticky; top:0; z-index:100; height:70px; display:flex; align-items:center; }
