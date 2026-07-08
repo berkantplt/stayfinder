@@ -309,6 +309,13 @@
             body.panel-layout-active .m-trust { display:none; }
             #ai-chat-container { bottom:92px !important; }
             #compare-bar { bottom:92px !important; }
+            /* AI chat mobil: balon kompakt yuvarlak FAB olur (yazı gizli),
+               pencere tam ekran açılır (inline stilleri !important ezer) */
+            #ai-chat-trigger { padding:10px !important; gap:0 !important; border-radius:50% !important; }
+            #ai-chat-trigger > div:last-child { display:none; }
+            #ai-chat-window { position:fixed !important; inset:0 !important; width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }
+            #ai-chat-window > div:first-child { padding-top:calc(16px + env(safe-area-inset-top)) !important; }
+            #ai-chat-window > div:last-child { padding-bottom:calc(12px + env(safe-area-inset-bottom)) !important; }
         }
         @media(min-width:769px) {
             .m-trust, .m-head, .m-tabbar { display:none; }
@@ -681,11 +688,14 @@
                 windowObj.style.visibility = 'visible';
                 trigger.style.opacity = '0';
                 trigger.style.pointerEvents = 'none';
+                // Mobilde pencere tam ekran: arka plan kaymasın
+                if (window.innerWidth <= 768) document.body.style.overflow = 'hidden';
                 document.getElementById('ai-chat-input').focus();
             } else {
                 windowObj.style.display = 'none';
                 trigger.style.opacity = '1';
                 trigger.style.pointerEvents = 'auto';
+                document.body.style.overflow = '';
             }
         }
 
@@ -1105,13 +1115,13 @@
             const trigger = document.getElementById('ai-chat-trigger');
             let offsetX, offsetY;
 
-            trigger.addEventListener('mousedown', (e) => {
+            function startDrag(clientX, clientY) {
                 isDragging = false;
-                dragStartX = e.clientX;
-                dragStartY = e.clientY;
+                dragStartX = clientX;
+                dragStartY = clientY;
                 const rect = container.getBoundingClientRect();
-                offsetX = e.clientX - rect.left;
-                offsetY = e.clientY - rect.top;
+                offsetX = clientX - rect.left;
+                offsetY = clientY - rect.top;
                 // Prevent stretching while dragging: lock to current fixed box
                 container.style.position = 'fixed';
                 container.style.left = rect.left + 'px';
@@ -1119,54 +1129,86 @@
                 container.style.right = 'auto';
                 container.style.bottom = 'auto';
                 container.style.transition = 'none';
+            }
+
+            function moveDrag(clientX, clientY) {
+                if (Math.abs(clientX - dragStartX) > 5 || Math.abs(clientY - dragStartY) > 5) {
+                    isDragging = true;
+                    container.style.position = 'fixed';
+                    container.style.left = (clientX - offsetX) + 'px';
+                    container.style.top = (clientY - offsetY) + 'px';
+                }
+                return isDragging;
+            }
+
+            function endDrag() {
+                if (!isDragging) return;
+                const margin = 24;
+                const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                const rect = container.getBoundingClientRect();
+                const dists = { left: rect.left, right: w - rect.right, top: rect.top, bottom: h - rect.bottom };
+                const min = Math.min(dists.left, dists.right, dists.top, dists.bottom);
+                container.style.transition = 'all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1)';
+                const maxLeft = Math.max(margin, w - container.offsetWidth - margin);
+                const maxTop = Math.max(margin, h - container.offsetHeight - margin);
+
+                if (min === dists.left) {
+                    container.style.left = margin + 'px';
+                    container.style.top = clamp(rect.top, margin, maxTop) + 'px';
+                } else if (min === dists.right) {
+                    container.style.left = maxLeft + 'px';
+                    container.style.top = clamp(rect.top, margin, maxTop) + 'px';
+                } else if (min === dists.top) {
+                    container.style.top = margin + 'px';
+                    container.style.left = clamp(rect.left, margin, maxLeft) + 'px';
+                } else {
+                    container.style.top = maxTop + 'px';
+                    container.style.left = clamp(rect.left, margin, maxLeft) + 'px';
+                }
+
+                const chatWindow = document.getElementById('ai-chat-window');
+                if (chatWindow && chatWindow.style.display === 'flex') {
+                    positionAIChatWindow();
+                }
+            }
+
+            trigger.addEventListener('mousedown', (e) => {
+                startDrag(e.clientX, e.clientY);
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             });
 
-            function onMouseMove(e) {
-                if (Math.abs(e.clientX - dragStartX) > 5 || Math.abs(e.clientY - dragStartY) > 5) {
-                    isDragging = true;
-                    container.style.position = 'fixed';
-                    container.style.left = (e.clientX - offsetX) + 'px';
-                    container.style.top = (e.clientY - offsetY) + 'px';
-                }
-            }
+            function onMouseMove(e) { moveDrag(e.clientX, e.clientY); }
 
-            function onMouseUp(e) {
+            function onMouseUp() {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
-                if (isDragging) {
-                    const margin = 24;
-                    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-                    const w = window.innerWidth;
-                    const h = window.innerHeight;
-                    const rect = container.getBoundingClientRect();
-                    const dists = { left: rect.left, right: w - rect.right, top: rect.top, bottom: h - rect.bottom };
-                    const min = Math.min(dists.left, dists.right, dists.top, dists.bottom);
-                    container.style.transition = 'all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1)';
-                    const maxLeft = Math.max(margin, w - container.offsetWidth - margin);
-                    const maxTop = Math.max(margin, h - container.offsetHeight - margin);
-
-                    if (min === dists.left) {
-                        container.style.left = margin + 'px';
-                        container.style.top = clamp(rect.top, margin, maxTop) + 'px';
-                    } else if (min === dists.right) {
-                        container.style.left = maxLeft + 'px';
-                        container.style.top = clamp(rect.top, margin, maxTop) + 'px';
-                    } else if (min === dists.top) {
-                        container.style.top = margin + 'px';
-                        container.style.left = clamp(rect.left, margin, maxLeft) + 'px';
-                    } else {
-                        container.style.top = maxTop + 'px';
-                        container.style.left = clamp(rect.left, margin, maxLeft) + 'px';
-                    }
-
-                    const chatWindow = document.getElementById('ai-chat-window');
-                    if (chatWindow && chatWindow.style.display === 'flex') {
-                        positionAIChatWindow();
-                    }
-                }
+                endDrag();
                 setTimeout(() => { isDragging = false; }, 50);
+            }
+
+            // Dokunmatik sürükleme (mobil): parmakla taşı, bırakınca kenara yapış
+            trigger.addEventListener('touchstart', (e) => {
+                const t = e.touches[0];
+                startDrag(t.clientX, t.clientY);
+                document.addEventListener('touchmove', onTouchMove, { passive: false });
+                document.addEventListener('touchend', onTouchEnd);
+            }, { passive: true });
+
+            function onTouchMove(e) {
+                // Sürükleme başladıysa sayfanın kaymasını engelle
+                const t = e.touches[0];
+                if (moveDrag(t.clientX, t.clientY)) e.preventDefault();
+            }
+
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+                endDrag();
+                // touchend'in ardından gelen sentetik click chat'i yanlışlıkla açmasın
+                setTimeout(() => { isDragging = false; }, 400);
             }
         }
 
