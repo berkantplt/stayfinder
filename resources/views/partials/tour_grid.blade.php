@@ -22,9 +22,6 @@
                     <span class="price-tag" style="font-size:18px;">{{ $tour->formatted_price }}</span>
                 @endif
                 <span class="price-sm"> / kişi</span>
-                @if($tour->views_count > 3 && $loop->index % 3 === 0)
-                    <span class="m-live-badge">● {{ 2 + ($tour->views_count % 17) }} kişi bakıyor</span>
-                @endif
             </div>
         </div>
     </a>

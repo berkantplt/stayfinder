@@ -559,7 +559,7 @@
         /* ================= MOBİL ANA SAYFA (turXtur Mobil 2a tasarımı) ================= */
         .story-item { flex:none; scroll-snap-align:start; }
         .story-mlabel { display:none; }
-        .m-home, .m-alltours, .m-guarantee, .m-drop-badge, .m-live-badge { display:none; }
+        .m-home, .m-alltours, .m-guarantee, .m-drop-badge { display:none; }
 
         @media(max-width:768px) {
             /* Tasarım sırası: storyler → hero/arama/istatistik → kategoriler → turlar */
@@ -611,7 +611,8 @@
             .m-stats span { font-size:11.5px; font-weight:600; color:#8a9a95; }
 
             /* Filtre kartı → sade pill şeridi */
-            .filter-bar-wrapper { background:transparent; box-shadow:none; border:none; padding:14px 0 0; }
+            /* Masaüstünün hero'ya bindirme margin'i (-40px) mobilde sıfırlanır */
+            .filter-bar-wrapper { background:transparent; box-shadow:none; border:none; padding:14px 0 0; margin:0 0 4px; }
             .filter-bar { background:transparent; box-shadow:none; border:none; padding:0; }
             .category-tab { border-radius:100px; font-size:12.5px; font-weight:600; padding:8px 15px; background:#fff; border:1px solid rgba(15,36,33,.1); color:#42544f; }
             .category-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:none; }
@@ -627,7 +628,6 @@
             #tour-grid-container .card-price-row { margin-top:auto !important; border-top:1px dashed rgba(15,36,33,.12); padding-top:8px; display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; }
             #tour-grid-container .price-tag { font-family:'Space Grotesk',var(--font); font-size:16px !important; color:#08211d; }
             .m-drop-badge { display:inline-block; position:absolute; top:0; left:0; background:#08211d; color:#5eead4; font-family:ui-monospace,monospace; font-size:9px; font-weight:700; padding:4px 8px; border-radius:0 0 10px 0; z-index:2; }
-            .m-live-badge { display:inline; font-family:ui-monospace,monospace; font-size:9.5px; color:#c96a2d; margin-left:auto; }
 
             /* CTA + güven kartı */
             .m-alltours { display:block; text-align:center; margin-top:14px; border:1.5px solid rgba(15,36,33,.12); color:#0c6e63; font-size:13.5px; font-weight:700; padding:12px; border-radius:12px; text-decoration:none; font-family:'Manrope',var(--font); }
