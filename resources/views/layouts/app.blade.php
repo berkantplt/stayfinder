@@ -357,8 +357,8 @@
 
         {{-- ===== Mobil üst şerit + başlık (≤768px) ===== --}}
         <div class="m-trust">
-            <span><i></i>Güvenli ödeme</span>
-            <span><i></i>Ücretsiz iptal</span>
+            <span><i></i>Onaylı acentalar</span>
+            <span><i></i>Komisyonsuz karşılaştırma</span>
             <span><i></i>7/24 destek</span>
         </div>
         <div class="m-head">

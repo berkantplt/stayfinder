@@ -207,7 +207,7 @@
             <div><b>{{ number_format($travelerCount, 0, ',', '.') }}+</b><span>kayıtlı gezgin</span></div>
             <div><b>{{ $tourCount }}</b><span>aktif tur</span></div>
             <div><b>{{ $agencyCount }}</b><span>doğrulanmış acenta</span></div>
-            <div><b class="m-teal">%100</b><span>ücretsiz iptal</span></div>
+            <div><b class="m-teal">{{ $allDestinations->count() }}</b><span>destinasyon</span></div>
         </div>
     </div>
 
@@ -318,9 +318,9 @@
         {{-- Mobil: tüm turlar CTA + güven kartı (≤768px) --}}
         <a href="{{ route('tours.index') }}" class="m-alltours">Tüm turları gör ({{ $tourCount }})</a>
         <div class="m-guarantee">
-            <div><span>✓</span><div><b>Güvenli ödeme</b><p>256-bit SSL; kart bilgin bizde saklanmaz.</p></div></div>
-            <div><span>✓</span><div><b>Ücretsiz iptal</b><p>Tura 48 saat kalana dek koşulsuz iptal.</p></div></div>
+            <div><span>✓</span><div><b>Doğrulanmış acentalar</b><p>Her acenta onay sürecinden geçtikten sonra yayına alınır.</p></div></div>
             <div><span>✓</span><div><b>Fiyat şeffaflığı</b><p>Gizli komisyon yok; acentanın fiyatı neyse o.</p></div></div>
+            <div><span>✓</span><div><b>Tarafsız karşılaştırma</b><p>Tüm acentaların turları tek ekranda, aracısız.</p></div></div>
         </div>
     </div>
 
