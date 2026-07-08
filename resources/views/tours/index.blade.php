@@ -195,7 +195,7 @@
             </div>
         </div>
 
-        <div class="tour-grid">
+        <div class="tour-grid m-hcard-list">
             @forelse($tours as $tour)
             <a href="{{ route('tours.show', $tour) }}" class="card" style="transition:all 0.3s;display:flex;flex-direction:column;">
                 @if($tour->image)

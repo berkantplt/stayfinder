@@ -12,7 +12,7 @@
         @endif
 
         @if($favorites->count())
-        <div class="grid-4">
+        <div class="grid-4 m-hcard-list">
             @foreach($favorites as $tour)
             <div class="card" style="position:relative;">
                 {{-- Remove button --}}

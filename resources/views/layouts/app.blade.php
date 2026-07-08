@@ -316,6 +316,22 @@
             #ai-chat-window { position:fixed !important; inset:0 !important; width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }
             #ai-chat-window > div:first-child { padding-top:calc(16px + env(safe-area-inset-top)) !important; }
             #ai-chat-window > div:last-child { padding-bottom:calc(12px + env(safe-area-inset-bottom)) !important; }
+
+            /* ===== Yatay tur kartı listesi (anasayfa kart düzeni — m-hcard-list
+               sınıfı verilen her tur ızgarası mobilde bu düzene döner) ===== */
+            .m-hcard-list { display:flex !important; flex-direction:column; gap:12px !important; }
+            .m-hcard-list .card { position:relative; border-radius:16px; border:1px solid rgba(15,36,33,.09); overflow:hidden; }
+            .m-hcard-list a.card { display:flex !important; flex-direction:row !important; }
+            .m-hcard-list div.card > a { display:flex; flex-direction:row; }
+            .m-hcard-list .card-img { width:118px !important; min-width:118px; height:auto !important; min-height:110px; object-fit:cover; }
+            .m-hcard-list .card-body { padding:12px 14px !important; flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+            .m-hcard-list .card-title { font-size:13px !important; font-weight:700; line-height:1.35; font-family:'Manrope',var(--font); margin-bottom:0 !important; }
+            .m-hcard-list .card-meta { font-family:ui-monospace,monospace; font-size:10.5px !important; color:#7d938d; margin-bottom:0 !important; }
+            .m-hcard-list .price-tag { font-family:'Space Grotesk',var(--font); font-size:16px !important; color:#08211d; }
+            /* Anasayfa kartlarındaki gibi yalın: liste içi buton/rozetler gizli */
+            .m-hcard-list .card .btn { display:none !important; }
+            .m-hcard-list .card .badge { display:none !important; }
+            .m-hcard-list div.card > div:last-child { display:none; }
         }
         @media(min-width:769px) {
             .m-trust, .m-head, .m-tabbar { display:none; }

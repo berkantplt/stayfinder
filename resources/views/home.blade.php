@@ -331,7 +331,7 @@
             <h2>Son Gezdiğiniz Turlar</h2>
             <span style="font-size:13px;color:var(--text-muted);">{{ $recentlyViewed->count() }} tur</span>
         </div>
-        <div class="grid-4">
+        <div class="grid-4 m-hcard-list">
             @foreach($recentlyViewed as $tour)
             <a href="{{ route('tours.show', $tour) }}" class="card">
                 @if($tour->image)
