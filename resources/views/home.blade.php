@@ -97,7 +97,7 @@
     </div>
 </div>
 
-<div class="container">
+<div class="container" id="homeMain">
     {{-- Filter Bar --}}
     <div class="filter-bar-wrapper">
         <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar">
@@ -167,20 +167,67 @@
         </form>
     </div>
 
+    {{-- ===== Mobil ana blok: hero + arama + istatistikler (≤768px, turXtur Mobil 2a) ===== --}}
+    <div class="m-home">
+        <div class="m-hero">
+            <img src="{{ $carouselBanners->first()->image_url }}" alt="turXtur">
+            <div class="m-hero-shade"></div>
+            <div class="m-hero-body">
+                <div class="m-hero-pill">TUR KARŞILAŞTIRMA MOTORU</div>
+                <h2 class="m-hero-title">Hayalindeki turu<br><span>en uygun fiyatla</span> bul.</h2>
+                <p class="m-hero-sub">Tüm turlar tek ekranda — sürprizsiz, komisyonsuz.</p>
+                <span class="m-live"><i></i>CANLI — {{ $liveDrop ? $liveDrop['name'].' az önce %'.$liveDrop['pct'].' ucuzladı' : $tourCount.' tur canlı takipte' }}</span>
+            </div>
+        </div>
+        <form action="{{ route('tours.index') }}" method="GET" class="m-search">
+            <label class="m-field">
+                <span>NEREYE?</span>
+                <input type="text" name="q" placeholder="Bodrum, Kapadokya, Roma...">
+            </label>
+            <div class="m-search-row">
+                <label class="m-field">
+                    <span>NE ZAMAN?</span>
+                    <input type="date" name="date_start">
+                </label>
+                <label class="m-field">
+                    <span>BÜTÇE</span>
+                    <select name="max_price">
+                        <option value="">Farketmez</option>
+                        <option value="5000">Max 5.000 ₺</option>
+                        <option value="10000">Max 10.000 ₺</option>
+                        <option value="20000">Max 20.000 ₺</option>
+                        <option value="30000">Max 30.000 ₺</option>
+                        <option value="50000">Max 50.000 ₺</option>
+                    </select>
+                </label>
+            </div>
+            <button type="submit" class="m-search-btn">Turları Karşılaştır</button>
+        </form>
+        <div class="m-stats">
+            <div><b>{{ number_format($travelerCount, 0, ',', '.') }}+</b><span>kayıtlı gezgin</span></div>
+            <div><b>{{ $tourCount }}</b><span>aktif tur</span></div>
+            <div><b>{{ $agencyCount }}</b><span>doğrulanmış acenta</span></div>
+            <div><b class="m-teal">%100</b><span>ücretsiz iptal</span></div>
+        </div>
+    </div>
+
     {{-- iPhone Style Story Cards --}}
     <div class="section" id="storiesSection" style="padding-top: 10px; margin-bottom: 0px;">
         <div class="stories-container">
             <div class="stories-scroll">
                 @foreach($featuredCities as $index => $city)
-                <div class="iphone-card" onclick="openStory({{ $index }})">
-                    <img src="{{ $city['images'][0] }}" alt="{{ $city['name'] }}" class="iphone-card-img">
-                    <div class="iphone-card-overlay">
-                        <div class="iphone-card-badge">{{ $city['count'] > 0 ? $city['count'] . ' Tur' : 'Yakında' }}</div>
-                        <div class="iphone-card-info">
-                            <h3 class="iphone-card-city">{{ $city['name'] }}</h3>
-                            <p class="iphone-card-country">{{ $city['country'] }}</p>
+                <div class="story-item" onclick="openStory({{ $index }})">
+                    <div class="iphone-card">
+                        <img src="{{ $city['images'][0] }}" alt="{{ $city['name'] }}" class="iphone-card-img">
+                        <div class="iphone-card-overlay">
+                            <div class="iphone-card-badge">{{ $city['count'] > 0 ? $city['count'] . ' Tur' : 'Yakında' }}</div>
+                            <div class="iphone-card-info">
+                                <h3 class="iphone-card-city">{{ $city['name'] }}</h3>
+                                <p class="iphone-card-country">{{ $city['country'] }}</p>
+                            </div>
                         </div>
                     </div>
+                    <div class="story-mlabel">{{ $city['name'] }}</div>
                 </div>
                 @endforeach
             </div>
@@ -259,13 +306,21 @@
 
         <div id="tour-grid-container">
             @if($popularTours->count())
-                @include('partials.tour_grid', ['popularTours' => $popularTours])
+                @include('partials.tour_grid', ['popularTours' => $popularTours, 'tourDrops' => $tourDrops ?? []])
             @else
                 <div style="text-align:center;padding:40px;color:var(--text-muted);">
                     <div style="font-size:48px;margin-bottom:12px;">🏖️</div>
                     <p>Henüz tur bulunmuyor.</p>
                 </div>
             @endif
+        </div>
+
+        {{-- Mobil: tüm turlar CTA + güven kartı (≤768px) --}}
+        <a href="{{ route('tours.index') }}" class="m-alltours">Tüm turları gör ({{ $tourCount }})</a>
+        <div class="m-guarantee">
+            <div><span>✓</span><div><b>Güvenli ödeme</b><p>256-bit SSL; kart bilgin bizde saklanmaz.</p></div></div>
+            <div><span>✓</span><div><b>Ücretsiz iptal</b><p>Tura 48 saat kalana dek koşulsuz iptal.</p></div></div>
+            <div><span>✓</span><div><b>Fiyat şeffaflığı</b><p>Gizli komisyon yok; acentanın fiyatı neyse o.</p></div></div>
         </div>
     </div>
 
@@ -500,6 +555,90 @@
         @media(min-width: 600px) {
             .story-window { width: 420px; height: 85vh; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
         }
+
+        /* ================= MOBİL ANA SAYFA (turXtur Mobil 2a tasarımı) ================= */
+        .story-item { flex:none; scroll-snap-align:start; }
+        .story-mlabel { display:none; }
+        .m-home, .m-alltours, .m-guarantee, .m-drop-badge, .m-live-badge { display:none; }
+
+        @media(max-width:768px) {
+            /* Tasarım sırası: storyler → hero/arama/istatistik → kategoriler → turlar */
+            #homeMain { display:flex; flex-direction:column; }
+            #homeMain > * { order:5; }
+            #homeMain > #storiesSection { order:1; }
+            #homeMain > .m-home { order:2; }
+            #homeMain > .filter-bar-wrapper { order:3; }
+            #homeMain > #tours-section { order:4; }
+            .hero-carousel { display:none; }
+            #destinationsSection { display:none !important; }
+
+            /* Storyler: daire avatar şeridi (beyaz tam genişlik bant) */
+            #storiesSection { padding:0 !important; margin:0 -16px !important; background:#fff; border-bottom:1px solid rgba(15,36,33,.07); }
+            .stories-container { margin:0; padding:10px 16px 6px; }
+            .stories-scroll { gap:14px; padding:4px 0 8px; }
+            .story-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
+            .iphone-card, body.filters-active .iphone-card { width:64px; height:64px; border-radius:50%; padding:3px; background:linear-gradient(135deg,#0d9488,#5eead4); box-shadow:none; border:none; }
+            .iphone-card-img { border-radius:50%; border:2.5px solid #fff; }
+            .iphone-card-overlay { display:none; }
+            .story-mlabel { display:block; font-size:10.5px; font-weight:700; color:#42544f; font-family:'Manrope',var(--font); }
+
+            /* Mobil hero */
+            .m-home { display:block; margin:0 -16px; font-family:'Manrope',var(--font); }
+            .m-hero { position:relative; height:400px; overflow:hidden; }
+            .m-hero > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; animation:mkb 26s ease-in-out infinite alternate; }
+            .m-hero-shade { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(5,28,25,.35) 0%, rgba(5,28,25,.55) 55%, rgba(5,28,25,.85) 100%); }
+            .m-hero-body { position:absolute; left:0; right:0; bottom:34px; padding:0 18px; }
+            .m-hero-pill { display:inline-flex; background:rgba(94,234,212,.14); border:1px solid rgba(94,234,212,.35); color:#8ff5e2; font-size:10px; font-weight:700; letter-spacing:1.2px; padding:6px 12px; border-radius:100px; backdrop-filter:blur(6px); }
+            .m-hero-title { margin:14px 0 8px; font-size:30px; line-height:1.1; font-weight:800; letter-spacing:-.8px; color:#fff; }
+            .m-hero-title span { color:#5eead4; }
+            .m-hero-sub { margin:0; font-size:13.5px; font-weight:500; color:rgba(255,255,255,.75); }
+            .m-live { display:inline-flex; align-items:center; gap:7px; background:rgba(4,24,21,.55); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.14); color:#fff; font-size:11px; font-weight:600; padding:7px 12px; border-radius:100px; margin-top:14px; }
+            .m-live i { width:6px; height:6px; border-radius:50%; background:#5eead4; animation:mpulse 1.6s infinite; }
+
+            /* Mobil arama kartı */
+            .m-search { margin:-14px 16px 0; position:relative; z-index:5; background:#fff; border-radius:18px; box-shadow:0 16px 40px rgba(4,24,21,.18); padding:10px; display:flex; flex-direction:column; gap:8px; }
+            .m-field { display:block; padding:9px 14px; border:1px solid rgba(15,36,33,.1); border-radius:12px; }
+            .m-field span { display:block; font-size:9.5px; font-weight:800; letter-spacing:1px; color:#8a9a95; }
+            .m-field input, .m-field select { border:none; outline:none; width:100%; font-family:'Manrope',var(--font); font-size:14px; font-weight:700; margin-top:2px; background:transparent; color:#0f2421; -webkit-appearance:none; appearance:none; }
+            .m-search-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+            .m-search-btn { background:linear-gradient(135deg,#0d9488,#0c6e63); color:#fff; border:none; font-family:'Manrope',var(--font); font-size:15px; font-weight:800; padding:14px; border-radius:12px; cursor:pointer; }
+
+            /* İstatistikler 2x2 */
+            .m-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:22px 16px 0; }
+            .m-stats > div { background:#fff; border:1px solid rgba(15,36,33,.07); border-radius:14px; padding:14px 16px; }
+            .m-stats b { display:block; font-size:20px; font-weight:800; color:#0c332e; }
+            .m-stats b.m-teal { color:var(--accent); }
+            .m-stats span { font-size:11.5px; font-weight:600; color:#8a9a95; }
+
+            /* Filtre kartı → sade pill şeridi */
+            .filter-bar-wrapper { background:transparent; box-shadow:none; border:none; padding:14px 0 0; }
+            .filter-bar { background:transparent; box-shadow:none; border:none; padding:0; }
+            .category-tab { border-radius:100px; font-size:12.5px; font-weight:600; padding:8px 15px; background:#fff; border:1px solid rgba(15,36,33,.1); color:#42544f; }
+            .category-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:none; }
+            .filter-select-group { display:none; }
+
+            /* Tur kartları: yatay düzen */
+            #tour-grid-container .grid-4 { display:flex; flex-direction:column; gap:12px; }
+            #tour-grid-container .card { position:relative; display:flex; flex-direction:row; border-radius:16px; border:1px solid rgba(15,36,33,.09); overflow:hidden; }
+            #tour-grid-container .card-img { width:118px; min-width:118px; height:auto; min-height:110px; object-fit:cover; }
+            #tour-grid-container .card-body { padding:12px 14px; flex:1; display:flex; flex-direction:column; gap:5px; }
+            #tour-grid-container .card-title { font-size:13px; font-weight:700; line-height:1.35; font-family:'Manrope',var(--font); }
+            #tour-grid-container .card-meta { font-family:ui-monospace,monospace; font-size:10.5px; color:#7d938d; }
+            #tour-grid-container .card-price-row { margin-top:auto !important; border-top:1px dashed rgba(15,36,33,.12); padding-top:8px; display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; }
+            #tour-grid-container .price-tag { font-family:'Space Grotesk',var(--font); font-size:16px !important; color:#08211d; }
+            .m-drop-badge { display:inline-block; position:absolute; top:0; left:0; background:#08211d; color:#5eead4; font-family:ui-monospace,monospace; font-size:9px; font-weight:700; padding:4px 8px; border-radius:0 0 10px 0; z-index:2; }
+            .m-live-badge { display:inline; font-family:ui-monospace,monospace; font-size:9.5px; color:#c96a2d; margin-left:auto; }
+
+            /* CTA + güven kartı */
+            .m-alltours { display:block; text-align:center; margin-top:14px; border:1.5px solid rgba(15,36,33,.12); color:#0c6e63; font-size:13.5px; font-weight:700; padding:12px; border-radius:12px; text-decoration:none; font-family:'Manrope',var(--font); }
+            .m-guarantee { display:flex; flex-direction:column; gap:18px; margin-top:26px; background:#0c332e; border-radius:18px; padding:22px 20px; font-family:'Manrope',var(--font); }
+            .m-guarantee > div { display:flex; gap:13px; align-items:flex-start; }
+            .m-guarantee span { width:38px; height:38px; flex:none; border-radius:11px; background:rgba(94,234,212,.14); color:#5eead4; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; }
+            .m-guarantee b { display:block; font-size:14px; font-weight:800; color:#fff; }
+            .m-guarantee p { font-size:12px; color:rgba(255,255,255,.6); margin:3px 0 0; line-height:1.5; }
+        }
+        @keyframes mkb { from { transform:scale(1); } to { transform:scale(1.08); } }
+        @keyframes mpulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
 @endsection
 
 @push('scripts')

@@ -28,6 +28,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    {{-- Mobil tasarım fontları (yalnız mobil seçicilerde kullanılır; kullanılmayan font indirilmez) --}}
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         :root {
@@ -165,6 +167,9 @@
 
         /* ── Page details ── */
         .detail-grid { display:grid; grid-template-columns:1.3fr 1fr; gap:32px; }
+        /* Grid kolonu, içindeki en geniş kırılmaz öğe kadar genişlemesin
+           (mobilde tarih kutuları sayfayı yana taşırıyordu) */
+        .detail-grid > div { min-width:0; }
         .detail-sidebar { position:sticky; top:80px; align-self:start; }
 
         /* ── Footer ── */
@@ -275,14 +280,38 @@
             .grid-3,.grid-4 { grid-template-columns:repeat(2,1fr); gap:12px; }
             .form-row { grid-template-columns:1fr; }
             .footer-grid { grid-template-columns:1fr 1fr; }
-            .nav-links { display:none; }
-            .mobile-menu-btn { display:flex!important; }
-            .nav-bell-mobile { display:flex; }
             .mobile-nav.open { display:flex!important; }
             .detail-grid { grid-template-columns:1fr; }
             .detail-sidebar { position:static; }
             .section { padding:24px 0; }
             .card-img { height:140px; }
+
+            /* ===== Mobil iskelet (turXtur Mobil 2a tasarımı) ===== */
+            .nav { height:auto; padding:0; flex-direction:column; align-items:stretch; }
+            .nav-inner { display:none !important; }
+            .m-trust { display:flex; justify-content:center; gap:16px; background:#0c332e; color:rgba(255,255,255,.85); font-size:10.5px; font-weight:600; padding:7px 12px; font-family:'Manrope',var(--font); }
+            .m-trust span { display:flex; align-items:center; gap:5px; }
+            .m-trust i { width:5px; height:5px; border-radius:50%; background:#5eead4; }
+            .m-head { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:var(--white); }
+            .m-head-right { display:flex; align-items:center; gap:12px; }
+            .m-bell { position:relative; width:34px; height:34px; border-radius:50%; background:#f0f6f4; display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; }
+            .m-bell-dot { position:absolute; top:5px; right:6px; width:7px; height:7px; border-radius:50%; background:#e0563a; border:1.5px solid #fff; }
+            .m-avatar { width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-family:'Manrope',var(--font); font-size:12px; font-weight:800; cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+            .m-avatar img { width:100%; height:100%; object-fit:cover; }
+            .m-login { background:var(--accent); color:#fff; font-size:12.5px; font-weight:700; padding:8px 16px; border-radius:100px; text-decoration:none; font-family:'Manrope',var(--font); }
+            .m-tabbar { display:grid; position:fixed; bottom:0; left:0; right:0; z-index:1500; background:rgba(255,255,255,.93); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid rgba(15,36,33,.08); grid-template-columns:repeat(4,1fr); padding:10px 8px calc(12px + env(safe-area-inset-bottom)); }
+            .m-tabbar a { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#8a9a95; text-decoration:none; font-family:'Manrope',var(--font); }
+            .m-tabbar a i { width:5px; height:5px; border-radius:50%; background:transparent; }
+            .m-tabbar a.active { color:var(--accent); font-weight:800; }
+            .m-tabbar a.active i { background:var(--accent); }
+            body { padding-bottom:80px; }
+            body.panel-layout-active { padding-bottom:0; }
+            body.panel-layout-active .m-trust { display:none; }
+            #ai-chat-container { bottom:92px !important; }
+            #compare-bar { bottom:92px !important; }
+        }
+        @media(min-width:769px) {
+            .m-trust, .m-head, .m-tabbar { display:none; }
         }
         @media(max-width:480px) {
             .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
@@ -295,15 +324,42 @@
 </head>
 <body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }}">
     <nav class="nav">
-        <div class="container nav-inner">
-            @auth
-                @php
-                    // SQL COUNT (satırları belleğe yüklemeden) + görülmemiş duyuru sayısı
-                    $unreadCount = auth()->user()->unreadNotifications()->count()
-                        + \App\Models\Announcement::unseenBy(auth()->user())->count();
-                @endphp
-            @endauth
+        @auth
+            @php
+                // SQL COUNT (satırları belleğe yüklemeden) + görülmemiş duyuru sayısı
+                $unreadCount = auth()->user()->unreadNotifications()->count()
+                    + \App\Models\Announcement::unseenBy(auth()->user())->count();
+            @endphp
+        @endauth
 
+        {{-- ===== Mobil üst şerit + başlık (≤768px) ===== --}}
+        <div class="m-trust">
+            <span><i></i>Güvenli ödeme</span>
+            <span><i></i>Ücretsiz iptal</span>
+            <span><i></i>7/24 destek</span>
+        </div>
+        <div class="m-head">
+            <a href="{{ route('home') }}" style="display:flex;align-items:center;">@include('partials.logo', ['height' => 24])</a>
+            <div class="m-head-right">
+                @auth
+                    <a href="{{ route('notifications.index') }}" class="m-bell" aria-label="Bildirimler">🔔
+                        @if($unreadCount > 0)<span class="m-bell-dot"></span>@endif
+                    </a>
+                    <button type="button" class="m-avatar" aria-label="Menü"
+                        onclick="document.getElementById('mobileNav').classList.toggle('open')">
+                        @if(auth()->user()->avatar)
+                            <img src="{{ Str::startsWith(auth()->user()->avatar, ['http://','https://']) ? auth()->user()->avatar : asset('storage/'.auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
+                        @else
+                            {{ mb_strtoupper(collect(explode(' ', trim(auth()->user()->name)))->filter()->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->join('')) }}
+                        @endif
+                    </button>
+                @else
+                    <a href="{{ route('login') }}" class="m-login">Giriş Yap</a>
+                @endauth
+            </div>
+        </div>
+
+        <div class="container nav-inner">
             <button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">☰</button>
 
             {{-- Sol grup: gezinme --}}
@@ -406,11 +462,30 @@
 
     <main>@yield('content')</main>
 
+    {{-- ===== Mobil sabit alt gezinme (≤768px, panel sayfaları hariç) ===== --}}
+    @if(! request()->is('admin*') && ! request()->is('agency*') && ! request()->is('acenta*'))
+        @php
+            $mProfileUrl = auth()->guest()
+                ? route('login')
+                : (auth()->user()->isAdmin()
+                    ? route('admin.dashboard')
+                    : (auth()->user()->isAgency()
+                        ? (auth()->user()->agencyApproved() ? route('agency.dashboard') : route('agency.application.status'))
+                        : route('profile.show')));
+        @endphp
+        <div class="m-tabbar">
+            <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}"><i></i>Keşfet</a>
+            <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar*') ? 'active' : '' }}"><i></i>Turlar</a>
+            <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="{{ request()->is('favorilerim*') ? 'active' : '' }}"><i></i>Favoriler</a>
+            <a href="{{ $mProfileUrl }}" class="{{ request()->is('profil*') ? 'active' : '' }}"><i></i>Profil</a>
+        </div>
+    @endif
+
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div>
-                    <div style="font-size:20px;font-weight:800;color:white;margin-bottom:10px;">🏖️ Stay<span style="color:#0d9488;">Finder</span></div>
+                    <div style="font-size:20px;font-weight:800;color:white;margin-bottom:10px;letter-spacing:-0.4px;">tur<span style="color:#2dd4bf;">X</span>tur</div>
                     <p style="font-size:14px;line-height:1.8;">Türkiye'nin en iyi tur acentalarından fiyatları karşılaştırın. En uygun turu bulun.</p>
                 </div>
                 <div><h4>Platform</h4><ul><li><a href="{{ route('tours.index') }}">Turlar</a></li><li><a href="#">Nasıl Çalışır?</a></li></ul></div>

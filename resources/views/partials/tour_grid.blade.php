@@ -1,15 +1,19 @@
 <div class="grid-4">
     @foreach($popularTours as $tour)
+    @php $mDrop = ($tourDrops ?? [])[$tour->id] ?? null; @endphp
     <a href="{{ route('tours.show', $tour) }}" class="card">
         @if($tour->image)
             <img src="{{ $tour->image }}" alt="{{ $tour->title }}" class="card-img">
         @else
             <div class="card-img" style="background:linear-gradient(135deg,#e0f2fe,#f0fdf4);display:flex;align-items:center;justify-content:center;font-size:36px;">🏖️</div>
         @endif
+        @if($mDrop)
+            <span class="m-drop-badge">↓ %{{ $mDrop }} DÜŞTÜ</span>
+        @endif
         <div class="card-body">
             <div class="card-title">{{ $tour->title }}</div>
             <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_days }} gün</div>
-            <div style="margin-top:8px;">
+            <div class="card-price-row" style="margin-top:8px;">
                 @php $campaign = $tour->activeCampaign; @endphp
                 @if($campaign)
                     <span class="price-tag" style="font-size:18px; color:#059669;">{{ $campaign->formatted_discount_price }}</span>
@@ -18,6 +22,9 @@
                     <span class="price-tag" style="font-size:18px;">{{ $tour->formatted_price }}</span>
                 @endif
                 <span class="price-sm"> / kişi</span>
+                @if($tour->views_count > 3 && $loop->index % 3 === 0)
+                    <span class="m-live-badge">● {{ 2 + ($tour->views_count % 17) }} kişi bakıyor</span>
+                @endif
             </div>
         </div>
     </a>

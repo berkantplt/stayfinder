@@ -7,7 +7,9 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Destination;
 use App\Models\FeaturedCity;
+use App\Models\PriceHistory;
 use App\Models\Tour;
+use App\Models\User;
 
 class HomeController extends Controller
 {
@@ -45,9 +47,43 @@ class HomeController extends Controller
 
         $popularTours = $query->limit(8)->get();
 
-        if (request()->ajax()) {
-            return view('partials.tour_grid', compact('popularTours'))->render();
+        // Mobil kart rozetleri + CANLI ticker: listedeki turların son 30 gündeki
+        // son iki fiyat kaydından düşüş yüzdesi (tur_id => %düşüş)
+        $tourDrops = [];
+        $histories = PriceHistory::whereIn('tour_id', $popularTours->pluck('id'))
+            ->where('created_at', '>=', now()->subDays(30))
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('tour_id');
+        foreach ($histories as $tourId => $rows) {
+            if ($rows->count() >= 2) {
+                $last = (float) $rows[0]->price;
+                $prev = (float) $rows[1]->price;
+                if ($prev > 0 && $last < $prev) {
+                    $tourDrops[$tourId] = (int) round((1 - $last / $prev) * 100);
+                }
+            }
         }
+        $tourDrops = array_filter($tourDrops);
+
+        if (request()->ajax()) {
+            return view('partials.tour_grid', compact('popularTours', 'tourDrops'))->render();
+        }
+
+        // Mobil hero ticker'ı: en büyük güncel düşüş
+        $liveDrop = null;
+        if ($tourDrops) {
+            arsort($tourDrops);
+            $dropTour = $popularTours->firstWhere('id', array_key_first($tourDrops));
+            if ($dropTour) {
+                $liveDrop = [
+                    'name' => $dropTour->destination ?: \Illuminate\Support\Str::limit($dropTour->title, 24, ''),
+                    'pct' => $tourDrops[array_key_first($tourDrops)],
+                ];
+            }
+        }
+
+        $travelerCount = User::count();
 
         // Get destinations from managed table with tour counts
         $destinations = Destination::active()
@@ -125,6 +161,6 @@ class HomeController extends Controller
             ]);
         }
 
-        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'activeAgencies', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities'));
+        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'activeAgencies', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities', 'tourDrops', 'liveDrop', 'travelerCount'));
     }
 }
