@@ -25,6 +25,14 @@
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 
+    {{-- PWA: ana ekrana eklenince uygulama gibi açılır --}}
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#0c332e">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="turXtur">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1281,5 +1289,12 @@
     @endif
 
     @stack('scripts')
+
+    <script>
+        // PWA service worker (kurulabilirlik için; önbellekleme yapmaz)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+        }
+    </script>
 </body>
 </html>

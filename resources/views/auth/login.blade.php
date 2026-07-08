@@ -4,8 +4,14 @@
 @section('content')
 @include('partials.auth-background')
 
-<div class="container" style="max-width:460px;padding-top:100px;padding-bottom:100px;position:relative;z-index:10;">
-    <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);border-radius:24px;padding:48px 40px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.5);">
+<style>
+@media(max-width:768px) {
+    .auth-wrap { padding-top:32px !important; padding-bottom:48px !important; }
+    .auth-card { padding:28px 20px !important; border-radius:18px !important; }
+}
+</style>
+<div class="container auth-wrap" style="max-width:460px;padding-top:100px;padding-bottom:100px;position:relative;z-index:10;">
+    <div class="auth-card" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);border-radius:24px;padding:48px 40px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.5);">
         
         <div style="text-align:center;margin-bottom:32px;">
             <h1 style="font-size:28px;font-weight:800;color:#0f172a;margin-bottom:8px;">Giriş Yap</h1>

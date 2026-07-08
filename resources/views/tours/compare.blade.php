@@ -2,7 +2,24 @@
 @section('title', 'Turları Karşılaştır — ' . count($tours) . ' Tur Gösteriliyor')
 
 @section('content')
-<div class="container" style="padding:40px 20px;">
+<style>
+/* Mobil karşılaştırma: kartlar tam genişliğe yakın, yatay kaydırmalı ve
+   ortaya yapışmalı (scroll-snap) — yandaki kartın kenarı görünür kalır */
+@media(max-width:768px) {
+    .compare-page { padding:20px 16px 32px !important; }
+    .compare-page h1 { font-size:24px !important; }
+    .compare-page p { font-size:13.5px !important; }
+    .compare-grid { display:flex !important; gap:12px !important; margin:0 -16px; padding:4px 16px 16px !important; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .compare-grid::-webkit-scrollbar { display:none; }
+    .compare-tour-card { flex:0 0 84%; min-width:0 !important; scroll-snap-align:center; border:1px solid rgba(15,36,33,.09) !important; border-radius:16px; }
+    .compare-tour-card > div:first-of-type img { height:150px !important; }
+    .compare-tour-card > div:last-child { padding:16px !important; }
+    .compare-tour-card h3 { font-size:16px !important; }
+    /* Uzun dahil/değil metinleri 5 satırda kırp — kartlar dev olmasın */
+    .compare-tour-card li > div > div:last-child { display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; }
+}
+</style>
+<div class="container compare-page" style="padding:40px 20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:16px;">
         <div>
             <a href="{{ route('tours.index') }}" class="btn btn-outline" style="margin-bottom:16px;">← Turlara Dön</a>

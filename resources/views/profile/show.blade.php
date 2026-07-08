@@ -8,8 +8,15 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
+        <style>
+        @media(max-width:768px) {
+            .profile-hero { padding:20px !important; }
+            .profile-cols { grid-template-columns:1fr !important; gap:16px !important; }
+        }
+        </style>
+
         {{-- Profile Header --}}
-        <div style="background:linear-gradient(135deg,#0d9488,#0891b2);border-radius:var(--radius-lg);padding:32px;color:white;margin-bottom:32px;position:relative;overflow:hidden;">
+        <div class="profile-hero" style="background:linear-gradient(135deg,#0d9488,#0891b2);border-radius:var(--radius-lg);padding:32px;color:white;margin-bottom:32px;position:relative;overflow:hidden;">
             <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
                 {{-- Avatar --}}
                 @if($user->avatar)
@@ -54,7 +61,7 @@
             </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="profile-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
             {{-- Favorites --}}
             <div>
                 <h2 style="font-size:17px;font-weight:700;margin-bottom:14px;">❤️ Favorilerim</h2>
