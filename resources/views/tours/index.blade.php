@@ -18,6 +18,33 @@
 .filter-radio { display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; padding:6px 0; color:#334155; }
 .filter-radio:hover { color:var(--accent); }
 .filter-radio input[type="radio"] { accent-color:var(--accent); width:16px; height:16px; margin:0; cursor:pointer; }
+
+/* ===== Mobil filtre: chip şeridi + bottom sheet (Airbnb kalıbı) ===== */
+.m-chipbar { display:none; }
+.m-sheet-back { display:none; position:fixed; inset:0; background:rgba(4,24,21,.45); z-index:2500; }
+.m-sheet { position:fixed; left:0; right:0; bottom:0; z-index:2600; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -12px 40px rgba(4,24,21,.3); transform:translateY(105%); transition:transform .3s ease; display:flex; flex-direction:column; max-height:82vh; }
+.m-sheet.open { transform:translateY(0); }
+@media(min-width:769px) { .m-sheet, .m-sheet-back { display:none !important; } }
+@media(max-width:768px) {
+    .tour-page-layout { padding-top:16px; gap:8px; }
+    .tour-sidebar { display:none; }
+    #tours-results h1 { font-size:22px; margin-bottom:14px; }
+    .m-chipbar { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; margin-bottom:14px; padding-bottom:2px; }
+    .m-chipbar::-webkit-scrollbar { display:none; }
+    .m-chip { flex:none; display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(15,36,33,.12); background:#fff; color:#42544f; font-family:'Manrope',var(--font); font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:100px; cursor:pointer; white-space:nowrap; }
+    .m-chip-main { background:#0f172a; border-color:#0f172a; color:#fff; font-weight:800; }
+    .m-chip-main b { background:var(--accent); border-radius:100px; padding:1px 7px; font-size:11px; }
+    .m-chip-on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
+    .m-sheet-grab { width:36px; height:4px; border-radius:3px; background:#cbd5e1; margin:8px auto 0; }
+    .m-sheet-head { display:flex; justify-content:space-between; align-items:center; padding:8px 18px 10px; border-bottom:1px solid #eef2f1; }
+    .m-sheet-head span { font-family:'Manrope',var(--font); font-size:15px; font-weight:800; color:#0f172a; }
+    .m-sheet-head button { background:#f0f6f4; border:none; width:30px; height:30px; border-radius:50%; font-size:13px; color:#475569; cursor:pointer; }
+    .m-sheet-body { flex:1; overflow-y:auto; padding:16px 18px 8px; }
+    .m-sheet-body h3 { display:none !important; }
+    .m-sheet-foot { display:flex; gap:10px; padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid #eef2f1; background:#fff; border-radius:0 0 0 0; }
+    .m-sheet-foot .m-clear { flex:1; background:#fff; border:1px solid #cbd5e1; border-radius:12px; padding:13px; font-family:'Manrope',var(--font); font-size:14px; font-weight:700; color:#475569; cursor:pointer; }
+    .m-sheet-foot .m-apply { flex:2; background:linear-gradient(135deg,#0d9488,#0c6e63); border:none; border-radius:12px; padding:13px; font-family:'Manrope',var(--font); font-size:14px; font-weight:800; color:#fff; cursor:pointer; }
+}
 </style>
 
 <div class="tour-page-layout" style="max-width: 1400px; margin: 0 auto; padding-left: 20px; padding-right: 20px;">
@@ -113,9 +140,48 @@
         <style>@keyframes spin { 100% { transform:rotate(360deg); } }</style>
 
         <h1 style="font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;margin-bottom:24px;">Turları Keşfedin</h1>
-        
+
+        {{-- Mobil chip şeridi: Filtreler (N) + aktif filtre chip'leri + hızlı kategoriler.
+             #tours-results içinde olduğu için her AJAX yenilemesinde güncel istekle yeniden çizilir. --}}
+        @php
+            $mActive = array_filter([
+                'q' => request('q'),
+                'destination' => request('destination'),
+                'departure_city' => request('departure_city'),
+                'agency_id' => request('agency_id'),
+                'dates' => request('date_start') || request('date_end') ? true : null,
+                'days' => request('min_days') || request('max_days') ? true : null,
+                'category' => request('category'),
+            ]);
+            $mAgencyName = request('agency_id') ? optional($agencies->firstWhere('id', (int) request('agency_id')))->name : null;
+        @endphp
+        <div class="m-chipbar">
+            <button type="button" class="m-chip m-chip-main" onclick="mSheetOpen()">⚙ Filtreler @if(count($mActive))<b>{{ count($mActive) }}</b>@endif</button>
+            @if(request('q'))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('q')">“{{ \Illuminate\Support\Str::limit(request('q'), 14) }}” ✕</button>
+            @endif
+            @if(request('destination'))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('destination')">{{ request('destination') }} ✕</button>
+            @endif
+            @if(request('departure_city'))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('departure_city')">🚌 {{ request('departure_city') }} ✕</button>
+            @endif
+            @if($mAgencyName)
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('agency_id')">{{ \Illuminate\Support\Str::limit($mAgencyName, 16) }} ✕</button>
+            @endif
+            @if(request('date_start') || request('date_end'))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('date_start,date_end')">📅 Tarih ✕</button>
+            @endif
+            @if(request('min_days') || request('max_days'))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('min_days,max_days')">{{ request('min_days', '1') }}-{{ request('max_days', '∞') }} gün ✕</button>
+            @endif
+            @foreach($categories as $cat)
+                <button type="button" class="m-chip {{ request('category') == $cat->slug ? 'm-chip-on' : '' }}" onclick="mQuickCat('{{ $cat->slug }}')">{{ $cat->icon }} {{ $cat->name }}{{ request('category') == $cat->slug ? ' ✕' : '' }}</button>
+            @endforeach
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;background:var(--white);padding:12px 20px;border-radius:12px;border:1px solid #e2e8f0;">
-            <div style="font-size:14px;color:#475569;font-weight:500;"><strong>{{ $tours->total() }}</strong> tur bulundu</div>
+            <div style="font-size:14px;color:#475569;font-weight:500;"><strong id="toursTotal">{{ $tours->total() }}</strong> tur bulundu</div>
             <div style="display:flex;align-items:center;gap:12px;">
                 <label style="font-size:13px;color:#475569;font-weight:600;">Sıralama:</label>
                 <select name="sort" form="filter-form" class="filter-select" style="padding:8px 16px;width:auto;background:transparent;">
@@ -200,6 +266,22 @@
     </main>
 </div>
 
+{{-- Mobil filtre bottom sheet: form JS ile sidebar'dan buraya taşınır (≤768px).
+     #tours-results DIŞINDA — AJAX yenilemeleri sheet'i ve dinleyicilerini bozmaz. --}}
+<div id="mSheetBack" class="m-sheet-back" onclick="mSheetClose()"></div>
+<div id="mSheet" class="m-sheet" role="dialog" aria-label="Filtreler">
+    <div class="m-sheet-grab"></div>
+    <div class="m-sheet-head">
+        <span>Filtreler</span>
+        <button type="button" onclick="mSheetClose()" aria-label="Kapat">✕</button>
+    </div>
+    <div class="m-sheet-body" id="mSheetBody"></div>
+    <div class="m-sheet-foot">
+        <button type="button" class="m-clear" onclick="mSheetClear()">Temizle</button>
+        <button type="button" class="m-apply" id="mSheetApply" onclick="mSheetApply()">Sonuçları Göster</button>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('filter-form');
@@ -211,20 +293,27 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.style.display = 'none';
     }
 
+    // Sheet açıkken filtreler ANINDA uygulanmaz (batch apply): yalnızca
+    // "N Sonucu Göster" sayacı güncellenir; Apply'a basınca uygulanır.
+    function autoSubmit(extraParams = {}) {
+        if (mSheetIsOpen()) { mPreviewCount(); return; }
+        submitForm(extraParams);
+    }
+
     form.addEventListener('input', function(e) {
         // İsimsiz alanlar (aranabilir select'in arama kutusu) otomatik-submit etmez
         if(!e.target.name || e.target.name === 'q' || e.target.type === 'number' || e.target.type === 'date') return;
-        submitForm();
+        autoSubmit();
     });
 
     form.querySelector('input[name="q"]').addEventListener('input', function() {
         clearTimeout(timeoutId);
-        timeoutId = setTimeout(submitForm, 400); // 400ms debounce
+        timeoutId = setTimeout(() => autoSubmit(), 400); // 400ms debounce
     });
-    
+
     form.addEventListener('change', function(e) {
         if(e.target.type === 'date' || e.target.type === 'number' || e.target.type === 'radio') {
-            submitForm();
+            autoSubmit();
         }
     });
 
@@ -300,6 +389,105 @@ document.addEventListener('DOMContentLoaded', function() {
             if(overlay) overlay.style.display = 'none';
         });
     }
+
+    // ===== Mobil bottom sheet (Airbnb kalıbı) =====
+    const mSheet = document.getElementById('mSheet');
+    const mBack = document.getElementById('mSheetBack');
+    const mBody = document.getElementById('mSheetBody');
+    const mApplyBtn = document.getElementById('mSheetApply');
+    const sidebarCard = form.parentElement;
+    let mCountTimer;
+
+    function mSheetIsOpen() { return mSheet.classList.contains('open'); }
+
+    // Tek form iki yerde yaşar: mobilde sheet gövdesine, masaüstünde sidebar'a
+    // taşınır (DOM taşıma — dinleyiciler ve alan durumu korunur).
+    function mPlaceForm() {
+        if (window.innerWidth <= 768) {
+            if (form.parentElement !== mBody) mBody.appendChild(form);
+        } else if (form.parentElement !== sidebarCard) {
+            sidebarCard.appendChild(form);
+        }
+    }
+    mPlaceForm();
+    window.addEventListener('resize', mPlaceForm);
+
+    function mBuildUrl() {
+        const url = new URL(form.action);
+        const params = new URLSearchParams();
+        for (const [key, value] of new FormData(form).entries()) {
+            if (value && value !== 'all') params.append(key, value);
+        }
+        url.search = params.toString();
+        return url;
+    }
+
+    // Sayaç önizlemesi: sonuçları DEĞİŞTİRMEDEN kaç tur çıkacağını gösterir
+    function mPreviewCount() {
+        clearTimeout(mCountTimer);
+        mCountTimer = setTimeout(() => {
+            fetch(mBuildUrl(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
+                .then(html => {
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const total = doc.getElementById('toursTotal');
+                    mApplyBtn.textContent = total ? total.textContent.trim() + ' Sonucu Göster' : 'Sonuçları Göster';
+                })
+                .catch(() => { mApplyBtn.textContent = 'Sonuçları Göster'; });
+        }, 350);
+    }
+
+    window.mSheetOpen = function() {
+        mPlaceForm();
+        const total = document.getElementById('toursTotal');
+        mApplyBtn.textContent = total ? total.textContent.trim() + ' Sonucu Göster' : 'Sonuçları Göster';
+        mBack.style.display = 'block';
+        mSheet.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.mSheetClose = function() {
+        mBack.style.display = 'none';
+        mSheet.classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    window.mSheetApply = function() {
+        window.mSheetClose();
+        submitForm();
+    };
+
+    window.mSheetClear = function() {
+        form.querySelectorAll('input[type="text"], input[type="date"], input[type="number"]').forEach(el => { el.value = ''; });
+        form.querySelectorAll('select').forEach(el => {
+            el.value = '';
+            // Aranabilir combobox'ın görünen etiketi senkron kalsın
+            if (el.hasAttribute('data-searchable')) el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        form.querySelectorAll('input[type="radio"]').forEach(el => { el.checked = el.value === ''; });
+        mPreviewCount();
+    };
+
+    // Chip ✕: ilgili alan(lar)ı temizle ve hemen uygula
+    window.mChipClear = function(names) {
+        names.split(',').forEach(name => {
+            const fields = form.querySelectorAll('[name="' + name + '"]');
+            fields.forEach(el => {
+                if (el.type === 'radio') { el.checked = el.value === ''; }
+                else { el.value = ''; }
+            });
+        });
+        submitForm();
+    };
+
+    // Hızlı kategori chip'i: seçiliyse kaldır, değilse seç; hemen uygula
+    window.mQuickCat = function(slug) {
+        const current = form.querySelector('input[name="category"]:checked');
+        const target = (current && current.value === slug) ? '' : slug;
+        const radio = form.querySelector('input[name="category"][value="' + target + '"]');
+        if (radio) radio.checked = true;
+        submitForm();
+    };
 });
 </script>
 @endsection
