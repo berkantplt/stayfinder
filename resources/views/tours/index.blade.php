@@ -199,7 +199,7 @@
             @forelse($tours as $tour)
             <a href="{{ route('tours.show', $tour) }}" class="card" style="transition:all 0.3s;display:flex;flex-direction:column;">
                 @if($tour->image)
-                    <img src="{{ $tour->image }}" alt="{{ $tour->title }}" class="card-img" style="height:200px;object-fit:cover;">
+                    <img src="{{ $tour->image }}" alt="{{ $tour->title }}" class="card-img" style="height:200px;object-fit:cover;view-transition-name: tour-{{ $tour->id }};">
                 @else
                     <div class="card-img" style="height:200px;background:linear-gradient(135deg,#e0f2fe,#f0fdf4);display:flex;align-items:center;justify-content:center;font-size:48px;">🏖️</div>
                 @endif
@@ -379,10 +379,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const newResults = doc.getElementById('tours-results');
-            document.getElementById('tours-results').innerHTML = newResults.innerHTML;
-            
-            // Re-bind compare buttons state
-            if(typeof window.updateCompareUI === 'function') window.updateCompareUI();
+            // View Transition varsa sonuçlar yumuşak geçişle değişir (app hissi)
+            const swap = () => {
+                document.getElementById('tours-results').innerHTML = newResults.innerHTML;
+                // Re-bind compare buttons state
+                if(typeof window.updateCompareUI === 'function') window.updateCompareUI();
+            };
+            if (document.startViewTransition) document.startViewTransition(swap);
+            else swap();
         })
         .catch(error => {
             console.error('Error fetching search results:', error);

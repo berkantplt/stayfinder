@@ -3,7 +3,8 @@
     @php $mDrop = ($tourDrops ?? [])[$tour->id] ?? null; @endphp
     <a href="{{ route('tours.show', $tour) }}" class="card">
         @if($tour->image)
-            <img src="{{ $tour->image }}" alt="{{ $tour->title }}" class="card-img">
+            {{-- view-transition-name: kart görseli detay galerisine akarak geçer --}}
+            <img src="{{ $tour->image }}" alt="{{ $tour->title }}" class="card-img" style="view-transition-name: tour-{{ $tour->id }};">
         @else
             <div class="card-img" style="background:linear-gradient(135deg,#e0f2fe,#f0fdf4);display:flex;align-items:center;justify-content:center;font-size:36px;">🏖️</div>
         @endif

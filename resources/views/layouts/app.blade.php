@@ -340,9 +340,25 @@
             .m-hcard-list .card .btn { display:none !important; }
             .m-hcard-list .card .badge { display:none !important; }
             .m-hcard-list div.card > div:last-child { display:none; }
+
+            /* ===== App hissi: dokunma geri bildirimi ===== */
+            * { -webkit-tap-highlight-color: transparent; }
+            a, button, select, .card { touch-action: manipulation; }
+            .btn, .m-chip, .category-tab, .tour-tab, .m-tabbar a, .m-avatar, .m-login, .m-search-btn { transition: transform .12s ease; }
+            .btn:active, .m-chip:active, .category-tab:active, .tour-tab:active, .m-tabbar a:active, .m-avatar:active, .m-login:active, .m-search-btn:active { transform: scale(.95); }
+            .card { transition: transform .12s ease; }
+            .card:active { transform: scale(.98); }
+            .m-trust, .m-head, .m-tabbar, .tour-tabs, .stories-scroll { -webkit-user-select:none; user-select:none; }
         }
         @media(min-width:769px) {
             .m-trust, .m-head, .m-tabbar { display:none; }
+        }
+
+        /* ===== App hissi: sayfalar arası yumuşak geçiş (View Transitions) ===== */
+        @view-transition { navigation: auto; }
+        ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+        @media (prefers-reduced-motion: reduce) {
+            ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
         }
         @media(max-width:480px) {
             .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
@@ -1295,6 +1311,25 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
         }
+    </script>
+
+    {{-- App hissi: dokunma başlarken sayfayı önceden hazırla — geçişler anında olur.
+         (Tarayıcı isteği Sec-Purpose başlığıyla işaretler; dokunma %99 gezinmeye
+         dönüştüğü için görüntülenme sayacına etkisi ihmal edilebilir.) --}}
+    <script type="speculationrules">
+    {
+        "prerender": [{
+            "where": { "and": [
+                { "href_matches": "/turlar/*" },
+                { "not": { "href_matches": "/turlar/karsilastir*" } }
+            ]},
+            "eagerness": "moderate"
+        }],
+        "prefetch": [{
+            "where": { "href_matches": ["/", "/turlar", "/blog", "/favorilerim", "/profil"] },
+            "eagerness": "moderate"
+        }]
+    }
     </script>
 </body>
 </html>

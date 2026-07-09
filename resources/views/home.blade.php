@@ -762,8 +762,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.text())
         .then(html => {
             if (tourGridContainer) {
-                tourGridContainer.innerHTML = html;
-                tourGridContainer.style.opacity = '1';
+                // View Transition varsa liste yumuşak geçişle değişir (app hissi)
+                const swap = () => {
+                    tourGridContainer.innerHTML = html;
+                    tourGridContainer.style.opacity = '1';
+                };
+                if (document.startViewTransition) document.startViewTransition(swap);
+                else swap();
             }
         })
         .catch(err => {

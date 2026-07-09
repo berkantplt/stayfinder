@@ -78,7 +78,7 @@
                 @endphp
                 @if(count($gallery))
                     <div style="margin-bottom:20px;">
-                        <img id="galleryMain" src="{{ $gallery[0] }}" alt="{{ $tour->title }}" style="width:100%;height:340px;object-fit:cover;border-radius:var(--radius-lg);">
+                        <img id="galleryMain" src="{{ $gallery[0] }}" alt="{{ $tour->title }}" style="width:100%;height:340px;object-fit:cover;border-radius:var(--radius-lg);view-transition-name: tour-{{ $tour->id }};">
                         @if(count($gallery) > 1)
                             <div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:4px;">
                                 @foreach($gallery as $img)
