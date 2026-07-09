@@ -117,15 +117,55 @@
                             </div>
                         </div>
 
+                        {{-- Manuel kategori ekleme: yanlış satın alma telafisi / iyi niyet --}}
+                        <form method="POST" action="{{ route('admin.agencies.categories.grant', $agency) }}"
+                              style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;">
+                            @csrf
+                            <div class="form-group" style="flex:2;min-width:230px;margin:0;">
+                                <label style="font-size:13px;font-weight:700;color:#475569;">➕ Manuel Kategori Ekle</label>
+                                <select name="category_id" required>
+                                    <option value="">Kategori seçin...</option>
+                                    @foreach($grantableCategories as $grantable)
+                                        <option value="{{ $grantable->id }}">
+                                            {{ $grantable->icon }} {{ $grantable->name }}{{ $grantable->parent ? ' — '.$grantable->parent->name : '' }} ({{ number_format((float) $grantable->monthly_price, 0, ',', '.') }} TL/ay)
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1;min-width:110px;margin:0;">
+                                <label style="font-size:13px;font-weight:700;color:#475569;">Süre</label>
+                                <select name="months" required>
+                                    <option value="1">1 Ay</option>
+                                    <option value="3">3 Ay</option>
+                                    <option value="6">6 Ay</option>
+                                    <option value="12" selected>12 Ay</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" {{ $grantableCategories->isEmpty() ? 'disabled' : '' }}>Ekle</button>
+                        </form>
+                        @if($agency->legacy_category_access)
+                            <div style="margin:-8px 0 18px;font-size:12px;color:#9a3412;background:#fff7ed;border-radius:10px;padding:8px 12px;">
+                                Bu acentada geçiş erişimi açık — zaten tüm aktif kategorilere erişebiliyor. Manuel ekleme yine de kayıt altına alınır.
+                            </div>
+                        @elseif($grantableCategories->isEmpty())
+                            <div style="margin:-8px 0 18px;font-size:12px;color:#64748b;">Eklenebilecek kategori kalmadı — tüm aktif alt kategorilerde açık aboneliği var.</div>
+                        @endif
+
                         @if($ownedCategories->isEmpty())
                             <div style="padding:18px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;">
                                 Bu acenta için açık kategori bulunmuyor.
                             </div>
                         @else
                             <style>
-                                /* Kaydırmasız sığsın: sıkı hücreler, dar başlıklar */
-                                .owned-cats-table th { font-size:11px; white-space:nowrap; padding:10px 8px; }
-                                .owned-cats-table td { padding:10px 8px; font-size:13px; }
+                                /* Sabit kolon düzeni: tablo karttan taşamaz, içerik hücre içinde sarar */
+                                .owned-cats-table { table-layout:fixed; width:100%; }
+                                .owned-cats-table th { font-size:11px; padding:10px 6px; }
+                                .owned-cats-table td { padding:10px 6px; font-size:13px; vertical-align:top; overflow-wrap:break-word; }
+                                .owned-cats-table th:nth-child(2) { width:92px; }
+                                .owned-cats-table th:nth-child(3) { width:66px; }
+                                .owned-cats-table th:nth-child(4) { width:84px; }
+                                .owned-cats-table th:nth-child(5) { width:98px; }
+                                .owned-cats-table th:nth-child(6) { width:62px; }
                             </style>
                             <div>
                                 <table class="table owned-cats-table" style="width:100%;text-align:left;">
@@ -190,40 +230,6 @@
                                     </tbody>
                                 </table>
                             </div>
-                        @endif
-
-                        {{-- Manuel kategori ekleme: yanlış satın alma telafisi / iyi niyet --}}
-                        <form method="POST" action="{{ route('admin.agencies.categories.grant', $agency) }}"
-                              style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid #e2e8f0;">
-                            @csrf
-                            <div class="form-group" style="flex:2;min-width:230px;margin:0;">
-                                <label style="font-size:13px;font-weight:700;color:#475569;">➕ Manuel Kategori Ekle</label>
-                                <select name="category_id" required>
-                                    <option value="">Kategori seçin...</option>
-                                    @foreach($grantableCategories as $grantable)
-                                        <option value="{{ $grantable->id }}">
-                                            {{ $grantable->icon }} {{ $grantable->name }}{{ $grantable->parent ? ' — '.$grantable->parent->name : '' }} ({{ number_format((float) $grantable->monthly_price, 0, ',', '.') }} TL/ay)
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="form-group" style="flex:1;min-width:110px;margin:0;">
-                                <label style="font-size:13px;font-weight:700;color:#475569;">Süre</label>
-                                <select name="months" required>
-                                    <option value="1">1 Ay</option>
-                                    <option value="3">3 Ay</option>
-                                    <option value="6">6 Ay</option>
-                                    <option value="12" selected>12 Ay</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary" {{ $grantableCategories->isEmpty() ? 'disabled' : '' }}>Ekle</button>
-                        </form>
-                        @if($agency->legacy_category_access)
-                            <div style="margin-top:10px;font-size:12px;color:#9a3412;background:#fff7ed;border-radius:10px;padding:8px 12px;">
-                                Bu acentada geçiş erişimi açık — zaten tüm aktif kategorilere erişebiliyor. Manuel ekleme yine de kayıt altına alınır.
-                            </div>
-                        @elseif($grantableCategories->isEmpty())
-                            <div style="margin-top:10px;font-size:12px;color:#64748b;">Eklenebilecek kategori kalmadı — tüm aktif alt kategorilerde açık aboneliği var.</div>
                         @endif
                     </div>
 
