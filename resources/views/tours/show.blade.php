@@ -35,6 +35,28 @@
     .tour-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
     .tour-tab-count { display:inline-block; background:var(--accent); color:#fff; font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; margin-left:4px; vertical-align:1px; }
     .tour-tab-panel[hidden] { display:none; }
+
+    /* Mobil kompakt fiyat kartı: tek satır fiyat + acenta, ince buton üçlüsü */
+    .p-tel-short { display:none; }
+    @media(max-width:768px) {
+        #priceCard { display:flex; flex-wrap:wrap; align-items:baseline; column-gap:8px; row-gap:2px; padding:10px 12px !important; border-width:1px !important; border-radius:14px !important; }
+        #priceCard .p-badge { margin:0 !important; }
+        #priceCard .p-badge .badge { font-size:10px; padding:3px 8px; }
+        #priceCard .p-price { margin:0 !important; }
+        #priceCard .p-price .price-tag { font-size:22px !important; }
+        #priceCard .p-agency { margin:0 0 0 auto !important; }
+        #priceCard .p-agency a { font-size:13px !important; }
+        #priceCard .p-ctas { flex-basis:100%; flex-direction:row !important; gap:6px !important; margin-top:8px; }
+        #priceCard .p-ctas .btn { width:auto !important; padding:9px 8px; font-size:13px; }
+        #priceCard .p-go { flex:2.2; }
+        #priceCard .p-call { flex:1; }
+        #priceCard .p-mail { flex:none; width:44px; padding:9px 0 !important; }
+        #priceCard .p-tel-full, #priceCard .p-mail-text { display:none; }
+        #priceCard .p-tel-short { display:inline; }
+        #priceCard #campaign-countdown { flex-basis:100%; margin:6px 0 0 !important; padding:6px 10px !important; }
+        #priceCard #campaign-countdown div:last-child { font-size:14px !important; }
+        #mPriceSlot:not(:empty) { margin-bottom:4px; }
+    }
 </style>
 @endpush
 
@@ -110,6 +132,9 @@
                         @endforeach
                     </div>
                 @endif
+
+                {{-- Mobilde kompakt fiyat kartı buraya taşınır (JS ile — tek DOM, iki yuva) --}}
+                <div id="mPriceSlot"></div>
 
                 {{-- #yorumlar derin linki için görünür çapa: tarayıcı buraya kaydırır,
                      sekme JS'i paneli açar (gizli panele id konursa scroll çalışmaz) --}}
@@ -516,13 +541,14 @@
 
                 {{-- Main Price Card --}}
                 @php $campaign = $tour->activeCampaign; @endphp
-                <div style="background:var(--white);border:2px solid {{ $campaign ? 'var(--green)' : 'var(--accent)' }};border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
+                <div id="dPriceSlot"></div>
+                <div id="priceCard" style="background:var(--white);border:2px solid {{ $campaign ? 'var(--green)' : 'var(--accent)' }};border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
                     @if($campaign)
                         {{-- Campaign active --}}
-                        <div style="margin-bottom:6px;">
+                        <div class="p-badge" style="margin-bottom:6px;">
                             <span class="badge badge-green">🏷️ {{ $campaign->label }}</span>
                         </div>
-                        <div style="margin:10px 0 4px;">
+                        <div class="p-price" style="margin:10px 0 4px;">
                             <span style="text-decoration:line-through;color:var(--text-muted);font-size:16px;">{{ $tour->formatted_price }}</span>
                             <span class="price-tag cheapest" style="font-size:32px;margin-left:8px;color:var(--green);">{{ $campaign->formatted_discount_price }}</span>
                             <span class="price-sm"> / kişi</span>
@@ -548,27 +574,27 @@
                         })();
                         </script>
                     @else
-                        <div style="margin-bottom:4px;">
+                        <div class="p-badge" style="margin-bottom:4px;">
                             <span class="badge badge-green">🏆 En Ucuz</span>
                         </div>
-                        <div style="margin:12px 0 4px;">
+                        <div class="p-price" style="margin:12px 0 4px;">
                             <span class="price-tag cheapest" style="font-size:32px;">{{ $tour->formatted_price }}</span>
                             <span class="price-sm"> / kişi</span>
                         </div>
                     @endif
-                    <div style="margin-bottom:16px;">
+                    <div class="p-agency" style="margin-bottom:16px;">
                         <a href="{{ route('agencies.show', $tour->agency) }}" style="color:var(--accent);font-weight:600;font-size:15px;">{{ $tour->agency->name }}</a>
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div class="p-ctas" style="display:flex;flex-direction:column;gap:10px;">
                         @php $mainUrl = $tour->tour_url ?: $tour->agency->website_url; @endphp
                         @if($mainUrl)
-                            <a href="{{ route('tour.redirect', $tour) }}" target="_blank" class="btn btn-primary" style="width:100%;">🌐 Tura Git →</a>
+                            <a href="{{ route('tour.redirect', $tour) }}" target="_blank" class="btn btn-primary p-go" style="width:100%;">🌐 Tura Git →</a>
                         @endif
                         @if($tour->agency->phone)
-                            <a href="tel:{{ $tour->agency->phone }}" class="btn btn-outline" style="width:100%;">📞 {{ $tour->agency->phone }}</a>
+                            <a href="tel:{{ $tour->agency->phone }}" class="btn btn-outline p-call" style="width:100%;">📞 <span class="p-tel-full">{{ $tour->agency->phone }}</span><span class="p-tel-short">Ara</span></a>
                         @endif
                         @if($tour->agency->email)
-                            <a href="mailto:{{ $tour->agency->email }}" class="btn btn-outline" style="width:100%;">✉️ E-posta Gönder</a>
+                            <a href="mailto:{{ $tour->agency->email }}" class="btn btn-outline p-mail" style="width:100%;">✉️<span class="p-mail-text"> E-posta Gönder</span></a>
                         @endif
                     </div>
                 </div>
@@ -669,6 +695,20 @@
         var h = (location.hash || '').replace('#', '');
         if (h) activate(h, false);
     });
+})();
+
+// Fiyat kartı: mobilde başlığın altına, masaüstünde sidebar'a (tek DOM, iki yuva)
+(function () {
+    const card = document.getElementById('priceCard');
+    const mSlot = document.getElementById('mPriceSlot');
+    const dSlot = document.getElementById('dPriceSlot');
+    if (!card || !mSlot || !dSlot) return;
+    function placePriceCard() {
+        const target = window.innerWidth <= 768 ? mSlot : dSlot;
+        if (card.parentElement !== target) target.appendChild(card);
+    }
+    placePriceCard();
+    window.addEventListener('resize', placePriceCard);
 })();
 </script>
 @if(isset($priceData) && $priceData->count() >= 2)
