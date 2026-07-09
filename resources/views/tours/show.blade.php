@@ -50,7 +50,7 @@
         #priceCard .p-ctas .btn { width:auto !important; padding:9px 8px; font-size:13px; }
         #priceCard .p-go { flex:1.6; }
         #priceCard .p-call { flex:1; }
-        #priceCard .p-mail { flex:none; width:74px; padding:9px 0 !important; font-size:17px !important; }
+        #priceCard .p-mail { flex:0.7; min-width:96px; padding:9px 0 !important; font-size:18px !important; }
         #priceCard .p-tel-full, #priceCard .p-mail-text { display:none; }
         #priceCard .p-tel-short { display:inline; }
         #priceCard #campaign-countdown { flex-basis:100%; margin:6px 0 0 !important; padding:6px 10px !important; }
