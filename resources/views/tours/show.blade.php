@@ -48,9 +48,9 @@
         #priceCard .p-agency a { font-size:13px !important; }
         #priceCard .p-ctas { flex-basis:100%; flex-direction:row !important; gap:6px !important; margin-top:8px; }
         #priceCard .p-ctas .btn { width:auto !important; padding:9px 8px; font-size:13px; }
-        #priceCard .p-go { flex:2.2; }
+        #priceCard .p-go { flex:1.6; }
         #priceCard .p-call { flex:1; }
-        #priceCard .p-mail { flex:none; width:44px; padding:9px 0 !important; }
+        #priceCard .p-mail { flex:none; width:58px; padding:9px 0 !important; font-size:15px !important; }
         #priceCard .p-tel-full, #priceCard .p-mail-text { display:none; }
         #priceCard .p-tel-short { display:inline; }
         #priceCard #campaign-countdown { flex-basis:100%; margin:6px 0 0 !important; padding:6px 10px !important; }
