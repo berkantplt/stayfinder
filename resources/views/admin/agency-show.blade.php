@@ -122,8 +122,13 @@
                                 Bu acenta için açık kategori bulunmuyor.
                             </div>
                         @else
-                            <div style="overflow-x:auto;">
-                                <table class="table" style="width:100%;text-align:left;">
+                            <style>
+                                /* Kaydırmasız sığsın: sıkı hücreler, dar başlıklar */
+                                .owned-cats-table th { font-size:11px; white-space:nowrap; padding:10px 8px; }
+                                .owned-cats-table td { padding:10px 8px; font-size:13px; }
+                            </style>
+                            <div>
+                                <table class="table owned-cats-table" style="width:100%;text-align:left;">
                                     <thead>
                                         <tr>
                                             <th>Kategori</th>
@@ -160,11 +165,12 @@
                                                     <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Toplam {{ $ownership->tours_count }}</div>
                                                 </td>
                                                 <td>{{ number_format((float) $ownership->monthly_price, 0, ',', '.') }} TL</td>
-                                                <td style="font-size:13px;color:#64748b;">
+                                                <td style="font-size:12px;color:#64748b;">
                                                     @if($ownership->source === 'legacy')
                                                         Süresiz geçiş
                                                     @else
-                                                        {{ $ownership->started_at?->format('d.m.Y') }} - {{ $ownership->expires_at?->format('d.m.Y') }}
+                                                        <span style="white-space:nowrap;">{{ $ownership->started_at?->format('d.m.Y') }}</span><br>
+                                                        <span style="white-space:nowrap;">→ {{ $ownership->expires_at?->format('d.m.Y') }}</span>
                                                     @endif
                                                 </td>
                                                 <td>
@@ -173,7 +179,7 @@
                                                               onsubmit="return confirm('{{ $ownership->category->name }} aboneliği iptal edilecek ve bu kategorideki turlar yayından kalkacak. Emin misiniz?');"
                                                               style="margin:0;">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;">İptal Et</button>
+                                                            <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;padding:6px 10px;white-space:nowrap;">İptal</button>
                                                         </form>
                                                     @else
                                                         <span style="font-size:12px;color:#94a3b8;">—</span>
