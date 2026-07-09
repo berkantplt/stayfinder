@@ -33,7 +33,23 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // 419 (oturum/CSRF zaman aşımı): soğuk hata sayfası yerine giriş
+        // sayfasına anlaşılır bir mesajla yönlendir. AJAX istekleri JSON
+        // beklediği için onlara 419 aynen döner (istemci kendi ele alır).
+        // Not: framework TokenMismatchException'ı render callback'lerinden
+        // ÖNCE HttpException(419)'a çevirir — o yüzden statü koduyla yakalanır.
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e, Request $request) {
+            if ($e->getStatusCode() !== 419) {
+                return null; // diğer HTTP hataları normal akışında kalsın
+            }
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Oturum süresi doldu. Sayfayı yenileyip tekrar deneyin.'], 419);
+            }
+
+            return redirect()->route('login')
+                ->withErrors(['session' => 'Oturumunuzun süresi doldu. Lütfen tekrar giriş yapın.']);
+        });
     })
     ->withProviders([
         PartnerServiceProvider::class,
