@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
+use App\Models\AgencyCategoryOrder;
+use App\Models\AgencyCategoryOrderItem;
+use App\Models\AgencyCategorySubscription;
 use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Tour;
@@ -13,7 +16,10 @@ use App\Models\User;
 use App\Support\CategoryLicensing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -162,7 +168,7 @@ class AdminController extends Controller
             ]);
 
             $activeSubscriptions = $agency->activeCategorySubscriptions()
-                ->with('category.parent')
+                ->with('category.parent', 'lastOrder')
                 ->orderBy('expires_at')
                 ->get();
 
@@ -192,10 +198,14 @@ class AdminController extends Controller
                     $subscription = $subscriptionsByCategoryId->get($category->id);
                     $usage = $usedCategoriesById->get($category->id);
 
+                    $isManual = $subscription?->lastOrder?->payment_provider === AgencyCategoryOrder::PROVIDER_MANUAL;
+                    $source = $agency->legacy_category_access ? 'legacy' : ($isManual ? 'manual' : 'purchase');
+
                     return (object) [
                         'category' => $category,
-                        'source' => $agency->legacy_category_access ? 'legacy' : 'purchase',
-                        'source_label' => $agency->legacy_category_access ? 'Geçiş erişimi' : 'Satın alındı',
+                        'subscription' => $subscription,
+                        'source' => $source,
+                        'source_label' => ['legacy' => 'Geçiş erişimi', 'manual' => 'Manuel eklendi', 'purchase' => 'Satın alındı'][$source],
                         'monthly_price' => (float) ($subscription?->monthly_price ?? $category->monthly_price),
                         'started_at' => $subscription?->started_at,
                         'expires_at' => $subscription?->expires_at,
@@ -232,6 +242,20 @@ class AdminController extends Controller
             ->limit(10)
             ->get();
 
+        // Manuel ekleme formu: aktif aboneliği OLMAYAN aktif alt kategoriler
+        $grantableCategories = collect();
+        if ($hasCategoryLicensing) {
+            $activeCategoryIds = $agency->activeCategorySubscriptions()->pluck('category_id');
+            $grantableCategories = Category::query()
+                ->active()
+                ->whereNotNull('parent_id')
+                ->whereNotIn('id', $activeCategoryIds)
+                ->with('parent')
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
+        }
+
         $stats = [
             'active_tours' => $agency->active_tours_count,
             'open_categories' => $ownedCategories->count(),
@@ -248,8 +272,116 @@ class AdminController extends Controller
             'usedCategories',
             'recentOrders',
             'recentTours',
-            'stats'
+            'stats',
+            'grantableCategories'
         ));
+    }
+
+    /**
+     * Admin bir acentaya manuel kategori lisansı verir (yanlış satın alma
+     * telafisi / iyi niyet jesti). Satın alma akışıyla (finalizePaidOrder)
+     * birebir aynı kalıp: denetim izi için 0 TL manuel sipariş yaratılır,
+     * aktif abonelik varsa uzatılır, yoksa/pasifse bugünden başlatılır.
+     */
+    public function grantCategory(Request $request, Agency $agency)
+    {
+        abort_unless(CategoryLicensing::schemaReady(), 404);
+
+        $validated = $request->validate([
+            'category_id' => [
+                'required', 'integer',
+                Rule::exists('categories', 'id')->whereNotNull('parent_id')->where('is_active', true),
+            ],
+            'months' => ['required', 'integer', 'min:1', 'max:24'],
+        ], [
+            'category_id.exists' => 'Yalnızca aktif alt kategoriler eklenebilir (üst kategoriler satılmaz/verilmez).',
+        ]);
+
+        $category = Category::findOrFail($validated['category_id']);
+        $months = (int) $validated['months'];
+
+        DB::transaction(function () use ($agency, $category, $months) {
+            $order = AgencyCategoryOrder::create([
+                'agency_id' => $agency->id,
+                'order_number' => $this->generateManualOrderNumber(),
+                'billing_cycle' => 'monthly',
+                'subtotal' => 0,
+                'currency' => 'TRY',
+                'status' => AgencyCategoryOrder::STATUS_PAID,
+                'payment_provider' => AgencyCategoryOrder::PROVIDER_MANUAL,
+                'buyer_type' => AgencyCategoryOrder::BUYER_INDIVIDUAL,
+                'purchased_at' => now(),
+                'paid_at' => now(),
+            ]);
+
+            AgencyCategoryOrderItem::create([
+                'order_id' => $order->id,
+                'category_id' => $category->id,
+                'category_name' => $category->name,
+                'unit_price' => 0,
+                'billing_cycle' => 'monthly',
+            ]);
+
+            // UNIQUE(agency_id, category_id): mevcut kaydı kilitle, yarışı önle
+            $subscription = AgencyCategorySubscription::query()
+                ->where('agency_id', $agency->id)
+                ->where('category_id', $category->id)
+                ->lockForUpdate()
+                ->first();
+
+            $today = now()->startOfDay();
+            $stillActive = $subscription
+                && $subscription->status === AgencyCategorySubscription::STATUS_ACTIVE
+                && $subscription->expires_at !== null
+                && $subscription->expires_at->gte($today);
+
+            $attributes = [
+                'last_order_id' => $order->id,
+                // Tarife fiyatı kayda geçer (sipariş 0 TL — bedava verildiği oradan izlenir)
+                'monthly_price' => (float) $category->monthly_price,
+                'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+                'started_at' => $stillActive ? $subscription->started_at : $today,
+                'expires_at' => ($stillActive ? $subscription->expires_at->copy() : $today->copy())->addMonths($months),
+                'renewal_reminder_sent_at' => null,
+            ];
+
+            if ($subscription) {
+                $subscription->update($attributes);
+            } else {
+                AgencyCategorySubscription::create(array_merge($attributes, [
+                    'agency_id' => $agency->id,
+                    'category_id' => $category->id,
+                ]));
+            }
+        });
+
+        return back()->with('success', $category->name.' kategorisi '.$months.' ay süreyle eklendi.');
+    }
+
+    /**
+     * Manuel/satın alınmış kategori aboneliğini iptal eder. Kayıt silinmez
+     * (denetim izi); status=cancelled olunca turlar anında yayından kalkar,
+     * gerekirse yeniden eklenebilir.
+     */
+    public function revokeCategory(Agency $agency, AgencyCategorySubscription $subscription)
+    {
+        abort_unless(CategoryLicensing::schemaReady(), 404);
+        abort_unless($subscription->agency_id === $agency->id, 404);
+
+        $subscription->update(['status' => AgencyCategorySubscription::STATUS_CANCELLED]);
+
+        $categoryName = $subscription->category?->name ?? 'Kategori';
+
+        return back()->with('success', $categoryName.' aboneliği iptal edildi — bu kategorideki turlar yayından kalktı.');
+    }
+
+    private function generateManualOrderNumber(): string
+    {
+        do {
+            $number = 'KYM-MAN-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
+        } while (AgencyCategoryOrder::where('order_number', $number)->exists());
+
+        return $number;
     }
 
     public function createAgency()

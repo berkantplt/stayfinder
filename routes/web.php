@@ -302,6 +302,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/acentalar/{agency}', [AdminController::class, 'showAgency'])->name('agencies.show');
     Route::post('/acentalar', [AdminController::class, 'storeAgency'])->name('agencies.store');
     Route::post('/acentalar/{agency}/toggle', [AdminController::class, 'toggleAgency'])->name('agencies.toggle');
+    Route::post('/acentalar/{agency}/kategori-ekle', [AdminController::class, 'grantCategory'])->name('agencies.categories.grant');
+    Route::post('/acentalar/{agency}/kategori-iptal/{subscription}', [AdminController::class, 'revokeCategory'])->name('agencies.categories.revoke');
     Route::post('/acenta-basvurulari/{agency}/onayla', [AdminController::class, 'approveAgencyApplication'])->name('agency-applications.approve');
     Route::post('/acenta-basvurulari/{agency}/reddet', [AdminController::class, 'rejectAgencyApplication'])->name('agency-applications.reject');
     Route::get('/turlar', [AdminController::class, 'tours'])->name('tours');

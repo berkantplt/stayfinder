@@ -6,6 +6,12 @@
     <div>
         @include('partials.admin-sidebar')
         <div class="section" style="padding:0;">
+            @if(session('success'))
+                <div class="alert alert-success" style="max-width:94%;margin:0 auto 16px;">{{ session('success') }}</div>
+            @endif
+            @if($errors->any())
+                <div class="alert alert-error" style="max-width:94%;margin:0 auto 16px;">{{ $errors->first() }}</div>
+            @endif
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:94%;margin:0 auto 24px;">
                 <div>
                     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
@@ -125,6 +131,7 @@
                                             <th>Aktif Tur</th>
                                             <th>Aylık Bedel</th>
                                             <th>Süre</th>
+                                            <th>İşlem</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -137,7 +144,14 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <span class="badge" style="background:{{ $ownership->source === 'legacy' ? '#fff7ed;color:#9a3412' : '#ecfeff;color:#155e75' }};border:none;">
+                                                    @php
+                                                        $sourceStyles = [
+                                                            'legacy' => '#fff7ed;color:#9a3412',
+                                                            'manual' => '#f5f3ff;color:#5b21b6',
+                                                            'purchase' => '#ecfeff;color:#155e75',
+                                                        ];
+                                                    @endphp
+                                                    <span class="badge" style="background:{{ $sourceStyles[$ownership->source] }};border:none;">
                                                         {{ $ownership->source_label }}
                                                     </span>
                                                 </td>
@@ -153,11 +167,57 @@
                                                         {{ $ownership->started_at?->format('d.m.Y') }} - {{ $ownership->expires_at?->format('d.m.Y') }}
                                                     @endif
                                                 </td>
+                                                <td>
+                                                    @if($ownership->subscription)
+                                                        <form method="POST" action="{{ route('admin.agencies.categories.revoke', [$agency, $ownership->subscription]) }}"
+                                                              onsubmit="return confirm('{{ $ownership->category->name }} aboneliği iptal edilecek ve bu kategorideki turlar yayından kalkacak. Emin misiniz?');"
+                                                              style="margin:0;">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;">İptal Et</button>
+                                                        </form>
+                                                    @else
+                                                        <span style="font-size:12px;color:#94a3b8;">—</span>
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
+                        @endif
+
+                        {{-- Manuel kategori ekleme: yanlış satın alma telafisi / iyi niyet --}}
+                        <form method="POST" action="{{ route('admin.agencies.categories.grant', $agency) }}"
+                              style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid #e2e8f0;">
+                            @csrf
+                            <div class="form-group" style="flex:2;min-width:230px;margin:0;">
+                                <label style="font-size:13px;font-weight:700;color:#475569;">➕ Manuel Kategori Ekle</label>
+                                <select name="category_id" required>
+                                    <option value="">Kategori seçin...</option>
+                                    @foreach($grantableCategories as $grantable)
+                                        <option value="{{ $grantable->id }}">
+                                            {{ $grantable->icon }} {{ $grantable->name }}{{ $grantable->parent ? ' — '.$grantable->parent->name : '' }} ({{ number_format((float) $grantable->monthly_price, 0, ',', '.') }} TL/ay)
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1;min-width:110px;margin:0;">
+                                <label style="font-size:13px;font-weight:700;color:#475569;">Süre</label>
+                                <select name="months" required>
+                                    <option value="1">1 Ay</option>
+                                    <option value="3">3 Ay</option>
+                                    <option value="6">6 Ay</option>
+                                    <option value="12" selected>12 Ay</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" {{ $grantableCategories->isEmpty() ? 'disabled' : '' }}>Ekle</button>
+                        </form>
+                        @if($agency->legacy_category_access)
+                            <div style="margin-top:10px;font-size:12px;color:#9a3412;background:#fff7ed;border-radius:10px;padding:8px 12px;">
+                                Bu acentada geçiş erişimi açık — zaten tüm aktif kategorilere erişebiliyor. Manuel ekleme yine de kayıt altına alınır.
+                            </div>
+                        @elseif($grantableCategories->isEmpty())
+                            <div style="margin-top:10px;font-size:12px;color:#64748b;">Eklenebilecek kategori kalmadı — tüm aktif alt kategorilerde açık aboneliği var.</div>
                         @endif
                     </div>
 
