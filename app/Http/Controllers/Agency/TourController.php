@@ -335,26 +335,33 @@ class TourController extends Controller
     }
 
     /**
-     * Paketlerdeki en düşük yetişkin (çocuk hariç) indirimli fiyat — "başlangıç fiyatı".
+     * Paketlerdeki en düşük yetişkin indirimli fiyat — "başlangıç/kapak fiyatı".
+     * KADEMELİ öncelik (importer'daki minAdultPriceFromBlocks ile aynı kural):
+     * önce double_pp, yoksa single, ancak ikisi de yoksa extra_bed. İlave yatak
+     * kişi başı oda fiyatından ucuz olduğundan düz min() kapak fiyatını
+     * sistematik yanlış (ilave yatak) seçiyordu — Jolly vakası.
      */
     private function minAdultPrice(array $packages): ?float
     {
-        $prices = [];
-        foreach ($packages as $pkg) {
-            foreach (Tour::ADULT_ROOM_TYPES as $type) {
+        foreach (Tour::ADULT_ROOM_TYPES as $type) {
+            $prices = [];
+            foreach ($packages as $pkg) {
                 $new = $pkg['prices'][$type]['new'] ?? null;
                 if ($new !== null) {
                     $prices[] = $new;
                 }
             }
+            if ($prices !== []) {
+                return min($prices);
+            }
         }
-        // Yetişkin fiyatı yoksa herhangi bir new fiyatına düş
-        if ($prices === []) {
-            foreach ($packages as $pkg) {
-                foreach ($pkg['prices'] as $p) {
-                    if (($p['new'] ?? null) !== null) {
-                        $prices[] = $p['new'];
-                    }
+
+        // Hiç yetişkin fiyatı yoksa son çare: herhangi bir new fiyatı
+        $prices = [];
+        foreach ($packages as $pkg) {
+            foreach ($pkg['prices'] as $p) {
+                if (($p['new'] ?? null) !== null) {
+                    $prices[] = $p['new'];
                 }
             }
         }

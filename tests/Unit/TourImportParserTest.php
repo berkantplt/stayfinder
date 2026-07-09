@@ -300,4 +300,64 @@ class TourImportParserTest extends TestCase
             $this->assertFalse($this->invoke('isUnavailableCell', [$name]), "'{$name}' hücre değeri sayılmamalı");
         }
     }
+
+    // ─── B9: YATAY tablo (Jolly tipi) — başlıklar art arda, fiyatlar toplu ─────
+    // Gerçek jollytur.com sayfasının Firecrawl render çıktısı (2026-07-09):
+    // kapak fiyatı hatası vakası — doğru kapak 32.599,50 (iki kişilik kişi başı),
+    // ilave yatak 29.099,50 kapak fiyatı OLMAMALI.
+
+    public function test_jolly_horizontal_table_is_parsed_deterministically(): void
+    {
+        $text = (string) file_get_contents(__DIR__.'/../Fixtures/import/page_jolly_likya_horizontal.txt');
+        $result = $this->invoke('deterministicPricingBlocks', [$text]);
+        $blocks = $result['blocks'];
+
+        $this->assertNotEmpty($blocks, 'Yatay Jolly tablosu deterministik çözülmeli (LLM fallback tetiklenmemeli)');
+        $this->assertSame('TRY', $result['currency']);
+
+        // 9 kalkış tarihi, hepsi aynı fiyat imzasında → tek blokta gruplanır
+        $allDates = [];
+        foreach ($blocks as $block) {
+            $allDates = array_merge($allDates, $block['dates']);
+        }
+        $this->assertCount(9, $allDates);
+        $this->assertContains('2026-07-25', $allDates);
+        $this->assertContains('2026-09-19', $allDates);
+
+        $pkg = $blocks[0]['packages'][0];
+        $this->assertSame('Fethiye Otelleri. Konaklama Opsiyonu', $pkg['hotel']);
+
+        // Kapak sütunu: eski 65.199 / güncel 32.599,50
+        $this->assertEquals(65199.0, $pkg['prices']['double_pp']['old']);
+        $this->assertEquals(32599.5, $pkg['prices']['double_pp']['new']);
+        $this->assertEquals(38399.5, $pkg['prices']['single']['new']);
+        // İlave yatak matriste doğru kovada (kapak fiyatı DEĞİL)
+        $this->assertEquals(29099.5, $pkg['prices']['extra_bed']['new']);
+        // Bebek: indirimsiz TEK fiyat (999) — çift sanılmamalı
+        $this->assertEquals(999.0, $pkg['prices']['child_0_2']['new']);
+        $this->assertNull($pkg['prices']['child_0_2']['old']);
+        $this->assertEquals(26799.5, $pkg['prices']['child_7_11']['new']);
+        // 2.Çocuk (2-6,99 yaş): indirimsiz tek fiyat — kapağa eşit ama farklı kova
+        $this->assertEquals(32599.0, $pkg['prices']['child_3_5']['new']);
+
+        // Başlangıç fiyatı = double_pp min — İLAVE YATAK DEĞİL
+        $this->assertEquals(32599.5, $this->invoke('minAdultPriceFromBlocks', [$blocks]));
+    }
+
+    public function test_horizontal_price_assignment_handles_pairs_and_singles(): void
+    {
+        // 6 sütun, 10 fiyat: 3 çift + tek + çift + tek (Jolly imzası)
+        $assigned = $this->invoke('assignHorizontalPrices', [6, [
+            65199.0, 32599.5, 76799.0, 38399.5, 58199.0, 29099.5, 999.0, 53599.0, 26799.5, 32599.0,
+        ]]);
+
+        $this->assertNotNull($assigned);
+        $this->assertSame(['old' => 65199.0, 'new' => 32599.5], $assigned[0]);
+        $this->assertSame(['old' => null, 'new' => 999.0], $assigned[3]);
+        $this->assertSame(['old' => 53599.0, 'new' => 26799.5], $assigned[4]);
+        $this->assertSame(['old' => null, 'new' => 32599.0], $assigned[5]);
+
+        // Sayı tutarsızlığı → null (güvenme): 2 sütuna 5 fiyat sığmaz
+        $this->assertNull($this->invoke('assignHorizontalPrices', [2, [1.0, 2.0, 3.0, 4.0, 5.0]]));
+    }
 }

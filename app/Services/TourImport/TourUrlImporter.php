@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 2;
+    private const CACHE_VERSION = 3;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -1046,6 +1046,9 @@ class TourUrlImporter
         - frequency (string|null): hareket sıklığı (ör. "Her Cuma kesin hareketli")
 
         ÖNEMLİ — fiyat: Sayfada birden fazla fiyat olabilir. GÜNCEL/indirimli kişi başı fiyatı al.
+        Kapak fiyatı İKİ KİŞİLİK ODA KİŞİ BAŞI fiyattır — "İlave Yatak", "3. Kişi",
+        "Tek Kişilik Oda" veya çocuk/bebek fiyatını kapak fiyatı olarak ASLA alma
+        (ilave yatak fiyatı genelde daha ucuzdur ama başlangıç fiyatı DEĞİLDİR).
         Üstü çizili/eski liste fiyatını, kapora/ön ödemeyi ve sayfadaki BAŞKA turların
         ("benzer turlar", "önerilen turlar", "diğer turlar") fiyatlarını ASLA alma.
 
@@ -1468,6 +1471,20 @@ class TourUrlImporter
             $types = $this->roomTypesFromLabel($fold);
             if ($types !== []) {
                 $next = $lines[$i + 1] ?? null;
+
+                // 3a) YATAY TABLO (Jolly tipi): etiketler ART ARDA dizilir, fiyatlar
+                // paket adından SONRA toplu gelir. Sonraki satır fiyat değilse ve
+                // ardışık başlık koşusu varsa yatay ayrıştırıcıyı dene.
+                if ($next !== null && ! $this->isPriceLine($next) && ! $this->isUnavailableCell($next)) {
+                    $advance = $this->parseHorizontalPriceTable($lines, $i, $currentDate, $byDate, $currencyVotes);
+                    if ($advance !== null) {
+                        $i = $advance;
+                        $currentPkg = null;
+                        $sawPriceForPkg = false;
+                        continue;
+                    }
+                }
+
                 if ($next !== null && $this->isPriceLine($next)) {
                     $first = $this->priceFloat($next);
                     $firstCur = $this->currencyFromLine($next);
@@ -1581,6 +1598,174 @@ class TourUrlImporter
         }
 
         return ['blocks' => $blocks, 'currency' => $currency];
+    }
+
+    /**
+     * YATAY fiyat tablosu ayrıştırıcı (Jolly tipi): önce TÜM sütun başlıkları
+     * art arda gelir ("İki Kişilik Oda Kişi Başı", "Tek Kişilik Oda", "İlave
+     * Yatak", "Bebek"+"0-1,99 Yaş", ...), ardından paket/otel adı ve fiyatlar
+     * TOPLU bir koşu halinde gelir; indirimli sayfada her sütun eski+yeni fiyat
+     * ÇİFTİ, indirimsiz sütun tek fiyat üretir. Başarıyla ayrıştırırsa
+     * $byDate'i doldurur ve tüketilen SON satırın index'ini döner; değilse null.
+     */
+    private function parseHorizontalPriceTable(array $lines, int $start, ?string $currentDate, array &$byDate, array &$currencyVotes): ?int
+    {
+        if ($currentDate === null) {
+            return null;
+        }
+        $count = count($lines);
+
+        // 1) Sütun başlıklarını topla. "Bebek"/"1.Çocuk" gibi yaşsız adlar sütun
+        // üretmez (yaş satırı kovayı verir) ama koşuyu bozmaz.
+        $columns = [];
+        $labelLines = 0;
+        $i = $start;
+        while ($i < $count) {
+            $fold = $this->foldTr($lines[$i]);
+            $types = $this->roomTypesFromLabel($fold);
+            if ($types !== []) {
+                $columns[] = $types;
+                $labelLines++;
+                $i++;
+
+                continue;
+            }
+            if (mb_strlen($fold) <= 20 && preg_match('/^(bebek|[0-9]?\s*\.?\s*cocuk|cocuk)\b/u', $fold)) {
+                $labelLines++;
+                $i++;
+
+                continue;
+            }
+            break;
+        }
+
+        // Yatay tablo sayılması için: en az 3 ardışık başlık satırı, en az 2 sütun
+        // ve yetişkin (double/single) sütunu şart — aksi halde dikey akışa bırak.
+        $hasAdult = array_filter($columns, fn ($t) => array_intersect($t, ['double_pp', 'single']) !== []);
+        if ($labelLines < 3 || count($columns) < 2 || $hasAdult === []) {
+            return null;
+        }
+
+        // 2) Paket adı + fiyat koşusu döngüsü (tabloda birden çok otel olabilir)
+        $pendingName = null;
+        $parsedAny = false;
+        while ($i < $count) {
+            $line = $lines[$i];
+            $fold = $this->foldTr($line);
+
+            if (str_contains($fold, 'rezervasyon yap')) {
+                $pendingName = null;
+                $i++;
+
+                continue;
+            }
+            // Yeni tarih başlığı veya yeni başlık bloğu → tablo bitti
+            if ($this->priceHeaderDate($line, $fold, $lines[$i + 1] ?? null) !== null) {
+                break;
+            }
+            if ($this->roomTypesFromLabel($fold) !== []) {
+                break;
+            }
+
+            if ($this->isPriceLine($line) || $this->isUnavailableCell($line)) {
+                // Fiyat koşusunu topla ("Kabul Edilemez" hücresi null yer tutucu)
+                $values = [];
+                $j = $i;
+                while ($j < $count && ($this->isPriceLine($lines[$j]) || $this->isUnavailableCell($lines[$j]))) {
+                    if ($this->isPriceLine($lines[$j])) {
+                        $values[] = $this->priceFloat($lines[$j]);
+                        if ($cur = $this->currencyFromLine($lines[$j])) {
+                            $currencyVotes[$cur] = ($currencyVotes[$cur] ?? 0) + 1;
+                        }
+                    } else {
+                        $values[] = null;
+                    }
+                    $j++;
+                }
+
+                $assigned = $this->assignHorizontalPrices(count($columns), $values);
+                if ($assigned === null) {
+                    // Sayı tutarlılığı sağlanamadı → bu tabloya güvenme
+                    return $parsedAny ? $i - 1 : null;
+                }
+
+                $prices = [];
+                foreach ($columns as $idx => $types) {
+                    $cell = $assigned[$idx];
+                    if ($cell['new'] === null) {
+                        continue; // müsait olmayan/fiyatsız sütun
+                    }
+                    foreach ($types as $type) {
+                        $prices[$type] = ['old' => $cell['old'], 'new' => $cell['new']];
+                    }
+                }
+                if ($prices !== []) {
+                    $byDate[$currentDate][] = [
+                        'hotel' => mb_substr($pendingName ?? 'Standart Paket', 0, 255),
+                        'prices' => $prices,
+                    ];
+                    $parsedAny = true;
+                }
+                $pendingName = null;
+                $i = $j;
+
+                continue;
+            }
+
+            // Paket/otel adı adayı — fiyat koşusundan önceki SON kısa satır kazanır
+            // (tur adı satırı otel adıyla ezilir)
+            if (mb_strlen($line) <= 120) {
+                $pendingName = $line;
+            }
+            $i++;
+        }
+
+        return $parsedAny ? $i - 1 : null;
+    }
+
+    /**
+     * Yatay tablo fiyat koşusunu sütunlara dağıtır: her sütun ya TEK fiyat ya da
+     * ESKİ>YENİ çifti tüketir; toplam TAM tükenmelidir (geri izlemeli eşleme).
+     * Sayı kısıtı çoğu yanlış eşlemeyi budar; çözüm yoksa null (güvenme).
+     *
+     * @param  array<int, float|null>  $values
+     * @return array<int, array{old: ?float, new: ?float}>|null
+     */
+    private function assignHorizontalPrices(int $columnCount, array $values): ?array
+    {
+        $total = count($values);
+
+        $solve = function (int $ci, int $pi) use (&$solve, $columnCount, $values, $total): ?array {
+            if ($ci === $columnCount) {
+                return $pi === $total ? [] : null;
+            }
+            $remainingCols = $columnCount - $ci;
+            $remaining = $total - $pi;
+            if ($remaining < $remainingCols || $remaining > 2 * $remainingCols) {
+                return null;
+            }
+
+            $a = $values[$pi] ?? null;
+            $b = $values[$pi + 1] ?? null;
+
+            // Önce çift dene (indirimli sayfa tipik durumu): eski > yeni
+            if ($a !== null && $b !== null && $a > $b) {
+                $rest = $solve($ci + 1, $pi + 2);
+                if ($rest !== null) {
+                    return array_merge([['old' => $a, 'new' => $b]], $rest);
+                }
+            }
+
+            // Tek fiyat (ya da müsait değil hücresi → new=null)
+            $rest = $solve($ci + 1, $pi + 1);
+            if ($rest !== null) {
+                return array_merge([['old' => null, 'new' => $a]], $rest);
+            }
+
+            return null;
+        };
+
+        return $solve(0, 0);
     }
 
     /** Türkçe metni ASCII'ye katlar + küçük harfe çevirir (etiket eşleştirme için). */

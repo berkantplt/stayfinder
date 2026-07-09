@@ -98,6 +98,73 @@ class TourPricingBlocksTest extends TestCase
         );
     }
 
+    public function test_headline_price_prefers_double_over_cheaper_extra_bed(): void
+    {
+        // Jolly vakası: ilave yatak (29.099,50) çift kişilikten (32.599,50) ucuz —
+        // kapak fiyatı yine de İKİ KİŞİLİK ODA KİŞİ BAŞI olmalı.
+        $depart = today()->addDays(30)->toDateString();
+
+        $this->actingAs($this->agencyUser)
+            ->post(route('agency.tours.store'), [
+                'category_id' => $this->category->id,
+                'title' => 'Uçaklı Likya Turu',
+                'destination' => 'Fethiye',
+                'departure_city' => 'İstanbul',
+                'duration_days' => 5,
+                'currency' => 'TRY',
+                'pricing_options' => [
+                    [
+                        'departure_dates' => [$depart],
+                        'packages' => [
+                            [
+                                'hotel' => 'Fethiye Otelleri',
+                                'double_pp' => ['old' => '65199', 'new' => '32599.5'],
+                                'single' => ['old' => '76799', 'new' => '38399.5'],
+                                'extra_bed' => ['old' => '58199', 'new' => '29099.5'],
+                                'child_0_2' => ['old' => '', 'new' => '999'],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('agency.tours.index'));
+
+        $tour = Tour::firstWhere('title', 'Uçaklı Likya Turu');
+        $this->assertNotNull($tour);
+        $this->assertEquals(32599.5, (float) $tour->price, 'Kapak fiyatı ilave yatak DEĞİL, double_pp olmalı');
+    }
+
+    public function test_headline_price_falls_back_to_extra_bed_when_no_room_price(): void
+    {
+        $depart = today()->addDays(30)->toDateString();
+
+        $this->actingAs($this->agencyUser)
+            ->post(route('agency.tours.store'), [
+                'category_id' => $this->category->id,
+                'title' => 'Sadece İlave Yatak Turu',
+                'destination' => 'Bodrum',
+                'departure_city' => 'İzmir',
+                'duration_days' => 3,
+                'currency' => 'TRY',
+                'pricing_options' => [
+                    [
+                        'departure_dates' => [$depart],
+                        'packages' => [
+                            [
+                                'hotel' => 'Tek Tip Otel',
+                                'extra_bed' => ['old' => '', 'new' => '5000'],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('agency.tours.index'));
+
+        $tour = Tour::firstWhere('title', 'Sadece İlave Yatak Turu');
+        $this->assertNotNull($tour);
+        $this->assertEquals(5000, (float) $tour->price);
+    }
+
     public function test_store_keeps_note_when_room_type_has_no_price(): void
     {
         $depart = today()->addDays(25)->toDateString();
