@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 3;
+    private const CACHE_VERSION = 4;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -419,7 +419,145 @@ class TourUrlImporter
             usort($candidates, fn ($a, $b) => $generic($b) <=> $generic($a));
         }
 
-        return array_slice(array_values(array_unique($candidates)), 0, 12);
+        $candidates = array_slice(array_values(array_unique($candidates)), 0, 16);
+
+        // İçerik-farkındalıklı eleme: hash isimli CDN'lerde (turperisi/acenta360
+        // vakası) jpg+webp çiftleri ve isimden tanınamayan logolar ancak
+        // İÇERİKTEN yakalanır — adayları indirir, algısal kopyaları tekiller,
+        // küçük/şerit-oranlı görselleri (logo) eler.
+        $candidates = $this->contentFilterImages($candidates);
+
+        return array_slice($candidates, 0, 12);
+    }
+
+    /**
+     * Aday görselleri paralel indirip içeriğe göre süzer:
+     * - kısa kenar < 300px veya aşırı yatay/dikey oran → logo/thumbnail, elenir
+     * - algısal parmak izi (dHash) eşleşenler tekilleşir; büyük kopya, KÜÇÜĞÜN
+     *   SIRASINDA kalır (kapak pozisyonu korunur)
+     * - indirilemeyen/çözümlenemeyen aday temkinli şekilde TUTULUR
+     * Ağ/ortam hatasında liste olduğu gibi döner (en-iyi-çaba katmanı).
+     *
+     * @param  array<int, string>  $urls
+     * @return array<int, string>
+     */
+    private function contentFilterImages(array $urls): array
+    {
+        if ($urls === [] || ! function_exists('imagecreatefromstring')) {
+            return $urls;
+        }
+
+        try {
+            $responses = Http::pool(fn ($pool) => array_map(
+                fn ($u) => $pool->as($u)->timeout(6)->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
+                    'Accept' => 'image/*,*/*;q=0.8',
+                ])->get($u),
+                $urls
+            ));
+        } catch (\Throwable) {
+            return $urls;
+        }
+
+        $kept = []; // ['url' => string, 'hash' => ?string, 'area' => int]
+        foreach ($urls as $u) {
+            $res = $responses[$u] ?? null;
+            $body = ($res instanceof \Illuminate\Http\Client\Response && $res->ok()) ? $res->body() : null;
+
+            if ($body === null || $body === '' || strlen($body) > 8 * 1024 * 1024) {
+                $kept[] = ['url' => $u, 'hash' => null, 'area' => 0];
+
+                continue;
+            }
+
+            $dims = @getimagesizefromstring($body);
+            $area = 0;
+            if ($dims !== false) {
+                [$w, $h] = $dims;
+                if (min($w, $h) < 300) {
+                    continue; // logo/thumbnail (kayıt tarafındaki kapıyla aynı eşik)
+                }
+                $ratio = $h > 0 ? $w / $h : 0;
+                if ($ratio > 3.2 || $ratio < 0.31) {
+                    continue; // şerit logo / banner oranı
+                }
+                $area = $w * $h;
+            }
+
+            $hash = $this->imageDHash($body);
+
+            // Algısal kopya kontrolü (jpg+webp çifti, yeniden boyutlanmış kopya)
+            $dupIndex = null;
+            if ($hash !== null) {
+                foreach ($kept as $idx => $item) {
+                    if ($item['hash'] !== null && $this->hammingBits($item['hash'], $hash) <= 10) {
+                        $dupIndex = $idx;
+                        break;
+                    }
+                }
+            }
+            if ($dupIndex !== null) {
+                if ($area > $kept[$dupIndex]['area']) {
+                    $kept[$dupIndex]['url'] = $u;
+                    $kept[$dupIndex]['area'] = $area;
+                }
+
+                continue;
+            }
+
+            $kept[] = ['url' => $u, 'hash' => $hash, 'area' => $area];
+        }
+
+        return array_map(fn ($item) => $item['url'], $kept);
+    }
+
+    /**
+     * dHash (difference hash): görseli 9×8 griye indirir, komşu piksel parlaklık
+     * karşılaştırmasından 64 bitlik imza üretir. Aynı fotoğrafın farklı
+     * format/boyut kopyaları ~0-6 bit farkla eşleşir.
+     */
+    private function imageDHash(string $bytes): ?string
+    {
+        $src = @imagecreatefromstring($bytes);
+        if ($src === false) {
+            return null;
+        }
+        if (! imageistruecolor($src)) {
+            imagepalettetotruecolor($src);
+        }
+        $img = imagescale($src, 9, 8);
+        if ($img === false) {
+            return null;
+        }
+
+        $bits = '';
+        for ($y = 0; $y < 8; $y++) {
+            $prev = null;
+            for ($x = 0; $x < 9; $x++) {
+                $rgb = imagecolorat($img, $x, $y);
+                $lum = (($rgb >> 16) & 0xFF) * 0.299 + (($rgb >> 8) & 0xFF) * 0.587 + ($rgb & 0xFF) * 0.114;
+                if ($prev !== null) {
+                    $bits .= $lum > $prev ? '1' : '0';
+                }
+                $prev = $lum;
+            }
+        }
+
+        return $bits;
+    }
+
+    /** İki bit dizisi arasındaki Hamming uzaklığı. */
+    private function hammingBits(string $a, string $b): int
+    {
+        $len = min(strlen($a), strlen($b));
+        $dist = abs(strlen($a) - strlen($b));
+        for ($i = 0; $i < $len; $i++) {
+            if ($a[$i] !== $b[$i]) {
+                $dist++;
+            }
+        }
+
+        return $dist;
     }
 
     /**
