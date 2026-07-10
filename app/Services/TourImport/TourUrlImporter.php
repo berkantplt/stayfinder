@@ -1034,12 +1034,7 @@ class TourUrlImporter
             throw new RuntimeException('Bu adres güvenlik nedeniyle çekilemez.');
         }
 
-        if (filter_var($host, FILTER_VALIDATE_IP)) {
-            $ips = [$host];
-        } else {
-            $ips = gethostbynamel($host) ?: [];
-        }
-
+        $ips = $this->resolveAllIps($host);
         if ($ips === []) {
             throw new RuntimeException('Adres çözümlenemedi.');
         }
@@ -1050,6 +1045,32 @@ class TourUrlImporter
                 throw new RuntimeException('Bu adres güvenlik nedeniyle çekilemez.');
             }
         }
+    }
+
+    /**
+     * Host'un TÜM IP'lerini (IPv4 A + IPv6 AAAA) çözer. gethostbynamel yalnız
+     * IPv4 döndürdüğü için, yalnız AAAA kaydı olan iç servisleri (::1, fd00::/8)
+     * kaçırırdı → dns_get_record ile AAAA da denetlenir.
+     *
+     * @return array<int, string>
+     */
+    private function resolveAllIps(string $host): array
+    {
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return [$host];
+        }
+
+        $ips = gethostbynamel($host) ?: [];
+
+        // AAAA (IPv6) kayıtları — DNS-rebinding/IPv6 kaçışını kapatır
+        $aaaa = @dns_get_record($host, DNS_AAAA) ?: [];
+        foreach ($aaaa as $rec) {
+            if (! empty($rec['ipv6'])) {
+                $ips[] = $rec['ipv6'];
+            }
+        }
+
+        return array_values(array_unique($ips));
     }
 
     /**
@@ -1150,6 +1171,23 @@ class TourUrlImporter
         $text = trim($text);
 
         $combined = trim(implode("\n", $hints)."\n".$text);
+
+        if (mb_strlen($combined) <= self::SCAN_CHARS) {
+            return $combined;
+        }
+
+        // Kör kesme yerine: fiyat tablosu çapası kesme sınırının ÖTESİNDEyse
+        // (çok uzun sayfa) fiyat bölgesini pencereleyip başa ekle — aksi halde
+        // hem deterministik parser hem LLM fallback tabloyu hiç göremezdi (DÜŞ7).
+        $low = mb_strtolower($combined);
+        $anchor = $this->priceAnchorStart($low);
+        if ($anchor !== null && $anchor >= self::SCAN_CHARS) {
+            $reserve = 36000; // fiyat bölgesi + hemen sonrası (dahil/hariç) için pay
+            $head = mb_substr($combined, 0, self::SCAN_CHARS - $reserve);
+            $priceWindow = mb_substr($combined, max(0, $anchor - 200), $reserve);
+
+            return $head."\n\n[...ARADAKİ İÇERİK ATLANDI...]\n".$priceWindow;
+        }
 
         return mb_substr($combined, 0, self::SCAN_CHARS);
     }
@@ -1350,15 +1388,24 @@ class TourUrlImporter
         ));
 
         // Çıktı tavana çarptıysa JSON kesilir → json_decode boş döner ve alanlar
-        // sessizce kaybolur; teşhis için logla.
+        // sessizce kaybolur.
         $finishReason = $response->choices[0]->finishReason ?? null;
-        if ($finishReason === 'length') {
-            Log::warning('[TourImport] genel çıkarım max_tokens tavanına çarptı — çıktı kesilmiş olabilir');
+        $content = $response->choices[0]->message->content ?? '';
+        $decoded = json_decode($content, true);
+
+        // finish_reason=length VEYA içerik dolu ama JSON parse edilemiyorsa: alanlar
+        // sessizce kaybolmasın — RuntimeException fırlat, doImport bunu yakalayıp
+        // kullanıcıya "yapay zeka çıktısı eksik" uyarısına çevirir + sonuç
+        // cache'lenmez (sağlık kapısı), tekrar denemede taze koşulur.
+        if ($finishReason === 'length' || (trim($content) !== '' && ! is_array($decoded))) {
+            Log::warning('[TourImport] genel çıkarım çıktısı kesik/geçersiz', [
+                'finish_reason' => $finishReason,
+                'content_len' => mb_strlen($content),
+            ]);
+            throw new RuntimeException('Yapay zeka çıktısı eksik veya biçimsiz döndü.');
         }
 
-        $content = $response->choices[0]->message->content ?? '{}';
-
-        return json_decode($content, true) ?: [];
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**
@@ -1554,7 +1601,19 @@ class TourUrlImporter
                 0.0
             ));
 
-            $data = json_decode($response->choices[0]->message->content ?? '{}', true) ?: [];
+            // Çok tarihli matris çıktı tavanını (6000) aşarsa JSON kesilir ve
+            // pricing_blocks sessizce boşalırdı — teşhis için finish_reason'ı logla.
+            // (Blok boş kalınca doImport zaten "fiyat tablosu çıkarılamadı" uyarısı
+            // verir; burada log ile ayrımı netleştiriyoruz.)
+            $finishReason = $response->choices[0]->finishReason ?? null;
+            $content = $response->choices[0]->message->content ?? '{}';
+            if ($finishReason === 'length') {
+                Log::info('[TourImport] fiyat matrisi çıktı tavanına çarptı — bloklar eksik olabilir', [
+                    'content_len' => mb_strlen($content),
+                ]);
+            }
+
+            $data = json_decode($content, true) ?: [];
 
             return is_array($data['pricing_blocks'] ?? null) ? $data['pricing_blocks'] : [];
         } catch (\Throwable $e) {
@@ -1584,10 +1643,15 @@ class TourUrlImporter
             return $title;
         }
 
+        // Yalnızca SÜRE ("3 Gece 4 Gün", "3 Gece Otel Konaklamalı") ve KALKIŞ
+        // ("İstanbul Çıkışlı") kuyruğu atılır. 'otel/hotel/resort/konaklamalı' TEK
+        // BAŞINA ölçüt DEĞİL: "Sunshine Holiday Resort Fethiye" gibi meşru tur adı
+        // segmentleri silinmesin (b977401 regresyonu). "Otel Konaklamalı" gibi bir
+        // kuyruk zaten "N gece/gün" ile yakalanır.
         $kept = array_values(array_filter(
             preg_split('#\s[/|]\s#', $title) ?: [],
             fn (string $seg): bool => ! preg_match(
-                '/\b\d+\s*gece\b|\b\d+\s*gün\b|çıkışlı|kalkışlı|hareketli|konaklamalı|otel|hotel|resort/iu',
+                '/\b\d+\s*gece\b|\b\d+\s*gün\b|çıkışlı|kalkışlı|hareketli/iu',
                 $seg
             )
         ));
@@ -1913,19 +1977,28 @@ class TourUrlImporter
         // boş dön ki çağıran LLM'e düşsün ("emin ama kaymış" fiyat asla üretilmez).
         $withDouble = 0;
         $suspect = 0;
+        $anySingle = false;
         foreach ($blocks as $b) {
             foreach ($b['packages'] as $p) {
                 $d = $p['prices']['double_pp']['new'] ?? null;
                 $s = $p['prices']['single']['new'] ?? null;
+                if ($s !== null) {
+                    $anySingle = true;
+                }
                 if ($d !== null) {
                     $withDouble++;
-                    if ($s === null || $s < $d) {
+                    // Yalnız MEVCUT ama tersine kaymış single şüphelidir (s < d).
+                    // single'ın hiç olmaması kayma değil — sütun yokluğudur.
+                    if ($s !== null && $s < $d) {
                         $suspect++;
                     }
                 }
             }
         }
-        if ($withDouble > 0 && ($suspect / $withDouble) > 0.5) {
+        // Tabloda single sütunu HİÇ yoksa (yalnız çift-kişilik fiyatlı geçerli
+        // dikey tablo) kayma heuristiği uygulanmaz — böyle tablolar elenmesin (DÜŞ2).
+        // Single VARSA ve paketlerin yarıdan çoğunda tersine kaymışsa güvenme.
+        if ($anySingle && $withDouble > 0 && ($suspect / $withDouble) > 0.5) {
             return ['blocks' => [], 'currency' => $currency];
         }
 
@@ -2273,7 +2346,12 @@ class TourUrlImporter
      */
     private function minAdultPriceFromBlocks(array $blocks): ?float
     {
-        foreach (['double_pp', 'single', 'extra_bed'] as $type) {
+        // extra_bed (İlave Yatak) BİLEREK dışarıda: ilave yatak fiyatı normal
+        // yetişkin başlangıç fiyatından düşüktür; onu "en düşük yetişkin" sayıp
+        // LLM'in doğru kapak fiyatını ezmek yanlıştır (DÜŞ1). Yalnızca çift
+        // kişilik kişi-başı ve tek kişilik fiyat kaynak kabul edilir; sadece
+        // extra_bed varsa null → LLM fiyatı korunur.
+        foreach (['double_pp', 'single'] as $type) {
             $values = [];
             foreach ($blocks as $block) {
                 foreach ($block['packages'] as $pkg) {

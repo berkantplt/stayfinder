@@ -363,15 +363,21 @@ class TourImportParserTest extends TestCase
 
     public function test_title_tail_junk_is_stripped(): void
     {
-        // tatilciniz: mini modeller ham <title>'ı kopyalıyor (" / " ayraçlı)
+        // tatilciniz: süre + kalkış kuyruğu atılır; otel-adı segmenti KORUNUR
+        // (b977401 regresyonu: "Resort" içeren meşru segmentler siliniyordu)
         $this->assertSame(
-            'Fethiye Ölüdeniz Pamukkale Turu',
+            'Fethiye Ölüdeniz Pamukkale Turu / Sunshine Holiday Resort Fethiye',
             $this->invoke('cleanTitle', ['Fethiye Ölüdeniz Pamukkale Turu / Sunshine Holiday Resort Fethiye / 3 Gece 4 Gün / İstanbul, İzmit ve Sakarya Çıkışlı'])
         );
-        // turperisi: " | " ayraçlı süre kuyruğu
+        // turperisi: " | " süre kuyruğu ("3 Gece Otel Konaklamalı" → "N gece" ile yakalanır)
         $this->assertSame(
             'Fethiye Ölüdeniz Dalyan Gökova Turu',
             $this->invoke('cleanTitle', ['Fethiye Ölüdeniz Dalyan Gökova Turu | 3 Gece Otel Konaklamalı'])
+        );
+        // "Resort/Otel" içeren tek segmentli meşru tur adı DOKUNULMAZ
+        $this->assertSame(
+            'Rixos Premium Belek Resort Turu',
+            $this->invoke('cleanTitle', ['Rixos Premium Belek Resort Turu'])
         );
         // Meşru "/" içeren başlık dokunulmaz kalır
         $this->assertSame(

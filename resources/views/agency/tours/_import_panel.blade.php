@@ -107,6 +107,15 @@ function importFromUrl(deep) {
     var otherBtn = document.getElementById(deep ? 'importBtn' : 'importDeepBtn');
     if (!url) { showImportStatus('Lütfen bir URL girin.', 'error'); return; }
 
+    // Dolu form üzerine yazma uyarısı: başlık dolu veya fiyat/tarih satırı varsa
+    // (özellikle düzenleme sayfasında) onay iste — sessizce ezme.
+    var titleFilled = (document.querySelector('input[name="title"]')?.value || '').trim() !== '';
+    var hasPricingRows = (typeof pricingOptions !== 'undefined' && Array.isArray(pricingOptions) && pricingOptions.length > 0);
+    if ((titleFilled || hasPricingRows) &&
+        !confirm('Formdaki mevcut bilgilerin (tur adı, tarih/fiyat satırları dahil) üzerine yazılacak. Devam edilsin mi?')) {
+        return;
+    }
+
     _importInFlight = true;
     var oldLabel = btn.textContent;
     btn.disabled = true;

@@ -189,7 +189,17 @@ class TourImageService
             return false;
         }
 
-        $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $ips = [$host];
+        } else {
+            $ips = gethostbynamel($host) ?: [];
+            // AAAA (IPv6) kayıtları da denetlenir — yalnız-IPv6 iç servisleri kaçmasın
+            foreach (@dns_get_record($host, DNS_AAAA) ?: [] as $rec) {
+                if (! empty($rec['ipv6'])) {
+                    $ips[] = $rec['ipv6'];
+                }
+            }
+        }
         if ($ips === []) {
             return false;
         }
