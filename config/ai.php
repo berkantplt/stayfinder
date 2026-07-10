@@ -39,14 +39,15 @@ return [
     // Destinasyon zenginleştirme job'ı — yüksek hacim, mini yeterli.
     'destination_enrichment_model' => env('AI_DEST_MODEL', 'gpt-4o-mini'),
 
-    // Tur URL'sinden içe aktarma — karışık HTML metninden çoklu alan çıkarımı;
-    // doğruluk için gpt-4o.
-    'import_model' => env('AI_IMPORT_MODEL', 'gpt-4o'),
+    // Tur URL'sinden içe aktarma — karışık HTML metninden çoklu alan çıkarımı.
+    // 2026-07: gpt-4o → gpt-5.4-mini (gpt-4o wind-down sürecinde; 5.4-mini zeka
+    // endeksi 40 vs 11, maliyet ~%65 düşük; reasoning parametreleri chatParams'ta).
+    'import_model' => env('AI_IMPORT_MODEL', 'gpt-5.4-mini'),
 
     // Fiyat matrisi fallback çağrısı (deterministik parser boş dönerse) — sayısal
-    // hassasiyet kritik (eski/yeni fiyat eşleşmesi); genel import modeli ucuza
-    // indirilse bile bu çağrı güçlü modelde kalır.
-    'import_pricing_model' => env('AI_IMPORT_PRICING_MODEL', 'gpt-4o'),
+    // hassasiyet kritik (eski/yeni fiyat eşleşmesi); şema/araç uyumu sınıfının
+    // en güçlüsü olan gpt-5.4-mini (τ2-bench 93.4) kullanılır.
+    'import_pricing_model' => env('AI_IMPORT_PRICING_MODEL', 'gpt-5.4-mini'),
 
     // Tur URL içe aktarma — okuyucu servisi: sayfayı gerçek tarayıcıyla render edip
     // temiz Markdown döndürür (JS-render + gürültü temizliği → daha doğru çıkarım).

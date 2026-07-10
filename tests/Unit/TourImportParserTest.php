@@ -360,4 +360,28 @@ class TourImportParserTest extends TestCase
         // Sayı tutarsızlığı → null (güvenme): 2 sütuna 5 fiyat sığmaz
         $this->assertNull($this->invoke('assignHorizontalPrices', [2, [1.0, 2.0, 3.0, 4.0, 5.0]]));
     }
+
+    public function test_title_tail_junk_is_stripped(): void
+    {
+        // tatilciniz: mini modeller ham <title>'ı kopyalıyor (" / " ayraçlı)
+        $this->assertSame(
+            'Fethiye Ölüdeniz Pamukkale Turu',
+            $this->invoke('cleanTitle', ['Fethiye Ölüdeniz Pamukkale Turu / Sunshine Holiday Resort Fethiye / 3 Gece 4 Gün / İstanbul, İzmit ve Sakarya Çıkışlı'])
+        );
+        // turperisi: " | " ayraçlı süre kuyruğu
+        $this->assertSame(
+            'Fethiye Ölüdeniz Dalyan Gökova Turu',
+            $this->invoke('cleanTitle', ['Fethiye Ölüdeniz Dalyan Gökova Turu | 3 Gece Otel Konaklamalı'])
+        );
+        // Meşru "/" içeren başlık dokunulmaz kalır
+        $this->assertSame(
+            'Kapadokya / Ihlara Vadisi Turu',
+            $this->invoke('cleanTitle', ['Kapadokya / Ihlara Vadisi Turu'])
+        );
+        // Tüm segmentler kalıba uyarsa orijinal korunur (boş başlık üretme)
+        $this->assertSame(
+            '3 Gece 4 Gün / İzmir Çıkışlı',
+            $this->invoke('cleanTitle', ['3 Gece 4 Gün / İzmir Çıkışlı'])
+        );
+    }
 }
