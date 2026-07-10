@@ -45,8 +45,15 @@ class SyncKnowledgeBase extends Command
 
     private function pruneStaleTourChunks(): void
     {
+        // Saklama ölçütü syncTours ile BİREBİR aynı olmalı: lisansı biten (KYM
+        // scopeActive: expires_at >= bugün) veya acentası pasifleşen turların
+        // chunk'ları silinsin — aksi halde asistan lisanssız/404 turu önerir.
+        $visibleTourIds = Tour::active()
+            ->whereHas('agency', fn ($q) => $q->active())
+            ->pluck('id');
+
         $pruned = \App\Models\KnowledgeChunk::where('source_type', 'tour')
-            ->whereNotIn('source_id', Tour::where('is_active', true)->pluck('id'))
+            ->whereNotIn('source_id', $visibleTourIds)
             ->delete();
 
         if ($pruned > 0) {

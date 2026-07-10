@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use OpenAI\Laravel\Facades\OpenAI;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -392,7 +393,27 @@ class AiSearchController extends Controller
             return response()->json(['error' => $data['error']], 500);
         }
 
-        return response()->json($data);
+        return response()->json($this->publicSearchPayload($data));
+    }
+
+    /**
+     * performAiSearch çıktısındaki İÇ alanları (tam Tour/Agency modelleri —
+     * embedding vektörleri, search_text, acenta e-posta/onay notları — ve
+     * ham intent) dış yanıttan ayıklar. Yalnızca istemcinin ihtiyacı olan
+     * beyaz-listedeki alanlar döner.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function publicSearchPayload(array $data): array
+    {
+        $whitelist = [
+            'results', 'aiComment', 'log_id', 'relaxation_note',
+            'total_matches', 'all_results_url', 'applied_filters',
+            'latency_ms', 'is_clarification',
+        ];
+
+        return array_intersect_key($data, array_flip($whitelist));
     }
 
     /**
@@ -1084,8 +1105,12 @@ class AiSearchController extends Controller
                 ],
             ];
 
-        } catch (\Exception $e) {
-            return ['error' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            // \Throwable: alt katmandaki fatal Error'lar (ör. rerank) da graceful
+            // fallback'e düşsün, tüm aramayı patlatmasın.
+            Log::error('[AiSearch] performAiSearch hata: '.$e->getMessage());
+
+            return ['error' => 'Arama sırasında bir sorun oluştu, lütfen tekrar deneyin.'];
         }
     }
 
@@ -1804,7 +1829,7 @@ class AiSearchController extends Controller
 
             return $response->choices[0]->message->content;
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('[AiSearchController] Yorum oluşturma hatası: '.$e->getMessage());
 
             return 'Şu an senin için en iyi seçenekleri araştırıyorum. İşte bulduğum turlar:';

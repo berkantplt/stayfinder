@@ -35,6 +35,16 @@ class TourUrlImporter
     private ?string $lastHtml = null;
 
     /**
+     * Bir import isteğinin duvar-saati son teslim anı (microtime float). doImport
+     * başında kurulur; ikinci LLM çağrısı / retry bu anı aşacaksa atlanır, böylece
+     * toplam süre nginx proxy zaman aşımının (60 sn) altında tutulur.
+     */
+    private ?float $deadline = null;
+
+    /** Sunucu tarafı toplam süre bütçesi (sn) — nginx 60 sn'nin güvenli altı. */
+    private const TIME_BUDGET = 52;
+
+    /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
      * yapılandırılmış tur alanlarına çıkarır ve normalize edip döner.
      *
@@ -90,6 +100,7 @@ class TourUrlImporter
     {
         $this->assertSafeUrl($url);
         $this->lastHtml = null;
+        $this->deadline = microtime(true) + self::TIME_BUDGET;
 
         $content = '';
         $usedFirecrawl = false;
@@ -153,7 +164,11 @@ class TourUrlImporter
         // ve Firecrawl anahtarı varken henüz denenmediyse, sayfayı GERÇEK TARAYICIDA
         // render ettirip (tutarlı DOM) render edilmiş rawHtml'den yeniden deterministik
         // ayrıştır. Böylece "899,00 €" her seferinde aynı temiz yapıdan kesin okunur.
-        if ($blocks === [] && ! $usedFirecrawl && config('ai.import_firecrawl_key')) {
+        // NOT: fiyat bölgesi ham HTML'de ZATEN varsa (yalnızca düzeni atipikse)
+        // render bir şey değiştirmez — 10-45 sn'lik Firecrawl turunu atla, doğrudan
+        // odaklı LLM çağrısına geç (canlıda proxy zaman aşımının baş nedeniydi).
+        if ($blocks === [] && ! $usedFirecrawl && config('ai.import_firecrawl_key')
+            && $this->priceTableRegion($text) === '') {
             try {
                 $this->fetchViaFirecrawl($url); // $this->lastHtml'i render edilmiş rawHtml ile doldurur
                 if ($this->lastHtml !== null && trim($this->lastHtml) !== '') {
@@ -170,8 +185,10 @@ class TourUrlImporter
             }
         }
 
-        if ($blocks === []) {
+        if ($blocks === [] && ! $this->deadlineExceeded()) {
             // Fallback: AYRI, odaklı LLM çağrısı — sadece fiyat tablosu bölgesini okur.
+            // Süre bütçesi aşıldıysa bu ikinci çağrı atlanır (nginx 60 sn'yi aşmasın);
+            // deterministik parser zaten denendi, fiyat elle girilebilir.
             $priceRegion = $this->priceTableRegion($text);
             if ($priceRegion !== '') {
                 $rawBlocks = $this->extractPricingBlocks($priceRegion);
@@ -316,10 +333,10 @@ class TourUrlImporter
         // Hiç HTML yoksa (ör. yalnızca okuyucu servisi kullanıldıysa) son çare: tek hızlı çekim
         if (trim($html) === '') {
             try {
-                $response = Http::timeout(10)->withHeaders([
+                $response = $this->safeGet($url, [
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
                     'Accept' => 'text/html,application/xhtml+xml,*/*;q=0.8',
-                ])->get($url);
+                ], 10);
 
                 if (! $response->ok()) {
                     return [];
@@ -492,13 +509,32 @@ class TourUrlImporter
             return $urls;
         }
 
+        // SSRF: sayfadan türetilen görsel URL'leri sunucuya indirilmeden önce
+        // doğrulanmalı. İç/reserved IP'ye çözümlenen adaylar analiz edilmeden
+        // (elenmeden) LİSTEDE bırakılır — kayıt aşamasında TourImageService
+        // ikinci güvenlik kapısını uygular; burada amaç iç ağ FETCH'ini önlemek.
+        $safe = [];
+        foreach ($urls as $u) {
+            try {
+                $this->assertSafeUrl($u);
+                $safe[] = $u;
+            } catch (\Throwable) {
+                // güvensiz aday: indirme, ama listeyi bozma
+            }
+        }
+        if ($safe === []) {
+            return $urls;
+        }
+
         try {
+            // withoutRedirecting: bir görsel URL'i iç ağa 302 atarsa hedef
+            // çekilmez (non-200 → analiz edilmez, temkinli tutulur).
             $responses = Http::pool(fn ($pool) => array_map(
-                fn ($u) => $pool->as($u)->timeout(6)->withHeaders([
+                fn ($u) => $pool->as($u)->timeout(6)->withoutRedirecting()->withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
                     'Accept' => 'image/*,*/*;q=0.8',
                 ])->get($u),
-                $urls
+                $safe
             ));
         } catch (\Throwable) {
             return $urls;
@@ -1016,16 +1052,64 @@ class TourUrlImporter
         }
     }
 
+    /**
+     * SSRF-güvenli GET: Guzzle'ın otomatik yönlendirmesi KAPALI; her Location
+     * hedefi indirmeden önce assertSafeUrl'den geçirilir (redirect ile iç ağa/
+     * metadata'ya kaçış engellenir). En fazla $maxHops yönlendirme izlenir.
+     */
+    private function safeGet(string $url, array $headers = [], int $timeout = 15, int $maxHops = 4): \Illuminate\Http\Client\Response
+    {
+        for ($hop = 0; ; $hop++) {
+            $this->assertSafeUrl($url);
+
+            $response = Http::timeout($timeout)
+                ->withHeaders($headers)
+                ->withoutRedirecting()
+                ->get($url);
+
+            $status = $response->status();
+            if ($status < 300 || $status >= 400) {
+                return $response;
+            }
+
+            $location = trim((string) $response->header('Location'));
+            if ($location === '' || $hop >= $maxHops) {
+                return $response;
+            }
+            $url = $this->absoluteRedirect($location, $url);
+        }
+    }
+
+    /** Yönlendirmedeki (muhtemelen göreli) Location'ı mutlak URL'ye çevirir. */
+    private function absoluteRedirect(string $location, string $base): string
+    {
+        if (preg_match('#^https?://#i', $location)) {
+            return $location;
+        }
+        $p = parse_url($base);
+        $scheme = $p['scheme'] ?? 'https';
+        $host = $p['host'] ?? '';
+        $port = isset($p['port']) ? ':'.$p['port'] : '';
+        if (str_starts_with($location, '//')) {
+            return $scheme.':'.$location;
+        }
+        if (str_starts_with($location, '/')) {
+            return $scheme.'://'.$host.$port.$location;
+        }
+        $path = $p['path'] ?? '/';
+        $dir = substr($path, 0, (int) strrpos($path, '/') + 1);
+
+        return $scheme.'://'.$host.$port.$dir.$location;
+    }
+
     private function fetchDirect(string $url): string
     {
-        $response = Http::timeout(15)
-            ->withHeaders([
-                // Gerçekçi tarayıcı başlıkları — basit bot engellerini azaltır
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language' => 'tr-TR,tr;q=0.9,en;q=0.8',
-            ])
-            ->get($url);
+        $response = $this->safeGet($url, [
+            // Gerçekçi tarayıcı başlıkları — basit bot engellerini azaltır
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language' => 'tr-TR,tr;q=0.9,en;q=0.8',
+        ]);
 
         if (! $response->ok()) {
             throw new RuntimeException('Sayfa getirilemedi (HTTP '.$response->status().').');
@@ -1320,13 +1404,26 @@ class TourUrlImporter
                 $permanent = str_contains($msg, 'insufficient_quota')
                     || str_contains($msg, 'exceeded your current quota')
                     || str_contains($msg, 'invalid api key')
-                    || str_contains($msg, 'incorrect api key');
-                if ($attempt >= 2 || $permanent) {
+                    || str_contains($msg, 'incorrect api key')
+                    // Deterministik istek hataları — tekrarlamak faydasız, süre yer:
+                    || str_contains($msg, 'model_not_found')
+                    || str_contains($msg, 'does not exist')
+                    || str_contains($msg, 'context_length')
+                    || str_contains($msg, 'maximum context length')
+                    || str_contains($msg, 'invalid_request_error');
+                // Süre bütçesi kalmadıysa retry etme (nginx 60 sn'yi aşmayalım).
+                if ($attempt >= 2 || $permanent || $this->deadlineExceeded()) {
                     throw $e;
                 }
                 usleep(1500000); // 1.5 sn bekle, bir kez daha dene
             }
         }
+    }
+
+    /** doImport süre bütçesi aşıldı mı (ikinci LLM çağrısı / retry atlanmalı mı). */
+    private function deadlineExceeded(): bool
+    {
+        return $this->deadline !== null && microtime(true) >= $this->deadline;
     }
 
     /**

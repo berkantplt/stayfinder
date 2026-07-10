@@ -3,16 +3,19 @@
 namespace App\Console\Commands;
 
 use App\Models\AgencyCategoryOrder;
+use App\Services\Payment\CategoryOrderFinalizer;
+use App\Services\Payment\IyzicoService;
 use App\Support\CategoryLicensing;
 use Illuminate\Console\Command;
+use Throwable;
 
 class CancelStalePendingOrders extends Command
 {
     protected $signature = 'app:cancel-stale-pending-orders {--hours=24 : Bu süreden eski pending siparişler iptal edilir}';
 
-    protected $description = 'Ödemesi yarım kalmış (24 saatten eski pending) kategori siparişlerini iptal eder ve alıcı kişisel verisini temizler.';
+    protected $description = 'Yarım kalmış pending siparişleri önce iyzico ile mutabık kılar (ödendiyse lisansı verir), aksi halde iptal edip alıcı kişisel verisini temizler.';
 
-    public function handle(): int
+    public function handle(IyzicoService $iyzico, CategoryOrderFinalizer $finalizer): int
     {
         if (! CategoryLicensing::schemaReady()) {
             $this->warn('Kategori yetkilendirme şeması hazır değil — atlanıyor.');
@@ -21,13 +24,39 @@ class CancelStalePendingOrders extends Command
         }
 
         $threshold = now()->subHours(max(1, (int) $this->option('hours')));
-        $count = 0;
+        $cancelled = 0;
+        $rescued = 0;
 
         AgencyCategoryOrder::query()
             ->where('status', AgencyCategoryOrder::STATUS_PENDING)
             ->where('created_at', '<', $threshold)
-            ->chunkById(100, function ($orders) use (&$count) {
+            ->chunkById(100, function ($orders) use (&$cancelled, &$rescued, $iyzico, $finalizer) {
                 foreach ($orders as $order) {
+                    // MUTABAKAT: callback hiç ulaşmamış olabilir (kullanıcı sekmeyi
+                    // kapattı, ağ koptu). İptal etmeden ÖNCE parayı iyzico'ya sor —
+                    // ödeme başarılıysa lisansı ver, aksi halde iptale devam et.
+                    if ($order->payment_provider === AgencyCategoryOrder::PROVIDER_IYZICO
+                        && (string) $order->provider_token !== '') {
+                        try {
+                            $checkout = $iyzico->retrieveCheckoutForm(
+                                (string) $order->provider_token,
+                                (string) $order->id
+                            );
+                            if ($finalizer->settleFromCheckout($order, $checkout) === 'paid') {
+                                $this->line('Kurtarıldı (ödeme bulundu): '.$order->order_number.' (acenta #'.$order->agency_id.')');
+                                $rescued++;
+
+                                continue;
+                            }
+                        } catch (Throwable $e) {
+                            // iyzico ulaşılamadıysa bu turda iptal etme; bir sonraki
+                            // koşuda tekrar denenir (para varsa kaybolmaz).
+                            $this->warn('Mutabakat başarısız, iptal ertelendi: '.$order->order_number.' — '.$e->getMessage());
+
+                            continue;
+                        }
+                    }
+
                     $order->update([
                         'status' => AgencyCategoryOrder::STATUS_CANCELLED,
                         'failure_reason' => 'Ödeme tamamlanmadı — zaman aşımıyla otomatik iptal edildi.',
@@ -37,11 +66,11 @@ class CancelStalePendingOrders extends Command
                     ]);
 
                     $this->line('İptal: '.$order->order_number.' (acenta #'.$order->agency_id.')');
-                    $count++;
+                    $cancelled++;
                 }
             });
 
-        $this->info($count.' bekleyen sipariş iptal edildi.');
+        $this->info($cancelled.' sipariş iptal edildi, '.$rescued.' sipariş ödeme bulunup kurtarıldı.');
 
         return self::SUCCESS;
     }

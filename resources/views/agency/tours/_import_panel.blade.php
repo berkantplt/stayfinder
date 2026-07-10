@@ -98,13 +98,19 @@ function applyImported(data, sourceUrl) {
     }
 }
 
+var _importInFlight = false;
+
 function importFromUrl(deep) {
+    if (_importInFlight) return; // çift tıklama / iki buton yarışı engellenir
     var url = (document.getElementById('importUrl').value || '').trim();
     var btn = document.getElementById(deep ? 'importDeepBtn' : 'importBtn');
+    var otherBtn = document.getElementById(deep ? 'importBtn' : 'importDeepBtn');
     if (!url) { showImportStatus('Lütfen bir URL girin.', 'error'); return; }
 
+    _importInFlight = true;
     var oldLabel = btn.textContent;
     btn.disabled = true;
+    if (otherBtn) otherBtn.disabled = true; // her iki import butonu da kilitlenir
     btn.textContent = deep ? 'Derin taranıyor…' : 'Getiriliyor…';
     showImportStatus(deep
         ? 'Sayfa gerçek tarayıcıda açılıyor, tüm tarihler taranıyor (~20 sn)…'
@@ -112,25 +118,70 @@ function importFromUrl(deep) {
 
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+    // İstemci zaman aşımı: sunucu/proxy sonsuza dek asılı kalırsa kullanıcı
+    // sonsuz "bekleyin" ekranında kalmasın. Derin tarama daha uzun sürebilir.
+    var controller = new AbortController();
+    var timeoutMs = deep ? 90000 : 65000;
+    var timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
+
     fetch('{{ route('agency.tours.import') }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-        body: JSON.stringify({ url: url, deep: deep ? 1 : 0 })
+        body: JSON.stringify({ url: url, deep: deep ? 1 : 0 }),
+        signal: controller.signal
     })
-    .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+    .then(function(r){
+        // 504/502/500'de gövde JSON değil HTML olabilir; parse'ı guard'la, aksi
+        // halde "Unexpected token <" gibi anlamsız hata çıkar.
+        return r.text().then(function(t){
+            var body = null;
+            try { body = t ? JSON.parse(t) : null; } catch (_) { body = null; }
+            return { status: r.status, ok: r.ok, body: body };
+        });
+    })
     .then(function(res){
-        if (!res.body || !res.body.ok) {
-            throw new Error((res.body && res.body.message) || 'İçe aktarma başarısız.');
+        if (res.ok && res.body && res.body.ok) {
+            applyImported(res.body.data, url);
+            var warns = (res.body.data && res.body.data.warnings) || [];
+            if (warns.length) {
+                showImportStatus('Bilgiler dolduruldu, ancak dikkat: ' + warns.join(' '), 'error');
+            } else {
+                showImportStatus('Bilgiler dolduruldu. Lütfen kategoriyi ve alanları kontrol edip kaydedin.', 'success');
+            }
+            return;
         }
-        applyImported(res.body.data, url);
-        var warns = (res.body.data && res.body.data.warnings) || [];
-        if (warns.length) {
-            showImportStatus('Bilgiler dolduruldu, ancak dikkat: ' + warns.join(' '), 'error');
+        // Duruma özel Türkçe mesaj
+        var msg;
+        if (res.body && res.body.message) {
+            msg = res.body.message;
+        } else if (res.body && res.body.errors && res.body.errors.url) {
+            msg = res.body.errors.url[0];
+        } else if (res.status === 429) {
+            msg = 'Çok sık denediniz. Lütfen bir dakika sonra tekrar deneyin.';
+        } else if (res.status === 419) {
+            msg = 'Oturumunuz yenilendi. Sayfayı yenileyip tekrar deneyin.';
+        } else if (res.status === 504 || res.status === 502) {
+            msg = 'Sayfa çok uzun sürdü ve zaman aşımına uğradı. Tekrar deneyin veya "Derin Tarama"yı kapatın.';
+        } else if (res.status >= 500) {
+            msg = 'Sunucuda bir sorun oluştu. Lütfen tekrar deneyin.';
         } else {
-            showImportStatus('Bilgiler dolduruldu. Lütfen kategoriyi ve alanları kontrol edip kaydedin.', 'success');
+            msg = 'İçe aktarma başarısız. Lütfen URL\'yi kontrol edip tekrar deneyin.';
+        }
+        showImportStatus(msg, 'error');
+    })
+    .catch(function(e){
+        if (e && e.name === 'AbortError') {
+            showImportStatus('İşlem çok uzun sürdü ve iptal edildi. Lütfen tekrar deneyin.', 'error');
+        } else {
+            showImportStatus('Bağlantı hatası — internet bağlantınızı kontrol edip tekrar deneyin.', 'error');
         }
     })
-    .catch(function(e){ showImportStatus(e.message || 'İçe aktarma başarısız.', 'error'); })
-    .finally(function(){ btn.disabled = false; btn.textContent = oldLabel; });
+    .finally(function(){
+        clearTimeout(timer);
+        _importInFlight = false;
+        btn.disabled = false;
+        if (otherBtn) otherBtn.disabled = false;
+        btn.textContent = oldLabel;
+    });
 }
 </script>

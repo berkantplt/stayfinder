@@ -58,44 +58,65 @@ class TourImageContentFilterTest extends TestCase
         // Logo: 400x100 şerit (isminde 'logo' YOK — isim filtresi yakalayamaz)
         $logoBody = $this->encode($this->gradientImage(400, 100), 'png');
 
+        // SSRF kapısı gerçek DNS çözer; testte çözülebilir public IP literal
+        // (TEST-NET-3, 203.0.113.0/24 — private/reserved değil) kullanılır.
         Http::fake([
-            'cdn.test/6a1f0a.jpg' => Http::response($small, 200, ['Content-Type' => 'image/jpeg']),
-            'cdn.test/9b2e4c.webp' => Http::response($bigBody, 200, ['Content-Type' => 'image/webp']),
-            'cdn.test/77ac1d.jpg' => Http::response($other, 200, ['Content-Type' => 'image/jpeg']),
-            'cdn.test/31fe9b.png' => Http::response($logoBody, 200, ['Content-Type' => 'image/png']),
+            '203.0.113.10/6a1f0a.jpg' => Http::response($small, 200, ['Content-Type' => 'image/jpeg']),
+            '203.0.113.10/9b2e4c.webp' => Http::response($bigBody, 200, ['Content-Type' => 'image/webp']),
+            '203.0.113.10/77ac1d.jpg' => Http::response($other, 200, ['Content-Type' => 'image/jpeg']),
+            '203.0.113.10/31fe9b.png' => Http::response($logoBody, 200, ['Content-Type' => 'image/png']),
         ]);
 
         $importer = new TourUrlImporter;
         $ref = new ReflectionClass($importer);
         $prop = $ref->getProperty('lastHtml');
         $prop->setValue($importer, implode('', [
-            '<img src="https://cdn.test/6a1f0a.jpg">',
-            '<img src="https://cdn.test/9b2e4c.webp">',
-            '<img src="https://cdn.test/77ac1d.jpg">',
-            '<img src="https://cdn.test/31fe9b.png">',
+            '<img src="https://203.0.113.10/6a1f0a.jpg">',
+            '<img src="https://203.0.113.10/9b2e4c.webp">',
+            '<img src="https://203.0.113.10/77ac1d.jpg">',
+            '<img src="https://203.0.113.10/31fe9b.png">',
         ]));
 
-        $urls = $ref->getMethod('harvestImages')->invoke($importer, 'https://cdn.test/tur/x');
+        $urls = $ref->getMethod('harvestImages')->invoke($importer, 'https://203.0.113.10/tur/x');
 
         // jpg+webp çifti tekilleşti (büyük kopya, İLK sırada kaldı), logo elendi
         $this->assertSame([
-            'https://cdn.test/9b2e4c.webp',
-            'https://cdn.test/77ac1d.jpg',
+            'https://203.0.113.10/9b2e4c.webp',
+            'https://203.0.113.10/77ac1d.jpg',
         ], $urls);
     }
 
     public function test_unreachable_candidates_are_kept(): void
     {
-        Http::fake(['cdn.test/*' => Http::response('', 500)]);
+        Http::fake(['203.0.113.10/*' => Http::response('', 500)]);
 
         $importer = new TourUrlImporter;
         $ref = new ReflectionClass($importer);
         $prop = $ref->getProperty('lastHtml');
-        $prop->setValue($importer, '<img src="https://cdn.test/a.jpg"><img src="https://cdn.test/b.jpg">');
+        $prop->setValue($importer, '<img src="https://203.0.113.10/a.jpg"><img src="https://203.0.113.10/b.jpg">');
 
-        $urls = $ref->getMethod('harvestImages')->invoke($importer, 'https://cdn.test/tur/x');
+        $urls = $ref->getMethod('harvestImages')->invoke($importer, 'https://203.0.113.10/tur/x');
 
         // İndirilemeyen adaylar temkinli şekilde tutulur (ağ hatası eleme sebebi değil)
         $this->assertCount(2, $urls);
+    }
+
+    public function test_internal_image_url_is_not_fetched_but_kept(): void
+    {
+        // SSRF: iç ağa çözülen görsel URL'i İNDİRİLMEZ (güvensiz) ama listeyi
+        // bozmaz — temkinli tutulur (kayıt aşamasındaki ikinci kapı eler).
+        Http::fake(['*' => Http::response('x', 200, ['Content-Type' => 'image/jpeg'])]);
+
+        $importer = new TourUrlImporter;
+        $ref = new ReflectionClass($importer);
+        $ref->getProperty('lastHtml')->setValue(
+            $importer,
+            '<img src="https://203.0.113.10/ok.jpg"><img src="http://169.254.169.254/latest.jpg">'
+        );
+
+        $urls = $ref->getMethod('harvestImages')->invoke($importer, 'https://203.0.113.10/tur/x');
+
+        // metadata IP'li aday indirilmedi ama elenmedi de (liste bütünlüğü korunur)
+        $this->assertContains('http://169.254.169.254/latest.jpg', $urls);
     }
 }

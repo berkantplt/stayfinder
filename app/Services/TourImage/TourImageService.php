@@ -79,12 +79,47 @@ class TourImageService
         }
 
         try {
-            $response = Http::timeout(20)
-                ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
-                    'Accept' => 'image/*,*/*;q=0.8',
-                ])
-                ->get($url);
+            // SSRF: her yönlendirme hedefini yeniden doğrula. Guzzle otomatik
+            // redirect'i KAPALI; güvenli görünen URL 302 ile iç ağa kaçamaz.
+            $hop = 0;
+            do {
+                if (! $this->isSafeRemoteUrl($url)) {
+                    return null;
+                }
+                $response = Http::timeout(20)
+                    ->withoutRedirecting()
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
+                        'Accept' => 'image/*,*/*;q=0.8',
+                    ])
+                    ->get($url);
+
+                $status = $response->status();
+                if ($status < 300 || $status >= 400) {
+                    break;
+                }
+                $location = trim((string) $response->header('Location'));
+                if ($location === '' || $hop >= 4) {
+                    return null;
+                }
+                // Göreli Location'ı mutlaklaştır
+                if (! preg_match('#^https?://#i', $location)) {
+                    $p = parse_url($url);
+                    $sch = $p['scheme'] ?? 'https';
+                    $h = $p['host'] ?? '';
+                    $pt = isset($p['port']) ? ':'.$p['port'] : '';
+                    if (str_starts_with($location, '//')) {
+                        $location = $sch.':'.$location;
+                    } elseif (str_starts_with($location, '/')) {
+                        $location = $sch.'://'.$h.$pt.$location;
+                    } else {
+                        $path = $p['path'] ?? '/';
+                        $location = $sch.'://'.$h.$pt.substr($path, 0, (int) strrpos($path, '/') + 1).$location;
+                    }
+                }
+                $url = $location;
+                $hop++;
+            } while (true);
 
             if (! $response->ok()) {
                 return null;
