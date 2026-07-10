@@ -9,10 +9,9 @@
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <input type="url" id="importUrl" placeholder="https://acenta.com/tur-sayfasi" style="flex:1;min-width:240px;margin:0;">
-        <button type="button" id="importBtn" class="btn btn-primary" onclick="importFromUrl(false)">Bilgileri Getir</button>
-        <button type="button" id="importDeepBtn" class="btn btn-outline" onclick="importFromUrl(true)" title="Açılır tarih menüleri gibi dinamik içerikleri de tarar (daha yavaş)">🔍 Derin Tarama</button>
+        <button type="button" id="importBtn" class="btn btn-primary" onclick="importFromUrl()">Bilgileri Getir</button>
     </div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Tarihler veya bilgiler eksik geldiyse "Derin Tarama"yı dene (sayfayı gerçek tarayıcıda açar, ~20 sn sürebilir).</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Sistem sayfayı en doğru şekilde okur; dinamik (JavaScript ile yüklenen) fiyat/tarih varsa gerçek tarayıcıda otomatik açar — bazı sayfalarda 30-60 sn sürebilir.</div>
     <div id="importStatus" style="font-size:13px;margin-top:10px;display:none;"></div>
 </div>
 
@@ -100,11 +99,10 @@ function applyImported(data, sourceUrl) {
 
 var _importInFlight = false;
 
-function importFromUrl(deep) {
-    if (_importInFlight) return; // çift tıklama / iki buton yarışı engellenir
+function importFromUrl() {
+    if (_importInFlight) return; // çift tıklama engellenir
     var url = (document.getElementById('importUrl').value || '').trim();
-    var btn = document.getElementById(deep ? 'importDeepBtn' : 'importBtn');
-    var otherBtn = document.getElementById(deep ? 'importBtn' : 'importDeepBtn');
+    var btn = document.getElementById('importBtn');
     if (!url) { showImportStatus('Lütfen bir URL girin.', 'error'); return; }
 
     // Dolu form üzerine yazma uyarısı: başlık dolu veya fiyat/tarih satırı varsa
@@ -119,24 +117,21 @@ function importFromUrl(deep) {
     _importInFlight = true;
     var oldLabel = btn.textContent;
     btn.disabled = true;
-    if (otherBtn) otherBtn.disabled = true; // her iki import butonu da kilitlenir
-    btn.textContent = deep ? 'Derin taranıyor…' : 'Getiriliyor…';
-    showImportStatus(deep
-        ? 'Sayfa gerçek tarayıcıda açılıyor, tüm tarihler taranıyor (~20 sn)…'
-        : 'Sayfa okunuyor, lütfen bekleyin…', 'info');
+    btn.textContent = 'Getiriliyor…';
+    showImportStatus('Sayfa okunuyor; dinamik içerik varsa gerçek tarayıcıda açılıyor, lütfen bekleyin…', 'info');
 
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
     // İstemci zaman aşımı: sunucu/proxy sonsuza dek asılı kalırsa kullanıcı
-    // sonsuz "bekleyin" ekranında kalmasın. Derin tarama daha uzun sürebilir.
+    // sonsuz "bekleyin" ekranında kalmasın. Akıllı akış SPA'da render yapabildiği
+    // için pay geniş tutulur (sunucu bütçesi 150 sn).
     var controller = new AbortController();
-    var timeoutMs = deep ? 90000 : 65000;
-    var timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
+    var timer = setTimeout(function(){ controller.abort(); }, 170000);
 
     fetch('{{ route('agency.tours.import') }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-        body: JSON.stringify({ url: url, deep: deep ? 1 : 0 }),
+        body: JSON.stringify({ url: url }),
         signal: controller.signal
     })
     .then(function(r){
@@ -170,7 +165,7 @@ function importFromUrl(deep) {
         } else if (res.status === 419) {
             msg = 'Oturumunuz yenilendi. Sayfayı yenileyip tekrar deneyin.';
         } else if (res.status === 504 || res.status === 502) {
-            msg = 'Sayfa çok uzun sürdü ve zaman aşımına uğradı. Tekrar deneyin veya "Derin Tarama"yı kapatın.';
+            msg = 'Sayfa çok uzun sürdü ve zaman aşımına uğradı. Lütfen biraz sonra tekrar deneyin.';
         } else if (res.status >= 500) {
             msg = 'Sunucuda bir sorun oluştu. Lütfen tekrar deneyin.';
         } else {
@@ -189,7 +184,6 @@ function importFromUrl(deep) {
         clearTimeout(timer);
         _importInFlight = false;
         btn.disabled = false;
-        if (otherBtn) otherBtn.disabled = false;
         btn.textContent = oldLabel;
     });
 }

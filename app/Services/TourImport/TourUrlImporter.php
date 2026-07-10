@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 6;
+    private const CACHE_VERSION = 7;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -41,8 +41,12 @@ class TourUrlImporter
      */
     private ?float $deadline = null;
 
-    /** Sunucu tarafı toplam süre bütçesi (sn) — nginx 60 sn'nin güvenli altı. */
-    private const TIME_BUDGET = 52;
+    /**
+     * Sunucu tarafı toplam süre bütçesi (sn). Tek-tuş akıllı akış SPA'larda düz
+     * çekim + gerçek tarayıcı render'ı (2 geçiş) yapabildiğinden bütçe yüksek
+     * tutulur — canlıda nginx proxy_read_timeout ≥ 180 sn olmalı (deploy notu).
+     */
+    private const TIME_BUDGET = 150;
 
     /**
      * Verilen URL'deki tur sayfasını güvenli şekilde çeker, içeriği LLM ile
@@ -95,31 +99,76 @@ class TourUrlImporter
         return ($result['price'] ?? null) !== null || ($result['pricing_blocks'] ?? []) !== [];
     }
 
-    /** @return array<string, mixed> */
-    private function doImport(string $url, bool $deep): array
+    /**
+     * Tek-tuş akıllı import: düz çekimle başlar; sayfa render edilmemiş SPA ise
+     * (fiyat/tarih {{ }} şablonlu — etstur gibi) VEYA düz çekimde fiyat da matris
+     * de gelmezse kendiliğinden gerçek tarayıcı render'ına (Firecrawl) yükseltir.
+     * $deep=true geriye-uyumluluk için doğrudan render'la başlatır.
+     *
+     * @return array<string, mixed>
+     */
+    private function doImport(string $url, bool $deep = false): array
     {
         $this->assertSafeUrl($url);
         $this->lastHtml = null;
         $this->deadline = microtime(true) + self::TIME_BUDGET;
 
-        $content = '';
+        $firecrawlAvailable = (bool) config('ai.import_firecrawl_key');
         $usedFirecrawl = false;
 
-        // Derin tarama: gerçek tarayıcıda render + scroll (açılır tarih menüleri vb.)
-        if ($deep && config('ai.import_firecrawl_key')) {
+        // 1) İçerik çekimi. $deep verildiyse doğrudan render; değilse düz çekim.
+        if ($deep && $firecrawlAvailable) {
             $content = $this->fetchViaFirecrawl($url);
             $usedFirecrawl = true;
-        }
-
-        // Normal yol (veya derin tarama başarısızsa fallback)
-        if (trim($content) === '') {
+            if (trim($content) === '') {
+                $content = $this->fetchContent($url);
+            }
+        } else {
             $content = $this->fetchContent($url);
         }
+        $text = $this->textForExtraction($content);
 
-        // LLM metni: ham HTML varsa ondan temizlenmiş metin kullan. Derin taramada
-        // Firecrawl'ın markdown'ı fiyat tablosunu farklı formatlayıp yanlış okutuyordu;
-        // rawHtml'den temizlenmiş metin normal modla AYNI güvenilir "eski yeni" sıralı
-        // formatı verir → fiyatlar tutarlı/doğru.
+        // 2) Render edilmemiş SPA erken tespiti: fiyat/tarih {{ }} şablonlarıyla
+        //    geliyorsa düz çıkarım mustache placeholder okur (çöp) — LLM'i boşa
+        //    harcamadan doğrudan gerçek tarayıcı render'ına geç.
+        if (! $usedFirecrawl && $firecrawlAvailable && ! $this->deadlineExceeded()
+            && $this->looksLikeUnrenderedSpa($text)) {
+            try {
+                $renderedText = $this->textForExtraction($this->fetchViaFirecrawl($url));
+                if (trim($renderedText) !== '') {
+                    $text = $renderedText;
+                    $usedFirecrawl = true;
+                }
+            } catch (\Throwable $e) {
+                Log::info('[TourImport] SPA render yükseltme başarısız', ['message' => $e->getMessage()]);
+            }
+        }
+
+        $result = $this->assembleResult($url, $text);
+
+        // 3) Güvence: düz çekimde fiyat DA matris DE gelmediyse (SPA erken tespiti
+        //    kaçırmış olabilir) sayfayı render edip TÜM çıkarımı bir kez daha koştur.
+        $incomplete = ($result['price'] ?? null) === null && ($result['pricing_blocks'] ?? []) === [];
+        if ($incomplete && ! $usedFirecrawl && $firecrawlAvailable && ! $this->deadlineExceeded()) {
+            try {
+                $renderedText = $this->textForExtraction($this->fetchViaFirecrawl($url));
+                if (trim($renderedText) !== '') {
+                    $result2 = $this->assembleResult($url, $renderedText);
+                    if (($result2['price'] ?? null) !== null || ($result2['pricing_blocks'] ?? []) !== []) {
+                        $result = $result2;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::info('[TourImport] render güvence yükseltme başarısız', ['message' => $e->getMessage()]);
+            }
+        }
+
+        return $result;
+    }
+
+    /** Ham içerik/HTML'den LLM'e verilecek temiz metni hazırlar. */
+    private function textForExtraction(string $content): string
+    {
         $text = ($this->lastHtml !== null && trim($this->lastHtml) !== '')
             ? $this->cleanHtml($this->lastHtml)
             : $content;
@@ -129,6 +178,27 @@ class TourUrlImporter
         if (trim($text) === '') {
             throw new RuntimeException('Sayfadan okunabilir içerik çıkarılamadı.');
         }
+
+        return $text;
+    }
+
+    /**
+     * Render edilmemiş SPA mı? Fiyat/tarih Vue/Angular {{ }} şablonlarıyla
+     * geliyorsa (etstur gibi) düz HTML'de gerçek fiyat yoktur — render şart.
+     */
+    private function looksLikeUnrenderedSpa(string $text): bool
+    {
+        return preg_match_all('/\{\{\s*[\w.$]+/', $text) >= 8;
+    }
+
+    /**
+     * Tek bir metinden (düz veya render edilmiş) tam sonucu üretir: genel alanlar,
+     * fiyat matrisi, başlangıç fiyatı, tarihler, görseller, uyarılar.
+     *
+     * @return array<string, mixed>
+     */
+    private function assembleResult(string $url, string $text): array
+    {
 
         // 1) Genel alanlar (fiyat matrisi HARİÇ) — fiyat tablosu dışlanmış, küçük
         // odaklanmış metinden (daha hızlı; tarihler harvestDates + fiyat çağrısından gelir).
@@ -156,34 +226,10 @@ class TourUrlImporter
         // 2) Fiyat matrisi — ÖNCE DETERMİNİSTİK (kodla) ayrıştırma. "899,00 €" sayfada
         // birebir string olduğundan sayıyı LLM'e okutmadan kodla çıkarınca hata payı ~0.
         // Tanınmayan/atipik (yatay) tablolarda boş döner → odaklı LLM çağrısına düşülür.
+        // (Render yükseltmesi artık doImport seviyesinde: bu metot yalnız verilen
+        // metinden çıkarım yapar; SPA ise doImport render edilmiş metni geçer.)
         $detected = $this->deterministicPricingBlocks($text);
         $blocks = $detected['blocks'];
-
-        // OTOMATİK YÜKSELTME (Katman 3): deterministik parser boş döndüyse — bu ya
-        // aralıklı bozuk/atipik ham çekim ya da fiyatı JS ile yükleyen bir sayfadır —
-        // ve Firecrawl anahtarı varken henüz denenmediyse, sayfayı GERÇEK TARAYICIDA
-        // render ettirip (tutarlı DOM) render edilmiş rawHtml'den yeniden deterministik
-        // ayrıştır. Böylece "899,00 €" her seferinde aynı temiz yapıdan kesin okunur.
-        // NOT: fiyat bölgesi ham HTML'de ZATEN varsa (yalnızca düzeni atipikse)
-        // render bir şey değiştirmez — 10-45 sn'lik Firecrawl turunu atla, doğrudan
-        // odaklı LLM çağrısına geç (canlıda proxy zaman aşımının baş nedeniydi).
-        if ($blocks === [] && ! $usedFirecrawl && config('ai.import_firecrawl_key')
-            && $this->priceTableRegion($text) === '') {
-            try {
-                $this->fetchViaFirecrawl($url); // $this->lastHtml'i render edilmiş rawHtml ile doldurur
-                if ($this->lastHtml !== null && trim($this->lastHtml) !== '') {
-                    $renderedText = $this->cleanHtml($this->lastHtml);
-                    $rendered = $this->deterministicPricingBlocks($renderedText);
-                    if ($rendered['blocks'] !== []) {
-                        $detected = $rendered;
-                        $blocks = $rendered['blocks'];
-                        $text = $renderedText; // tarih/görsel/LLM-fallback da render edilmiş metinden
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::info('[TourImport] firecrawl yükseltme başarısız', ['message' => $e->getMessage()]);
-            }
-        }
 
         if ($blocks === [] && ! $this->deadlineExceeded()) {
             // Fallback: AYRI, odaklı LLM çağrısı — sadece fiyat tablosu bölgesini okur.
@@ -249,6 +295,16 @@ class TourUrlImporter
             $result['departure_dates'],
             $isHotelPage ? [] : $this->harvestDates($text)
         );
+
+        // SPA'ların (Etstur/Jolly vb.) ham HTML'ine gömdüğü JSON kalkış takvimi:
+        // metin şablonu {{ }} placeholder olduğu için cleanHtml'de kaybolur, ama
+        // "departureDate":{"year":Y,"month":M,"day":D} objesi ham HTML'de nettir.
+        if (! $isHotelPage) {
+            $result['departure_dates'] = $this->mergeDates(
+                $result['departure_dates'],
+                $this->harvestJsonDates($this->lastHtml ?? '')
+            );
+        }
 
         // Görselleri ham HTML'den sırayla yakala (og:image + JSON-LD + <img>).
         $result['image_urls'] = $this->harvestImages($url);
@@ -2533,6 +2589,39 @@ class TourUrlImporter
                     if ($date = $this->parseFutureDate($raw)) {
                         $found[] = $date;
                     }
+                }
+            }
+        }
+
+        return array_values(array_unique($found));
+    }
+
+    /**
+     * SPA ham HTML'ine gömülü JSON kalkış takviminden tarihleri çıkarır.
+     * Yalnızca "departureDate":{"year":Y,"month":M,"day":D} şeklindeki KESİN
+     * JSON kalıbını eşler — genel metinde false-positive üretmez. (Etstur gibi
+     * fiyat/tarihi client-side yükleyen sitelerde tarihler böyle güvenilir gelir.)
+     *
+     * @return array<int, string>
+     */
+    private function harvestJsonDates(string $rawHtml): array
+    {
+        if ($rawHtml === '') {
+            return [];
+        }
+
+        $found = [];
+        // "departureDate":{"year":2026,"month":9,"day":25}  (anahtar sırası sabit)
+        if (preg_match_all(
+            '/"departureDate"\s*:\s*\{\s*"year"\s*:\s*(20\d{2})\s*,\s*"month"\s*:\s*(\d{1,2})\s*,\s*"day"\s*:\s*(\d{1,2})/',
+            $rawHtml,
+            $matches,
+            PREG_SET_ORDER
+        )) {
+            foreach ($matches as $m) {
+                $iso = sprintf('%04d-%02d-%02d', (int) $m[1], (int) $m[2], (int) $m[3]);
+                if ($date = $this->parseFutureDate($iso)) {
+                    $found[] = $date;
                 }
             }
         }

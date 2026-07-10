@@ -390,4 +390,23 @@ class TourImportParserTest extends TestCase
             $this->invoke('cleanTitle', ['3 Gece 4 Gün / İzmir Çıkışlı'])
         );
     }
+
+    public function test_json_departure_dates_harvested_from_spa_raw_html(): void
+    {
+        // Etstur/SPA vakası: fiyat/tarih client-side yüklenir, metin şablonu {{ }}
+        // ama ham HTML'de kalkış takvimi JSON objesi nettir → deterministik gelir.
+        $rawHtml = '<script>window.__DATA={"periods":['
+            .'{"departCode":"1","departureDate":{"year":2026,"month":9,"day":25},"price":{}},'
+            .'{"departCode":"2","departureDate":{"year":2026,"month":10,"day":17},"price":{}},'
+            .'{"departCode":"3","departureDate":{"year":2026,"month":11,"day":27},"price":{}}'
+            .']}</script>';
+
+        $dates = $this->invoke('harvestJsonDates', [$rawHtml]);
+
+        $this->assertSame(['2026-09-25', '2026-10-17', '2026-11-27'], $dates);
+
+        // Geçmiş yıl elenir; alakasız JSON false-positive üretmez
+        $this->assertSame([], $this->invoke('harvestJsonDates', ['{"foo":{"year":2020,"bar":1}}']));
+        $this->assertSame([], $this->invoke('harvestJsonDates', ['']));
+    }
 }

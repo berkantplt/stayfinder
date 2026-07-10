@@ -21,6 +21,8 @@ class TourImportController extends Controller
     {
         $validated = $request->validate([
             'url' => 'required|url|max:2000',
+            // 'deep' artık istemciden gelmiyor: tek-tuş akıllı akış render'a
+            // kendi karar veriyor. Geriye-uyumluluk için hâlâ kabul edilir.
             'deep' => 'sometimes|boolean',
         ]);
 
