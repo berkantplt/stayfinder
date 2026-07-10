@@ -170,5 +170,7 @@ Schedule::command('app:prune-analytics')
 */
 Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
-    ->withoutOverlapping()
+    // 5 dk expiry: worker süreci beklenmedik şekilde ölürse kilit varsayılan
+    // 24 saat yerine en fazla 5 dk sürede düşer, kuyruk saatlerce donmaz.
+    ->withoutOverlapping(5)
     ->name('queue-worker');

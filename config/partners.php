@@ -14,6 +14,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mock Mode
+    |--------------------------------------------------------------------------
+    |
+    | true → tüm partner servisleri MockPartnerService ile değiştirilir (dev/test).
+    | config üzerinden okunur ki `php artisan config:cache` sonrası da geçerli olsun.
+    |
+    */
+    'mock_enabled' => (bool) env('PARTNER_MOCK_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Global Defaults
     |--------------------------------------------------------------------------
     |

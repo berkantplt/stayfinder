@@ -45,6 +45,17 @@ class CategoryOrderFinalizer
                     continue;
                 }
 
+                // Ödeme sırasında kategori pasifleştirilmiş olabilir: abonelik yine
+                // verilir (para çekildi) ama admin manuel telafi/inceleme için
+                // uyarılır — aksi halde acenta kullanamadığı bir kategoriye para öder.
+                if ($item->category && ! $item->category->is_active) {
+                    Log::warning('iyzico finalize: pasif kategoriye abonelik açıldı — inceleme gerekebilir', [
+                        'order_id' => $order->id,
+                        'agency_id' => $order->agency_id,
+                        'category_id' => $item->category_id,
+                    ]);
+                }
+
                 // Eşzamanlı çift callback'e karşı satır kilidi (transaction içindeyiz)
                 $subscription = AgencyCategorySubscription::query()
                     ->where('agency_id', $order->agency_id)

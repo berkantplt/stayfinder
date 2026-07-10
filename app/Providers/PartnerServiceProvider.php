@@ -53,7 +53,10 @@ class PartnerServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $useMock = (bool) env('PARTNER_MOCK_ENABLED', false);
+        // config() üzerinden oku: `php artisan config:cache` sonrası doğrudan env()
+        // null döner ve mock sessizce kapanıp gerçek (sahte URL'li) partner
+        // servisleri devreye girerdi. config/partners.php env'i cache'lenmeden okur.
+        $useMock = (bool) config('partners.mock_enabled', false);
 
         if ($useMock) {
             // -------------------------------------------------------

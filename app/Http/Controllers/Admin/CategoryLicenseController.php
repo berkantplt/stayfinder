@@ -69,16 +69,21 @@ class CategoryLicenseController extends Controller
             ->orderByDesc('purchased_at')
             ->paginate(20);
 
-        $allOrders = AgencyCategoryOrder::query()->get(['subtotal', 'purchased_at']);
+        $allOrders = AgencyCategoryOrder::query()->get(['status', 'subtotal', 'purchased_at', 'paid_at']);
         $lastThirtyDays = now()->subDays(30);
+
+        // CİRO yalnızca ödenmiş (PAID) siparişlerden hesaplanır — pending/failed/
+        // cancelled sipariş "gelir" sayılmaz (şişkin ciro raporlanmaz). Tarih
+        // filtresi için ödemenin gerçekleştiği an (paid_at) kullanılır.
+        $paidOrders = $allOrders->where('status', AgencyCategoryOrder::STATUS_PAID);
 
         $orderStats = [
             'total_orders' => $allOrders->count(),
-            'total_revenue' => round($allOrders->sum(fn ($order) => (float) $order->subtotal), 2),
-            'last_30_days_orders' => $allOrders->filter(fn ($order) => $order->purchased_at && $order->purchased_at->greaterThanOrEqualTo($lastThirtyDays))->count(),
+            'total_revenue' => round($paidOrders->sum(fn ($order) => (float) $order->subtotal), 2),
+            'last_30_days_orders' => $paidOrders->filter(fn ($order) => $order->paid_at && $order->paid_at->greaterThanOrEqualTo($lastThirtyDays))->count(),
             'last_30_days_revenue' => round(
-                $allOrders
-                    ->filter(fn ($order) => $order->purchased_at && $order->purchased_at->greaterThanOrEqualTo($lastThirtyDays))
+                $paidOrders
+                    ->filter(fn ($order) => $order->paid_at && $order->paid_at->greaterThanOrEqualTo($lastThirtyDays))
                     ->sum(fn ($order) => (float) $order->subtotal),
                 2
             ),

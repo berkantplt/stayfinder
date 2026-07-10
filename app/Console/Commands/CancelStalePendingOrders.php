@@ -70,7 +70,17 @@ class CancelStalePendingOrders extends Command
                 }
             });
 
-        $this->info($cancelled.' sipariş iptal edildi, '.$rescued.' sipariş ödeme bulunup kurtarıldı.');
+        // KVKK veri minimizasyonu: başarısız (FAILED) siparişlerin alıcı kimlik
+        // verisi (TC dahil buyer_snapshot) süresiz saklanmasın. 7 günlük inceleme
+        // payından sonra scrub'lanır — sipariş kaydı denetim için kalır, PII gider.
+        $scrubThreshold = now()->subDays(7);
+        $scrubbed = AgencyCategoryOrder::query()
+            ->where('status', AgencyCategoryOrder::STATUS_FAILED)
+            ->whereNotNull('buyer_snapshot')
+            ->where('updated_at', '<', $scrubThreshold)
+            ->update(['buyer_snapshot' => null]);
+
+        $this->info($cancelled.' sipariş iptal edildi, '.$rescued.' sipariş ödeme bulunup kurtarıldı, '.$scrubbed.' başarısız siparişin kimlik verisi temizlendi.');
 
         return self::SUCCESS;
     }
