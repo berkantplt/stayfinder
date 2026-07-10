@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 4;
+    private const CACHE_VERSION = 5;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -48,10 +48,41 @@ class TourUrlImporter
 
         // Sonuç önbelleği: aynı URL + aynı mod için 30 dk içinde tekrar istek
         // (çift tıklama, doğrulama hatası sonrası yeniden deneme) LLM + Firecrawl
-        // maliyetini yeniden ödemesin. Hatalar cache'lenmez (exception geçer).
+        // maliyetini yeniden ödemesin.
         $cacheKey = 'tour_import:v'.self::CACHE_VERSION.':'.md5($url.'|'.($deep ? 1 : 0));
 
-        return Cache::remember($cacheKey, 1800, fn () => $this->doImport($url, $deep));
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $result = $this->doImport($url, $deep);
+
+        // SADECE sağlıklı sonuç cache'lenir. doImport, LLM hatasında exception
+        // yerine uyarılı/boş kısmi sonuç döner — o kısmi sonuç cache'lenirse tek
+        // bir geçici hata URL'yi 30 dk "boş geliyor" durumuna kilitler (tatilciniz
+        // vakası). Sağlıksız sonuç kullanıcıya yine döner ama tekrar denemede
+        // taze koşulur.
+        if ($this->isUsableResult($result)) {
+            Cache::put($cacheKey, $result, 1800);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Cache'e girmeye değer sonuç: başlık çıkmış (genel çıkarım yaşıyor) VE
+     * fiyat tarafından en az bir sinyal var (kapak fiyatı veya fiyat matrisi).
+     *
+     * @param  array<string, mixed>  $result
+     */
+    private function isUsableResult(array $result): bool
+    {
+        if (trim((string) ($result['title'] ?? '')) === '') {
+            return false;
+        }
+
+        return ($result['price'] ?? null) !== null || ($result['pricing_blocks'] ?? []) !== [];
     }
 
     /** @return array<string, mixed> */
