@@ -34,11 +34,15 @@ class TourObserver
      */
     public function updated(Tour $tour): void
     {
-        // Sadece embedding'i etkileyen alanlar değiştiyse yeniden üret
+        // Sadece embedding'i etkileyen alanlar değiştiyse yeniden üret.
+        // itinerary/hotel_info/extras/kalkış-durak şehirleri de search_text'e
+        // girer → değişince vektör bayatlamasın. is_active: pasif↔aktif geçişi de
+        // arama görünürlüğünü etkilediği için yeniden üretimi tetikler.
         $embeddingFields = [
             'title', 'destination', 'description', 'price', 'currency',
             'duration_days', 'included', 'excluded', 'is_international',
-            'requires_visa', 'category_id',
+            'requires_visa', 'category_id', 'itinerary', 'hotel_info',
+            'extras', 'departure_city', 'stop_cities', 'is_active',
         ];
 
         $needsRegeneration = false;
@@ -58,8 +62,11 @@ class TourObserver
             $this->dispatchDestinationEnrichmentIfNeeded((string) $tour->destination);
         }
 
-        // Knowledge chunk: title/destination/description değiştiyse RAG bağlamı güncellensin
-        $knowledgeFields = ['title', 'destination', 'description', 'price', 'currency', 'duration_days'];
+        // Knowledge chunk: içerik alanları VEYA is_active değiştiyse RAG bağlamı
+        // güncellensin. is_active kritik: tur pasifleşince syncKnowledgeChunkFor
+        // chunk'ı siler (asistan satıştan kalkan turu önermez), aktifleşince
+        // yeniden oluşturur.
+        $knowledgeFields = ['title', 'destination', 'description', 'price', 'currency', 'duration_days', 'is_active'];
         foreach ($knowledgeFields as $field) {
             if ($tour->wasChanged($field)) {
                 $this->syncKnowledgeChunkFor($tour);

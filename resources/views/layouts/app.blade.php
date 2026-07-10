@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'turXtur — Tur Karşılaştırma')</title>
     <meta name="description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
@@ -575,7 +575,7 @@
         </div>
 
         {{-- Premium Chat Window (Dark Glass) --}}
-        <div id="ai-chat-window" style="display:none; position:absolute; bottom:70px; right:0; width:min(400px, 90vw); height:600px; background:rgba(15,23,42,0.75); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); border-radius:24px; box-shadow:0 30px 60px -12px rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); overflow:hidden; flex-direction:column; animation:premiumSlideIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);">
+        <div id="ai-chat-window" role="dialog" aria-modal="true" aria-label="turXtur AI tatil asistanı" style="display:none; position:absolute; bottom:70px; right:0; width:min(400px, 90vw); height:600px; background:rgba(15,23,42,0.75); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); border-radius:24px; box-shadow:0 30px 60px -12px rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); overflow:hidden; flex-direction:column; animation:premiumSlideIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);">
             {{-- Header --}}
             <div style="border-bottom:1px solid rgba(255,255,255,0.1); color:white; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; position:relative;">
                 <div style="display:flex; align-items:center; gap:12px;">
@@ -595,7 +595,7 @@
             </div>
             
             {{-- Messages Area --}}
-            <div id="ai-chat-messages" style="flex:1; min-height:0; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:16px; align-items:stretch;">
+            <div id="ai-chat-messages" aria-live="polite" aria-atomic="false" style="flex:1; min-height:0; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:16px; align-items:stretch;">
                 <div class="ai-msg-ai">
                     Selam! 👋 Ben senin kişisel tatil uzmanıyım. <span style="font-weight:700; color:#2dd4bf;">Kültür, vize, bütçe</span> veya sadece <span style="font-weight:700; color:#2dd4bf;">hayallerindeki doğayı</span> anlat, senin için en iyi turu saniyeler içinde bulayım!
                 </div>
@@ -717,6 +717,22 @@
             }
         }
 
+        // Mobil tam ekran chat: klavye açılınca pencereyi görsel viewport'a bağla,
+        // input klavyenin arkasında kalmasın (visualViewport, iOS Safari + Android).
+        function _aiSyncViewport() {
+            const w = document.getElementById('ai-chat-window');
+            if (!w || w.style.display === 'none' || window.innerWidth > 768 || !window.visualViewport) return;
+            w.style.height = window.visualViewport.height + 'px';
+        }
+
+        // Escape ile kapat + odağı tetikleyiciye iade (dialog erişilebilirliği)
+        function _aiEscHandler(e) {
+            if (e.key === 'Escape') {
+                const w = document.getElementById('ai-chat-window');
+                if (w && w.style.display !== 'none') { toggleAIChat(); }
+            }
+        }
+
         function toggleAIChat() {
             if (isDragging) return;
             const windowObj = document.getElementById('ai-chat-window');
@@ -731,11 +747,20 @@
                 // Mobilde pencere tam ekran: arka plan kaymasın
                 if (window.innerWidth <= 768) document.body.style.overflow = 'hidden';
                 document.getElementById('ai-chat-input').focus();
+                document.addEventListener('keydown', _aiEscHandler);
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', _aiSyncViewport);
+                    _aiSyncViewport();
+                }
             } else {
                 windowObj.style.display = 'none';
+                windowObj.style.height = ''; // viewport override'ını temizle
                 trigger.style.opacity = '1';
                 trigger.style.pointerEvents = 'auto';
                 document.body.style.overflow = '';
+                document.removeEventListener('keydown', _aiEscHandler);
+                if (window.visualViewport) window.visualViewport.removeEventListener('resize', _aiSyncViewport);
+                trigger.focus();
             }
         }
 
@@ -745,6 +770,11 @@
         }
 
         function resetAIChat() {
+            // Devam eden akışı iptal et — yoksa eski stream'in yanıt/tur kartları
+            // temizlenmiş konuşmaya geri akmaya devam eder.
+            if (window._aiWidgetController) { try { window._aiWidgetController.abort(); } catch (e) {} }
+            if (window._aiWidgetWatchdog) { clearTimeout(window._aiWidgetWatchdog); window._aiWidgetWatchdog = null; }
+            window._aiWidgetSending = false;
             try { localStorage.removeItem('turxtur_ai_conv'); } catch (e) {}
             const messages = document.getElementById('ai-chat-messages');
             if (messages) {
@@ -762,6 +792,17 @@
             if (!text) return;
             if (window._aiWidgetSending) return; // çift gönderim koruması
             window._aiWidgetSending = true;
+
+            // Watchdog: akış askıda kalırsa (sunucu/ağ) kilit sonsuza dek açık
+            // kalmasın. Her SSE olayında sıfırlanır; 75 sn sessizlikte iptal eder.
+            const controller = new AbortController();
+            window._aiWidgetController = controller;
+            const WATCHDOG_MS = 75000;
+            const armWatchdog = () => {
+                if (window._aiWidgetWatchdog) clearTimeout(window._aiWidgetWatchdog);
+                window._aiWidgetWatchdog = setTimeout(() => { try { controller.abort(); } catch (e) {} }, WATCHDOG_MS);
+            };
+            armWatchdog();
 
             // 1. User Message
             const userMsg = document.createElement('div');
@@ -807,6 +848,7 @@
                         message: text,
                         conversation_uuid: convData?.uuid || null,
                     }),
+                    signal: controller.signal,
                 });
 
                 if (!response.ok) {
@@ -890,6 +932,13 @@
                         }
                     } else if (eventName === 'done') {
                         if (data.is_clarification) isClarification = true;
+                        // Netleştirme işareti yalnız 'done'da gelir; comment o an zaten
+                        // normal stille render edilmiştir → geriye dönük yeniden stille.
+                        if (data.is_clarification && contentEl) {
+                            contentEl.textContent = '🤔 ' + fullContent;
+                            const label = aiMsg && aiMsg.querySelector('div');
+                            if (label) label.style.color = '#fbbf24';
+                        }
                         if (data.log_id) lastLogId = data.log_id;
                         if (!aiMsg && !loadingRemoved) {
                             // Sonuç boş + comment yok edge case
@@ -918,6 +967,7 @@
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
+                    armWatchdog(); // her veri parçasında watchdog sıfırlanır
                     buffer += decoder.decode(value, { stream: true });
 
                     let sepIdx;
@@ -949,18 +999,26 @@
                     silentMsg.textContent = '⚠️ Bağlantı beklenmedik şekilde kesildi — mesajını tekrar gönderebilirsin.';
                     messages.appendChild(silentMsg);
                     messages.scrollTop = messages.scrollHeight;
+                    if (!input.value) input.value = text; // mesajı geri koy, elle yazmasın
                 }
             } catch (err) {
                 console.error('AI Error:', err);
                 if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
                 var errorMsg = document.createElement('div');
                 errorMsg.className = 'ai-msg-ai';
-                errorMsg.textContent = (err && String(err.message || '').includes('429'))
-                    ? '⚠️ Biraz hızlı gidiyoruz 🙂 Birkaç saniye bekleyip tekrar dener misin?'
-                    : '⚠️ Bir bağlantı sorunu oluştu — lütfen tekrar dene.';
+                if (err && err.name === 'AbortError') {
+                    errorMsg.textContent = '⚠️ Yanıt çok uzun sürdü — mesajını tekrar gönderebilirsin.';
+                } else if (err && String(err.message || '').includes('429')) {
+                    errorMsg.textContent = '⚠️ Biraz hızlı gidiyoruz 🙂 Birkaç saniye bekleyip tekrar dener misin?';
+                } else {
+                    errorMsg.textContent = '⚠️ Bir bağlantı sorunu oluştu — lütfen tekrar dene.';
+                }
                 messages.appendChild(errorMsg);
                 messages.scrollTop = messages.scrollHeight;
+                if (!input.value) input.value = text; // mesajı geri koy
             } finally {
+                if (window._aiWidgetWatchdog) { clearTimeout(window._aiWidgetWatchdog); window._aiWidgetWatchdog = null; }
+                window._aiWidgetController = null;
                 window._aiWidgetSending = false;
             }
         }
@@ -1254,6 +1312,11 @@
 
         document.getElementById('ai-chat-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendAIChatMessage(); });
         document.addEventListener('DOMContentLoaded', initDraggableChat);
+        // Widget transkripti sayfa yenilenince kaybolur (kalıcı DOM yok). Saklı
+        // conversation_uuid'i de temizle: aksi halde boş ekrana sorulan yeni soru,
+        // sunucudaki GÖRÜNMEYEN eski niyet/filtrelerle yanıtlanır (kafa karıştırır).
+        // Böylece her sayfa yüklemesi widget'ta temiz bir konuşma başlatır.
+        try { localStorage.removeItem('turxtur_ai_conv'); } catch (e) {}
         window.addEventListener('resize', () => {
             const chatWindow = document.getElementById('ai-chat-window');
             if (chatWindow && chatWindow.style.display === 'flex') {

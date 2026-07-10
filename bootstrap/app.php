@@ -43,7 +43,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null; // diğer HTTP hataları normal akışında kalsın
             }
 
-            if ($request->expectsJson()) {
+            // AJAX/fetch/SSE istekleri login HTML redirect'i değil, JSON 419
+            // beklemeli. Aksi halde fetch redirect'i sessizce izler, chat/arama
+            // widget'ı yanlış "bağlantı kesildi" gösterir ve tekrar deneme sonsuza
+            // dek başarısız olur. Accept başlığında json VEYA event-stream olan
+            // (ya da X-Requested-With ile AJAX işaretli) istekler JSON alır.
+            $accept = (string) $request->header('Accept', '');
+            $wantsJson = $request->expectsJson()
+                || $request->ajax()
+                || str_contains($accept, 'application/json')
+                || str_contains($accept, 'text/event-stream');
+
+            if ($wantsJson) {
                 return response()->json(['message' => 'Oturum süresi doldu. Sayfayı yenileyip tekrar deneyin.'], 419);
             }
 

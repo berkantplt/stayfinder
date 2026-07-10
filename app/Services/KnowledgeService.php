@@ -64,6 +64,13 @@ class KnowledgeService
      */
     private function cosineSimilarity(array $vecA, array $vecB): float
     {
+        // Boyut uyuşmazlığı (model değişimi → eski embedding farklı boyutta):
+        // sessizce bozuk skor üretmek yerine 0 dön. Aksi halde $vecB[$i] tanımsız
+        // olur, PHP 8'de uyarı + yanlış benzerlik skoru çıkar.
+        if (count($vecA) !== count($vecB) || $vecA === []) {
+            return 0.0;
+        }
+
         $dotProduct = 0;
         $normA = 0;
         $normB = 0;

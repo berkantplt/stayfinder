@@ -57,8 +57,12 @@ class AiSearchController extends Controller
             ->values()
             ->all();
 
+        // Görünürlük filtresi: eski konuşma açılınca lisansı bitmiş/pasif tur
+        // fiyatıyla gösterilip 404 link vermesin. active() dışında kalanlar
+        // $tours'a girmez → blade'deki @if($tour) kartı sessizce atlar.
         $tours = ! empty($tourIds)
-            ? Tour::with('agency')
+            ? Tour::active()
+                ->with('agency')
                 ->whereIn('id', $tourIds)
                 ->get()
                 ->keyBy('id')
@@ -104,10 +108,14 @@ class AiSearchController extends Controller
             }
         }
 
-        // 2) Favori turda fiyat düşüşü (favorilendiği günkü fiyata göre)
+        // 2) Favori turda fiyat düşüşü (favorilendiği günkü fiyata göre).
+        // İlişki adı favoriteTours (favorites DEĞİL) — eski method_exists guard'ı
+        // hep false döndüğü için bu sinyal hiç görünmüyordu. active() ile yalnızca
+        // hâlâ satışta olan favoriler (görünür, 404 vermeyen) değerlendirilir.
         $user = $request->user();
-        if ($user && method_exists($user, 'favorites')) {
-            foreach ($user->favorites()->with('priceHistories')->limit(10)->get() as $favorite) {
+        if ($user) {
+            $favorites = $user->favoriteTours()->active()->with('priceHistories')->limit(10)->get();
+            foreach ($favorites as $favorite) {
                 $favoritedAt = $favorite->pivot?->created_at;
                 $baseline = $favorite->priceHistories
                     ->when($favoritedAt, fn ($c) => $c->filter(fn ($h) => $h->recorded_at <= $favoritedAt))
@@ -146,8 +154,11 @@ class AiSearchController extends Controller
                 'error' => 'Önceki mesajınız hâlâ işleniyor. Lütfen birkaç saniye bekleyip tekrar deneyin.',
             ], 429);
         } catch (\Throwable $e) {
+            // Ham hata mesajı (OpenAI/DB detayı) kullanıcıya SIZDIRILMAZ; yalnız loglanır.
+            Log::error('[AiSearch] sendMessage hata: '.$e->getMessage());
+
             return response()->json([
-                'error' => $e->getMessage(),
+                'error' => 'Şu an bir sorun oluştu, lütfen birazdan tekrar deneyin.',
             ], 500);
         }
 
@@ -320,6 +331,13 @@ class AiSearchController extends Controller
                 @flush();
             };
 
+            // İLK BAYTI HEMEN akıt: intent + arama fazı (OpenAI çağrıları) çıktı
+            // üretmeden önce nginx proxy zaman aşımı (proxy_read_timeout) sıfır-bayt
+            // görüp bağlantıyı koparmasın. SSE yorum satırı (":") spec gereği tüm
+            // istemciler tarafından yok sayılır — davranışı bozmaz, sadece canlı tutar.
+            echo ": keep-alive\n\n";
+            @flush();
+
             try {
                 $service->respondStreamed($request, $conversation, $validated['message'], $emit);
             } catch (LockTimeoutException $e) {
@@ -480,7 +498,11 @@ class AiSearchController extends Controller
             // aynı 24 saatlik girdiye düşer → isabet artar, gpt-4o maliyeti düşer
             $intentCacheKey = 'ai:intent:'.md5($intentModel.'|'.$this->normalizeText($query).'|'.json_encode($previousIntent ?? []));
 
-            $analysis = Cache::remember($intentCacheKey, 86400, function () use ($intentModel, $systemPrompt, $query) {
+            // Cache::remember DEĞİL: parse hatasında boş [] 24 saat cache'lenip
+            // sorguyu "niyetsiz" duruma kilitlerdi. Önce üret, GEÇERLİYSE (boş
+            // değil) cache'e yaz; boşsa cache'leme, bir sonraki denemede taze koşsun.
+            $analysis = Cache::get($intentCacheKey);
+            if (! is_array($analysis) || $analysis === []) {
                 $analysisResponse = OpenAI::chat()->create([
                     'model' => $intentModel,
                     'messages' => [
@@ -491,8 +513,11 @@ class AiSearchController extends Controller
                     'max_tokens' => 600, // intent JSON'u kompakt — kaçak uzun çıktıya tavan
                 ]);
 
-                return json_decode($analysisResponse->choices[0]->message->content, true) ?: [];
-            });
+                $analysis = json_decode($analysisResponse->choices[0]->message->content, true) ?: [];
+                if ($analysis !== []) {
+                    Cache::put($intentCacheKey, $analysis, 86400);
+                }
+            }
 
             // A/B test ve maliyet analizi için: hangi modelin çıkardığı log'a yazılsın
             $analysis['_model'] = $intentModel;
@@ -1868,7 +1893,11 @@ class AiSearchController extends Controller
         $cacheKey = 'ai:rerank:'.md5($this->normalizeText($query).'|'.$intentSummary.'|'.$top->pluck('id')->implode(','));
 
         try {
-            $scores = Cache::remember($cacheKey, 86400, function () use ($cards, $intentSummary, $query) {
+            // Cache::remember DEĞİL: parse hatasında boş skor listesi 24 saat
+            // cache'lenip rerank'ı kalıcı devre dışı bırakırdı. Boş skor
+            // cache'lenmez → sonraki denemede taze puanlanır.
+            $scores = Cache::get($cacheKey);
+            if (! is_array($scores) || $scores === []) {
                 $response = OpenAI::chat()->create([
                     'model' => config('ai.router_model', 'gpt-4o-mini'),
                     'messages' => [
@@ -1882,9 +1911,11 @@ class AiSearchController extends Controller
                 ]);
 
                 $data = json_decode($response->choices[0]->message->content ?? '{}', true) ?: [];
-
-                return is_array($data['scores'] ?? null) ? $data['scores'] : [];
-            });
+                $scores = is_array($data['scores'] ?? null) ? $data['scores'] : [];
+                if ($scores !== []) {
+                    Cache::put($cacheKey, $scores, 86400);
+                }
+            }
         } catch (\Throwable $e) {
             Log::info('[AiRerank] hata, hibrit sıra korunuyor', ['message' => $e->getMessage()]);
 

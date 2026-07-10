@@ -142,7 +142,9 @@ class ConversationService
             return null;
         }
 
-        $tour = Tour::with('agency')->find($lastIds[0]);
+        // Görünürlük: bayat last_result_tour_ids içindeki lisansı bitmiş/pasif tur
+        // takip sorusunda tam veri fişiyle (fiyat/program) LLM cevabına girmesin.
+        $tour = Tour::active()->with('agency')->find($lastIds[0]);
         if (! $tour || ! $tour->agency) {
             return null;
         }
@@ -345,7 +347,7 @@ class ConversationService
     {
         $tours = empty($route['tour_ids'])
             ? collect()
-            : Tour::with(['agency', 'dates'])->whereIn('id', $route['tour_ids'])->get();
+            : Tour::active()->with(['agency', 'dates'])->whereIn('id', $route['tour_ids'])->get();
 
         $comparison = ($route['action'] === 'compare' && $tours->count() >= 2)
             ? $this->searchController->buildComparisonTable($tours)
@@ -433,7 +435,7 @@ class ConversationService
 
         $tours = empty($route['tour_ids'])
             ? collect()
-            : Tour::with(['agency', 'dates'])->whereIn('id', $route['tour_ids'])->get();
+            : Tour::active()->with(['agency', 'dates'])->whereIn('id', $route['tour_ids'])->get();
 
         if ($route['action'] === 'compare' && $tours->count() >= 2) {
             $emit('compare', $this->searchController->buildComparisonTable($tours));
