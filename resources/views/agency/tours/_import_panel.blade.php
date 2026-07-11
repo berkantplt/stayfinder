@@ -74,22 +74,50 @@ function applyImported(data, sourceUrl) {
         }
     }
 
-    // Her tarih kendi satırı: paket matrisi varsa bloğun tarihlerini tek tek aç;
-    // yoksa düz tarih listesini (varsa tek fiyatla) tarih satırlarına dök.
+    // Her kalkış tarihi kendi satırı olur. Fiyat bloğu OLAN tarih tam paket/oda
+    // matrisiyle gelir. Bloğu OLMAYAN tarihler (ör. etstur'da modal yalnız bir
+    // tarihin tablosunu yükler) için:
+    //   - turun başlangıç (çift kişilik) fiyatı, bloğun çift kişilik fiyatıyla
+    //     AYNIYSA → fiyat tarihe göre değişmiyor demektir; aynı oda matrisini
+    //     ŞABLON olarak tüm tarihlere uygula (acenta yine kontrol eder)
+    //   - FARKLIYSA → fiyat tarihe göre değişkendir; sadece başlangıç fiyatını koy
+    //     (yanlış oda fiyatı uydurma), acenta o tarihi elle girer
     var entries = [];
-    if (Array.isArray(data.pricing_blocks) && data.pricing_blocks.length) {
-        data.pricing_blocks.forEach(function(block) {
-            var pkgs = Array.isArray(block.packages) ? block.packages : [];
-            (Array.isArray(block.dates) ? block.dates : []).forEach(function(d) {
-                entries.push({ date: d, price: '', packages: pkgs });
-            });
+    var blockByDate = {};
+    (Array.isArray(data.pricing_blocks) ? data.pricing_blocks : []).forEach(function(block) {
+        var pkgs = Array.isArray(block.packages) ? block.packages : [];
+        (Array.isArray(block.dates) ? block.dates : []).forEach(function(d) {
+            blockByDate[d] = pkgs;
         });
-    } else {
-        var price = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
-        (Array.isArray(data.departure_dates) ? data.departure_dates : []).forEach(function(d) {
-            entries.push({ date: d, price: price, packages: [] });
-        });
+    });
+
+    // Tüm tarihler = departure_dates ∪ blok tarihleri (tekilleştirilip sıralanır)
+    var allDates = {};
+    (Array.isArray(data.departure_dates) ? data.departure_dates : []).forEach(function(d) { allDates[d] = true; });
+    Object.keys(blockByDate).forEach(function(d) { allDates[d] = true; });
+
+    // Şablon matrisi ve onun çift kişilik fiyatı (ilk blok tarihinden)
+    var templatePkgs = null, templateDouble = null;
+    var blockDates = Object.keys(blockByDate).sort();
+    if (blockDates.length && blockByDate[blockDates[0]] && blockByDate[blockDates[0]].length) {
+        templatePkgs = blockByDate[blockDates[0]];
+        var pr = templatePkgs[0] && templatePkgs[0].prices && templatePkgs[0].prices.double_pp;
+        templateDouble = pr ? (pr['new'] !== null && pr['new'] !== undefined ? pr['new'] : pr.old) : null;
     }
+    var startPrice = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
+    // Şablonu diğer tarihlere uygula? Başlangıç fiyatı = şablonun çift kişilik fiyatı ise
+    var applyTemplate = templatePkgs && templateDouble !== null && startPrice !== '' &&
+        Number(startPrice) === Number(templateDouble);
+
+    Object.keys(allDates).sort().forEach(function(d) {
+        if (blockByDate[d] && blockByDate[d].length) {
+            entries.push({ date: d, price: '', packages: blockByDate[d] });
+        } else if (applyTemplate) {
+            entries.push({ date: d, price: '', packages: templatePkgs });
+        } else {
+            entries.push({ date: d, price: startPrice, packages: [] });
+        }
+    });
     if (entries.length) {
         setDateEntries(entries);
     }
