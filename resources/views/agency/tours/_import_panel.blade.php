@@ -21,7 +21,12 @@ function showImportStatus(msg, type) {
     if (!s) return;
     s.style.display = 'block';
     s.textContent = msg;
-    s.style.color = type === 'error' ? '#b91c1c' : (type === 'success' ? '#15803d' : '#475569');
+    // error=kırmızı (gerçek başarısızlık), warn=amber (kısmi başarı, veri doldu
+    // ama bir kısmı elle gerekiyor), success=yeşil, diğer=nötr.
+    s.style.color = type === 'error' ? '#b91c1c'
+        : type === 'warn' ? '#b45309'
+        : type === 'success' ? '#15803d'
+        : '#475569';
 }
 
 function setVal(selector, value) {
@@ -148,9 +153,10 @@ function importFromUrl() {
             applyImported(res.body.data, url);
             var warns = (res.body.data && res.body.data.warnings) || [];
             if (warns.length) {
-                showImportStatus('Bilgiler dolduruldu, ancak dikkat: ' + warns.join(' '), 'error');
+                // Veri DOLDU; uyarı kısmi eksikliği anlatır (hata değil) → amber.
+                showImportStatus('✓ Bilgiler dolduruldu. Not: ' + warns.join(' '), 'warn');
             } else {
-                showImportStatus('Bilgiler dolduruldu. Lütfen kategoriyi ve alanları kontrol edip kaydedin.', 'success');
+                showImportStatus('✓ Bilgiler dolduruldu. Lütfen kategoriyi ve alanları kontrol edip kaydedin.', 'success');
             }
             return;
         }

@@ -278,8 +278,13 @@ class TourUrlImporter
             if ($minAdult !== null && ($llmPrice === null || $llmPrice > $minAdult * 1.15 || $llmPrice < $minAdult * 0.5)) {
                 $result['price'] = $minAdult;
             }
+        } elseif (($result['price'] ?? null) !== null) {
+            // Başlangıç fiyatı geldi ama otel/tarih bazlı FİYAT TABLOSU gelmedi.
+            // Bazı siteler (Etstur gibi) tabloyu ancak otel seçilince API'den
+            // yükler, sayfada yoktur — bu bir hata değil, kısmi başarıdır.
+            $warnings[] = 'Başlangıç fiyatı alındı, ancak bu sitede otel/tarih bazlı fiyat tablosu sayfada yer almadığından çekilemedi — tarih ve otel fiyatlarını elle girebilirsiniz.';
         } else {
-            $warnings[] = 'Fiyat tablosu çıkarılamadı — fiyatları kontrol edip elle girin.';
+            $warnings[] = 'Fiyat bilgisi bu sayfadan otomatik alınamadı — fiyatları elle girin.';
         }
 
         // Otel-detay sayfası tespiti: tur şablonu sinyali olmayan sayfalarda serbest
@@ -289,20 +294,22 @@ class TourUrlImporter
             $warnings[] = 'Bu adres bir tur sayfasından çok OTEL sayfasına benziyor — tarih/fiyat bilgileri güvenilir çıkarılamayabilir, lütfen kontrol edin.';
         }
 
-        // Deterministik tarih yakalama: içerikteki TÜM tarihleri regex ile topla ve
-        // LLM'in bulduklarıyla birleştir (LLM bazılarını atlasa bile gelsin).
-        $result['departure_dates'] = $this->mergeDates(
-            $result['departure_dates'],
-            $isHotelPage ? [] : $this->harvestDates($text)
-        );
-
         // SPA'ların (Etstur/Jolly vb.) ham HTML'ine gömdüğü JSON kalkış takvimi:
         // metin şablonu {{ }} placeholder olduğu için cleanHtml'de kaybolur, ama
         // "departureDate":{"year":Y,"month":M,"day":D} objesi ham HTML'de nettir.
-        if (! $isHotelPage) {
+        $jsonDates = $isHotelPage ? [] : $this->harvestJsonDates($this->lastHtml ?? '');
+
+        if ($jsonDates !== []) {
+            // Güvenilir JSON KALKIŞ takvimi var → gürültülü metin taramasını ATLA.
+            // (Modal fiyat tablosunun "GG Ay - GG Ay" aralıklarındaki DÖNÜŞ tarihleri
+            // regex taramasına sızıp sahte kalkış tarihi üretiyordu.) Yalnız LLM +
+            // JSON + blok tarihleri kullanılır.
+            $result['departure_dates'] = $this->mergeDates($result['departure_dates'], $jsonDates);
+        } else {
+            // Klasik (SPA olmayan) sayfa: metindeki tüm tarihleri regex ile topla.
             $result['departure_dates'] = $this->mergeDates(
                 $result['departure_dates'],
-                $this->harvestJsonDates($this->lastHtml ?? '')
+                $isHotelPage ? [] : $this->harvestDates($text)
             );
         }
 
@@ -999,6 +1006,25 @@ class TourUrlImporter
         } catch (e) {}
         JS;
 
+        // Otel/oda bazlı FİYAT TABLOSU birçok OTA'da (etstur vb.) bir MODAL'da olup
+        // tetikleyici tıklanınca API'den yüklenir — sayfa metninde yalnız "kişi başı"
+        // başlangıç fiyatı görünür. Tetikleyiciyi tıkla ki tam tablo (Double/Tek
+        // Kişilik/Üçüncü Kişi/Çocuk fiyatları) DOM'a → rawHtml'e girsin.
+        $priceModalScript = <<<'JS'
+        try {
+          var btn = document.querySelector('button.hotel-info-button, button[class*="hotel-info" i], [class*="productsInstallmentTable" i] button');
+          if (!btn) {
+            btn = [].slice.call(document.querySelectorAll('a,button,div,span'))
+              .filter(function (e) {
+                var t = (e.innerText || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                return (e.innerText || '').length < 45 && /otellere g.re fiyat|fiyat tablosu/.test(t);
+              })
+              .sort(function (a, b) { return (a.innerText || '').length - (b.innerText || '').length; })[0];
+          }
+          if (btn) { btn.scrollIntoView(); btn.click(); }
+        } catch (e) {}
+        JS;
+
         $base = [
             'url' => $url,
             // rawHtml de iste: görselleri (render edilmiş galeri dahil) ayrı istek
@@ -1015,15 +1041,18 @@ class TourUrlImporter
                 ['type' => 'wait', 'milliseconds' => 3000],
                 ['type' => 'scroll', 'direction' => 'down'],
                 ['type' => 'wait', 'milliseconds' => 1500],
-                ['type' => 'executeJavascript', 'script' => $clickScript], // menüyü aç
-                ['type' => 'wait', 'milliseconds' => 2500],                 // seçenekler yüklensin
-                ['type' => 'executeJavascript', 'script' => $revealScript], // hepsini topla
-                ['type' => 'wait', 'milliseconds' => 1000],
+                ['type' => 'executeJavascript', 'script' => $clickScript],        // tarih menüsünü aç
+                ['type' => 'wait', 'milliseconds' => 2500],                        // seçenekler yüklensin
+                ['type' => 'executeJavascript', 'script' => $revealScript],        // tarihleri topla
+                ['type' => 'executeJavascript', 'script' => $priceModalScript],    // fiyat tablosu modalını aç
+                ['type' => 'wait', 'milliseconds' => 6000],                        // modal API'den dolsun
             ],
             [
                 ['type' => 'wait', 'milliseconds' => 3000],
                 ['type' => 'scroll', 'direction' => 'down'],
-                ['type' => 'wait', 'milliseconds' => 2500],
+                ['type' => 'wait', 'milliseconds' => 1500],
+                ['type' => 'executeJavascript', 'script' => $priceModalScript],    // sade denemede de modalı aç
+                ['type' => 'wait', 'milliseconds' => 5000],
             ],
         ];
 
@@ -1031,12 +1060,12 @@ class TourUrlImporter
         foreach ($attempts as $actions) {
             // Zaman bütçesi: ilk deneme uzun sürdüyse ikinciye girme — toplam istek
             // süresi sunucu proxy zaman aşımını (504) tetiklemesin.
-            if (microtime(true) - $started > 35) {
+            if (microtime(true) - $started > 45) {
                 Log::info('[TourImport] firecrawl zaman bütçesi doldu, fallback');
                 break;
             }
             try {
-                $response = Http::timeout(45)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+                $response = Http::timeout(60)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
 
                 if ($response->ok()) {
                     $markdown = trim((string) $response->json('data.markdown'));
@@ -1537,17 +1566,29 @@ class TourUrlImporter
     {
         $low = mb_strtolower($text);
         $start = $this->priceAnchorStart($low);
-        if ($start === null) {
-            return '';
+        $region = '';
+        if ($start !== null) {
+            $start = max(0, $start - 200);
+            $end = mb_strrpos($low, 'rezervasyon yap');
+            if ($end === false || $end < $start) {
+                $end = mb_strlen($low);
+            }
+            $end = min($end + 200, $start + 60000);
+            $region = mb_substr($text, $start, $end - $start);
         }
-        $start = max(0, $start - 200);
-        $end = mb_strrpos($low, 'rezervasyon yap');
-        if ($end === false || $end < $start) {
-            $end = mb_strlen($low);
-        }
-        $end = min($end + 200, $start + 60000);
 
-        return mb_substr($text, $start, $end - $start);
+        // Otel/oda bazlı fiyat tablosu (etstur vb. MODAL) sayfanın başka yerinde
+        // olabilir; yukarıdaki bölgede yoksa modal tablo penceresini ayrıca ekle
+        // ki LLM fiyat çıkarımı per-oda (double/tek/üçüncü/çocuk) fiyatları görsün.
+        foreach (['double odada', 'otellere göre fiyat tablosu'] as $modalAnchor) {
+            $modalPos = mb_strpos($low, $modalAnchor);
+            if ($modalPos !== false && mb_stripos($region, 'double odada') === false) {
+                $region .= "\n…\n".mb_substr($text, max(0, $modalPos - 250), 6000);
+                break;
+            }
+        }
+
+        return $region;
     }
 
     /**
@@ -1603,8 +1644,18 @@ class TourUrlImporter
              }}]}
         ]}
 
-        Oda/yaş tipleri: double_pp=İki Kişilik Oda Kişi Başı, single=Tek Kişilik Oda,
-        extra_bed=İlave Yatak, child_0_2=0-1,99 Yaş, child_3_5=3-5,99 Yaş, child_7_11=7-11,99 Yaş.
+        Oda/yaş tipleri: double_pp=İki Kişilik Oda Kişi Başı (VEYA "Double Odada Kişi Başı"),
+        single=Tek Kişilik Oda, extra_bed=İlave Yatak (VEYA "Üçüncü Kişi"/"3. Kişi"),
+        child_0_2=0-1,99 Yaş (VEYA "0-1 Yaş"), child_3_5=3-5,99 Yaş, child_7_11=7-11,99 Yaş.
+
+        ÇİFT PARA BİRİMİ: Bir hücrede aynı fiyat İKİ para biriminde yazılmış olabilir
+        (ör. "1.599,00 USD 75.595 TL" veya "1.949,00 USD 92.141 TL"). Bunlar eski/yeni
+        DEĞİL, AYNI fiyatın iki para birimidir. İki para birimi varsa YALNIZ İLK yazılanı
+        (ör. USD değerini) al, diğerini (TL) YOK SAY; bu tek fiyatı "new" alanına yaz, old=null.
+
+        TARİH ARALIĞI: Başlık "GG Ay YYYY - GG Ay YYYY" aralığı ise (ör. "25 Eylül 2026 -
+        30 Eylül 2026") İLK tarih KALKIŞ, ikinci DÖNÜŞtür. "dates" listesine YALNIZ kalkış
+        (ilk) tarihini yaz; dönüş tarihini kalkış sanma.
 
         TABLO YAPISI: Her tur tarihi için ("Tur Hareket Tarihi: DD-MM-YYYY" başlığı altında)
         bir tablo vardır. Tablo başlığı sütunları sıralar (Paket Adı, İki Kişilik Oda Kişi Başı,
