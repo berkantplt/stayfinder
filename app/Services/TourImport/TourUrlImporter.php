@@ -1031,28 +1031,27 @@ class TourUrlImporter
             // atmadan bu HTML'den çıkaracağız — derin taramada süre/timeout kazancı.
             'formats' => ['markdown', 'rawHtml'],
             'onlyMainContent' => false,
-            'waitFor' => 8000,
+            'waitFor' => 3500,
         ];
 
-        // 1. deneme: JS ile DOM'daki tüm tarih/seçenekleri yüzeye çıkar (en kapsamlı).
-        // 2. deneme: Firecrawl JS aksiyonunu desteklemezse sade bekle+kaydır (regresyon yok).
+        // HIZ: tarih menüsü + fiyat modalı TEK bekleme aralığında açılır (ayrı ayrı
+        // bekleme yok). Tarihler zaten harvestJsonDates ile ham HTML'den gelir; bu
+        // aksiyonlar esas fiyat MODALINI yüklemek için — toplam bekleme ~21→~8 sn.
         $attempts = [
             [
-                ['type' => 'wait', 'milliseconds' => 3000],
+                ['type' => 'wait', 'milliseconds' => 1000],
                 ['type' => 'scroll', 'direction' => 'down'],
-                ['type' => 'wait', 'milliseconds' => 1500],
-                ['type' => 'executeJavascript', 'script' => $clickScript],        // tarih menüsünü aç
-                ['type' => 'wait', 'milliseconds' => 2500],                        // seçenekler yüklensin
-                ['type' => 'executeJavascript', 'script' => $revealScript],        // tarihleri topla
-                ['type' => 'executeJavascript', 'script' => $priceModalScript],    // fiyat tablosu modalını aç
-                ['type' => 'wait', 'milliseconds' => 6000],                        // modal API'den dolsun
+                ['type' => 'wait', 'milliseconds' => 600],
+                ['type' => 'executeJavascript', 'script' => $clickScript],         // tarih menüsü
+                ['type' => 'executeJavascript', 'script' => $priceModalScript],    // fiyat tablosu modalı
+                ['type' => 'wait', 'milliseconds' => 4000],                         // modal + seçenekler dolsun
+                ['type' => 'executeJavascript', 'script' => $revealScript],         // tarihleri topla
             ],
             [
-                ['type' => 'wait', 'milliseconds' => 3000],
+                ['type' => 'wait', 'milliseconds' => 2000],
                 ['type' => 'scroll', 'direction' => 'down'],
-                ['type' => 'wait', 'milliseconds' => 1500],
                 ['type' => 'executeJavascript', 'script' => $priceModalScript],    // sade denemede de modalı aç
-                ['type' => 'wait', 'milliseconds' => 5000],
+                ['type' => 'wait', 'milliseconds' => 4000],
             ],
         ];
 
