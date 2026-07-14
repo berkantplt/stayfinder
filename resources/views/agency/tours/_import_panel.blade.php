@@ -96,25 +96,27 @@ function applyImported(data, sourceUrl) {
     (Array.isArray(data.departure_dates) ? data.departure_dates : []).forEach(function(d) { allDates[d] = true; });
     Object.keys(blockByDate).forEach(function(d) { allDates[d] = true; });
 
-    // Şablon matrisi ve onun çift kişilik fiyatı (ilk blok tarihinden)
-    var templatePkgs = null, templateDouble = null;
+    // Şablon matrisi (ilk blok tarihinden). Kullanıcı kararı: NE OLURSA OLSUN her
+    // tarih PAKET (matris) olarak gelsin. Modallı OTA'larda (etstur) tarih dropdown'ı
+    // opak custom bileşen olduğundan her tarihin GERÇEK matrisi tek tek çekilemiyor;
+    // bu yüzden ilk bloğun matrisi TÜM tarihlere ŞABLON olarak uygulanır. Fiyat
+    // tarihe göre farklıysa acenta düzenler (sayfada tek fiyat bilgisi olduğundan
+    // per-tarih fark zaten tespit edilemiyor).
+    var templatePkgs = null;
     var blockDates = Object.keys(blockByDate).sort();
     if (blockDates.length && blockByDate[blockDates[0]] && blockByDate[blockDates[0]].length) {
         templatePkgs = blockByDate[blockDates[0]];
-        var pr = templatePkgs[0] && templatePkgs[0].prices && templatePkgs[0].prices.double_pp;
-        templateDouble = pr ? (pr['new'] !== null && pr['new'] !== undefined ? pr['new'] : pr.old) : null;
     }
     var startPrice = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
-    // Şablonu diğer tarihlere uygula? Başlangıç fiyatı = şablonun çift kişilik fiyatı ise
-    var applyTemplate = templatePkgs && templateDouble !== null && startPrice !== '' &&
-        Number(startPrice) === Number(templateDouble);
 
     Object.keys(allDates).sort().forEach(function(d) {
         if (blockByDate[d] && blockByDate[d].length) {
             entries.push({ date: d, price: '', packages: blockByDate[d] });
-        } else if (applyTemplate) {
+        } else if (templatePkgs) {
+            // Bloğu olmayan tarih → ilk bloğun matrisini şablonla (her tarih paket)
             entries.push({ date: d, price: '', packages: templatePkgs });
         } else {
+            // Hiç matris yok (site fiyat tablosu vermiyor) → düz başlangıç fiyatı
             entries.push({ date: d, price: startPrice, packages: [] });
         }
     });
