@@ -413,6 +413,13 @@ class TourImportParserTest extends TestCase
             '3 Gece 4 Gün / İzmir Çıkışlı',
             $this->invoke('cleanTitle', ['3 Gece 4 Gün / İzmir Çıkışlı'])
         );
+        // gezentiturizm: süre BİLGİSİ tur-adı segmentinde ("Kapadokya Turu 2 Gece
+        // Konaklamalı") → segment tur adı olduğundan ATILMAZ; sadece pazarlama
+        // kuyruğu kalır ama tur adı korunur (eskiden yalnız "Yemek Dahil..." kalıyordu)
+        $this->assertSame(
+            'Kapadokya Turu 2 Gece Konaklamalı / Yemek Dahil Özel Program',
+            $this->invoke('cleanTitle', ['Kapadokya Turu 2 Gece Konaklamalı | Yemek Dahil Özel Program'])
+        );
     }
 
     public function test_json_departure_dates_harvested_from_spa_raw_html(): void

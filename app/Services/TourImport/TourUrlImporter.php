@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 7;
+    private const CACHE_VERSION = 8;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -324,7 +324,9 @@ class TourUrlImporter
         }
 
         // Görselleri ham HTML'den sırayla yakala (og:image + JSON-LD + <img>).
-        $result['image_urls'] = $this->harvestImages($url);
+        // $text (okuyucu/render markdown'ı) ham HTML hiç oluşmadıysa (bot-bloklu
+        // SPA) görsel URL'leri için son-çare kaynak olur.
+        $result['image_urls'] = $this->harvestImages($url, $text);
 
         $result['warnings'] = $warnings;
 
@@ -397,7 +399,7 @@ class TourUrlImporter
      *
      * @return array<int, string>
      */
-    private function harvestImages(string $url): array
+    private function harvestImages(string $url, string $fallbackText = ''): array
     {
         // Önce içerik çekiminde yakalanan ham HTML'i kullan (EKSTRA İSTEK YOK).
         // Derin taramada Firecrawl'ın rawHtml'i, normal yolda fetchDirect'in body'si.
@@ -411,15 +413,24 @@ class TourUrlImporter
                     'Accept' => 'text/html,application/xhtml+xml,*/*;q=0.8',
                 ], 10);
 
-                if (! $response->ok()) {
-                    return [];
+                if ($response->ok()) {
+                    $ct = strtolower((string) $response->header('Content-Type'));
+                    if ($ct === '' || str_contains($ct, 'text/html')) {
+                        $html = substr($response->body(), 0, 2000000);
+                    }
                 }
-                $ct = strtolower((string) $response->header('Content-Type'));
-                if ($ct !== '' && ! str_contains($ct, 'text/html')) {
-                    return [];
-                }
-                $html = substr($response->body(), 0, 2000000);
             } catch (\Throwable) {
+                // yut → okuyucu markdown'ına düş
+            }
+
+            // Son çare çekim de boş/blok döndüyse (TatilBudur gibi bot-bloklu SPA'lar
+            // içerik'i r.jina.ai okuyucu markdown'ından alır; ham HTML hiç oluşmaz):
+            // markdown'daki görsel URL'lerini kaynak al — regex #1 çıplak/![](url)
+            // URL'leri yakalar, aynı skorlama/eleme hattından geçer (logo/ikon elenir).
+            if (trim($html) === '' && trim($fallbackText) !== '') {
+                $html = $fallbackText;
+            }
+            if (trim($html) === '') {
                 return [];
             }
         }
@@ -517,7 +528,7 @@ class TourUrlImporter
         // gerçek galeriyi (farklı CDN'de bile) bastırmasın (etstur resources_t vakası).
         $uiPenalty = function (string $u): int {
             $low = strtolower($u);
-            foreach (['resources_t', '/assets/', '/static/', '/img/user', '/img/icon', 'login',
+            foreach (['resources_t', '/assets/', '/static/', '/img/user', '/img/icon', '/icon/', 'login',
                 'payment', 'reservation-document', 'call-you', 'uyelere-ozel', 'facebook',
                 'logo', 'sprite', 'placeholder', 'avatar', 'favicon', '/ui/', '/common/'] as $bad) {
                 if (str_contains($low, $bad)) {
@@ -1302,7 +1313,18 @@ class TourUrlImporter
         // Liste/blok sınırlarına satır başı koy ki <li>/<br>/<p> maddeleri yapışmasın
         // (dahil/hariç hizmet listeleri böyle korunur)
         $text = preg_replace('#<\s*(br|/li|/p|/div|/tr|/h[1-6])\s*/?>#i', "\n", $text) ?? $text;
-        $text = strip_tags($text);
+        // HTML comment'leri güvenli kaldır. DENGESİZ comment'li sayfalarda (bizcetatil:
+        // 39 açılış / 38 kapanış — elle yorumlanmış <li>/<div> blokları) strip_tags
+        // bir "<!--" den sonrasını comment sanıp fiyat matrisi + programı YİYORDU.
+        // Önce dengeli comment'leri, sonra yetim "<!--"/"-->" işaretlerini temizle.
+        $text = preg_replace('/<!--.*?-->/s', ' ', $text) ?? $text;
+        $text = str_replace(['<!--', '-->'], ' ', $text);
+        // strip_tags YERİNE iyi-biçimli tek-tag regex'i: strip_tags'in durum makinesi
+        // kapanmamış/bozuk bir tag'da takılıp ta kapanışına dek GERÇEK içeriği
+        // silebiliyor (bizcetatil 170KB→1KB, matris kayboluyordu). "<[^<>]+>" ASLA
+        // bir "<" üzerinden atlamaz; bozuk HTML'de içerik kaybı olmaz.
+        $text = preg_replace('/<[^<>]+>/', ' ', $text) ?? $text;
+        $text = preg_replace('/<[^<>]*$/', '', $text) ?? $text; // dosya sonunda kapanmamış açık tag
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         // Satır içi boşlukları sıkıştır ama satır sonlarını KORU
         $text = preg_replace('/[ \t\x{00a0}]+/u', ' ', $text) ?? $text;
@@ -1655,8 +1677,13 @@ class TourUrlImporter
     private function priceAnchorStart(string $low): ?int
     {
         $anchorSets = [
-            ['fiyatlar ve tarih', 'iki kişilik oda kişi baş', 'tur hareket tarih'], // güçlü, tabloya özgü
-            ['paket ad', 'kişi baş', 'kisi bas', 'hareket tarih'],                   // jenerik yedek
+            // Güçlü, tabloya özgü çapalar (program/iptal metninde nadiren geçer).
+            // "çift/tek kişilik oda" oda-tipi matrisinin kesin işaretidir; hem
+            // tatilsepeti (DIV "Çift Kişilik Odada Kişibaşı") hem bizcetatil
+            // ("Tek Kişilik Oda 209.-€") gibi düzenleri gerçek tabloya çapalar —
+            // sayfa başındaki tekil "kişi başı" başlangıç fiyatına DEĞİL.
+            ['fiyatlar ve tarih', 'iki kişilik oda kişi baş', 'çift kişilik oda', 'tek kişilik oda', 'tur hareket tarih'],
+            ['paket ad', 'kişi baş', 'kişibaş', 'kisi bas', 'hareket tarih'], // jenerik yedek (bitişik "kişibaşı" dahil)
         ];
 
         foreach ($anchorSets as $anchors) {
@@ -1810,12 +1837,15 @@ class TourUrlImporter
         // BAŞINA ölçüt DEĞİL: "Sunshine Holiday Resort Fethiye" gibi meşru tur adı
         // segmentleri silinmesin (b977401 regresyonu). "Otel Konaklamalı" gibi bir
         // kuyruk zaten "N gece/gün" ile yakalanır.
+        // Bir segment KORUNUR eğer: tur-adı anahtarı ("tur/turu/gezi/gezisi/tour")
+        // içeriyorsa (o zaman süre bilgisi taşısa bile gerçek başlıktır —
+        // "Kapadokya Turu 2 Gece Konaklamalı" TAM başlıktır, atılmaz), VEYA süre/kalkış
+        // kuyruğu değilse. Yalnız SAF süre/kalkış kuyruğu ("3 Gece 4 Gün", "İzmir
+        // Çıkışlı" — tur anahtarı yok) atılır.
         $kept = array_values(array_filter(
             preg_split('#\s[/|]\s#', $title) ?: [],
-            fn (string $seg): bool => ! preg_match(
-                '/\b\d+\s*gece\b|\b\d+\s*gün\b|çıkışlı|kalkışlı|hareketli/iu',
-                $seg
-            )
+            fn (string $seg): bool => preg_match('/\bturu?\b|\bturlar|\bgezi\b|\bgezisi\b|\btour\b/iu', $seg)
+                || ! preg_match('/\b\d+\s*gece\b|\b\d+\s*gün\b|çıkışlı|kalkışlı|hareketli/iu', $seg)
         ));
 
         return $kept !== [] ? implode(' / ', $kept) : $title;
