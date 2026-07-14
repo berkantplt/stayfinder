@@ -205,12 +205,22 @@ class TourUrlImporter
         // LLM zaman aşımı/hatasında SERT 422 yerine eldeki veriyle (tarih/görsel/fiyat)
         // dönmek için yakalanır.
         $warnings = [];
-        try {
-            $extracted = $this->extractWithLlm($this->focusContent($text, false));
-        } catch (\Throwable $e) {
-            Log::warning('[TourImport] genel çıkarım hata, kısmi sonuç', ['message' => $e->getMessage()]);
+        // Süre bütçesi aşıldıysa (iki-geçişli akışın 2. turu, API tıkanıklığı vb.)
+        // genel LLM çağrısını ATLA — deterministik alanlar (tarih/görsel/fiyat)
+        // yine gelir. Aksi halde her çağrı 60 sn timeout × retry ile toplam süreyi
+        // dakikalara çıkarabiliyordu (LisinyaTur 969 sn hang vakası).
+        if ($this->deadlineExceeded()) {
+            Log::info('[TourImport] süre bütçesi aşıldı, genel LLM atlandı');
             $extracted = [];
-            $warnings[] = 'Yapay zeka metin çıkarımı başarısız oldu ('.$this->friendlyLlmError($e).') — başlık/açıklama/program alanları boş kalabilir.';
+            $warnings[] = 'Sayfa çok uzun sürdü; başlık/açıklama alanları eksik olabilir.';
+        } else {
+            try {
+                $extracted = $this->extractWithLlm($this->focusContent($text, false));
+            } catch (\Throwable $e) {
+                Log::warning('[TourImport] genel çıkarım hata, kısmi sonuç', ['message' => $e->getMessage()]);
+                $extracted = [];
+                $warnings[] = 'Yapay zeka metin çıkarımı başarısız oldu ('.$this->friendlyLlmError($e).') — başlık/açıklama/program alanları boş kalabilir.';
+            }
         }
         $result = $this->normalize($extracted);
 
@@ -631,8 +641,13 @@ class TourUrlImporter
         foreach ($urls as $u) {
             $res = $responses[$u] ?? null;
             $body = ($res instanceof \Illuminate\Http\Client\Response && $res->ok()) ? $res->body() : null;
+            // İşlenen yanıtı havuzdan hemen düşür: 16 gövdeyi (her biri MB'lar)
+            // aynı anda bellekte tutmak, decode ile birlikte belleği patlatıyordu.
+            unset($responses[$u]);
 
-            if ($body === null || $body === '' || strlen($body) > 8 * 1024 * 1024) {
+            // 5MB üstü gövdeyi analiz etme (decode belleği + havuz baskısı) —
+            // büyük görsel gerçek fotoğraftır, dedupsuz tutulur.
+            if ($body === null || $body === '' || strlen($body) > 5 * 1024 * 1024) {
                 $kept[] = ['url' => $u, 'hash' => null, 'area' => 0];
 
                 continue;
@@ -650,6 +665,16 @@ class TourUrlImporter
                     continue; // şerit logo / banner oranı
                 }
                 $area = $w * $h;
+            }
+
+            // Bellek koruması: çok büyük görseli dHash için decode ETME —
+            // imagecreatefromstring truecolor bitmap'e açar (w×h×4 bayt; 24MP =
+            // ~96MB) ve PHP bellek limitini patlatır (GomuTur vakası, 128MB).
+            // Bu görseli dedupsuz TUT (gerçek büyük fotoğraf, elenmemeli).
+            if ($dims === false || $area > 15_000_000) {
+                $kept[] = ['url' => $u, 'hash' => null, 'area' => $area];
+
+                continue;
             }
 
             $hash = $this->imageDHash($body);
@@ -686,6 +711,13 @@ class TourUrlImporter
      */
     private function imageDHash(string $bytes): ?string
     {
+        // Savunma katmanı: decode'dan önce boyutu ucuza ölç; çok büyük görseli
+        // (>24MP) açma — truecolor bitmap belleği patlatabilir.
+        $info = @getimagesizefromstring($bytes);
+        if ($info === false || ($info[0] * $info[1]) > 15_000_000) {
+            return null;
+        }
+
         $src = @imagecreatefromstring($bytes);
         if ($src === false) {
             return null;
