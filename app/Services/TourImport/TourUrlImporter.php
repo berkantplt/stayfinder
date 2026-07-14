@@ -485,9 +485,33 @@ class TourUrlImporter
 
         $hintScore = function (string $u): int {
             $low = strtolower($u);
-            foreach (['gallery', 'galeri', 'photo', 'foto', 'upload', 'media', 'image', 'resim'] as $hint) {
+            // GÜÇLÜ tur-galeri sinyali: bu klasörler AYNI-HOST UI görselinden daha
+            // güvenilir tur fotoğrafı işaretidir (etstur "tourMedia" CDN'i gibi) —
+            // farklı alt-domainde olsa bile öne çıksın.
+            foreach (['tourmedia', 'tourgallery', 'tour-media', 'tourdetail', 'gallery', 'galeri', 'fotogaleri', '/photos/'] as $strong) {
+                if (str_contains($low, $strong)) {
+                    return 50;
+                }
+            }
+            foreach (['photo', 'foto', 'upload', 'media', 'image', 'resim'] as $hint) {
                 if (str_contains($low, $hint)) {
                     return 15;
+                }
+            }
+
+            return 0;
+        };
+
+        // Arayüz/dekorasyon görselleri (logo, giriş, ödeme, banner, sprite, avatar) —
+        // tur fotoğrafı değil, her sayfada tekrarlanan çöp. Skorda dibe gönderilir ki
+        // gerçek galeriyi (farklı CDN'de bile) bastırmasın (etstur resources_t vakası).
+        $uiPenalty = function (string $u): int {
+            $low = strtolower($u);
+            foreach (['resources_t', '/assets/', '/static/', '/img/user', '/img/icon', 'login',
+                'payment', 'reservation-document', 'call-you', 'uyelere-ozel', 'facebook',
+                'logo', 'sprite', 'placeholder', 'avatar', 'favicon', '/ui/', '/common/'] as $bad) {
+                if (str_contains($low, $bad)) {
+                    return -100;
                 }
             }
 
@@ -510,7 +534,7 @@ class TourUrlImporter
             // Çok sinyalli skor: kapak > aynı klasör > aynı host > galeri ipucu.
             // Küme münhasır filtre DEĞİL — galeri birden çok klasöre bölünebilir
             // (WP aylık klasörleri); sıralama + 12 kota + sinyalsiz-aday elemesi çöpü keser.
-            $score = function (string $u) use ($hero, $heroDir, $heroHost, $clusterDir, $hintScore): int {
+            $score = function (string $u) use ($hero, $heroDir, $heroHost, $clusterDir, $hintScore, $uiPenalty): int {
                 if ($u === $hero) {
                     return 100;
                 }
@@ -522,7 +546,7 @@ class TourUrlImporter
                     $s += 20;
                 }
 
-                return $s + $hintScore($u);
+                return $s + $hintScore($u) + $uiPenalty($u);
             };
             // Kapak klasöründe yeterli görsel varsa zayıf adaylar kota boş kalsa
             // bile listeye giremez: salt kelime ipucu (media/img...) yetmez,
@@ -536,10 +560,10 @@ class TourUrlImporter
         } else {
             // Kapak yok/geçersiz: sayfanın hostu + galeri ipucuyla genel sıralama
             $pageHost = strtolower((string) parse_url($url, PHP_URL_HOST));
-            $generic = function (string $u) use ($pageHost, $hintScore): int {
+            $generic = function (string $u) use ($pageHost, $hintScore, $uiPenalty): int {
                 $s = strtolower((string) parse_url($u, PHP_URL_HOST)) === $pageHost ? 20 : 0;
 
-                return $s + $hintScore($u);
+                return $s + $hintScore($u) + $uiPenalty($u);
             };
             usort($candidates, fn ($a, $b) => $generic($b) <=> $generic($a));
         }
