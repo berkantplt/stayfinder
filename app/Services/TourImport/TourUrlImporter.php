@@ -2684,9 +2684,26 @@ class TourUrlImporter
             '#\b\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2}\b#',
         ];
 
+        // KALKIŞ–DÖNÜŞ ARALIĞI: "17.07.2026 / 22.07.2026" (Ayder) veya
+        // "17-07-2026 - 19-07-2026" (Keyftur) gibi çiftlerde İKİNCİ tarih DÖNÜŞtür,
+        // kalkış değildir. Dönüş tarihlerinin konumlarını topla ki sayılmasın
+        // (yoksa tarih sayısı 2 katına çıkıyordu — Ayder 18=9×2, Keyftur 48=24×2).
+        $atom = '(?:\d{1,2}\s+(?:'.$months.')\s+20\d{2}|\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2})';
+        $sep = '(?:\s*/\s*|\s+-\s+|\s*[–—]\s*|\s*→\s*|\s*\.{2,3}\s*|\s+ile\s+)';
+        $returnOffsets = [];
+        if (preg_match_all('#'.$atom.$sep.'('.$atom.')#u', $content, $rm, PREG_OFFSET_CAPTURE)) {
+            foreach ($rm[1] as [, $off]) {
+                $returnOffsets[(int) $off] = true;
+            }
+        }
+
         foreach ($patterns as $pattern) {
             if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
                 foreach ($matches[0] as [$raw, $offset]) {
+                    // Dönüş tarihi (aralığın ikinci tarihi) → kalkış değil, atla.
+                    if (isset($returnOffsets[(int) $offset])) {
+                        continue;
+                    }
                     // Kupon/kampanya geçerlilik aralıkları ve otel etkinlik (konser)
                     // takvimindeki tarihler KALKIŞ tarihi değildir — bağlama bak, ele.
                     if ($this->dateContextIsExcluded($content, (int) $offset, strlen($raw))) {

@@ -243,6 +243,30 @@ class TourImportParserTest extends TestCase
         $this->assertContains('2026-12-26', $dates7, 'İskandinavya 26-12 gerçek tarihi korunmalı');
     }
 
+    public function test_departure_return_range_not_double_counted(): void
+    {
+        // Ayder deseni: "kalkış / dönüş" — İKİNCİ tarih dönüştür, sayılmamalı.
+        $ayder = 'Kalkış Tarihleri 17.07.2026 / 22.07.2026 Kesin Kalkış '
+               . '24.07.2026 / 29.07.2026 07.08.2026 / 12.08.2026';
+        $d = $this->invoke('harvestDates', [$ayder]);
+        $this->assertContains('2026-07-17', $d, 'kalkış korunmalı');
+        $this->assertContains('2026-07-24', $d, 'kalkış korunmalı');
+        $this->assertContains('2026-08-07', $d, 'kalkış korunmalı');
+        $this->assertNotContains('2026-07-22', $d, 'dönüş tarihi sayılmamalı');
+        $this->assertNotContains('2026-07-29', $d, 'dönüş tarihi sayılmamalı');
+        $this->assertNotContains('2026-08-12', $d, 'dönüş tarihi sayılmamalı');
+        $this->assertCount(3, $d, 'sadece 3 kalkış — dönüşler ayıklanmış (çift sayım yok)');
+
+        // Keyftur deseni: "kalkış - dönüş" (sayısal, boşluklu tire)
+        $keyftur = 'Tarihleri Seçin 17-07-2026 - 19-07-2026 24-07-2026 - 26-07-2026';
+        $k = $this->invoke('harvestDates', [$keyftur]);
+        $this->assertContains('2026-07-17', $k);
+        $this->assertContains('2026-07-24', $k);
+        $this->assertNotContains('2026-07-19', $k, 'dönüş sayılmamalı');
+        $this->assertNotContains('2026-07-26', $k, 'dönüş sayılmamalı');
+        $this->assertCount(2, $k, 'sadece 2 kalkış');
+    }
+
     public function test_hotel_page_detected_and_concert_dates_suppressed(): void
     {
         // page_5: otel sayfası — tespit edilmeli
