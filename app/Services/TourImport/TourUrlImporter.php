@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 12;
+    private const CACHE_VERSION = 13;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -2463,6 +2463,18 @@ class TourUrlImporter
 
         $blocks = $this->normalizePricingBlocks(array_values($groups));
 
+        // SATIR-BAZLI tablo (tatilciniz motoru vb.): her satır "TARİH + seçenek +
+        // fiyat + para birimi" ("25.07.2026 3* & 4* Oteller Vb. 769 ,00 €").
+        // Dikey/yatay parser bu düzeni tanımaz; LLM ise 27 satırlık tabloda
+        // güvenilmez (canlı vaka: yalnız son 2 satırı döndürüp TÜM tarihlere 599
+        // şablonlanmasına yol açtı — 25.07 gerçekte 769). Kodla oku: kesin + hızlı.
+        if ($blocks === []) {
+            $rowParsed = $this->parseDateRowTable($lines, $currencyVotes);
+            if ($rowParsed !== []) {
+                $blocks = $this->normalizePricingBlocks($rowParsed);
+            }
+        }
+
         arsort($currencyVotes);
         $currency = $currencyVotes === [] ? null : (string) array_key_first($currencyVotes);
 
@@ -2504,6 +2516,110 @@ class TourUrlImporter
         }
 
         return ['blocks' => $blocks, 'currency' => $currency];
+    }
+
+    /**
+     * SATIR-BAZLI tarih-fiyat tablosu ayrıştırıcı: her satır kendi başına tam
+     * bir kayıttır — "TARİH  seçenek/otel adı  FİYAT + PARA BİRİMİ [kuyruk]"
+     * ("25.07.2026 3* & 4* Oteller Vb. 769 ,00 € Taksitler »"). Türk tur
+     * sitelerinde yaygın bir motor düzeni (tatilciniz vb.). Aynı satırda aynı
+     * para biriminde İKİ fiyat varsa ve ikincisi küçükse eski→old, küçük→new
+     * (indirimli satır). Yanlış tetiklenmeye karşı: satır TARİHLE başlamalı,
+     * para birimli fiyat içermeli, kampanya sözcüğü içermemeli ve EN AZ 3 farklı
+     * gelecek tarihli satır bulunmalı. Tek fiyat sütunu Türk konvansiyonunda
+     * "İki Kişilik Odada Kişi Başı"dır → double_pp.
+     *
+     * @param  array<int, string>  $lines
+     * @param  array<string, int>  $currencyVotes
+     * @return array<int, array{dates: array<int,string>, packages: array<int, array{hotel: string, prices: array<string, array{old: ?float, new: ?float}>}>}>
+     */
+    private function parseDateRowTable(array $lines, array &$currencyVotes): array
+    {
+        $months = 'Ocak|Şubat|Subat|Mart|Nisan|Mayıs|Mayis|Haziran|Temmuz|Ağustos|Agustos|Eylül|Eylul|Ekim|Kasım|Kasim|Aralık|Aralik';
+        $dateStart = '#^(\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2}|\d{1,2}\s+(?:'.$months.')\s+20\d{2})\b#u';
+        // "649 ,00 €" (span bölünmesi), "1.099,00 EUR", "12.500 TL" — sayı + para birimi
+        $money = '#(\d{1,3}(?:\.\d{3})*|\d+)(?:\s*,\s*(\d{1,2}))?\s*(€|₺|\$|£)|(\d{1,3}(?:\.\d{3})*|\d+)(?:\s*,\s*(\d{1,2}))?\s*\b(EUR|EURO|USD|TL|TRY|GBP)\b#iu';
+
+        $byDate = [];
+        $votes = [];
+        foreach ($lines as $line) {
+            if (mb_strlen($line) > 200 || ! preg_match($dateStart, $line, $dm)) {
+                continue;
+            }
+            // Kampanya/kupon satırı tarih+fiyat içerebilir ("31.12.2026 tarihine
+            // kadar 100 € indirim") — kalkış fiyat satırı değildir.
+            $fold = $this->foldTr($line);
+            if (preg_match('/kadar|kampanya|kupon|indirim kodu|gecerli|arasinda/', $fold)) {
+                continue;
+            }
+            $iso = $this->parseFutureDate($dm[1]);
+            if ($iso === null) {
+                continue;
+            }
+            $rest = trim(mb_substr($line, mb_strlen($dm[1])));
+            if (! preg_match_all($money, $rest, $mm, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+                continue;
+            }
+            // Seçenek/otel adı = tarihten İLK fiyata kadarki metin
+            $firstOffset = (int) $mm[0][0][1];
+            $hotel = trim((string) preg_replace('#^[\s/|–—-]+#u', '', (string) substr($rest, 0, $firstOffset)));
+            if ($hotel === '' || mb_strlen($hotel) > 120) {
+                continue;
+            }
+            // Otel adına TARİH sızdıysa bu bir kalkış-dönüş aralığı satırıdır
+            // ("17.07.2026 / 22.07.2026 …"), tablo kaydı değil — atla.
+            if (preg_match('#\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2}#', $hotel)) {
+                continue;
+            }
+            $toks = [];
+            foreach (array_slice($mm, 0, 2) as $m) {
+                $numRaw = ($m[1][0] !== '' ? $m[1][0] : ($m[4][0] ?? ''));
+                $decRaw = ($m[2][0] ?? '') !== '' ? $m[2][0] : (($m[5][0] ?? '') !== '' ? $m[5][0] : null);
+                $curRaw = ($m[3][0] ?? '') !== '' ? $m[3][0] : ($m[6][0] ?? '');
+                $val = $this->priceFloat($numRaw.($decRaw !== null ? ','.$decRaw : ''));
+                if ($val !== null && $val >= 1) {
+                    $toks[] = ['val' => $val, 'cur' => $this->currencyFromLine(' '.$curRaw)];
+                }
+            }
+            if ($toks === []) {
+                continue;
+            }
+            $old = null;
+            $new = $toks[0]['val'];
+            $cur = $toks[0]['cur'];
+            // Aynı para biriminde ikinci, daha KÜÇÜK fiyat = indirimli (eski→old)
+            if (isset($toks[1]) && $toks[1]['cur'] === $cur && $toks[1]['val'] < $new) {
+                $old = $new;
+                $new = $toks[1]['val'];
+            }
+            $byDate[$iso][] = ['hotel' => mb_substr($hotel, 0, 255), 'prices' => [
+                'double_pp' => ['old' => $old, 'new' => $new],
+            ]];
+            if ($cur !== null) {
+                $votes[$cur] = ($votes[$cur] ?? 0) + 1;
+            }
+        }
+
+        // Güvenlik eşiği: en az 3 FARKLI tarih — tek tük tarih+fiyat cümleleri
+        // (program metni içindeki) tablo sayılmaz.
+        if (count($byDate) < 3) {
+            return [];
+        }
+        foreach ($votes as $c => $n) {
+            $currencyVotes[$c] = ($currencyVotes[$c] ?? 0) + $n;
+        }
+
+        // Aynı fiyat imzalı tarihleri tek blokta grupla (ana akışla aynı düzen).
+        $groups = [];
+        foreach ($byDate as $iso => $packages) {
+            $sig = md5((string) json_encode($packages));
+            if (! isset($groups[$sig])) {
+                $groups[$sig] = ['dates' => [], 'packages' => $packages];
+            }
+            $groups[$sig]['dates'][] = $iso;
+        }
+
+        return array_values($groups);
     }
 
     /**

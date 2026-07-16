@@ -243,6 +243,33 @@ class TourImportParserTest extends TestCase
         $this->assertContains('2026-12-26', $dates7, 'İskandinavya 26-12 gerçek tarihi korunmalı');
     }
 
+    public function test_date_row_table_parsed_deterministically(): void
+    {
+        // page_11: tatilciniz İtalya-Yunanistan (gerçek sayfa) — satır-bazlı tablo:
+        // "25.07.2026 3* & 4* Oteller Vb. 769 ,00 €". LLM bu 27 satırlık tabloda
+        // yalnız son 2 satırı döndürüp TÜM tarihlere 599 şablonlatmıştı (canlı vaka:
+        // 25.07 gerçekte 769). Satır parser'ı kodla okur — her tarih KENDİ fiyatı.
+        $r = $this->invoke('deterministicPricingBlocks', [$this->fixture(11)]);
+        $this->assertSame('EUR', $r['currency']);
+
+        $got = [];
+        foreach ($r['blocks'] as $b) {
+            foreach ($b['dates'] as $d) {
+                $got[$d] = $b['packages'][0]['prices']['double_pp']['new'];
+                $this->assertSame('3* & 4* Oteller Vb.', $b['packages'][0]['hotel']);
+            }
+        }
+        $this->assertCount(27, $got, 'tablodaki 27 tarihin HEPSİ fiyatlanmalı');
+        // Sayfadaki gerçek değerler (ground truth):
+        foreach ([
+            '2026-07-17' => 649.0, '2026-07-25' => 769.0, '2026-07-31' => 749.0,
+            '2026-08-01' => 669.0, '2026-08-07' => 699.0, '2026-09-04' => 599.0,
+            '2026-11-14' => 599.0,
+        ] as $date => $price) {
+            $this->assertSame($price, $got[$date], "{$date} kendi fiyatını almalı");
+        }
+    }
+
     public function test_per_date_prices_parsed_from_marker(): void
     {
         // etstur render iterator'ının bıraktığı işaretçi; Firecrawl markdown'ında
