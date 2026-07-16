@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 8;
+    private const CACHE_VERSION = 9;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -272,6 +272,48 @@ class TourUrlImporter
                     $result['departure_dates'][] = $blockDate;
                 }
             }
+        }
+
+        // PER-TARİH FİYAT (etstur vb. OTA): render iterator'ı her kalkış tarihinin
+        // KENDİ başlangıç fiyatını topladıysa, tüm tarihlere tek fiyat şablonlamak
+        // yerine her tarihe kendi fiyatını ver (kullanıcı talebi: 3 tarih 3619/3890/3690
+        // EUR — ayrı ayrı). Modaldan tam matris gelen tarih korunur; kapsanmayan
+        // tarihlere double_pp'lik tek-paket blok eklenir.
+        $perDate = $this->harvestPerDatePrices($this->lastHtml ?? '');
+        if ($perDate !== []) {
+            $covered = [];
+            foreach ($blocks as $block) {
+                foreach ($block['dates'] as $d) {
+                    $covered[$d] = true;
+                }
+            }
+            $perDateCurrency = null;
+            foreach ($perDate as $iso => $info) {
+                $perDateCurrency ??= $info['currency'];
+                if (isset($covered[$iso])) {
+                    continue; // bu tarihin zaten (modalden) tam matris bloğu var
+                }
+                $blocks[] = [
+                    'dates' => [$iso],
+                    'packages' => [[
+                        'hotel' => 'Kişi başı başlangıç fiyatı',
+                        'prices' => [
+                            'double_pp' => ['old' => null, 'new' => $info['price']],
+                            'single' => ['old' => null, 'new' => null],
+                            'extra_bed' => ['old' => null, 'new' => null],
+                            'child_0_2' => ['old' => null, 'new' => null],
+                            'child_3_5' => ['old' => null, 'new' => null],
+                            'child_7_11' => ['old' => null, 'new' => null],
+                        ],
+                    ]],
+                ];
+                $result['departure_dates'][] = $iso;
+            }
+            $result['pricing_blocks'] = $blocks;
+            if ($perDateCurrency !== null && ($result['currency'] ?? null) === null) {
+                $result['currency'] = $perDateCurrency;
+            }
+            $warnings[] = 'Her kalkış tarihinin kendi başlangıç fiyatı ayrı çekildi; tarihe göre değişen otel/oda kırılımını kontrol edin.';
         }
 
         // Deterministik ayrıştırma para birimini yakaladıysa ve genel çağrı kaçırdıysa uygula.
@@ -1092,6 +1134,67 @@ class TourUrlImporter
         } catch (e) {}
         JS;
 
+        // PER-TARİH FİYAT (etstur vb. OTA): tarih dropdown'ında her kalkış tarihinin
+        // KENDİ başlangıç fiyatı vardır (07 Oca=3619, 13 Şub=3890, 27 Şub=3690 EURO gibi).
+        // Sayfa yalnız seçili tarihin fiyatını gösterir; diğerleri seçilince API'den
+        // yüklenir. Bu script tarihleri tek tek seçip fiyatı okur, bir işaretçi div'e
+        // yazar → ham HTML'e girer → harvestPerDatePrices ayrıştırır. Böylece tüm
+        // tarihlere AYNI fiyatı şablonlamak yerine her tarih KENDİ fiyatını alır.
+        $perDateScript = <<<'JS'
+        (function () {
+          (async function () {
+            function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+            function ensureOpen() {
+              var c = document.querySelector('.selectbox-container');
+              if (!c || c.querySelectorAll('li').length === 0) {
+                var r = document.querySelector('.selectbox-result');
+                if (r) { try { r.click(); } catch (_) {} }
+              }
+            }
+            function readP() {
+              var pb = document.querySelector('.priceBox');
+              var cu = document.querySelector('.currency');
+              return { p: pb ? (pb.innerText || '').replace(/[^\d]/g, '') : '', c: cu ? (cu.innerText || '').trim() : '' };
+            }
+            function liText(li) { var sp = li.querySelector('.tour-date'); return (sp ? sp.innerText : li.innerText || '').trim(); }
+            try {
+              var res = [];
+              // Picker yavaş render olabilir: li'ler görünene dek birkaç kez aç-dene
+              // (GUARD ile erken çıkma yerine — picker'sız sayfalarda sadece no-op).
+              var lis = [];
+              for (var tr = 0; tr < 6 && lis.length === 0; tr++) {
+                ensureOpen(); await sleep(700);
+                lis = document.querySelectorAll('.selectbox-container li');
+              }
+              if (lis.length === 0) return;
+              // Tarih METİNLERİNİ önce topla (dropdown her seçimde yeniden render olur;
+              // indeks yerine metinle eşleştirmek kayma/atlamayı önler).
+              var dates = [];
+              for (var k = 0; k < lis.length && k < 8; k++) { var tx = liText(lis[k]); if (tx) dates.push(tx); }
+              for (var i = 0; i < dates.length; i++) {
+                ensureOpen(); await sleep(500);
+                var opts = document.querySelectorAll('.selectbox-container li');
+                var target = null;
+                for (var j = 0; j < opts.length; j++) { if (liText(opts[j]) === dates[i]) { target = opts[j]; break; } }
+                if (!target) continue;
+                var before = readP().p;
+                try { target.click(); } catch (_) {}
+                var t = 0, pr = readP();
+                while (t < 2500) { await sleep(250); t += 250; pr = readP(); if (pr.p !== '' && pr.p !== before) break; }
+                if (pr.p === '') { await sleep(600); pr = readP(); }
+                if (pr.p) res.push(dates[i] + '|' + pr.p + '|' + pr.c);
+              }
+              if (res.length) {
+                var d = document.createElement('div');
+                d.setAttribute('data-ets-dates', '1');
+                d.innerText = 'ETSDATEPRICES<<<' + res.join(' :: ') + '>>>';
+                document.body.appendChild(d);
+              }
+            } catch (e) {}
+          })();
+        })();
+        JS;
+
         $base = [
             'url' => $url,
             // rawHtml de iste: görselleri (render edilmiş galeri dahil) ayrı istek
@@ -1109,8 +1212,8 @@ class TourUrlImporter
                 ['type' => 'wait', 'milliseconds' => 1000],
                 ['type' => 'scroll', 'direction' => 'down'],
                 ['type' => 'wait', 'milliseconds' => 600],
-                ['type' => 'executeJavascript', 'script' => $clickScript],         // tarih menüsü
-                ['type' => 'executeJavascript', 'script' => $priceModalScript],    // fiyat tablosu modalı
+                ['type' => 'executeJavascript', 'script' => $clickScript],          // tarih menüsü
+                ['type' => 'executeJavascript', 'script' => $priceModalScript],     // fiyat tablosu modalı
                 ['type' => 'wait', 'milliseconds' => 4000],                         // modal + seçenekler dolsun
                 ['type' => 'executeJavascript', 'script' => $revealScript],         // tarihleri topla
             ],
@@ -1120,6 +1223,18 @@ class TourUrlImporter
                 ['type' => 'executeJavascript', 'script' => $priceModalScript],    // sade denemede de modalı aç
                 ['type' => 'wait', 'milliseconds' => 4000],
             ],
+        ];
+
+        // Per-tarih fiyat çağrısı AYRI tutulur (modal + iterator birlikte Firecrawl'ı
+        // zaman aşımına uğratıyor). Yalnız sayfada per-tarih picker'ı (etstur vb.)
+        // tespit edilirse çalışır; modal render'ından SONRA marker'ı birleştiririz.
+        // Böylece etstur-dışı SPA'lar hiç ceza ödemez.
+        $perDateActions = [
+            ['type' => 'wait', 'milliseconds' => 800],
+            ['type' => 'scroll', 'direction' => 'down'],
+            ['type' => 'wait', 'milliseconds' => 400],
+            ['type' => 'executeJavascript', 'script' => $perDateScript],
+            ['type' => 'wait', 'milliseconds' => 13500],   // picker retry (≤4.2s) + tarih döngüsü (~9s)
         ];
 
         $started = microtime(true);
@@ -1143,6 +1258,13 @@ class TourUrlImporter
                             $this->lastHtml = substr($rawHtml, 0, 2000000);
                         }
 
+                        // PER-TARİH: sayfa etstur-benzeri tarih picker'ı içeriyorsa
+                        // (birden çok departureDate + tour-date/selectbox) her tarihin
+                        // KENDİ fiyatını AYRI bir çağrıyla topla, marker'ı lastHtml'e ekle.
+                        if ($this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 40) {
+                            $this->appendPerDatePrices($endpoint, $key, $base, $perDateActions);
+                        }
+
                         return mb_substr($markdown, 0, self::SCAN_CHARS);
                     }
                 }
@@ -1162,6 +1284,40 @@ class TourUrlImporter
         }
 
         return '';
+    }
+
+    /** Sayfa etstur-benzeri per-tarih fiyat picker'ı içeriyor mu? (≥2 kalkış + tarih seçici) */
+    private function hasPerDatePicker(string $rawHtml): bool
+    {
+        if ($rawHtml === '') {
+            return false;
+        }
+        $departures = preg_match_all('/"departureDate"\s*:/', $rawHtml);
+
+        return $departures >= 2
+            && (str_contains($rawHtml, 'selectbox-result') || str_contains($rawHtml, 'tour-date'));
+    }
+
+    /**
+     * Per-tarih fiyat iterator'ını AYRI bir Firecrawl çağrısıyla koşar; ürettiği
+     * "ETSDATEPRICES<<<...>>>" işaretçisini mevcut lastHtml'e ekler (böylece
+     * harvestPerDatePrices ayrıştırır). Başarısızsa sessizce geçer — modal sonucu korunur.
+     */
+    private function appendPerDatePrices(string $endpoint, string $key, array $base, array $actions): void
+    {
+        try {
+            $resp = Http::timeout(60)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+            if (! $resp->ok()) {
+                return;
+            }
+            $raw = (string) $resp->json('data.rawHtml');
+            $md = (string) $resp->json('data.markdown');
+            if (preg_match('/ETSDATEPRICES<<<.*?>>>/s', $raw.' '.$md, $m)) {
+                $this->lastHtml = ($this->lastHtml ?? '')."\n".$m[0];
+            }
+        } catch (\Throwable $e) {
+            Log::info('[TourImport] per-tarih fiyat çağrısı atlandı', ['message' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -2780,6 +2936,45 @@ class TourUrlImporter
         }
 
         return array_values(array_unique($found));
+    }
+
+    /**
+     * Per-tarih başlangıç fiyatları (etstur vb. OTA). Render sırasında $perDateScript
+     * her kalkış tarihini seçip fiyatını okuyup "ETSDATEPRICES<<<GG Ay YYYY|fiyat|para
+     * :: ...>>>" işaretçisine yazar. Bunu ayrıştırıp ISO tarih → {price, currency}
+     * döner. Amaç: tüm tarihlere AYNI fiyatı şablonlamak yerine her tarih KENDİ fiyatını
+     * alsın (kullanıcı talebi: etstur'da 3 tarih 3619/3890/3690 EUR — ayrı ayrı).
+     *
+     * @return array<string, array{price: float, currency: ?string}>
+     */
+    private function harvestPerDatePrices(string $rawHtml): array
+    {
+        if ($rawHtml === '' || ! preg_match('/ETSDATEPRICES<<<(.*?)>>>/s', $rawHtml, $m)) {
+            return [];
+        }
+
+        // İşaretçi Firecrawl markdown'ından geldiğinde pipe'lar kaçışlı olur ("\|");
+        // ham HTML'den geldiğinde entity'lidir. İkisini de temizle.
+        $payload = html_entity_decode(str_replace('\\', '', $m[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        $out = [];
+        foreach (explode(' :: ', $payload) as $entry) {
+            $parts = explode('|', $entry);
+            if (count($parts) < 2) {
+                continue;
+            }
+            $iso = $this->parseFutureDate(trim($parts[0]));
+            $price = $this->priceFloat($parts[1]);
+            if ($iso === null || $price === null || $price < 1) {
+                continue;
+            }
+            $out[$iso] = [
+                'price' => $price,
+                'currency' => isset($parts[2]) ? $this->currencyFromLine(' '.trim($parts[2])) : null,
+            ];
+        }
+
+        return $out;
     }
 
     /**

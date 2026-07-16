@@ -243,6 +243,23 @@ class TourImportParserTest extends TestCase
         $this->assertContains('2026-12-26', $dates7, 'İskandinavya 26-12 gerçek tarihi korunmalı');
     }
 
+    public function test_per_date_prices_parsed_from_marker(): void
+    {
+        // etstur render iterator'ının bıraktığı işaretçi; Firecrawl markdown'ında
+        // pipe'lar kaçışlı gelir ("\|") — harvestPerDatePrices bunu temizleyip
+        // her tarihe KENDİ başlangıç fiyatını çıkarmalı (kullanıcı vakası: 3 tarih ayrı).
+        $marker = 'ETSDATEPRICES<<<7 Ocak 2027\|3619\|EURO :: 13 Şubat 2027\|3890\|EURO :: 27 Şubat 2027\|3690\|EURO>>>';
+        $pd = $this->invoke('harvestPerDatePrices', [$marker]);
+        $this->assertCount(3, $pd);
+        $this->assertSame(3619.0, $pd['2027-01-07']['price'] ?? null);
+        $this->assertSame('EUR', $pd['2027-01-07']['currency'] ?? null);
+        $this->assertSame(3890.0, $pd['2027-02-13']['price'] ?? null);
+        $this->assertSame(3690.0, $pd['2027-02-27']['price'] ?? null);
+
+        // İşaretçi yoksa boş döner (etstur-dışı sayfalar)
+        $this->assertSame([], $this->invoke('harvestPerDatePrices', ['<html>fiyat yok</html>']));
+    }
+
     public function test_departure_return_range_not_double_counted(): void
     {
         // Ayder deseni: "kalkış / dönüş" — İKİNCİ tarih dönüştür, sayılmamalı.
