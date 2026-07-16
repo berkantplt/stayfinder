@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 9;
+    private const CACHE_VERSION = 10;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -130,9 +130,11 @@ class TourUrlImporter
 
         // 2) Render edilmemiş SPA erken tespiti: fiyat/tarih {{ }} şablonlarıyla
         //    geliyorsa düz çıkarım mustache placeholder okur (çöp) — LLM'i boşa
-        //    harcamadan doğrudan gerçek tarayıcı render'ına geç.
+        //    harcamadan doğrudan gerçek tarayıcı render'ına geç. Ayrıca per-tarih
+        //    fiyat picker'lı sayfalar (etstur): statik kabukta fiyat yoktur, ilk
+        //    LLM boşa gider — doğrudan render'a geç (süre kazancı).
         if (! $usedFirecrawl && $firecrawlAvailable && ! $this->deadlineExceeded()
-            && $this->looksLikeUnrenderedSpa($text)) {
+            && ($this->looksLikeUnrenderedSpa($text) || $this->hasPerDatePicker($this->lastHtml ?? ''))) {
             try {
                 $renderedText = $this->textForExtraction($this->fetchViaFirecrawl($url));
                 if (trim($renderedText) !== '') {
@@ -1180,8 +1182,8 @@ class TourUrlImporter
                 var before = readP().p;
                 try { target.click(); } catch (_) {}
                 var t = 0, pr = readP();
-                while (t < 2500) { await sleep(250); t += 250; pr = readP(); if (pr.p !== '' && pr.p !== before) break; }
-                if (pr.p === '') { await sleep(600); pr = readP(); }
+                while (t < 3000) { await sleep(250); t += 250; pr = readP(); if (pr.p !== '' && pr.p !== before) break; }
+                if (pr.p === '') { await sleep(1000); pr = readP(); }
                 if (pr.p) res.push(dates[i] + '|' + pr.p + '|' + pr.c);
               }
               if (res.length) {
@@ -1201,40 +1203,58 @@ class TourUrlImporter
             // atmadan bu HTML'den çıkaracağız — derin taramada süre/timeout kazancı.
             'formats' => ['markdown', 'rawHtml'],
             'onlyMainContent' => false,
-            'waitFor' => 3500,
+            'waitFor' => 3000,
+            // Reklam/tracking bloklama render'ı hızlandırır (ağır SPA yüklemesi kısalır)
+            'blockAds' => true,
         ];
 
-        // HIZ: tarih menüsü + fiyat modalı TEK bekleme aralığında açılır (ayrı ayrı
-        // bekleme yok). Tarihler zaten harvestJsonDates ile ham HTML'den gelir; bu
-        // aksiyonlar esas fiyat MODALINI yüklemek için — toplam bekleme ~21→~8 sn.
-        $attempts = [
-            [
-                ['type' => 'wait', 'milliseconds' => 1000],
-                ['type' => 'scroll', 'direction' => 'down'],
-                ['type' => 'wait', 'milliseconds' => 600],
-                ['type' => 'executeJavascript', 'script' => $clickScript],          // tarih menüsü
-                ['type' => 'executeJavascript', 'script' => $priceModalScript],     // fiyat tablosu modalı
-                ['type' => 'wait', 'milliseconds' => 4000],                         // modal + seçenekler dolsun
-                ['type' => 'executeJavascript', 'script' => $revealScript],         // tarihleri topla
-            ],
-            [
-                ['type' => 'wait', 'milliseconds' => 2000],
-                ['type' => 'scroll', 'direction' => 'down'],
-                ['type' => 'executeJavascript', 'script' => $priceModalScript],    // sade denemede de modalı aç
-                ['type' => 'wait', 'milliseconds' => 4000],
-            ],
+        // Düz çekimdeki HTML etstur-benzeri per-tarih fiyat picker'ı içeriyor mu?
+        // İçeriyorsa (etstur) TEK çağrıda per-tarih iterator + modal koşarız (2b):
+        // ayrı 2. çağrının ~20sn'lik tekrar sayfa yüklemesi elenir. İçermiyorsa
+        // (etstur-dışı SPA) mevcut modal akışı — hiç per-tarih cezası ödenmez.
+        $perDate = $this->hasPerDatePicker($this->lastHtml ?? '');
+
+        // Modal akışı: tarih menüsü + fiyat modalı tek bekleme aralığında açılır.
+        $modalActions = [
+            ['type' => 'wait', 'milliseconds' => 1000],
+            ['type' => 'scroll', 'direction' => 'down'],
+            ['type' => 'wait', 'milliseconds' => 600],
+            ['type' => 'executeJavascript', 'script' => $clickScript],          // tarih menüsü
+            ['type' => 'executeJavascript', 'script' => $priceModalScript],     // fiyat tablosu modalı
+            ['type' => 'wait', 'milliseconds' => 4000],                         // modal + seçenekler dolsun
+            ['type' => 'executeJavascript', 'script' => $revealScript],         // tarihleri topla
+        ];
+        // 2b BİRLEŞİK: aynı render oturumunda önce per-tarih iterator, sonra modal.
+        // (blockAds sayesinde ~28sn'de sığar; ölçüldü.) Her tarih KENDİ fiyatını,
+        // son seçili tarih de modal matrisini verir.
+        $combinedActions = [
+            ['type' => 'wait', 'milliseconds' => 500],
+            ['type' => 'scroll', 'direction' => 'down'],
+            ['type' => 'wait', 'milliseconds' => 300],
+            ['type' => 'executeJavascript', 'script' => $perDateScript],
+            ['type' => 'wait', 'milliseconds' => 14000],   // picker retry + tarih döngüsü tamamlansın
+            ['type' => 'executeJavascript', 'script' => $priceModalScript],
+            ['type' => 'wait', 'milliseconds' => 2500],
+        ];
+        $simpleActions = [
+            ['type' => 'wait', 'milliseconds' => 2000],
+            ['type' => 'scroll', 'direction' => 'down'],
+            ['type' => 'executeJavascript', 'script' => $priceModalScript],
+            ['type' => 'wait', 'milliseconds' => 4000],
         ];
 
-        // Per-tarih fiyat çağrısı AYRI tutulur (modal + iterator birlikte Firecrawl'ı
-        // zaman aşımına uğratıyor). Yalnız sayfada per-tarih picker'ı (etstur vb.)
-        // tespit edilirse çalışır; modal render'ından SONRA marker'ı birleştiririz.
-        // Böylece etstur-dışı SPA'lar hiç ceza ödemez.
-        $perDateActions = [
+        // Per-tarih sayfalarda birleşik önce; sığmazsa modal fallback. Diğerlerinde
+        // klasik modal + sade fallback.
+        $attempts = $perDate ? [$combinedActions, $modalActions] : [$modalActions, $simpleActions];
+
+        // Güvenlik: birleşik render marker üretemezse (nadir timeout) kullanılan
+        // hafif, per-tarih-only aksiyon.
+        $leanPerDateActions = [
             ['type' => 'wait', 'milliseconds' => 800],
             ['type' => 'scroll', 'direction' => 'down'],
             ['type' => 'wait', 'milliseconds' => 400],
             ['type' => 'executeJavascript', 'script' => $perDateScript],
-            ['type' => 'wait', 'milliseconds' => 13500],   // picker retry (≤4.2s) + tarih döngüsü (~9s)
+            ['type' => 'wait', 'milliseconds' => 14000],
         ];
 
         $started = microtime(true);
@@ -1258,11 +1278,12 @@ class TourUrlImporter
                             $this->lastHtml = substr($rawHtml, 0, 2000000);
                         }
 
-                        // PER-TARİH: sayfa etstur-benzeri tarih picker'ı içeriyorsa
-                        // (birden çok departureDate + tour-date/selectbox) her tarihin
-                        // KENDİ fiyatını AYRI bir çağrıyla topla, marker'ı lastHtml'e ekle.
-                        if ($this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 40) {
-                            $this->appendPerDatePrices($endpoint, $key, $base, $perDateActions);
+                        // GÜVENLİK: per-tarih beklendi ama birleşik render marker'ı
+                        // üretemediyse (nadir timeout) ayrı hafif çağrıyla tamamla —
+                        // böylece 2b başarısız olsa bile veri eskisinden kötü olmaz.
+                        if ($perDate && ($rawHtml === '' || ! str_contains($rawHtml, 'ETSDATEPRICES'))
+                            && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 40) {
+                            $this->appendPerDatePrices($endpoint, $key, $base, $leanPerDateActions);
                         }
 
                         return mb_substr($markdown, 0, self::SCAN_CHARS);
@@ -2949,12 +2970,13 @@ class TourUrlImporter
      */
     private function harvestPerDatePrices(string $rawHtml): array
     {
-        if ($rawHtml === '' || ! preg_match('/ETSDATEPRICES<<<(.*?)>>>/s', $rawHtml, $m)) {
+        // İşaretçi ham HTML'de entity'li ("ETSDATEPRICES&lt;&lt;&lt;…&gt;&gt;&gt;"),
+        // markdown'da literal ("<<<…>>>") olabilir — ikisini de yakala.
+        if ($rawHtml === '' || ! preg_match('/ETSDATEPRICES(?:<<<|&lt;&lt;&lt;)(.*?)(?:>>>|&gt;&gt;&gt;)/s', $rawHtml, $m)) {
             return [];
         }
 
-        // İşaretçi Firecrawl markdown'ından geldiğinde pipe'lar kaçışlı olur ("\|");
-        // ham HTML'den geldiğinde entity'lidir. İkisini de temizle.
+        // Markdown pipe kaçışını ("\|") ve HTML entity'lerini temizle.
         $payload = html_entity_decode(str_replace('\\', '', $m[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         $out = [];
