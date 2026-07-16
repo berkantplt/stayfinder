@@ -2567,8 +2567,10 @@ class TourUrlImporter
                 continue;
             }
             // Otel adına TARİH sızdıysa bu bir kalkış-dönüş aralığı satırıdır
-            // ("17.07.2026 / 22.07.2026 …"), tablo kaydı değil — atla.
-            if (preg_match('#\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2}#', $hotel)) {
+            // ("17.07.2026 / 22.07.2026 …" veya "7 Ocak 2027 - 10 Ocak 2027 …"),
+            // tablo kaydı değil — atla (etstur render metnindeki Türkçe aralıklar dahil).
+            if (preg_match('#\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2}#', $hotel)
+                || preg_match('#\b\d{1,2}\s+(?:'.$months.')\s+20\d{2}\b#u', $hotel)) {
                 continue;
             }
             $toks = [];

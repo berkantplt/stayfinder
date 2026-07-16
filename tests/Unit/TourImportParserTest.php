@@ -268,6 +268,15 @@ class TourImportParserTest extends TestCase
         ] as $date => $price) {
             $this->assertSame($price, $got[$date], "{$date} kendi fiyatını almalı");
         }
+
+        // Etstur tipi TÜRKÇE kalkış-dönüş ARALIĞI satırları tablo kaydı SAYILMAZ —
+        // ikinci tarih (dönüş) otel adına düşer, satır elenir. Aksi halde satır
+        // parser'ı etstur render metninde sahte blok üretip per-tarih akışını bozar.
+        $ranges = "7 Ocak 2027 - 10 Ocak 2027 3.619,00 EUR\n"
+                 ."13 Şubat 2027 - 16 Şubat 2027 3.890,00 EUR\n"
+                 ."27 Şubat 2027 - 2 Mart 2027 3.690,00 EUR";
+        $r2 = $this->invoke('deterministicPricingBlocks', [$ranges]);
+        $this->assertSame([], $r2['blocks'], 'Türkçe tarih-aralığı satırları blok üretmemeli');
     }
 
     public function test_per_date_prices_parsed_from_marker(): void
