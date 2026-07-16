@@ -1196,6 +1196,15 @@ class TourUrlImporter
             function selLabel() { var s = document.querySelector('.selectbox-result .tour-date'); return s ? (s.innerText || '').trim() : ''; }
             try {
               var done = {}, res = [];
+              // ARTIMLI işaretçi: div'i BAŞTA oluştur, her doğrulanan tarihten sonra
+              // güncelle. Firecrawl sayfayı bekleme bittiğinde fotoğraflar — döngü
+              // yarıda kalsa bile o ana dek doğrulanan fiyatlar rawHtml'e girer
+              // (eskiden işaretçi yalnız döngü SONUNDA yazılıyordu; yavaş sayfada
+              // 2. tarih doğrulansa bile kayboluyordu). Kalanı telafi çağrısı toplar.
+              var d = document.createElement('div');
+              d.setAttribute('data-ets-dates', '1');
+              document.body.appendChild(d);
+              function flush() { if (res.length) d.innerText = 'ETSDATEPRICES<<<' + res.join(' :: ') + '>>>'; }
               // Picker yavaş render olabilir: li'ler görünene dek birkaç kez aç-dene
               // (GUARD ile erken çıkma yerine — picker'sız sayfalarda sadece no-op).
               var lis = [];
@@ -1222,7 +1231,7 @@ class TourUrlImporter
                   // (hiç tıklamadık, bayatlama imkânsız) — doğrudan kaydet.
                   if (!clickedAny && selLabel() === dates[i]) {
                     var pr0 = readP();
-                    if (pr0.p) { done[dates[i]] = true; res.push(dates[i] + '|' + pr0.p + '|' + pr0.c); }
+                    if (pr0.p) { done[dates[i]] = true; res.push(dates[i] + '|' + pr0.p + '|' + pr0.c); flush(); }
                     continue;
                   }
                   // Tıklamalar başladıktan sonra hedef zaten "seçili" görünüyorsa fiyatına
@@ -1245,27 +1254,21 @@ class TourUrlImporter
                   try { target.click(); } catch (_) {} clickedAny = true;
                   // 1) SEÇİM DOĞRULAMA: etiket hedef tarihi göstermeli.
                   var t = 0;
-                  while (t < 2500 && selLabel() !== dates[i]) { await sleep(250); t += 250; }
+                  while (t < 2000 && selLabel() !== dates[i]) { await sleep(250); t += 250; }
                   if (selLabel() !== dates[i]) continue;
                   // 2) TAZE FİYAT SİNYALİ: değer değişti VEYA kutu boşalıp doldu.
                   t = 0; var pr = readP(); var sawEmpty = false;
-                  while (t < 6000) {
+                  while (t < 5000) {
                     await sleep(250); t += 250; pr = readP();
                     if (pr.p === '') { sawEmpty = true; continue; }
                     if (pr.p !== before) break;   // fiyat güncellendi → kesin taze
                     if (sawEmpty) break;          // boşalıp aynı değerle doldu → taze
                   }
                   if (pr.p !== '' && (pr.p !== before || sawEmpty)) {
-                    done[dates[i]] = true; res.push(dates[i] + '|' + pr.p + '|' + pr.c);
+                    done[dates[i]] = true; res.push(dates[i] + '|' + pr.p + '|' + pr.c); flush();
                   }
                 }
                 if (res.length >= dates.length) break;
-              }
-              if (res.length) {
-                var d = document.createElement('div');
-                d.setAttribute('data-ets-dates', '1');
-                d.innerText = 'ETSDATEPRICES<<<' + res.join(' :: ') + '>>>';
-                document.body.appendChild(d);
               }
             } catch (e) {}
           })();
@@ -1281,6 +1284,11 @@ class TourUrlImporter
             'waitFor' => 3000,
             // Reklam/tracking bloklama render'ı hızlandırır (ağır SPA yüklemesi kısalır)
             'blockAds' => true,
+            // Firecrawl'ın KENDİ scrape limiti varsayılan 30sn — per-tarih iterator'lı
+            // birleşik çağrı (yavaş sayfa yüklemesi + 17sn aksiyon beklemesi) bunu
+            // aşınca 408 dönüyor ve HİÇBİR veri gelmiyordu (canlı vaka: 2. tarih bile
+            // kayboldu). Limiti aksiyon bütçemize göre yükselt.
+            'timeout' => 55000,
         ];
 
         // Düz çekimdeki HTML etstur-benzeri per-tarih fiyat picker'ı içeriyor mu?
@@ -1341,7 +1349,7 @@ class TourUrlImporter
                 break;
             }
             try {
-                $response = Http::timeout(60)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+                $response = Http::timeout(65)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
 
                 if ($response->ok()) {
                     $markdown = trim((string) $response->json('data.markdown'));
@@ -1358,7 +1366,7 @@ class TourUrlImporter
                         // oturmayabiliyor) → ayrı hafif çağrıyla tamamla. Kaçan tarih
                         // frontend'de İLK bloğun fiyatıyla şablonlanırdı (YANLIŞ fiyat,
                         // kullanıcı vakası: son tarih 3690 yerine 3619 görünmüştü).
-                        if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 40) {
+                        if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 70) {
                             $expected = min(preg_match_all('/"departureDate"\s*:/', $rawHtml), 8);
                             $got = count($this->harvestPerDatePrices($this->lastHtml ?? ''));
                             if ($got < $expected) {
@@ -1408,7 +1416,7 @@ class TourUrlImporter
     private function appendPerDatePrices(string $endpoint, string $key, array $base, array $actions): void
     {
         try {
-            $resp = Http::timeout(60)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+            $resp = Http::timeout(65)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
             if (! $resp->ok()) {
                 return;
             }
