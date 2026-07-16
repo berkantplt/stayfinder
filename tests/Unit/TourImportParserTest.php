@@ -446,6 +446,18 @@ class TourImportParserTest extends TestCase
             'Kapadokya Turu 2 Gece Konaklamalı / Yemek Dahil Özel Program',
             $this->invoke('cleanTitle', ['Kapadokya Turu 2 Gece Konaklamalı | Yemek Dahil Özel Program'])
         );
+        // etstur Lapland: gerçek ad süre İÇERİYOR ama "tur" kelimesi içermiyor —
+        // süre+dolgu soyulunca anlamlı ad kaldığından KORUNUR (eskiden atılıp yalnız
+        // "Ekstra Turlar Dahil" etiketi kalıyordu). Sondaki yetim "|" da kırpılır.
+        $this->assertSame(
+            'Türk Hava Yolları ile Büyüleyici Kuzey Işıkları & Lapland 3 Gece 4 Gün / Ekstra Turlar Dahil',
+            $this->invoke('cleanTitle', ['Türk Hava Yolları ile Büyüleyici Kuzey Işıkları & Lapland 3 Gece 4 Gün | Ekstra Turlar Dahil |'])
+        );
+        // Ayraçsız ama sonu yetim pipe'lı başlık da temizlenir
+        $this->assertSame(
+            'Ekstra Turlar Dahil',
+            $this->invoke('cleanTitle', ['Ekstra Turlar Dahil |'])
+        );
     }
 
     public function test_json_departure_dates_harvested_from_spa_raw_html(): void

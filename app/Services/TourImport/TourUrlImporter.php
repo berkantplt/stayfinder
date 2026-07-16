@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 11;
+    private const CACHE_VERSION = 12;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -2094,24 +2094,62 @@ class TourUrlImporter
      */
     private function cleanTitle(?string $title): ?string
     {
-        if ($title === null || ! preg_match('#\s[/|]\s#', $title)) {
+        if ($title === null) {
+            return null;
+        }
+
+        // Uçlardaki yetim ayırıcıları kırp: "… Ekstra Turlar Dahil |" gibi başlıklar
+        // ayraç regex'ine ("boşluk|boşluk") uymadığından pipe segmentte kalıyordu.
+        $trimSep = fn (string $s): string => trim((string) preg_replace('#^[\s/|–—-]+|[\s/|–—-]+$#u', '', $s));
+        $title = $trimSep($title);
+
+        if (! preg_match('#\s[/|]\s#', $title)) {
             return $title;
         }
 
         // Yalnızca SÜRE ("3 Gece 4 Gün", "3 Gece Otel Konaklamalı") ve KALKIŞ
         // ("İstanbul Çıkışlı") kuyruğu atılır. 'otel/hotel/resort/konaklamalı' TEK
         // BAŞINA ölçüt DEĞİL: "Sunshine Holiday Resort Fethiye" gibi meşru tur adı
-        // segmentleri silinmesin (b977401 regresyonu). "Otel Konaklamalı" gibi bir
-        // kuyruk zaten "N gece/gün" ile yakalanır.
-        // Bir segment KORUNUR eğer: tur-adı anahtarı ("tur/turu/gezi/gezisi/tour")
-        // içeriyorsa (o zaman süre bilgisi taşısa bile gerçek başlıktır —
-        // "Kapadokya Turu 2 Gece Konaklamalı" TAM başlıktır, atılmaz), VEYA süre/kalkış
-        // kuyruğu değilse. Yalnız SAF süre/kalkış kuyruğu ("3 Gece 4 Gün", "İzmir
-        // Çıkışlı" — tur anahtarı yok) atılır.
+        // segmentleri silinmesin (b977401 regresyonu).
+        // Bir segment KORUNUR eğer:
+        //  1) tur-adı anahtarı ("tur/turu/gezi/tour") içeriyorsa ("Kapadokya Turu
+        //     2 Gece Konaklamalı" TAM başlıktır), VEYA
+        //  2) süre/kalkış kalıbı hiç yoksa, VEYA
+        //  3) süre geçse bile süre + dolgu sözcükler çıkarılınca geriye ANLAMLI bir
+        //     ad kalıyorsa — etstur vakası: "Türk Hava Yolları ile Büyüleyici Kuzey
+        //     Işıkları & Lapland 3 Gece 4 Gün" gerçek addır, atılmaz (eskiden süre
+        //     geçtiği için atılıp yalnız "Ekstra Turlar Dahil" etiketi kalıyordu).
+        // Yalnız SAF süre/kalkış kuyruğu ("3 Gece 4 Gün", "3 Gece Otel Konaklamalı",
+        // "İzmir Çıkışlı") atılır.
+        $isRealSegment = function (string $seg) use ($trimSep): bool {
+            $seg = $trimSep($seg);
+            if ($seg === '') {
+                return false;
+            }
+            if (preg_match('/\bturu?\b|\bturlar|\bgezi\b|\bgezisi\b|\btour\b/iu', $seg)) {
+                return true;
+            }
+            if (! preg_match('/\b\d+\s*gece\b|\b\d+\s*gün\b|çıkışlı|kalkışlı|hareketli/iu', $seg)) {
+                return true;
+            }
+            // Kalkış listeleri ("İstanbul, İzmit ve Sakarya Çıkışlı") uzun da olsa kuyruktur.
+            if (preg_match('/çıkışlı|kalkışlı|hareketli/iu', $seg)) {
+                return false;
+            }
+            // Süre segmenti: süre + dolgu ("otel", "konaklamalı"…) soyulunca kalan öz.
+            $core = (string) preg_replace(
+                '/\b\d+\s*gece\b|\b\d+\s*gün\b|\botel(?:de|ler|lerde)?\b|\bhotel\b|\bkonaklamal[ıi]\b|\bkonaklama\b|\bve\b|\bile\b|[\d&.,()+-]+/iu',
+                ' ',
+                $seg
+            );
+            $core = trim((string) preg_replace('/\s+/u', ' ', $core));
+
+            return mb_strlen($core) >= 10;
+        };
+
         $kept = array_values(array_filter(
-            preg_split('#\s[/|]\s#', $title) ?: [],
-            fn (string $seg): bool => preg_match('/\bturu?\b|\bturlar|\bgezi\b|\bgezisi\b|\btour\b/iu', $seg)
-                || ! preg_match('/\b\d+\s*gece\b|\b\d+\s*gün\b|çıkışlı|kalkışlı|hareketli/iu', $seg)
+            array_map($trimSep, preg_split('#\s[/|]\s#', $title) ?: []),
+            $isRealSegment
         ));
 
         return $kept !== [] ? implode(' / ', $kept) : $title;
