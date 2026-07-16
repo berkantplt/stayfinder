@@ -32,7 +32,7 @@ class TourImportCacheHealthTest extends TestCase
         $this->assertNotEmpty($result['warnings']);
 
         // Kısmi sonuç CACHE'E GİRMEMELİ — tekrar deneme taze koşulmalı
-        $this->assertNull(Cache::get('tour_import:v10:'.md5('https://1.1.1.1/fethiye-turu|0')));
+        $this->assertNull(Cache::get('tour_import:v11:'.md5('https://1.1.1.1/fethiye-turu|0')));
     }
 
     public function test_healthy_result_is_cached_and_reused(): void
@@ -59,7 +59,7 @@ class TourImportCacheHealthTest extends TestCase
 
         $first = $this->importer()->import('https://1.1.1.1/fethiye-turu');
         $this->assertSame('Fethiye Turu', $first['title']);
-        $this->assertNotNull(Cache::get('tour_import:v10:'.md5('https://1.1.1.1/fethiye-turu|0')));
+        $this->assertNotNull(Cache::get('tour_import:v11:'.md5('https://1.1.1.1/fethiye-turu|0')));
 
         // İkinci çağrı cache'ten dönmeli: fake havuzu bitti, LLM'e gitse patlardı
         $second = $this->importer()->import('https://1.1.1.1/fethiye-turu');

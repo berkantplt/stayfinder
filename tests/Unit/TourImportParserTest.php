@@ -258,6 +258,15 @@ class TourImportParserTest extends TestCase
 
         // İşaretçi yoksa boş döner (etstur-dışı sayfalar)
         $this->assertSame([], $this->invoke('harvestPerDatePrices', ['<html>fiyat yok</html>']));
+
+        // Entity'li işaretçi (ham HTML'de innerText &lt;&lt;&lt; olur) da tanınır,
+        // ve BİRDEN ÇOK işaretçi (birleşik render + telafi çağrısı) birleştirilir.
+        $multi = 'ETSDATEPRICES&lt;&lt;&lt;7 Ocak 2027|3619|EURO&gt;&gt;&gt; ara '
+               . 'ETSDATEPRICES<<<27 Şubat 2027\|3690\|EURO>>>';
+        $pd2 = $this->invoke('harvestPerDatePrices', [$multi]);
+        $this->assertCount(2, $pd2);
+        $this->assertSame(3619.0, $pd2['2027-01-07']['price'] ?? null);
+        $this->assertSame(3690.0, $pd2['2027-02-27']['price'] ?? null);
     }
 
     public function test_departure_return_range_not_double_counted(): void

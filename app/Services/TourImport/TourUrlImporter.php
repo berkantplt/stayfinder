@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 10;
+    private const CACHE_VERSION = 11;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -93,6 +93,14 @@ class TourUrlImporter
     private function isUsableResult(array $result): bool
     {
         if (trim((string) ($result['title'] ?? '')) === '') {
+            return false;
+        }
+
+        // Per-tarih fiyatlı sayfada bazı tarihlerin fiyatı doğrulanamadıysa sonucu
+        // CACHE'leme: acenta "yeniden içe aktar" deyince taze koşulsun (site yavaşken
+        // iterator başarısız olabiliyor; ikinci deneme çoğu kez tamamlar). Sonuç
+        // kullanıcıya yine döner, sadece 30 dk kilitlenmez.
+        if (($result['per_date_unverified'] ?? false) === true) {
             return false;
         }
 
@@ -316,6 +324,30 @@ class TourUrlImporter
                 $result['currency'] = $perDateCurrency;
             }
             $warnings[] = 'Her kalkış tarihinin kendi başlangıç fiyatı ayrı çekildi; tarihe göre değişen otel/oda kırılımını kontrol edin.';
+        }
+
+        // Per-tarih fiyat picker'lı sayfada (etstur vb.) fiyatı DOĞRULANAMAYAN tarih
+        // kaldıysa AÇIKÇA uyar — perDate kısmen VEYA tamamen boş dönse bile (site
+        // yavaşken iterator hiç sonuç üretemeyebiliyor). Frontend bloksuz tarihi ilk
+        // bloğun fiyatıyla şablonlar; fiyat tarihe göre değişiyorsa bu YANLIŞ fiyat
+        // demektir, acenta sessizce yayınlamasın (canlı vaka: son tarih 3690 yerine
+        // 3619 görünmüştü).
+        if ($this->hasPerDatePicker($this->lastHtml ?? '')) {
+            $allCovered = [];
+            foreach ($blocks as $block) {
+                foreach ($block['dates'] as $d) {
+                    $allCovered[$d] = true;
+                }
+            }
+            $unverified = array_values(array_filter(
+                $this->harvestJsonDates($this->lastHtml ?? ''),
+                fn (string $d): bool => ! isset($allCovered[$d])
+            ));
+            if ($unverified !== []) {
+                $tr = array_map(fn (string $d): string => Carbon::parse($d)->locale('tr')->translatedFormat('j F Y'), $unverified);
+                $warnings[] = 'Şu tarihlerin fiyatı sayfadan doğrulanamadı: '.implode(', ', $tr).' — bu tarihlere ilk tarihin fiyatı kopyalandı; lütfen kontrol edin veya birkaç dakika sonra yeniden içe aktarın.';
+                $result['per_date_unverified'] = true;
+            }
         }
 
         // Deterministik ayrıştırma para birimini yakaladıysa ve genel çağrı kaçırdıysa uygula.
@@ -1159,12 +1191,15 @@ class TourUrlImporter
               return { p: pb ? (pb.innerText || '').replace(/[^\d]/g, '') : '', c: cu ? (cu.innerText || '').trim() : '' };
             }
             function liText(li) { var sp = li.querySelector('.tour-date'); return (sp ? sp.innerText : li.innerText || '').trim(); }
+            // Seçili tarih etiketi: tetikleyici kutu DOM'da container'dan ÖNCE gelir,
+            // ilk eşleşme onun .tour-date'idir (= o an seçili tarih).
+            function selLabel() { var s = document.querySelector('.selectbox-result .tour-date'); return s ? (s.innerText || '').trim() : ''; }
             try {
-              var res = [];
+              var done = {}, res = [];
               // Picker yavaş render olabilir: li'ler görünene dek birkaç kez aç-dene
               // (GUARD ile erken çıkma yerine — picker'sız sayfalarda sadece no-op).
               var lis = [];
-              for (var tr = 0; tr < 6 && lis.length === 0; tr++) {
+              for (var tr = 0; tr < 10 && lis.length === 0; tr++) {
                 ensureOpen(); await sleep(700);
                 lis = document.querySelectorAll('.selectbox-container li');
               }
@@ -1173,18 +1208,58 @@ class TourUrlImporter
               // indeks yerine metinle eşleştirmek kayma/atlamayı önler).
               var dates = [];
               for (var k = 0; k < lis.length && k < 8; k++) { var tx = liText(lis[k]); if (tx) dates.push(tx); }
-              for (var i = 0; i < dates.length; i++) {
-                ensureOpen(); await sleep(500);
-                var opts = document.querySelectorAll('.selectbox-container li');
-                var target = null;
-                for (var j = 0; j < opts.length; j++) { if (liText(opts[j]) === dates[i]) { target = opts[j]; break; } }
-                if (!target) continue;
-                var before = readP().p;
-                try { target.click(); } catch (_) {}
-                var t = 0, pr = readP();
-                while (t < 3000) { await sleep(250); t += 250; pr = readP(); if (pr.p !== '' && pr.p !== before) break; }
-                if (pr.p === '') { await sleep(1000); pr = readP(); }
-                if (pr.p) res.push(dates[i] + '|' + pr.p + '|' + pr.c);
+              // İKİ geçiş: ilk geçişte doğrulanamayan tarihler ikinci geçişte yeniden
+              // denenir. TEMEL KURAL: fiyatın o tarihe ait olduğu KANITLANMADIKÇA
+              // kaydetme — API yavaş kalınca fiyat kutusu güncellenmeden okunuyor ve
+              // ESKİ fiyat YENİ tarihe yazılıyordu (canlı vaka: 3 tarih de 3619).
+              // Taze sinyal = fiyat DEĞİŞTİ veya kutu boşalıp yeniden doldu.
+              // Doğrulanamayan kaydedilmez → PHP tarafı telafi çağrısı + açık uyarı verir.
+              var clickedAny = false;
+              for (var pass = 0; pass < 2; pass++) {
+                for (var i = 0; i < dates.length; i++) {
+                  if (done[dates[i]]) continue;
+                  // Sayfanın İLK açılışında seçili gelen tarih: görünen fiyat onundur
+                  // (hiç tıklamadık, bayatlama imkânsız) — doğrudan kaydet.
+                  if (!clickedAny && selLabel() === dates[i]) {
+                    var pr0 = readP();
+                    if (pr0.p) { done[dates[i]] = true; res.push(dates[i] + '|' + pr0.p + '|' + pr0.c); }
+                    continue;
+                  }
+                  // Tıklamalar başladıktan sonra hedef zaten "seçili" görünüyorsa fiyatına
+                  // güvenilemez (güncellenmemiş olabilir) — önce BAŞKA bir tarihe geç ki
+                  // hedefe tıklayınca gerçek bir seçim değişimi tetiklensin.
+                  if (selLabel() === dates[i] && dates.length > 1) {
+                    ensureOpen(); await sleep(400);
+                    var others = document.querySelectorAll('.selectbox-container li');
+                    for (var o = 0; o < others.length; o++) {
+                      if (liText(others[o]) !== dates[i]) { try { others[o].click(); } catch (_) {} break; }
+                    }
+                    await sleep(1200);
+                  }
+                  ensureOpen(); await sleep(500);
+                  var opts = document.querySelectorAll('.selectbox-container li');
+                  var target = null;
+                  for (var j = 0; j < opts.length; j++) { if (liText(opts[j]) === dates[i]) { target = opts[j]; break; } }
+                  if (!target) continue;
+                  var before = readP().p;
+                  try { target.click(); } catch (_) {} clickedAny = true;
+                  // 1) SEÇİM DOĞRULAMA: etiket hedef tarihi göstermeli.
+                  var t = 0;
+                  while (t < 2500 && selLabel() !== dates[i]) { await sleep(250); t += 250; }
+                  if (selLabel() !== dates[i]) continue;
+                  // 2) TAZE FİYAT SİNYALİ: değer değişti VEYA kutu boşalıp doldu.
+                  t = 0; var pr = readP(); var sawEmpty = false;
+                  while (t < 6000) {
+                    await sleep(250); t += 250; pr = readP();
+                    if (pr.p === '') { sawEmpty = true; continue; }
+                    if (pr.p !== before) break;   // fiyat güncellendi → kesin taze
+                    if (sawEmpty) break;          // boşalıp aynı değerle doldu → taze
+                  }
+                  if (pr.p !== '' && (pr.p !== before || sawEmpty)) {
+                    done[dates[i]] = true; res.push(dates[i] + '|' + pr.p + '|' + pr.c);
+                  }
+                }
+                if (res.length >= dates.length) break;
               }
               if (res.length) {
                 var d = document.createElement('div');
@@ -1232,7 +1307,7 @@ class TourUrlImporter
             ['type' => 'scroll', 'direction' => 'down'],
             ['type' => 'wait', 'milliseconds' => 300],
             ['type' => 'executeJavascript', 'script' => $perDateScript],
-            ['type' => 'wait', 'milliseconds' => 14000],   // picker retry + tarih döngüsü tamamlansın
+            ['type' => 'wait', 'milliseconds' => 17000],   // picker retry + tarih döngüsü tamamlansın
             ['type' => 'executeJavascript', 'script' => $priceModalScript],
             ['type' => 'wait', 'milliseconds' => 2500],
         ];
@@ -1254,7 +1329,7 @@ class TourUrlImporter
             ['type' => 'scroll', 'direction' => 'down'],
             ['type' => 'wait', 'milliseconds' => 400],
             ['type' => 'executeJavascript', 'script' => $perDateScript],
-            ['type' => 'wait', 'milliseconds' => 14000],
+            ['type' => 'wait', 'milliseconds' => 17000],
         ];
 
         $started = microtime(true);
@@ -1278,12 +1353,18 @@ class TourUrlImporter
                             $this->lastHtml = substr($rawHtml, 0, 2000000);
                         }
 
-                        // GÜVENLİK: per-tarih beklendi ama birleşik render marker'ı
-                        // üretemediyse (nadir timeout) ayrı hafif çağrıyla tamamla —
-                        // böylece 2b başarısız olsa bile veri eskisinden kötü olmaz.
-                        if ($perDate && ($rawHtml === '' || ! str_contains($rawHtml, 'ETSDATEPRICES'))
-                            && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 40) {
-                            $this->appendPerDatePrices($endpoint, $key, $base, $leanPerDateActions);
+                        // GÜVENLİK: per-tarih beklendi ama birleşik render marker'ı hiç
+                        // üretemedi VEYA bazı tarihleri kaçırdı (yavaş API'de seçim
+                        // oturmayabiliyor) → ayrı hafif çağrıyla tamamla. Kaçan tarih
+                        // frontend'de İLK bloğun fiyatıyla şablonlanırdı (YANLIŞ fiyat,
+                        // kullanıcı vakası: son tarih 3690 yerine 3619 görünmüştü).
+                        if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 40) {
+                            $expected = min(preg_match_all('/"departureDate"\s*:/', $rawHtml), 8);
+                            $got = count($this->harvestPerDatePrices($this->lastHtml ?? ''));
+                            if ($got < $expected) {
+                                Log::info('[TourImport] per-tarih kapsam eksik, telafi çağrısı', ['got' => $got, 'expected' => $expected]);
+                                $this->appendPerDatePrices($endpoint, $key, $base, $leanPerDateActions);
+                            }
                         }
 
                         return mb_substr($markdown, 0, self::SCAN_CHARS);
@@ -2971,29 +3052,31 @@ class TourUrlImporter
     private function harvestPerDatePrices(string $rawHtml): array
     {
         // İşaretçi ham HTML'de entity'li ("ETSDATEPRICES&lt;&lt;&lt;…&gt;&gt;&gt;"),
-        // markdown'da literal ("<<<…>>>") olabilir — ikisini de yakala.
-        if ($rawHtml === '' || ! preg_match('/ETSDATEPRICES(?:<<<|&lt;&lt;&lt;)(.*?)(?:>>>|&gt;&gt;&gt;)/s', $rawHtml, $m)) {
+        // markdown'da literal ("<<<…>>>") olabilir — ikisini de yakala. Birden çok
+        // işaretçi olabilir (birleşik render + telafi çağrısı) — HEPSİ birleştirilir.
+        if ($rawHtml === '' || ! preg_match_all('/ETSDATEPRICES(?:<<<|&lt;&lt;&lt;)(.*?)(?:>>>|&gt;&gt;&gt;)/s', $rawHtml, $mm)) {
             return [];
         }
 
-        // Markdown pipe kaçışını ("\|") ve HTML entity'lerini temizle.
-        $payload = html_entity_decode(str_replace('\\', '', $m[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
         $out = [];
-        foreach (explode(' :: ', $payload) as $entry) {
-            $parts = explode('|', $entry);
-            if (count($parts) < 2) {
-                continue;
+        foreach ($mm[1] as $chunk) {
+            // Markdown pipe kaçışını ("\|") ve HTML entity'lerini temizle.
+            $payload = html_entity_decode(str_replace('\\', '', $chunk), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            foreach (explode(' :: ', $payload) as $entry) {
+                $parts = explode('|', $entry);
+                if (count($parts) < 2) {
+                    continue;
+                }
+                $iso = $this->parseFutureDate(trim($parts[0]));
+                $price = $this->priceFloat($parts[1]);
+                if ($iso === null || $price === null || $price < 1) {
+                    continue;
+                }
+                $out[$iso] = [
+                    'price' => $price,
+                    'currency' => isset($parts[2]) ? $this->currencyFromLine(' '.trim($parts[2])) : null,
+                ];
             }
-            $iso = $this->parseFutureDate(trim($parts[0]));
-            $price = $this->priceFloat($parts[1]);
-            if ($iso === null || $price === null || $price < 1) {
-                continue;
-            }
-            $out[$iso] = [
-                'price' => $price,
-                'currency' => isset($parts[2]) ? $this->currencyFromLine(' '.trim($parts[2])) : null,
-            ];
         }
 
         return $out;
