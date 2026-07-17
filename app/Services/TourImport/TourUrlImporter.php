@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 15;
+    private const CACHE_VERSION = 14;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -288,9 +288,8 @@ class TourUrlImporter
             }
         }
 
-        // SATIŞI KAPANMIŞ (Tükendi) kalkışlar: gömülü JSON'daki "sold":true tarihler
-        // ATLANMAZ — fiyat matrisleriyle birlikte çekilir ve "Tükendi" işaretiyle
-        // aktarılır (kullanıcı talebi: sitede rozet olarak görünsün, Bali: 14'ün 5'i).
+        // SATIŞI KAPANMIŞ (Tükendi) kalkışlar: gömülü JSON'daki "sold":true tarihleri
+        // içe AKTARILMAZ — satılamaz stok forma taşınmasın (Bali vakası: 14'ün 5'i).
         $soldOut = $this->harvestSoldOutDates($this->lastHtml ?? '');
         $soldSet = array_flip($soldOut);
 
@@ -311,7 +310,7 @@ class TourUrlImporter
         $perDateCurrency = null;
         foreach ($modalMatrix as $iso => $info) {
             $perDateCurrency ??= $info['currency'];
-            if (isset($covered[$iso])) {
+            if (isset($covered[$iso]) || isset($soldSet[$iso])) {
                 continue;
             }
             $blocks[] = ['dates' => [$iso], 'packages' => $info['packages']];
@@ -323,10 +322,7 @@ class TourUrlImporter
         foreach ($perDate as $iso => $info) {
             $perDateCurrency ??= $info['currency'];
             if (isset($covered[$iso]) || isset($soldSet[$iso])) {
-                // Kapsanmış YA DA Tükendi: satışı kapanmış tarihin fiyatı yalnız
-                // güvenilir matris kaynağından gelir — ana sayfa fiyat kutusu sold
-                // tarihte seçime izin vermeyip bayat değer gösterebilir.
-                continue;
+                continue; // matris/mevcut blok kapsamış ya da satışta değil
             }
             $blocks[] = [
                 'dates' => [$iso],
@@ -423,31 +419,14 @@ class TourUrlImporter
             );
         }
 
-        // TÜKENDİ İŞARETLEME (son adım — tüm tarih kaynakları birleştikten sonra):
-        // satışı kapanmış kalkışlar FİYATI BİLİNİYORSA (matris bloğu varsa) kalkış
-        // listesine dahil edilir ve sold_out_dates ile işaretlenir → form gizli
-        // input'la taşır, TourDate.label 'Tükendi' olur, sitede kırmızı rozetle
-        // görünür (kullanıcı talebi). Fiyatı bulunamayan sold kalkış AKTARILMAZ:
-        // fiyat uydurulmaz, form da fiyatsız tarihi kabul etmez — dürüst not düşülür.
+        // TÜKENDİ FİLTRESİ (son adım — tüm tarih kaynakları birleştikten sonra):
+        // satışı kapanmış kalkışlar listeden çıkarılır, acentaya açıkça bildirilir.
         if ($soldOut !== []) {
-            $blockDates = [];
-            foreach ($blocks as $block) {
-                foreach ($block['dates'] as $d) {
-                    $blockDates[$d] = true;
-                }
-            }
-            $priced = array_values(array_filter($soldOut, fn (string $d): bool => isset($blockDates[$d])));
-            $unpriced = array_values(array_diff($soldOut, $priced));
-
-            $trFmt = fn (string $d): string => Carbon::parse($d)->locale('tr')->translatedFormat('j F Y');
-            if ($priced !== []) {
-                $result['departure_dates'] = $this->mergeDates($result['departure_dates'], $priced);
-                $result['sold_out_dates'] = $priced;
-                $warnings[] = 'Kaynak sitede satışı kapanmış kalkışlar "Tükendi" işaretiyle aktarıldı: '.implode(', ', array_map($trFmt, $priced)).'.';
-            }
-            if ($unpriced !== []) {
-                $result['departure_dates'] = array_values(array_diff($result['departure_dates'], $unpriced));
-                $warnings[] = 'Şu kalkışlar kaynak sitede satışı kapanmış VE fiyatı yayında olmadığından aktarılmadı: '.implode(', ', array_map($trFmt, $unpriced)).'.';
+            $before = count($result['departure_dates']);
+            $result['departure_dates'] = array_values(array_diff($result['departure_dates'], $soldOut));
+            if (count($result['departure_dates']) < $before) {
+                $tr = array_map(fn (string $d): string => Carbon::parse($d)->locale('tr')->translatedFormat('j F Y'), $soldOut);
+                $warnings[] = 'Kaynak sitede satışı kapanmış (Tükendi) kalkışlar içe aktarılmadı: '.implode(', ', $tr).'.';
             }
         }
 
@@ -1489,13 +1468,14 @@ JS;
         ];
         // BİRLEŞİK (per-tarih sayfalar): BİRİNCİL yol modal-matris iterasyonu —
         // her dönemin TAM matrisi (double/tek/3.kişi/çocuk) data-price'tan kesin
-        // okunur. TÜKENMİŞ dönemler de OKUNUR: fiyatlarıyla "Tükendi" işaretli
-        // aktarılırlar (skip-list yalnız telafide, zaten-kapsananlar için).
+        // okunur. TÜKENMİŞ dönemler statik JSON'dan bilinir ve iterasyonda atlanır
+        // (zaman + tavan tasarrufu). Modal başarısızsa PHP telafi zinciri (aşağıda).
+        $soldStatic = $this->harvestSoldOutDates($this->lastHtml ?? '');
         $combinedActions = [
             ['type' => 'wait', 'milliseconds' => 500],
             ['type' => 'scroll', 'direction' => 'down'],
             ['type' => 'wait', 'milliseconds' => 300],
-            ['type' => 'executeJavascript', 'script' => $injectSkip([])],
+            ['type' => 'executeJavascript', 'script' => $injectSkip($soldStatic)],
             ['type' => 'wait', 'milliseconds' => 15000],   // modal + API replay döngüsü (~11 dönem × ~400ms)
         ];
         $simpleActions = [
@@ -1559,9 +1539,13 @@ JS;
                         // modal/dropdown oturmayabiliyor) → telafi zinciri. Kaçan tarih
                         // frontend'de İLK bloğun fiyatıyla şablonlanırdı (YANLIŞ fiyat,
                         // kullanıcı vakası: son tarih 3690 yerine 3619 görünmüştü).
-                        // Tükendi dönemler DE beklenir — fiyatlarıyla işaretli aktarılırlar.
+                        // SATILAN (sold:false) tarihler esas alınır — Tükendi zaten atlanır.
                         if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 70) {
-                            $expected = min(preg_match_all('/"departureDate"\s*:/', $rawHtml), 16);
+                            $expected = min(max(
+                                preg_match_all('/"sold"\s*:\s*false/', $rawHtml),
+                                preg_match_all('/"departureDate"\s*:/', $rawHtml) > 0 && ! str_contains($rawHtml, '"sold"')
+                                    ? preg_match_all('/"departureDate"\s*:/', $rawHtml) : 0
+                            ), 12);
                             $covered = fn (): int => count($this->harvestModalMatrix($this->lastHtml ?? ''))
                                 + count(array_diff_key(
                                     $this->harvestPerDatePrices($this->lastHtml ?? ''),
@@ -1569,9 +1553,12 @@ JS;
                                 ));
                             if ($covered() < $expected) {
                                 Log::info('[TourImport] per-tarih kapsam eksik, telafi: modal-matris', ['got' => $covered(), 'expected' => $expected]);
-                                // Zaten kapsanan dönemler atlanır → kuyruktaki eksikler
-                                // hızla okunur (aynı dönemleri yeniden gezme).
-                                $skip = array_keys($this->harvestModalMatrix($this->lastHtml ?? ''));
+                                // Zaten kapsanan + tükenen dönemler atlanır → kuyruktaki
+                                // eksikler hızla okunur (aynı dönemleri yeniden gezme).
+                                $skip = array_merge(
+                                    array_keys($this->harvestModalMatrix($this->lastHtml ?? '')),
+                                    $this->harvestSoldOutDates($rawHtml)
+                                );
                                 $this->appendPerDatePrices($endpoint, $key, $base, $leanMatrixActions($skip));
                             }
                             // 2. kademe YALNIZ tam başarısızlıkta (hiç veri yoksa) —
@@ -3555,10 +3542,7 @@ JS;
                 $segment = substr($rawHtml, $start, $end - $start);
                 if (preg_match('/"sold"\s*:\s*true/', $segment)) {
                     $iso = sprintf('%04d-%02d-%02d', (int) $m[1][0], (int) $m[2][0], (int) $m[3][0]);
-                    // Geçmiş sold kalkışlar forma taşınmaz (parseFutureDate eler)
-                    if ($this->parseFutureDate($iso) !== null) {
-                        $sold[] = $iso;
-                    }
+                    $sold[] = $iso;
                 }
             }
         }

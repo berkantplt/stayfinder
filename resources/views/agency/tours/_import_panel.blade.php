@@ -109,22 +109,15 @@ function applyImported(data, sourceUrl) {
     }
     var startPrice = (data.price !== null && data.price !== undefined) ? String(data.price) : '';
 
-    // Kaynak sitede satışı kapanmış (Tükendi) tarihler: fiyatlarıyla gelir ama
-    // işaretli — formda kırmızı çip, sitede "Tükendi" rozeti olur.
-    var soldSet = {};
-    (Array.isArray(data.sold_out_dates) ? data.sold_out_dates : []).forEach(function(d) { soldSet[d] = true; });
-
     Object.keys(allDates).sort().forEach(function(d) {
         if (blockByDate[d] && blockByDate[d].length) {
-            entries.push({ date: d, price: '', packages: blockByDate[d], sold: !!soldSet[d] });
-        } else if (templatePkgs && !soldSet[d]) {
-            // Bloğu olmayan tarih → ilk bloğun matrisini şablonla (her tarih paket).
-            // Tükendi tarihe şablon fiyat UYDURULMAZ.
-            entries.push({ date: d, price: '', packages: templatePkgs, sold: false });
+            entries.push({ date: d, price: '', packages: blockByDate[d] });
+        } else if (templatePkgs) {
+            // Bloğu olmayan tarih → ilk bloğun matrisini şablonla (her tarih paket)
+            entries.push({ date: d, price: '', packages: templatePkgs });
         } else {
-            // Hiç matris yok → düz başlangıç fiyatı; Tükendi tarihte fiyat boş
-            // bırakılır (satılmıyor, uydurma fiyat yazılmaz).
-            entries.push({ date: d, price: soldSet[d] ? '' : startPrice, packages: [], sold: !!soldSet[d] });
+            // Hiç matris yok (site fiyat tablosu vermiyor) → düz başlangıç fiyatı
+            entries.push({ date: d, price: startPrice, packages: [] });
         }
     });
     if (entries.length) {

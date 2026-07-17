@@ -117,7 +117,6 @@ class TourController extends Controller
             $request->input('price'),
             (int) $validated['duration_days']
         );
-        $dates = $this->applySoldOutLabels($dates, (array) $request->input('sold_out_dates', []));
 
         unset($validated['gallery']);
         $gallery = $this->processGallery((array) $request->input('gallery', []));
@@ -207,7 +206,6 @@ class TourController extends Controller
             $request->input('price'),
             (int) $validated['duration_days']
         );
-        $dates = $this->applySoldOutLabels($dates, (array) $request->input('sold_out_dates', []));
 
         unset($validated['gallery']);
         $oldImages = $tour->images ?: ($tour->image ? [$tour->image] : []);
@@ -551,40 +549,10 @@ class TourController extends Controller
 
     private function resolveBasePrice(array $dates): float
     {
-        // "…'dan başlayan" taban fiyata TÜKENMİŞ tarihler girmez — satılamayan
-        // ucuz bir tarih vitrin fiyatını yanlış düşürmesin. Hepsi tükendiyse
-        // (bilgi amaçlı tur) tüm tarihlerden hesaplanır.
-        $sellable = array_filter($dates, fn (array $d) => ($d['label'] ?? null) !== 'Tükendi');
-
-        return (float) collect($sellable !== [] ? $sellable : $dates)
+        return (float) collect($dates)
             ->pluck('price')
             ->map(fn ($price) => (float) $price)
             ->min();
-    }
-
-    /**
-     * Formdan gelen sold_out_dates[] (kaynak sitede satışı kapanmış kalkışlar)
-     * ilgili tarih satırlarına label='Tükendi' yazar — sitede rozet olarak görünür.
-     *
-     * @param  array<int, array<string, mixed>>  $dates
-     * @param  array<int, mixed>  $soldInput
-     * @return array<int, array<string, mixed>>
-     */
-    private function applySoldOutLabels(array $dates, array $soldInput): array
-    {
-        $sold = [];
-        foreach ($soldInput as $raw) {
-            try {
-                $sold[Carbon::parse((string) $raw)->toDateString()] = true;
-            } catch (\Throwable) {
-                // geçersiz tarih girdisi sessizce yok sayılır
-            }
-        }
-
-        return array_map(
-            fn (array $row) => $row + ['label' => isset($sold[$row['departure_date']]) ? 'Tükendi' : null],
-            $dates
-        );
     }
 
     /**
@@ -765,13 +733,6 @@ class TourController extends Controller
     private function resolvePrimaryDate(array $dates): array
     {
         $today = Carbon::today()->toDateString();
-        // Önce SATIŞTAKİ (Tükendi olmayan) gelecek tarih; yoksa herhangi bir
-        // gelecek tarih; o da yoksa ilk kayıt.
-        foreach ($dates as $date) {
-            if ($date['departure_date'] >= $today && ($date['label'] ?? null) !== 'Tükendi') {
-                return $date;
-            }
-        }
         foreach ($dates as $date) {
             if ($date['departure_date'] >= $today) {
                 return $date;

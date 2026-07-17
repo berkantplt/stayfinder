@@ -257,14 +257,12 @@
                         <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">📅 Kalkış Tarihleri</div>
                         <div style="display:flex;flex-wrap:wrap;gap:8px;">
                             @foreach($upcomingDates as $date)
-                            <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;{{ $date->label === 'Tükendi' ? 'opacity:0.65;' : '' }}">
+                            <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;">
                                 <span style="font-weight:600;">{{ $date->departure_date->format('d-m-Y') }}</span>
                                 <span style="color:var(--text-muted);margin:0 3px;">→</span>
                                 <span style="font-weight:600;">{{ $date->return_date->format('d-m-Y') }}</span>
                                 {!! $datePriceRenderer($date) !!}
-                                @if($date->label === 'Tükendi')
-                                    <span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:4px;">Tükendi</span>
-                                @elseif($date->label)
+                                @if($date->label)
                                     <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
                                 @endif
                             </div>
@@ -281,9 +279,7 @@
                                 <span style="color:var(--text-muted);margin:0 3px;">→</span>
                                 <span style="font-weight:600;">{{ $date->return_date->format('d-m-Y') }}</span>
                                 {!! $datePriceRenderer($date) !!}
-                                @if($date->label === 'Tükendi')
-                                    <span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:4px;">Tükendi</span>
-                                @elseif($date->label)
+                                @if($date->label)
                                     <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
                                 @endif
                             </div>
@@ -299,15 +295,7 @@
 
                     {{-- Fiyat tablosu: tarihe tıklanınca paket/oda-tipi fiyat matrisi açılır --}}
                     @if($hasPricingBlocks)
-                        @php
-                            $roomTypeLabels = \App\Models\Tour::ROOM_TYPES;
-                            $priceCurrency = $tour->currency_symbol;
-                            // Tükendi işaretli tarihler (TourDate.label) — akordeon çiplerinde rozet
-                            $soldOutDateSet = $tour->dates
-                                ->filter(fn ($d) => $d->label === 'Tükendi' && $d->departure_date)
-                                ->mapWithKeys(fn ($d) => [$d->departure_date->toDateString() => true])
-                                ->all();
-                        @endphp
+                        @php $roomTypeLabels = \App\Models\Tour::ROOM_TYPES; $priceCurrency = $tour->currency_symbol; @endphp
                         <div style="margin-bottom:24px;">
                             <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">💰 Tarih ve Paket Fiyatları</div>
                             @foreach($tour->pricing_blocks as $block)
@@ -335,11 +323,8 @@
                                     <summary style="cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
                                         <span style="color:var(--accent);">📅</span>
                                         @foreach($blockDates as $bd)
-                                            @php
-                                                $bdReturn = $bd->copy()->addDays(max(1, (int) $tour->duration_days) - 1);
-                                                $bdSold = $soldOutDateSet[$bd->toDateString()] ?? false;
-                                            @endphp
-                                            <span style="background:{{ $bdSold ? '#fee2e2' : 'var(--accent-bg)' }};border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d-m-Y') }} → {{ $bdReturn->format('d-m-Y') }}@if($bdSold) <strong style="color:#b91c1c;">· Tükendi</strong>@endif</span>
+                                            @php $bdReturn = $bd->copy()->addDays(max(1, (int) $tour->duration_days) - 1); @endphp
+                                            <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d-m-Y') }} → {{ $bdReturn->format('d-m-Y') }}</span>
                                         @endforeach
                                         <span style="color:var(--text-muted);font-size:12px;font-weight:500;margin-left:auto;">fiyatları gör ▾</span>
                                     </summary>
