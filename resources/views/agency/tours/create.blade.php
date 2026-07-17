@@ -404,6 +404,7 @@
             @if($canCreateTours)
             <script>
             const initialPricingOptions = @json($oldPricingOptions);
+            const initialSoldDates = @json(old('sold_out_dates', []));
             const minSelectableDate = '{{ now()->toDateString() }}';
             const currencySymbols = @json(collect($currencyOptions)->map(fn($meta) => (string) ($meta['symbol'] ?? '₺'))->toArray());
             const monthNamesTr = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
@@ -591,6 +592,7 @@
                     price: String((entry && entry.price) || ''),
                     packages: normalizePackagesJs((entry && entry.packages) || []),
                     open: !!(entry && entry.open),
+                    sold: !!(entry && entry.sold), // kaynak sitede satışı kapanmış (Tükendi)
                 };
             }
 
@@ -737,6 +739,14 @@
                         dateInput.name = 'pricing_options[' + index + '][departure_dates][]';
                         dateInput.value = option.date;
                         hidden.appendChild(dateInput);
+
+                        if (option.sold) {
+                            var soldInput = document.createElement('input');
+                            soldInput.type = 'hidden';
+                            soldInput.name = 'sold_out_dates[]';
+                            soldInput.value = option.date;
+                            hidden.appendChild(soldInput);
+                        }
                     }
 
                     (option.packages || []).forEach(function(pkg, j) {
@@ -793,11 +803,16 @@
                         <div class="date-entry-head">
                             <span class="date-entry-title"><span class="date-entry-caret">▸</span>${dateLabel}${retLabel}</span>
                             <span style="display:flex;align-items:center;gap:10px;">
+                                ${option.sold ? '<span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;">Tükendi</span>' : ''}
                                 <span class="date-entry-summary">${summary}</span>
                                 <button type="button" class="btn btn-outline btn-sm remove-date-btn">Sil</button>
                             </span>
                         </div>
                         <div class="date-entry-body" style="${option.open ? '' : 'display:none;'}">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#b91c1c;margin-bottom:10px;cursor:pointer;">
+                                <input type="checkbox" class="option-sold-input" ${option.sold ? 'checked' : ''} style="width:auto;margin:0;">
+                                Bu tarih satışta değil (sitede "Tükendi" rozetiyle görünür)
+                            </label>
                             <div class="form-group" style="margin-bottom:10px;max-width:240px;">
                                 <label>Fiyat (${getSelectedCurrencySymbol()}) — paket yoksa</label>
                                 <input type="number" class="option-price-input" min="0" step="0.01" value="${escapeAttr(option.price)}" placeholder="Tek fiyat">
@@ -825,6 +840,12 @@
                     blockExponentKeys(priceInput);
                     priceInput.addEventListener('input', function() { updateOptionPrice(option.id, this.value); });
 
+                    var soldInput = entry.querySelector('.option-sold-input');
+                    if (soldInput) soldInput.addEventListener('change', function() {
+                        var o = getOptionById(option.id);
+                        if (o) { o.sold = this.checked; renderPricingOptions(); }
+                    });
+
                     renderPackages(option, entry);
                     var addPkgBtn = entry.querySelector('.add-package-btn');
                     if (addPkgBtn) addPkgBtn.addEventListener('click', function() { addPackage(option.id); });
@@ -842,8 +863,10 @@
                     var dates = (option && option.departure_dates) || [];
                     var pkgs = (option && option.packages) || [];
                     var price = (option && option.price) || '';
+                    var soldInit = {};
+                    (Array.isArray(initialSoldDates) ? initialSoldDates : []).forEach(function(sd) { soldInit[sd] = true; });
                     (Array.isArray(dates) ? dates : []).forEach(function(d) {
-                        initial.push({ date: d, price: price, packages: pkgs });
+                        initial.push({ date: d, price: price, packages: pkgs, sold: !!soldInit[d] });
                     });
                 });
                 setDateEntries(initial);

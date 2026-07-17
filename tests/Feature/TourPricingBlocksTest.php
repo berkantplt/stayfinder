@@ -98,6 +98,46 @@ class TourPricingBlocksTest extends TestCase
         );
     }
 
+    public function test_sold_out_dates_get_tukendi_label_and_are_excluded_from_base_price(): void
+    {
+        // Kaynak sitede satışı kapanmış (Tükendi) tarih: içe aktarılır ama
+        // label='Tükendi' olur ve UCUZ olsa bile vitrin "…'dan başlayan"
+        // fiyatını BELİRLEYEMEZ (satılamayan fiyat vitrine çıkmaz).
+        $soldDate = today()->addDays(10)->toDateString();
+        $openDate = today()->addDays(20)->toDateString();
+
+        $payload = [
+            'category_id' => $this->category->id,
+            'title' => 'Tükendi Rozet Turu',
+            'destination' => 'Bali',
+            'departure_city' => 'İstanbul',
+            'duration_days' => 5,
+            'currency' => 'USD',
+            'pricing_options' => [
+                ['departure_dates' => [$soldDate], 'price' => '1500'],
+                ['departure_dates' => [$openDate], 'price' => '2600'],
+            ],
+            'sold_out_dates' => [$soldDate],
+        ];
+
+        $this->actingAs($this->agencyUser)
+            ->post(route('agency.tours.store'), $payload)
+            ->assertRedirect(route('agency.tours.index'));
+
+        $tour = Tour::firstWhere('title', 'Tükendi Rozet Turu');
+        $this->assertNotNull($tour);
+
+        // Tükendi tarih label'lı, satıştaki tarih label'sız kaydedildi
+        $this->assertSame('Tükendi', $tour->dates()->whereDate('departure_date', $soldDate)->first()?->label);
+        $this->assertNull($tour->dates()->whereDate('departure_date', $openDate)->first()?->label);
+
+        // Vitrin fiyatı satıştaki tarihten gelir (1500 değil 2600)
+        $this->assertEquals(2600, (float) $tour->price);
+
+        // Birincil (kapak) tarih de satıştaki tarihtir
+        $this->assertSame($openDate, $tour->departure_date?->toDateString());
+    }
+
     public function test_headline_price_prefers_double_over_cheaper_extra_bed(): void
     {
         // Jolly vakası: ilave yatak (29.099,50) çift kişilikten (32.599,50) ucuz —
