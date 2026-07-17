@@ -279,6 +279,61 @@ class TourImportParserTest extends TestCase
         $this->assertSame([], $r2['blocks'], 'Türkçe tarih-aralığı satırları blok üretmemeli');
     }
 
+    public function test_modal_matrix_marker_parsed(): void
+    {
+        // etstur Bali vakası: modal tablosu data-price attribute'larından TAM matris.
+        // hdr[0]=dönem, hdr[1..]=kolonlar ↔ p[0..]; "2 - 11 Yaş" HEM child_3_5 HEM
+        // child_7_11 kovasına yazılır (yaş bandı kapsaması).
+        $json = json_encode([[
+            'r' => '25 Ağustos 2026 - 1 Eylül 2026',
+            't' => [
+                'hdr' => ['25 Ağustos 2026 - 01 Eylül 2026', 'Double Odada Kişi Başı Fiyat', 'Tek Kişilik Oda', 'Üçüncü Kişi Fiyat', '0 - 1 Yaş Çocuk', '2 - 11 Yaş Çocuk'],
+                'rows' => [[
+                    'h' => '4 ve 5 Yıldızlı Oteller - Standard Room',
+                    'p' => [
+                        ['v' => '2769.00', 'c' => 'USD'],
+                        ['v' => '4339.00', 'c' => 'USD'],
+                        ['v' => '2099.00', 'c' => 'USD'],
+                        ['v' => '199.00', 'c' => 'USD'],
+                        ['v' => '1599.00', 'c' => 'USD'],
+                    ],
+                ]],
+            ],
+        ]], JSON_UNESCAPED_UNICODE);
+        $m = $this->invoke('harvestModalMatrix', ['önce ETSMATRIXJSON<<<'.$json.'>>> sonra']);
+        $this->assertCount(1, $m);
+        $pkg = $m['2026-08-25']['packages'][0] ?? null;
+        $this->assertNotNull($pkg, 'dönemin İLK tarihi (25 Ağustos) kalkış olmalı');
+        $this->assertSame('4 ve 5 Yıldızlı Oteller - Standard Room', $pkg['hotel']);
+        $this->assertSame(2769.0, $pkg['prices']['double_pp']['new']);
+        $this->assertSame(4339.0, $pkg['prices']['single']['new']);
+        $this->assertSame(2099.0, $pkg['prices']['extra_bed']['new']);
+        $this->assertSame(199.0, $pkg['prices']['child_0_2']['new']);
+        $this->assertSame(1599.0, $pkg['prices']['child_3_5']['new']);
+        $this->assertSame(1599.0, $pkg['prices']['child_7_11']['new']);
+        $this->assertSame('USD', $m['2026-08-25']['currency']);
+
+        // Entity'li işaretçi de (ham HTML innerText) çözülür
+        $ent = str_replace(['<<<', '>>>', '"'], ['&lt;&lt;&lt;', '&gt;&gt;&gt;', '&quot;'], 'ETSMATRIXJSON<<<'.$json.'>>>');
+        $this->assertCount(1, $this->invoke('harvestModalMatrix', [$ent]));
+
+        $this->assertSame([], $this->invoke('harvestModalMatrix', ['işaretçi yok']));
+    }
+
+    public function test_sold_out_dates_harvested(): void
+    {
+        // etstur tourPeriods JSON'u: "sold":true kalkışlar Tükendi'dir, içe aktarılmaz.
+        $html = '{"departCode":"1054017","departureDate":{"year":2026,"month":8,"day":25},"x":1,"sold":false,"remaining":4},'
+              . '{"departCode":"1054012","departureDate":{"year":2026,"month":7,"day":21},"x":1,"sold":true,"remaining":0},'
+              . '{"departCode":"1054013","departureDate":{"year":2026,"month":7,"day":28},"x":1,"sold":true,"remaining":0}';
+        $sold = $this->invoke('harvestSoldOutDates', [$html]);
+        $this->assertSame(['2026-07-21', '2026-07-28'], $sold);
+        $this->assertNotContains('2026-08-25', $sold, 'satıştaki tarih Tükendi sayılmamalı');
+
+        // "sold" alanı olmayan sayfalarda (etstur-dışı) boş döner
+        $this->assertSame([], $this->invoke('harvestSoldOutDates', ['"departureDate":{"year":2026,"month":8,"day":25}']));
+    }
+
     public function test_per_date_prices_parsed_from_marker(): void
     {
         // etstur render iterator'ının bıraktığı işaretçi; Firecrawl markdown'ında

@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 13;
+    private const CACHE_VERSION = 14;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -251,7 +251,11 @@ class TourUrlImporter
         $detected = $this->deterministicPricingBlocks($text);
         $blocks = $detected['blocks'];
 
-        if ($blocks === [] && ! $this->deadlineExceeded()) {
+        // Modal-matris verisi (etstur: her dönemin TAM matrisi data-price'tan) varsa
+        // LLM fiyat çıkarımına hiç gerek yok — deterministik veri eksiksiz ve kesin.
+        $modalMatrix = $this->harvestModalMatrix($this->lastHtml ?? '');
+
+        if ($blocks === [] && $modalMatrix === [] && ! $this->deadlineExceeded()) {
             // Fallback: AYRI, odaklı LLM çağrısı — sadece fiyat tablosu bölgesini okur.
             // Süre bütçesi aşıldıysa bu ikinci çağrı atlanır (nginx 60 sn'yi aşmasın);
             // deterministik parser zaten denendi, fiyat elle girilebilir.
@@ -284,64 +288,80 @@ class TourUrlImporter
             }
         }
 
-        // PER-TARİH FİYAT (etstur vb. OTA): render iterator'ı her kalkış tarihinin
-        // KENDİ başlangıç fiyatını topladıysa, tüm tarihlere tek fiyat şablonlamak
-        // yerine her tarihe kendi fiyatını ver (kullanıcı talebi: 3 tarih 3619/3890/3690
-        // EUR — ayrı ayrı). Modaldan tam matris gelen tarih korunur; kapsanmayan
-        // tarihlere double_pp'lik tek-paket blok eklenir.
+        // SATIŞI KAPANMIŞ (Tükendi) kalkışlar: gömülü JSON'daki "sold":true tarihleri
+        // içe AKTARILMAZ — satılamaz stok forma taşınmasın (Bali vakası: 14'ün 5'i).
+        $soldOut = $this->harvestSoldOutDates($this->lastHtml ?? '');
+        $soldSet = array_flip($soldOut);
+
+        // PER-TARİH FİYAT (etstur vb. OTA) — iki kaynaklı birleşim:
+        //  1) MODAL-MATRİS (birincil): her dönemin TAM matrisi (double/tek/3.kişi/
+        //     çocuk) modal tablosunun data-price attribute'larından, kesin.
+        //  2) double-only iterator (yedek): matris kapsamadığı tarihlere ana sayfa
+        //     fiyat kutusundan okunan başlangıç fiyatı.
+        // Böylece tüm tarihlere tek fiyat şablonlamak yerine her tarih KENDİ
+        // fiyatını alır (kullanıcı talebi: 3619/3890/3690 ayrı ayrı).
+        $covered = [];
+        foreach ($blocks as $block) {
+            foreach ($block['dates'] as $d) {
+                $covered[$d] = true;
+            }
+        }
+        $perDateAny = false;
+        $perDateCurrency = null;
+        foreach ($modalMatrix as $iso => $info) {
+            $perDateCurrency ??= $info['currency'];
+            if (isset($covered[$iso]) || isset($soldSet[$iso])) {
+                continue;
+            }
+            $blocks[] = ['dates' => [$iso], 'packages' => $info['packages']];
+            $covered[$iso] = true;
+            $result['departure_dates'][] = $iso;
+            $perDateAny = true;
+        }
         $perDate = $this->harvestPerDatePrices($this->lastHtml ?? '');
-        if ($perDate !== []) {
-            $covered = [];
-            foreach ($blocks as $block) {
-                foreach ($block['dates'] as $d) {
-                    $covered[$d] = true;
-                }
+        foreach ($perDate as $iso => $info) {
+            $perDateCurrency ??= $info['currency'];
+            if (isset($covered[$iso]) || isset($soldSet[$iso])) {
+                continue; // matris/mevcut blok kapsamış ya da satışta değil
             }
-            $perDateCurrency = null;
-            foreach ($perDate as $iso => $info) {
-                $perDateCurrency ??= $info['currency'];
-                if (isset($covered[$iso])) {
-                    continue; // bu tarihin zaten (modalden) tam matris bloğu var
-                }
-                $blocks[] = [
-                    'dates' => [$iso],
-                    'packages' => [[
-                        'hotel' => 'Kişi başı başlangıç fiyatı',
-                        'prices' => [
-                            'double_pp' => ['old' => null, 'new' => $info['price']],
-                            'single' => ['old' => null, 'new' => null],
-                            'extra_bed' => ['old' => null, 'new' => null],
-                            'child_0_2' => ['old' => null, 'new' => null],
-                            'child_3_5' => ['old' => null, 'new' => null],
-                            'child_7_11' => ['old' => null, 'new' => null],
-                        ],
-                    ]],
-                ];
-                $result['departure_dates'][] = $iso;
-            }
+            $blocks[] = [
+                'dates' => [$iso],
+                'packages' => [[
+                    'hotel' => 'Kişi başı başlangıç fiyatı',
+                    'prices' => [
+                        'double_pp' => ['old' => null, 'new' => $info['price']],
+                        'single' => ['old' => null, 'new' => null],
+                        'extra_bed' => ['old' => null, 'new' => null],
+                        'child_0_2' => ['old' => null, 'new' => null],
+                        'child_3_5' => ['old' => null, 'new' => null],
+                        'child_7_11' => ['old' => null, 'new' => null],
+                    ],
+                ]],
+            ];
+            $covered[$iso] = true;
+            $result['departure_dates'][] = $iso;
+            $perDateAny = true;
+        }
+        if ($perDateAny || $modalMatrix !== []) {
             $result['pricing_blocks'] = $blocks;
             if ($perDateCurrency !== null && ($result['currency'] ?? null) === null) {
                 $result['currency'] = $perDateCurrency;
             }
-            $warnings[] = 'Her kalkış tarihinin kendi başlangıç fiyatı ayrı çekildi; tarihe göre değişen otel/oda kırılımını kontrol edin.';
+            $warnings[] = $modalMatrix !== []
+                ? 'Her kalkış tarihinin kendi fiyat tablosu (oda/yaş kırılımıyla) ayrı çekildi — kontrol edip kaydedin.'
+                : 'Her kalkış tarihinin kendi başlangıç fiyatı ayrı çekildi; tarihe göre değişen otel/oda kırılımını kontrol edin.';
         }
 
         // Per-tarih fiyat picker'lı sayfada (etstur vb.) fiyatı DOĞRULANAMAYAN tarih
-        // kaldıysa AÇIKÇA uyar — perDate kısmen VEYA tamamen boş dönse bile (site
+        // kaldıysa AÇIKÇA uyar — kaynaklar kısmen VEYA tamamen boş dönse bile (site
         // yavaşken iterator hiç sonuç üretemeyebiliyor). Frontend bloksuz tarihi ilk
         // bloğun fiyatıyla şablonlar; fiyat tarihe göre değişiyorsa bu YANLIŞ fiyat
         // demektir, acenta sessizce yayınlamasın (canlı vaka: son tarih 3690 yerine
-        // 3619 görünmüştü).
+        // 3619 görünmüştü). Tükendi tarihler beklenmez — onlar bilerek dışarıda.
         if ($this->hasPerDatePicker($this->lastHtml ?? '')) {
-            $allCovered = [];
-            foreach ($blocks as $block) {
-                foreach ($block['dates'] as $d) {
-                    $allCovered[$d] = true;
-                }
-            }
             $unverified = array_values(array_filter(
                 $this->harvestJsonDates($this->lastHtml ?? ''),
-                fn (string $d): bool => ! isset($allCovered[$d])
+                fn (string $d): bool => ! isset($covered[$d]) && ! isset($soldSet[$d])
             ));
             if ($unverified !== []) {
                 $tr = array_map(fn (string $d): string => Carbon::parse($d)->locale('tr')->translatedFormat('j F Y'), $unverified);
@@ -397,6 +417,17 @@ class TourUrlImporter
                 $result['departure_dates'],
                 $isHotelPage ? [] : $this->harvestDates($text)
             );
+        }
+
+        // TÜKENDİ FİLTRESİ (son adım — tüm tarih kaynakları birleştikten sonra):
+        // satışı kapanmış kalkışlar listeden çıkarılır, acentaya açıkça bildirilir.
+        if ($soldOut !== []) {
+            $before = count($result['departure_dates']);
+            $result['departure_dates'] = array_values(array_diff($result['departure_dates'], $soldOut));
+            if (count($result['departure_dates']) < $before) {
+                $tr = array_map(fn (string $d): string => Carbon::parse($d)->locale('tr')->translatedFormat('j F Y'), $soldOut);
+                $warnings[] = 'Kaynak sitede satışı kapanmış (Tükendi) kalkışlar içe aktarılmadı: '.implode(', ', $tr).'.';
+            }
         }
 
         // Görselleri ham HTML'den sırayla yakala (og:image + JSON-LD + <img>).
@@ -1275,6 +1306,130 @@ class TourUrlImporter
         })();
         JS;
 
+        // MODAL-MATRİS (per-tarih akışının BİRİNCİL yolu) — API-TABANLI:
+        // Modal butonuna 1 kez basılır, sayfanın KENDİ attığı
+        // "/Tur/ajax/tour-products-installments-table" isteği yakalanır
+        // (packageCode/packageType/tourName parametreleri otomatik doğru olur),
+        // sonra HER DÖNEM için "card=<dönem>" ile replay edilip fragment
+        // DOMParser'la okunur. UI koreografisi YOK: dropdown sürme/bekleme/bayat
+        // okuma riski yok (etstur Vue durum makinesi kararsızdı; Cloudflare
+        // challenge'ı sayfa-içi same-origin fetch'i etkilemez). Hücre değerleri
+        // data-price/data-currency attribute'larından KESİN okunur. Sonuç
+        // ETSMATRIXJSON<<<[...]>>> işaretçisine ARTIMLI yazılır.
+        $modalMatrixScript = <<<'JS'
+        (function () {
+          (async function () {
+            function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+            function txt(e) { return e ? (e.innerText || e.textContent || '').replace(/\s+/g, ' ').trim() : ''; }
+            try {
+              // 0) Sayfanın KENDİ isteğini yakala (parametreler otomatik doğru)
+              var cap = null;
+              var oo = XMLHttpRequest.prototype.open, os = XMLHttpRequest.prototype.send;
+              XMLHttpRequest.prototype.open = function (m, u) { this.__u = u; return oo.apply(this, arguments); };
+              XMLHttpRequest.prototype.send = function (b) {
+                if (!cap && String(this.__u || '').indexOf('tour-products-installments-table') !== -1) {
+                  cap = { u: this.__u, b: (typeof b === 'string' ? b : '') };
+                }
+                return os.apply(this, arguments);
+              };
+              // 1) Modal butonuna bas → istek sayfa tarafından atılır
+              var btn = document.querySelector('button.hotel-info-button, button[class*="hotel-info" i]');
+              if (!btn) {
+                btn = [].slice.call(document.querySelectorAll('a,button,div,span')).filter(function (e) {
+                  var t2 = (e.innerText || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                  return (e.innerText || '').length < 45 && /otellere g.re fiyat|fiyat tablosu/.test(t2);
+                }).sort(function (a, b2) { return (a.innerText || '').length - (b2.innerText || '').length; })[0];
+              }
+              if (btn) btn.click();
+              // Yakalama beklenir; buton handler'ı geç bağlanmış olabilir (Vue
+              // hidrasyonu) → 4sn'de yakalanamazsa BİR KEZ daha tıkla.
+              var t = 0;
+              while (t < 4000 && !cap) { await sleep(300); t += 300; }
+              if (!cap && btn) { try { btn.click(); } catch (_) {} }
+              while (t < 8000 && !cap) { await sleep(300); t += 300; }
+              // SON ÇARE: istek hiç atılmadıysa kendimiz kur — packageCode URL'nin
+              // sonundaki koddur; API tourName'e duyarsız, packageType=HotelBased
+              // her iki tur tipinde de (Bali/Lapland) doğrulandı.
+              if (!cap) {
+                var pkg = (location.pathname.match(/-([A-Z0-9]{8,})\/?$/) || [])[1] || '';
+                if (!pkg) return;
+                cap = { u: '/Tur/ajax/tour-products-installments-table',
+                        b: 'packageCode=' + pkg + '&card=&installment=&packageType=HotelBased&tourName=x&onlineSale=false' };
+              }
+              // 2) Fragment ayrıştırıcı: tablo + dönem option listesi
+              function parseTable(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var hdr = [].slice.call(doc.querySelectorAll('table thead th')).map(function (x) { return txt(x); });
+                var rows = [];
+                var trs = doc.querySelectorAll('table tbody tr');
+                for (var r2 = 0; r2 < trs.length && r2 < 6; r2++) {
+                  var tds = trs[r2].querySelectorAll('td');
+                  if (tds.length < 2) continue;
+                  var row = { h: txt(tds[0]), p: [] };
+                  for (var c2 = 1; c2 < tds.length && c2 <= 8; c2++) {
+                    var span = tds[c2].querySelector('.currencyChangeArea');
+                    row.p.push(span ? { v: span.getAttribute('data-price'), c: span.getAttribute('data-currency') } : null);
+                  }
+                  rows.push(row);
+                }
+                var opts = [].slice.call(doc.querySelectorAll('select option')).map(function (o) { return (o.getAttribute('value') || '').trim(); }).filter(Boolean);
+                return { hdr: hdr, rows: rows, opts: opts };
+              }
+              async function fetchRange(card) {
+                var body = cap.b.indexOf('card=') !== -1
+                  ? cap.b.replace(/card=[^&]*/, 'card=' + encodeURIComponent(card))
+                  : cap.b + '&card=' + encodeURIComponent(card);
+                var resp = await fetch(cap.u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: body, credentials: 'same-origin' });
+                return parseTable(await resp.text());
+              }
+              // 3) İlk fragment (varsayılan dönem) + tüm dönemler
+              var results = [];
+              var d = document.createElement('div');
+              d.setAttribute('data-ets-matrix', '1');
+              document.body.appendChild(d);
+              function flush() { if (results.length) d.innerText = 'ETSMATRIXJSON<<<' + JSON.stringify(results) + '>>>'; }
+              var first = await fetchRange('');
+              var firstHdr = first.hdr.length ? first.hdr[0] : '';
+              if (first.rows.length && firstHdr) { results.push({ r: firstHdr, t: { hdr: first.hdr, rows: first.rows } }); flush(); }
+              var norm = function (s) { return (s || '').replace(/\b0(\d)/g, '$1').trim(); };
+              for (var i2 = 0; i2 < first.opts.length && i2 < 20; i2++) {
+                var range = first.opts[i2];
+                var fd = (range.split(' - ')[0] || range).trim();
+                /*__SKIPCHECK__*/
+                // ilk (varsayılan) dönem zaten okundu ("04" vs "4" normalize edilir)
+                if (firstHdr && norm(firstHdr).indexOf(norm(fd)) === 0) continue;
+                var snap = await fetchRange(range);
+                if (snap.rows.length && snap.hdr.length) { results.push({ r: snap.hdr[0], t: { hdr: snap.hdr, rows: snap.rows } }); flush(); }
+              }
+            } catch (e) {}
+          })();
+        })();
+        JS;
+
+        // Skip-list enjeksiyonu: TÜKENMİŞ (sold) dönemler + telafi çağrısında zaten
+        // kapsanmış tarihler iterasyonda ATLANIR — modal listesi satılmış dönemleri
+        // de içerdiğinden (Bali: 14 dönemin 5'i) tavana takılıp kuyruktaki satıştaki
+        // dönem (27 Ekim) hiç okunamıyordu.
+        $injectSkip = function (array $skipIso) use ($modalMatrixScript): string {
+            $js = <<<'JS'
+            var SKIP = __SKIP__;
+            var MONX = {ocak:'01',şubat:'02',subat:'02',mart:'03',nisan:'04',mayıs:'05',mayis:'05',haziran:'06',temmuz:'07',ağustos:'08',agustos:'08',eylül:'09',eylul:'09',ekim:'10',kasım:'11',kasim:'11',aralık:'12',aralik:'12'};
+            function skipIso(s) {
+              var m = (s || '').match(/^(\d{1,2})\s+(\S+)\s+(20\d\d)/);
+              if (!m) return false;
+              var mm = MONX[m[2].toLowerCase()] || '';
+              return mm !== '' && SKIP.indexOf(m[3] + '-' + mm + '-' + ('0' + m[1]).slice(-2)) !== -1;
+            }
+JS;
+            $js = str_replace('__SKIP__', json_encode(array_values($skipIso)), $js);
+
+            // skipIso yardımcılarını script başına, atlatma kontrolünü döngüdeki
+            // /*__SKIPCHECK__*/ işaretine enjekte et (fd = dönemin ilk tarihi).
+            $script = str_replace('function txt(e)', $js."\n            function txt(e)", $modalMatrixScript);
+
+            return str_replace('/*__SKIPCHECK__*/', 'if (skipIso(fd)) continue;', $script);
+        };
+
         $base = [
             'url' => $url,
             // rawHtml de iste: görselleri (render edilmiş galeri dahil) ayrı istek
@@ -1289,6 +1444,10 @@ class TourUrlImporter
             // aşınca 408 dönüyor ve HİÇBİR veri gelmiyordu (canlı vaka: 2. tarih bile
             // kayboldu). Limiti aksiyon bütçemize göre yükselt.
             'timeout' => 55000,
+            // Firecrawl cache'inden ESKİ snapshot dönerse JS aksiyonları koşmaz →
+            // işaretçiler sessizce kaybolur (aynı kodun bir koşuda tam, sonrakinde
+            // boş dönmesinin nedeni). Daima taze render iste.
+            'maxAge' => 0,
         ];
 
         // Düz çekimdeki HTML etstur-benzeri per-tarih fiyat picker'ı içeriyor mu?
@@ -1307,17 +1466,17 @@ class TourUrlImporter
             ['type' => 'wait', 'milliseconds' => 4000],                         // modal + seçenekler dolsun
             ['type' => 'executeJavascript', 'script' => $revealScript],         // tarihleri topla
         ];
-        // 2b BİRLEŞİK: aynı render oturumunda önce per-tarih iterator, sonra modal.
-        // (blockAds sayesinde ~28sn'de sığar; ölçüldü.) Her tarih KENDİ fiyatını,
-        // son seçili tarih de modal matrisini verir.
+        // BİRLEŞİK (per-tarih sayfalar): BİRİNCİL yol modal-matris iterasyonu —
+        // her dönemin TAM matrisi (double/tek/3.kişi/çocuk) data-price'tan kesin
+        // okunur. TÜKENMİŞ dönemler statik JSON'dan bilinir ve iterasyonda atlanır
+        // (zaman + tavan tasarrufu). Modal başarısızsa PHP telafi zinciri (aşağıda).
+        $soldStatic = $this->harvestSoldOutDates($this->lastHtml ?? '');
         $combinedActions = [
             ['type' => 'wait', 'milliseconds' => 500],
             ['type' => 'scroll', 'direction' => 'down'],
             ['type' => 'wait', 'milliseconds' => 300],
-            ['type' => 'executeJavascript', 'script' => $perDateScript],
-            ['type' => 'wait', 'milliseconds' => 17000],   // picker retry + tarih döngüsü tamamlansın
-            ['type' => 'executeJavascript', 'script' => $priceModalScript],
-            ['type' => 'wait', 'milliseconds' => 2500],
+            ['type' => 'executeJavascript', 'script' => $injectSkip($soldStatic)],
+            ['type' => 'wait', 'milliseconds' => 15000],   // modal + API replay döngüsü (~11 dönem × ~400ms)
         ];
         $simpleActions = [
             ['type' => 'wait', 'milliseconds' => 2000],
@@ -1330,8 +1489,20 @@ class TourUrlImporter
         // klasik modal + sade fallback.
         $attempts = $perDate ? [$combinedActions, $modalActions] : [$modalActions, $simpleActions];
 
-        // Güvenlik: birleşik render marker üretemezse (nadir timeout) kullanılan
-        // hafif, per-tarih-only aksiyon.
+        // TELAFİ ZİNCİRİ (kapsam eksikse ayrı hafif çağrılar):
+        //  1. kademe: modal-matris yeniden — TAZE oturumda, ZATEN KAPSANAN + tükenen
+        //     dönemler atlanarak (kuyruktaki eksik dönemlere hızla ulaşır)
+        //  2. kademe: eski per-tarih double-only iterator (modal hiç çalışmazsa —
+        //     bugünkü davranış; asla bugünden kötü olmaz)
+        $leanMatrixActions = function (array $skipIso) use ($injectSkip): array {
+            return [
+                ['type' => 'wait', 'milliseconds' => 800],
+                ['type' => 'scroll', 'direction' => 'down'],
+                ['type' => 'wait', 'milliseconds' => 400],
+                ['type' => 'executeJavascript', 'script' => $injectSkip($skipIso)],
+                ['type' => 'wait', 'milliseconds' => 15000],
+            ];
+        };
         $leanPerDateActions = [
             ['type' => 'wait', 'milliseconds' => 800],
             ['type' => 'scroll', 'direction' => 'down'],
@@ -1343,8 +1514,11 @@ class TourUrlImporter
         $started = microtime(true);
         foreach ($attempts as $actions) {
             // Zaman bütçesi: ilk deneme uzun sürdüyse ikinciye girme — toplam istek
-            // süresi sunucu proxy zaman aşımını (504) tetiklemesin.
-            if (microtime(true) - $started > 45) {
+            // süresi sunucu proxy zaman aşımını tetiklemesin. Eşik, Firecrawl'ın
+            // kendi 55sn limiti bir kez dolsa bile (CF challenge'lı yavaş açılış →
+            // 408) yedek denemenin KOŞABİLECEĞİ kadar geniş — eskiden 45'ti ve tek
+            // 408 tüm zinciri iptal edip importu boş bırakıyordu (Lapland vakası).
+            if (microtime(true) - $started > 58) {
                 Log::info('[TourImport] firecrawl zaman bütçesi doldu, fallback');
                 break;
             }
@@ -1361,16 +1535,37 @@ class TourUrlImporter
                             $this->lastHtml = substr($rawHtml, 0, 2000000);
                         }
 
-                        // GÜVENLİK: per-tarih beklendi ama birleşik render marker'ı hiç
-                        // üretemedi VEYA bazı tarihleri kaçırdı (yavaş API'de seçim
-                        // oturmayabiliyor) → ayrı hafif çağrıyla tamamla. Kaçan tarih
+                        // GÜVENLİK: per-tarih beklendi ama kapsam eksik (yavaş API'de
+                        // modal/dropdown oturmayabiliyor) → telafi zinciri. Kaçan tarih
                         // frontend'de İLK bloğun fiyatıyla şablonlanırdı (YANLIŞ fiyat,
                         // kullanıcı vakası: son tarih 3690 yerine 3619 görünmüştü).
+                        // SATILAN (sold:false) tarihler esas alınır — Tükendi zaten atlanır.
                         if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 70) {
-                            $expected = min(preg_match_all('/"departureDate"\s*:/', $rawHtml), 8);
-                            $got = count($this->harvestPerDatePrices($this->lastHtml ?? ''));
-                            if ($got < $expected) {
-                                Log::info('[TourImport] per-tarih kapsam eksik, telafi çağrısı', ['got' => $got, 'expected' => $expected]);
+                            $expected = min(max(
+                                preg_match_all('/"sold"\s*:\s*false/', $rawHtml),
+                                preg_match_all('/"departureDate"\s*:/', $rawHtml) > 0 && ! str_contains($rawHtml, '"sold"')
+                                    ? preg_match_all('/"departureDate"\s*:/', $rawHtml) : 0
+                            ), 12);
+                            $covered = fn (): int => count($this->harvestModalMatrix($this->lastHtml ?? ''))
+                                + count(array_diff_key(
+                                    $this->harvestPerDatePrices($this->lastHtml ?? ''),
+                                    $this->harvestModalMatrix($this->lastHtml ?? '')
+                                ));
+                            if ($covered() < $expected) {
+                                Log::info('[TourImport] per-tarih kapsam eksik, telafi: modal-matris', ['got' => $covered(), 'expected' => $expected]);
+                                // Zaten kapsanan + tükenen dönemler atlanır → kuyruktaki
+                                // eksikler hızla okunur (aynı dönemleri yeniden gezme).
+                                $skip = array_merge(
+                                    array_keys($this->harvestModalMatrix($this->lastHtml ?? '')),
+                                    $this->harvestSoldOutDates($rawHtml)
+                                );
+                                $this->appendPerDatePrices($endpoint, $key, $base, $leanMatrixActions($skip));
+                            }
+                            // 2. kademe YALNIZ tam başarısızlıkta (hiç veri yoksa) —
+                            // kısmi eksikte üçüncü çağrı süreyi şişirir (169sn vakası);
+                            // kalan tarihleri "doğrulanamadı" uyarısı zaten açıkça bildirir.
+                            if ($covered() === 0) {
+                                Log::info('[TourImport] per-tarih hiç veri yok, telafi: double-only iterator');
                                 $this->appendPerDatePrices($endpoint, $key, $base, $leanPerDateActions);
                             }
                         }
@@ -1422,8 +1617,10 @@ class TourUrlImporter
             }
             $raw = (string) $resp->json('data.rawHtml');
             $md = (string) $resp->json('data.markdown');
-            if (preg_match('/ETSDATEPRICES<<<.*?>>>/s', $raw.' '.$md, $m)) {
-                $this->lastHtml = ($this->lastHtml ?? '')."\n".$m[0];
+            // Hem tam-matris (ETSMATRIXJSON) hem double-only (ETSDATEPRICES)
+            // işaretçileri yakalanır — harvest tarafı birleştirir.
+            if (preg_match_all('/(?:ETSMATRIXJSON|ETSDATEPRICES)(?:<<<|&lt;&lt;&lt;).*?(?:>>>|&gt;&gt;&gt;)/s', $raw.' '.$md, $mm)) {
+                $this->lastHtml = ($this->lastHtml ?? '')."\n".implode("\n", $mm[0]);
             }
         } catch (\Throwable $e) {
             Log::info('[TourImport] per-tarih fiyat çağrısı atlandı', ['message' => $e->getMessage()]);
@@ -2837,13 +3034,15 @@ class TourUrlImporter
      */
     private function roomTypesFromLabel(string $fold): array
     {
-        if (str_contains($fold, 'iki kisilik oda')) {
+        // "double odada kişi başı" = etstur kolon adı (iki kişilik oda eşdeğeri)
+        if (str_contains($fold, 'iki kisilik oda') || str_contains($fold, 'double odada') || str_contains($fold, 'cift kisilik oda')) {
             return ['double_pp'];
         }
         if (str_contains($fold, 'tek kisilik oda')) {
             return ['single'];
         }
-        if (str_contains($fold, 'ilave yatak') || str_contains($fold, 'ekstra yatak') || str_contains($fold, '3. kisi')) {
+        if (str_contains($fold, 'ilave yatak') || str_contains($fold, 'ekstra yatak')
+            || str_contains($fold, '3. kisi') || str_contains($fold, 'ucuncu kisi')) {
             return ['extra_bed'];
         }
         if (str_contains($fold, 'yas')) {
@@ -3244,6 +3443,111 @@ class TourUrlImporter
         }
 
         return $out;
+    }
+
+    /**
+     * Modal-matris işaretçisini ("ETSMATRIXJSON<<<[...]>>>", modalMatrixScript üretir)
+     * ayrıştırır: her dönem için TAM oda matrisi (double/tek/3.kişi/çocuk yaş bantları),
+     * değerler tablo hücrelerinin data-price attribute'undan gelir — metin ayrıştırması
+     * yok, kesindir. Kolon başlıkları roomTypesFromLabel ile kovalara eşlenir
+     * ("Double Odada Kişi Başı"→double_pp, "2 - 11 Yaş"→child_3_5+child_7_11).
+     *
+     * @return array<string, array{packages: array<int, array{hotel: string, prices: array<string, array{old: ?float, new: ?float}>}>, currency: ?string}>
+     */
+    private function harvestModalMatrix(string $rawHtml): array
+    {
+        if ($rawHtml === '' || ! preg_match_all('/ETSMATRIXJSON(?:<<<|&lt;&lt;&lt;)(.*?)(?:>>>|&gt;&gt;&gt;)/s', $rawHtml, $mm)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($mm[1] as $chunk) {
+            $payload = html_entity_decode($chunk, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $data = json_decode($payload, true);
+            if (! is_array($data)) {
+                // Markdown kaçışları JSON'u bozmuş olabilir — ters bölüleri temizleyip dene
+                $data = json_decode(stripslashes($payload), true);
+            }
+            if (! is_array($data)) {
+                continue;
+            }
+            foreach ($data as $entry) {
+                $range = (string) ($entry['r'] ?? '');
+                $iso = $this->parseFutureDate(trim((string) (explode(' - ', $range)[0] ?? '')));
+                if ($iso === null) {
+                    continue;
+                }
+                $hdr = array_values((array) ($entry['t']['hdr'] ?? []));
+                $rows = (array) ($entry['t']['rows'] ?? []);
+                $packages = [];
+                $currency = null;
+                foreach ($rows as $row) {
+                    $hotel = trim((string) ($row['h'] ?? ''));
+                    $cells = array_values((array) ($row['p'] ?? []));
+                    $prices = [];
+                    foreach ($cells as $ci => $cell) {
+                        // hdr[0] dönem başlığıdır; fiyat kolonları hdr[1..] ↔ p[0..]
+                        $label = (string) ($hdr[$ci + 1] ?? '');
+                        $types = $this->roomTypesFromLabel($this->foldTr($label));
+                        $val = is_array($cell) ? $this->priceFloat($cell['v'] ?? null) : null;
+                        if ($types === [] || $val === null || $val < 1) {
+                            continue;
+                        }
+                        $cur = is_array($cell) ? $this->currencyFromLine(' '.(string) ($cell['c'] ?? '')) : null;
+                        $currency ??= $cur;
+                        foreach ($types as $type) {
+                            $prices[$type] = ['old' => null, 'new' => $val];
+                        }
+                    }
+                    if ($prices !== []) {
+                        $packages[] = ['hotel' => $hotel !== '' ? mb_substr($hotel, 0, 255) : 'Standart Paket', 'prices' => $prices];
+                    }
+                }
+                if ($packages !== []) {
+                    $out[$iso] = ['packages' => $packages, 'currency' => $currency];
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Sayfanın gömülü kalkış JSON'undan ("sold":true/false, "remaining":N — etstur
+     * tourPeriods) SATIŞI KAPANMIŞ (Tükendi) kalkış tarihlerini çıkarır. Bu tarihler
+     * içe aktarılmaz: satılamaz stok forma taşınmasın (kullanıcı talebi, Bali vakası:
+     * 14 kalkışın 5'i Tükendi idi).
+     *
+     * @return array<int, string> ISO tarihler
+     */
+    private function harvestSoldOutDates(string $rawHtml): array
+    {
+        if ($rawHtml === '' || ! str_contains($rawHtml, '"sold"')) {
+            return [];
+        }
+
+        $sold = [];
+        if (preg_match_all(
+            '/"departureDate"\s*:\s*\{\s*"year"\s*:\s*(20\d{2})\s*,\s*"month"\s*:\s*(\d{1,2})\s*,\s*"day"\s*:\s*(\d{1,2})/',
+            $rawHtml,
+            $matches,
+            PREG_OFFSET_CAPTURE | PREG_SET_ORDER
+        )) {
+            foreach ($matches as $i => $m) {
+                // Bu kalkış objesinin "sold" alanı: bu departureDate ile SONRAKİ
+                // departureDate arasındaki bölgede aranır (obje sınırı yaklaşık ama
+                // "sold" her objede tek geçer).
+                $start = (int) $m[0][1];
+                $end = isset($matches[$i + 1]) ? (int) $matches[$i + 1][0][1] : min(strlen($rawHtml), $start + 6000);
+                $segment = substr($rawHtml, $start, $end - $start);
+                if (preg_match('/"sold"\s*:\s*true/', $segment)) {
+                    $iso = sprintf('%04d-%02d-%02d', (int) $m[1][0], (int) $m[2][0], (int) $m[3][0]);
+                    $sold[] = $iso;
+                }
+            }
+        }
+
+        return array_values(array_unique($sold));
     }
 
     /**
