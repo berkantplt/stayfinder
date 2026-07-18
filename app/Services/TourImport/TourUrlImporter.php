@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 15;
+    private const CACHE_VERSION = 16;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -405,18 +405,48 @@ class TourUrlImporter
         // "departureDate":{"year":Y,"month":M,"day":D} objesi ham HTML'de nettir.
         $jsonDates = $isHotelPage ? [] : $this->harvestJsonDates($this->lastHtml ?? '');
 
+        $harvested = ($isHotelPage || $jsonDates !== []) ? [] : $this->harvestDates($text);
+
+        // KANIT KÜMESİ: gömülü JSON takvim ∪ metin taraması ∪ fiyat bloğu tarihleri.
+        // LLM'in döndürdüğü bir tarih ANCAK bu kümede varsa kalır (prontotour +
+        // etstur Japonya vakaları): kanıtsız LLM tarihi ya uydurmadır (prompt'ta
+        // bugünün tarihi var — render düşünce "18 Temmuz [=o gün] + 29 Ağustos"
+        // üretti) ya da DÖNÜŞ tarihidir (Japonya: 2 gerçek kalkışa LLM 04 Nisan
+        // [program uçuş gecesi] + 12 Nisan [dönüş] ekledi). Kural: doğrulanamayan
+        // tarih HİÇBİR durumda listeye giremez.
+        $evidence = [];
+        foreach (($result['pricing_blocks'] ?? []) as $b) {
+            foreach (($b['dates'] ?? []) as $d) {
+                $evidence[$d] = true;
+            }
+        }
+        foreach ($jsonDates as $d) {
+            $evidence[$d] = true;
+        }
+        foreach ($harvested as $d) {
+            $evidence[$d] = true;
+        }
+
+        $llmDates = (array) ($result['departure_dates'] ?? []);
+        $unproven = array_values(array_filter($llmDates, fn (string $d): bool => ! isset($evidence[$d])));
+        if ($unproven !== []) {
+            Log::info('[TourImport] kanıtsız LLM tarihleri elendi', ['dropped' => $unproven]);
+            $result['departure_dates'] = array_values(array_filter($llmDates, fn (string $d): bool => isset($evidence[$d])));
+        }
+
         if ($jsonDates !== []) {
-            // Güvenilir JSON KALKIŞ takvimi var → gürültülü metin taramasını ATLA.
-            // (Modal fiyat tablosunun "GG Ay - GG Ay" aralıklarındaki DÖNÜŞ tarihleri
-            // regex taramasına sızıp sahte kalkış tarihi üretiyordu.) Yalnız LLM +
-            // JSON + blok tarihleri kullanılır.
+            // Güvenilir JSON KALKIŞ takvimi var → gürültülü metin taraması zaten
+            // atlandı; takvimi birleştir.
             $result['departure_dates'] = $this->mergeDates($result['departure_dates'], $jsonDates);
         } else {
             // Klasik (SPA olmayan) sayfa: metindeki tüm tarihleri regex ile topla.
-            $result['departure_dates'] = $this->mergeDates(
-                $result['departure_dates'],
-                $isHotelPage ? [] : $this->harvestDates($text)
-            );
+            $result['departure_dates'] = $this->mergeDates($result['departure_dates'], $harvested);
+        }
+
+        // Sayfada HİÇ kanıt yokken LLM tarih üretmişse (prontotour: render düşmüş,
+        // tarihsiz metin) alan boş kalır ve AÇIKÇA bildirilir.
+        if ($evidence === [] && $unproven !== []) {
+            $warnings[] = 'Sayfada doğrulanabilir kalkış tarihi bulunamadı; tarih alanı boş bırakıldı (uydurma tarih yazılmaz) — tarihleri elle girin veya sayfa tam yüklenemediyse birkaç dakika sonra yeniden içe aktarın.';
         }
 
         // TÜKENDİ FİLTRESİ (son adım — tüm tarih kaynakları birleştikten sonra):
@@ -3344,8 +3374,11 @@ JS;
         // "17-07-2026 - 19-07-2026" (Keyftur) gibi çiftlerde İKİNCİ tarih DÖNÜŞtür,
         // kalkış değildir. Dönüş tarihlerinin konumlarını topla ki sayılmasın
         // (yoksa tarih sayısı 2 katına çıkıyordu — Ayder 18=9×2, Keyftur 48=24×2).
+        // Ayraç SATIR SONU AŞAMAZ: gerçek aralıklar hep tek satırdadır; markdown
+        // liste maddeleri ("- 25 Eylül 2030\n- 17 Ekim 2030") aralık DEĞİLDİR —
+        // satır başındaki tire ayraç sanılınca liste tarihleri dönüş diye eleniyordu.
         $atom = '(?:\d{1,2}\s+(?:'.$months.')\s+20\d{2}|\d{1,2}[.\-/]\d{1,2}[.\-/]20\d{2})';
-        $sep = '(?:\s*/\s*|\s+-\s+|\s*[–—]\s*|\s*→\s*|\s*\.{2,3}\s*|\s+ile\s+)';
+        $sep = '(?:[ \t]*/[ \t]*|[ \t]+-[ \t]+|[ \t]*[–—][ \t]*|[ \t]*→[ \t]*|[ \t]*\.{2,3}[ \t]*|[ \t]+ile[ \t]+)';
         $returnOffsets = [];
         if (preg_match_all('#'.$atom.$sep.'('.$atom.')#u', $content, $rm, PREG_OFFSET_CAPTURE)) {
             foreach ($rm[1] as [, $off]) {

@@ -51,7 +51,9 @@ class TourUrlImportTest extends TestCase
 
     public function test_successful_import_returns_normalized_fields(): void
     {
-        Http::fake(['*' => Http::response('<html><body><h1>Tur</h1><p>Harika bir gezi</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
+        // Sayfada tarih KANITI var (01.09.2030) — kanıtsız LLM tarihi artık
+        // yazılmadığından (prontotour hayalet-tarih guard'ı) fixture'da bulunmalı.
+        Http::fake(['*' => Http::response('<html><body><h1>Tur</h1><p>Harika bir gezi. Kalkış: 01.09.2030</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
 
         $this->fakeOpenAi([
             'title' => 'Latin Amerika Turu',
@@ -175,7 +177,8 @@ class TourUrlImportTest extends TestCase
 
     public function test_turkish_month_dates_are_parsed_to_iso(): void
     {
-        Http::fake(['*' => Http::response('<html><body>İçerik metni burada.</body></html>', 200, ['Content-Type' => 'text/html'])]);
+        // Sayfada tarih kanıtı var (hayalet-tarih guard'ı kanıtsız LLM tarihini eler)
+        Http::fake(['*' => Http::response('<html><body>İçerik metni burada. Kalkış tarihleri: 17 Ekim 2030 ve 7 Kasım 2030.</body></html>', 200, ['Content-Type' => 'text/html'])]);
 
         // Model ISO yerine Türkçe tarih döndürürse de doğru parse edilmeli
         $this->fakeOpenAi([
