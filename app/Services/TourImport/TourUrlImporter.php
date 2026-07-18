@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 16;
+    private const CACHE_VERSION = 17;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -1571,11 +1571,10 @@ JS;
                         // kullanıcı vakası: son tarih 3690 yerine 3619 görünmüştü).
                         // SATILAN (sold:false) tarihler esas alınır — Tükendi zaten atlanır.
                         if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 70) {
-                            $expected = min(max(
-                                preg_match_all('/"sold"\s*:\s*false/', $rawHtml),
-                                preg_match_all('/"departureDate"\s*:/', $rawHtml) > 0 && ! str_contains($rawHtml, '"sold"')
-                                    ? preg_match_all('/"departureDate"\s*:/', $rawHtml) : 0
-                            ), 12);
+                            // Beklenen = toplam kalkış - Tükendi (sold:true VEYA remaining:0);
+                            // sold alanı olmayan sayfalarda Tükendi 0 döner → beklenen = toplam.
+                            $totalPeriods = preg_match_all('/"departureDate"\s*:/', $rawHtml);
+                            $expected = min(max($totalPeriods - count($this->harvestSoldOutDates($rawHtml)), 0), 12);
                             $covered = fn (): int => count($this->harvestModalMatrix($this->lastHtml ?? ''))
                                 + count(array_diff_key(
                                     $this->harvestPerDatePrices($this->lastHtml ?? ''),
@@ -3560,7 +3559,7 @@ JS;
      */
     private function harvestSoldOutDates(string $rawHtml): array
     {
-        if ($rawHtml === '' || ! str_contains($rawHtml, '"sold"')) {
+        if ($rawHtml === '' || (! str_contains($rawHtml, '"sold"') && ! str_contains($rawHtml, '"remaining"'))) {
             return [];
         }
 
@@ -3578,7 +3577,12 @@ JS;
                 $start = (int) $m[0][1];
                 $end = isset($matches[$i + 1]) ? (int) $matches[$i + 1][0][1] : min(strlen($rawHtml), $start + 6000);
                 $segment = substr($rawHtml, $start, $end - $start);
-                if (preg_match('/"sold"\s*:\s*true/', $segment)) {
+                // Etstur verisi tutarsız olabiliyor (Balkanlar vakası): ekrandaki
+                // "Tükendi" rozeti remaining=0'a bakar, "sold" bayrağı gecikmeli
+                // güncellenir (25 Temmuz sold=false + remaining=0 gelip elekten
+                // geçmişti). Ekran mantığıyla hizala: sold:true VEYA remaining:0.
+                if (preg_match('/"sold"\s*:\s*true/', $segment)
+                    || preg_match('/"remaining"\s*:\s*0(?![.\d])/', $segment)) {
                     $iso = sprintf('%04d-%02d-%02d', (int) $m[1][0], (int) $m[2][0], (int) $m[3][0]);
                     $sold[] = $iso;
                 }

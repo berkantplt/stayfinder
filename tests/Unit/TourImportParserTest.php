@@ -354,6 +354,13 @@ class TourImportParserTest extends TestCase
         $this->assertSame(['2026-07-21', '2026-07-28'], $sold);
         $this->assertNotContains('2026-08-25', $sold, 'satıştaki tarih Tükendi sayılmamalı');
 
+        // Balkanlar vakası: etstur verisi tutarsız — sold=false ama remaining=0
+        // (ekrandaki Tükendi rozeti remaining'e bakar). remaining=0 da elenmeli.
+        $lag = '{"departCode":"1","departureDate":{"year":2026,"month":7,"day":25},"x":1,"sold":false,"remaining":0},'
+             . '{"departCode":"2","departureDate":{"year":2026,"month":8,"day":1},"x":1,"sold":false,"remaining":20}';
+        $lagSold = $this->invoke('harvestSoldOutDates', [$lag]);
+        $this->assertSame(['2026-07-25'], $lagSold, 'remaining=0 Tükendi sayılmalı, remaining=20 sayılmamalı');
+
         // "sold" alanı olmayan sayfalarda (etstur-dışı) boş döner
         $this->assertSame([], $this->invoke('harvestSoldOutDates', ['"departureDate":{"year":2026,"month":8,"day":25}']));
     }
