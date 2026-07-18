@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 19;
+    private const CACHE_VERSION = 20;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -603,6 +603,25 @@ class TourUrlImporter
                 $add($u);
             }
         }
+        // 2.5) HERHANGİ etiketteki mutlak data-src/lazy adayları: bazı motorlar
+        // (viya.plus/kplus — etstur "Fotoğraflar ve Videolar" galerisi) görselleri
+        // <div class="lazy" data-src="https://cdn.kplus.com.tr/?url=BASE64"> olarak
+        // gömer — uzantı base64'ün İÇİNDE olduğundan uzantı regex'i, etiket filtresi
+        // yüzünden de img/source taraması ıskalıyordu (Fas: 8 galeri fotoğrafı görünmezdi).
+        if (preg_match_all('#(?:data-src|data-original|data-lazy-src)=["\'](https?://[^"\']+)["\']#i', $html, $mm)) {
+            foreach ($mm[1] as $u) {
+                $add($u);
+            }
+        }
+        // 2.6) Inline style background-image URL'leri (uzantısız proxy dahil):
+        // lazyload kütüphaneleri data-src'ı tüketip görseli style'a taşır
+        // (etstur render'ında kplus galerisi + hero yalnız burada görünür).
+        // Uzantılı olanları pass-1 zaten yakalar; bu geçiş uzantısızları da alır.
+        if (preg_match_all('#background-image:\s*url\(\s*(?:&quot;|["\'])?((?:https?:)?//.+?)(?:&quot;|["\']|\))#i', $html, $mm)) {
+            foreach ($mm[1] as $u) {
+                $add($u);
+            }
+        }
         // 3) <img>/<source> etiketleri: srcset varyantları, uzantısız CDN görselleri
         //    (Cloudinary/imgix tarzı) ve belge-göreli src'ler yalnızca etiket bağlamında
         //    toplanır ki script/JSON içindeki alakasız string'ler karışmasın.
@@ -643,6 +662,12 @@ class TourUrlImporter
 
         $hintScore = function (string $u): int {
             $low = strtolower($u);
+            if (($dec = $this->decodeProxyImageUrl($u)) !== null) {
+                $low .= ' '.strtolower($dec); // gizli yol da ipucu taramasına girsin
+            }
+            if (str_contains($low, 'albummedia')) {
+                return 50; // viya/kplus galeri klasörü — kesin tur albümü
+            }
             // GÜÇLÜ tur-galeri sinyali: bu klasörler AYNI-HOST UI görselinden daha
             // güvenilir tur fotoğrafı işaretidir (etstur "tourMedia" CDN'i gibi) —
             // farklı alt-domainde olsa bile öne çıksın.
@@ -665,6 +690,9 @@ class TourUrlImporter
         // gerçek galeriyi (farklı CDN'de bile) bastırmasın (etstur resources_t vakası).
         $uiPenalty = function (string $u): int {
             $low = strtolower($u);
+            if (($dec = $this->decodeProxyImageUrl($u)) !== null) {
+                $low .= ' '.strtolower($dec);
+            }
             foreach (['resources_t', '/assets/', '/static/', '/img/user', '/img/icon', '/icon/', 'login',
                 'payment', 'reservation-document', 'call-you', 'uyelere-ozel', 'facebook',
                 'logo', 'sprite', 'placeholder', 'avatar', 'favicon', '/ui/', '/common/'] as $bad) {
@@ -938,6 +966,23 @@ class TourUrlImporter
      * Görsel uzantısı olmayan dinamik URL'lerde (getimage.php?img=101) query
      * kimliğin parçasıdır, anahtara dahil edilir.
      */
+    /**
+     * Base64 görsel-proxy URL'ini çözer (cdn.kplus.com.tr/?url=BASE64 — viya.plus
+     * motoru). Çözülmüş yol görsel uzantısıyla bitiyorsa onu döner; değilse null.
+     */
+    private function decodeProxyImageUrl(string $url): ?string
+    {
+        if (! preg_match('#[?&]url=([A-Za-z0-9+/%]+={0,2})(?:&|$)#', $url, $m)) {
+            return null;
+        }
+        $decoded = base64_decode(urldecode($m[1]), true);
+        if ($decoded === false || ! preg_match('/\.(jpe?g|png|webp|gif|avif)$/i', $decoded)) {
+            return null;
+        }
+
+        return $decoded;
+    }
+
     private function imageVariantKey(string $url): string
     {
         $p = parse_url($url);
@@ -1017,14 +1062,21 @@ class TourUrlImporter
             return false;
         }
 
-        // Logo/ikon/sosyal/pixel/reklam/tema iskeleti ele
-        foreach (['logo', 'icon', 'favicon', 'sprite', 'placeholder', 'blank', 'avatar',
-            'flag', 'pixel', '1x1', 'spacer', 'loading', 'whatsapp', 'facebook',
+        // Logo/ikon/sosyal/pixel/reklam/tema iskeleti ele.
+        // Belirsiz KISA kelimeler kelime-sınırlıdır: düz str_contains 'blank'
+        // kelimesini "KazaBLANKa" şehir adının içinde yakalayıp GERÇEK tur
+        // fotoğraflarını kapıda reddediyordu (etstur Fas vakası: 3 Kazablanka
+        // görseli elendi, import 0 fotoğrafla döndü). Aynı risk logo→"teknologo",
+        // icon→"rubicon", flag→"flagship" için de geçerli.
+        foreach (['favicon', 'sprite', 'placeholder', 'spacer', 'whatsapp', 'facebook',
             'instagram', 'twitter', 'youtube', '/ads/', 'advert', 'banner-',
-            'default-', 'dummy', 'sample-', '/theme/', '/themes/', 'lazyload'] as $bad) {
+            'default-', 'dummy', 'sample-', '/theme/', '/themes/', 'lazyload', '1x1'] as $bad) {
             if (str_contains($low, $bad)) {
                 return false;
             }
+        }
+        if (preg_match('#(^|[/_.\-])(logo|icon|blank|flag|pixel|avatar|loading)s?([/_.\-@]|$)#', $low)) {
+            return false;
         }
         // no-image/noimage: kelime sınırıyla — torino-image.jpg masumdur
         if (preg_match('#(^|[/_.-])no[-_]?images?([/_.-]|$)#', $low)) {
@@ -1038,6 +1090,11 @@ class TourUrlImporter
 
         $imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp', 'tiff'];
         if (in_array($ext, $imageExts, true)) {
+            return true;
+        }
+        // Base64 proxy CDN'i (kplus/viya): gerçek yol ?url= paramının base64'ünde —
+        // çözümü görsel uzantısıyla bitiyorsa bu bir görseldir (etstur galerisi).
+        if (($decoded = $this->decodeProxyImageUrl($url)) !== null) {
             return true;
         }
         // Uzantısız CDN görselleri: yol ipucu varsa kabul

@@ -24,6 +24,38 @@ class TourImageHarvestTest extends TestCase
         $this->ref = new ReflectionClass($this->importer);
     }
 
+    public function test_base64_proxy_gallery_images_are_harvested(): void
+    {
+        // etstur "Fotoğraflar ve Videolar" galerisi (viya.plus/kplus motoru):
+        // görseller div.lazy data-src'ta base64 proxy URL'i olarak gömülü —
+        // uzantı base64 İÇİNDE olduğundan eski toplayıcılar ıskalıyordu.
+        $b64 = base64_encode('agency.viya.plus//AlbumMedia/Tour/24547/fa29e82e-16b0.jpg');
+        $b64b = base64_encode('agency.viya.plus//AlbumMedia/Tour/24547/79fb8dd1-a3e0.jpg');
+        $html = '<html><body>'
+            .'<div class="content-box lazy" data-src="https://cdn.kplus.com.tr/?url='.$b64.'"></div>'
+            .'<div class="content-box lazy" data-src="https://cdn.kplus.com.tr/?url='.$b64b.'"></div>'
+            .'<div class="lazy" data-src="https://cdn.kplus.com.tr/?url='.base64_encode('x/site.pdf').'"></div>'
+            .'</body></html>';
+        $prop = $this->ref->getProperty('lastHtml');
+        $prop->setValue($this->importer, null);
+
+        // contentFilter ağa çıkmasın diye doğrudan looksLike + aday toplamayı test ediyoruz
+        $this->assertTrue($this->looksLike('https://cdn.kplus.com.tr/?url='.$b64), 'base64 jpg proxy kabul');
+        $this->assertFalse($this->looksLike('https://cdn.kplus.com.tr/?url='.base64_encode('x/site.pdf')), 'base64 pdf proxy ret');
+
+        $imgs = $this->harvest($html, 'https://www.etstur.com/tur-x');
+        $this->assertContains('https://cdn.kplus.com.tr/?url='.$b64, $imgs, 'proxy galeri adayı toplanmalı');
+        $this->assertContains('https://cdn.kplus.com.tr/?url='.$b64b, $imgs);
+        $this->assertCount(2, $imgs, 'pdf proxy elenmiş olmalı');
+    }
+
+    private function looksLike(string $url): bool
+    {
+        $m = $this->ref->getMethod('looksLikeTourImage');
+
+        return (bool) $m->invoke($this->importer, $url);
+    }
+
     /** @return array<int, string> */
     private function harvest(string $html, string $pageUrl): array
     {
@@ -33,6 +65,30 @@ class TourImageHarvestTest extends TestCase
         $method = $this->ref->getMethod('harvestImages');
 
         return $method->invoke($this->importer, $pageUrl);
+    }
+
+    public function test_blacklist_words_are_word_bounded(): void
+    {
+        // etstur Fas vakası: 'blank' kara-liste kelimesi "KazaBLANKa" şehir adının
+        // içinde eşleşip GERÇEK tur fotoğraflarını kapıda reddediyordu (import 0
+        // fotoğrafla döndü). Belirsiz kısa kelimeler kelime-sınırlı olmalı.
+        $yes = [
+            'https://images.etstur.com/imgproxy/files/images/site/images/cmsRoot/tourMedia/etstur-kazablanka-genel-1-155.jpg',
+            'https://x.com/tour/flagship-hotel.jpg',   // flag ≠ flagship
+            'https://x.com/media/rubicon-tour.jpg',    // icon ≠ rubicon
+        ];
+        $no = [
+            'https://x.com/assets/site-logo.png',
+            'https://x.com/img/blank.gif',
+            'https://x.com/icons/icon-32.png',
+            'https://x.com/logo@2x.png',
+        ];
+        foreach ($yes as $u) {
+            $this->assertTrue($this->looksLike($u), "kabul edilmeli: $u");
+        }
+        foreach ($no as $u) {
+            $this->assertFalse($this->looksLike($u), "reddedilmeli: $u");
+        }
     }
 
     public function test_tema_copu_elenir_boyut_varyanti_tekillesir_ve_kapak_basa_gelir(): void
