@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 14;
+    private const CACHE_VERSION = 15;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -1787,7 +1787,12 @@ JS;
         // silebiliyor (bizcetatil 170KB→1KB, matris kayboluyordu). "<[^<>]+>" ASLA
         // bir "<" üzerinden atlamaz; bozuk HTML'de içerik kaybı olmaz.
         $text = preg_replace('/<[^<>]+>/', ' ', $text) ?? $text;
-        $text = preg_replace('/<[^<>]*$/', '', $text) ?? $text; // dosya sonunda kapanmamış açık tag
+        // Dosya sonunda GERÇEKTEN kapanmamış tag kırıntısı: tag-adıyla başlamalı,
+        // satır sonu içermemeli ve kısa olmalı. Eski hali ('<[^<>]*$') metindeki SON
+        // yalın "<" işaretinden (ör. kaçan JS kalıntısı "i < options.length") string
+        // sonuna dek HER ŞEYİ siliyordu — yunanistan.com vakası: 196KB içerik
+        // (tüm kabin fiyat kartları) sessizce yok oldu, sayfa 2KB'a çöktü.
+        $text = preg_replace('/<[a-zA-Z\/][^<>\n]{0,200}$/', '', $text) ?? $text;
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         // Satır içi boşlukları sıkıştır ama satır sonlarını KORU
         $text = preg_replace('/[ \t\x{00a0}]+/u', ' ', $text) ?? $text;

@@ -243,6 +243,30 @@ class TourImportParserTest extends TestCase
         $this->assertContains('2026-12-26', $dates7, 'İskandinavya 26-12 gerçek tarihi korunmalı');
     }
 
+    public function test_stray_lt_in_text_does_not_nuke_tail(): void
+    {
+        // yunanistan.com vakası: kaçan bir script'in metni ("i < options.length")
+        // yalın "<" bırakıyordu; eski kuyruk-silme regex'i ('<[^<>]*$') SON yalın
+        // "<"ten string sonuna dek HER ŞEYİ siliyordu — 196KB kabin fiyat kartı
+        // sessizce yok oldu. Yeni kural: yalnız tag-adıyla başlayan, satırsonu
+        // içermeyen KISA kırıntı silinir; yalın "<" sonrası içerik korunur.
+        $html = "<div>Kruvaziyer Turu</div>\n"
+              ."for (var i = 0; i < options.length; i++) {}\n"
+              ."<p>IA İç Kabin (27.10.2026)</p>\n"
+              ."<span>Çift Kişilik Oda</span>\n"
+              ."<b>1.398,00 €</b>\n"
+              ."Seç ve Satın Al";
+        $text = $this->invoke('cleanHtml', [$html]);
+        $this->assertStringContainsString('İç Kabin', $text, 'yalın < sonrası içerik korunmalı');
+        $this->assertStringContainsString('1.398,00 €', $text, 'fiyat korunmalı');
+        $this->assertStringContainsString('Çift Kişilik Oda', $text);
+
+        // Dosya sonundaki GERÇEK kapanmamış tag kırıntısı yine temizlenir
+        $text2 = $this->invoke('cleanHtml', ['<div>İçerik burada</div><div class="yarim']);
+        $this->assertStringContainsString('İçerik burada', $text2);
+        $this->assertStringNotContainsString('yarim', $text2, 'kapanmamış tag kırıntısı silinmeli');
+    }
+
     public function test_date_row_table_parsed_deterministically(): void
     {
         // page_11: tatilciniz İtalya-Yunanistan (gerçek sayfa) — satır-bazlı tablo:
