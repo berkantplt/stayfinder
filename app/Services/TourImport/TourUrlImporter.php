@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 17;
+    private const CACHE_VERSION = 18;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -1422,7 +1422,7 @@ class TourUrlImporter
               var firstHdr = first.hdr.length ? first.hdr[0] : '';
               if (first.rows.length && firstHdr) { results.push({ r: firstHdr, t: { hdr: first.hdr, rows: first.rows } }); flush(); }
               var norm = function (s) { return (s || '').replace(/\b0(\d)/g, '$1').trim(); };
-              for (var i2 = 0; i2 < first.opts.length && i2 < 20; i2++) {
+              for (var i2 = 0; i2 < first.opts.length && i2 < 40; i2++) {
                 var range = first.opts[i2];
                 var fd = (range.split(' - ')[0] || range).trim();
                 /*__SKIPCHECK__*/
@@ -1501,12 +1501,17 @@ JS;
         // okunur. TÜKENMİŞ dönemler statik JSON'dan bilinir ve iterasyonda atlanır
         // (zaman + tavan tasarrufu). Modal başarısızsa PHP telafi zinciri (aşağıda).
         $soldStatic = $this->harvestSoldOutDates($this->lastHtml ?? '');
+        // Bekleme, SATIŞTAKİ dönem sayısına göre boyutlanır (dönem başına ~900ms
+        // API replay + modal açılışı). Sabit 15sn, 21 dönemli Air Serbia'da döngüyü
+        // yarıda kesiyordu. Tavan 30sn (Firecrawl 55sn limiti içinde kalır).
+        $periodCount = max(preg_match_all('/"departureDate"\s*:/', (string) ($this->lastHtml ?? '')) - count($soldStatic), 1);
+        $matrixWait = (int) min(6000 + 900 * $periodCount, 30000);
         $combinedActions = [
             ['type' => 'wait', 'milliseconds' => 500],
             ['type' => 'scroll', 'direction' => 'down'],
             ['type' => 'wait', 'milliseconds' => 300],
             ['type' => 'executeJavascript', 'script' => $injectSkip($soldStatic)],
-            ['type' => 'wait', 'milliseconds' => 15000],   // modal + API replay döngüsü (~11 dönem × ~400ms)
+            ['type' => 'wait', 'milliseconds' => $matrixWait],
         ];
         $simpleActions = [
             ['type' => 'wait', 'milliseconds' => 2000],
@@ -1524,13 +1529,13 @@ JS;
         //     dönemler atlanarak (kuyruktaki eksik dönemlere hızla ulaşır)
         //  2. kademe: eski per-tarih double-only iterator (modal hiç çalışmazsa —
         //     bugünkü davranış; asla bugünden kötü olmaz)
-        $leanMatrixActions = function (array $skipIso) use ($injectSkip): array {
+        $leanMatrixActions = function (array $skipIso) use ($injectSkip, $matrixWait): array {
             return [
                 ['type' => 'wait', 'milliseconds' => 800],
                 ['type' => 'scroll', 'direction' => 'down'],
                 ['type' => 'wait', 'milliseconds' => 400],
                 ['type' => 'executeJavascript', 'script' => $injectSkip($skipIso)],
-                ['type' => 'wait', 'milliseconds' => 15000],
+                ['type' => 'wait', 'milliseconds' => $matrixWait],
             ];
         };
         $leanPerDateActions = [
@@ -1570,11 +1575,13 @@ JS;
                         // frontend'de İLK bloğun fiyatıyla şablonlanırdı (YANLIŞ fiyat,
                         // kullanıcı vakası: son tarih 3690 yerine 3619 görünmüştü).
                         // SATILAN (sold:false) tarihler esas alınır — Tükendi zaten atlanır.
-                        if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 70) {
+                        if ($perDate && $this->hasPerDatePicker($rawHtml) && microtime(true) - $started < 100) {
                             // Beklenen = toplam kalkış - Tükendi (sold:true VEYA remaining:0);
                             // sold alanı olmayan sayfalarda Tükendi 0 döner → beklenen = toplam.
+                            // Tavan 40: eski 12 tavanı Air Serbia'da (21 satıştaki kalkış)
+                            // telafiyi erken durdurup 7 tarihi şablona bırakıyordu.
                             $totalPeriods = preg_match_all('/"departureDate"\s*:/', $rawHtml);
-                            $expected = min(max($totalPeriods - count($this->harvestSoldOutDates($rawHtml)), 0), 12);
+                            $expected = min(max($totalPeriods - count($this->harvestSoldOutDates($rawHtml)), 0), 40);
                             $covered = fn (): int => count($this->harvestModalMatrix($this->lastHtml ?? ''))
                                 + count(array_diff_key(
                                     $this->harvestPerDatePrices($this->lastHtml ?? ''),
