@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 18;
+    private const CACHE_VERSION = 19;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -1431,6 +1431,34 @@ class TourUrlImporter
                 var snap = await fetchRange(range);
                 if (snap.rows.length && snap.hdr.length) { results.push({ r: snap.hdr[0], t: { hdr: snap.hdr, rows: snap.rows } }); flush(); }
               }
+              // GERÇEK-ZAMANLI SATILABİLİRLİK taraması: etstur'un statik tourPeriods
+              // verisi GERİDE kalabiliyor (Air Serbia: rem=10 görünen 5 kalkış için
+              // availability API "yok" dedi — UI rozeti de tıklanınca bu API'den
+              // geliyor). Her kalkış için tour-availability sorgulanır; ok:false
+              // dönenler PHP'de Tükendi listesine katılır. packageCode yakalanan
+              // modal isteğinin gövdesinden alınır.
+              try {
+                var pkgM = (cap.b || '').match(/packageCode=([A-Z0-9]+)/i);
+                var periods = (window.pageApp && window.pageApp.tourPeriods) || [];
+                if (pkgM && periods.length) {
+                  var av = [];
+                  var d2 = document.createElement('div');
+                  d2.setAttribute('data-ets-avail', '1');
+                  document.body.appendChild(d2);
+                  function flushAv() { if (av.length) d2.innerText = 'ETSAVAILJSON<<<' + JSON.stringify(av) + '>>>'; }
+                  for (var a2 = 0; a2 < periods.length && a2 < 40; a2++) {
+                    var pp = periods[a2];
+                    var dd2 = pp.departureDate || {};
+                    var iso2 = dd2.year + '-' + ('0' + dd2.month).slice(-2) + '-' + ('0' + dd2.day).slice(-2);
+                    try {
+                      var ar = await fetch('/Tur/ajax/tour-availability?packageCode=' + pkgM[1] + '&adultCount=2&departCode=' + pp.departCode, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+                      var aj = await ar.json();
+                      av.push({ d: iso2, ok: !!(aj && aj.success) });
+                    } catch (e2) { av.push({ d: iso2, ok: null }); }
+                    flushAv();
+                  }
+                }
+              } catch (e3) {}
             } catch (e) {}
           })();
         })();
@@ -1504,8 +1532,12 @@ JS;
         // Bekleme, SATIŞTAKİ dönem sayısına göre boyutlanır (dönem başına ~900ms
         // API replay + modal açılışı). Sabit 15sn, 21 dönemli Air Serbia'da döngüyü
         // yarıda kesiyordu. Tavan 30sn (Firecrawl 55sn limiti içinde kalır).
-        $periodCount = max(preg_match_all('/"departureDate"\s*:/', (string) ($this->lastHtml ?? '')) - count($soldStatic), 1);
-        $matrixWait = (int) min(6000 + 900 * $periodCount, 30000);
+        $totalPeriodCount = max(preg_match_all('/"departureDate"\s*:/', (string) ($this->lastHtml ?? '')), 1);
+        $periodCount = max($totalPeriodCount - count($soldStatic), 1);
+        // matris (satıştaki dönem × ~900ms) + availability taraması (TÜM dönem × ~400ms)
+        $matrixWait = (int) min(6000 + 900 * $periodCount + 400 * $totalPeriodCount, 38000);
+        // Firecrawl'ın kendi scrape limiti de beklemeye göre büyür (yükleme payıyla)
+        $base['timeout'] = (int) min(18000 + $matrixWait, 60000);
         $combinedActions = [
             ['type' => 'wait', 'milliseconds' => 500],
             ['type' => 'scroll', 'direction' => 'down'],
@@ -1558,7 +1590,7 @@ JS;
                 break;
             }
             try {
-                $response = Http::timeout(65)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+                $response = Http::timeout(75)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
 
                 if ($response->ok()) {
                     $markdown = trim((string) $response->json('data.markdown'));
@@ -1647,7 +1679,7 @@ JS;
     private function appendPerDatePrices(string $endpoint, string $key, array $base, array $actions): void
     {
         try {
-            $resp = Http::timeout(65)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
+            $resp = Http::timeout(75)->withToken($key)->post($endpoint, $base + ['actions' => $actions]);
             if (! $resp->ok()) {
                 return;
             }
@@ -3571,6 +3603,20 @@ JS;
         }
 
         $sold = [];
+        // GERÇEK-ZAMANLI satılabilirlik işaretçisi (modalMatrixScript availability
+        // taraması): statik veri "satışta" dese bile API ok:false diyorsa Tükendi'dir
+        // (etstur statik verisi geride kalabiliyor — Air Serbia'da 5 kalkış).
+        if (preg_match_all('/ETSAVAILJSON(?:<<<|&lt;&lt;&lt;)(.*?)(?:>>>|&gt;&gt;&gt;)/s', $rawHtml, $avm)) {
+            foreach ($avm[1] as $chunk) {
+                $data = json_decode(html_entity_decode($chunk, ENT_QUOTES | ENT_HTML5, 'UTF-8'), true);
+                foreach ((array) $data as $entry) {
+                    if (is_array($entry) && ($entry['ok'] ?? null) === false
+                        && $this->parseFutureDate((string) ($entry['d'] ?? '')) !== null) {
+                        $sold[] = (string) $entry['d'];
+                    }
+                }
+            }
+        }
         if (preg_match_all(
             '/"departureDate"\s*:\s*\{\s*"year"\s*:\s*(20\d{2})\s*,\s*"month"\s*:\s*(\d{1,2})\s*,\s*"day"\s*:\s*(\d{1,2})/',
             $rawHtml,

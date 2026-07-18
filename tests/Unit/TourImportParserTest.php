@@ -361,6 +361,18 @@ class TourImportParserTest extends TestCase
         $lagSold = $this->invoke('harvestSoldOutDates', [$lag]);
         $this->assertSame(['2026-07-25'], $lagSold, 'remaining=0 Tükendi sayılmalı, remaining=20 sayılmamalı');
 
+        // Air Serbia vakası: statik veri "satışta" derken GERÇEK-ZAMANLI availability
+        // API'si ok:false diyorsa o kalkış da Tükendi'dir (statik veri geride kalıyor;
+        // UI rozeti de tıklanınca bu API'den geliyor).
+        $rt = $lag.' ETSAVAILJSON<<<'.json_encode([
+            ['d' => '2026-08-01', 'ok' => false],
+            ['d' => '2026-08-07', 'ok' => true],
+        ]).'>>>';
+        $rtSold = $this->invoke('harvestSoldOutDates', [$rt]);
+        $this->assertContains('2026-08-01', $rtSold, 'API ok:false → Tükendi');
+        $this->assertContains('2026-07-25', $rtSold, 'statik remaining=0 korunur');
+        $this->assertNotContains('2026-08-07', $rtSold, 'API ok:true elenmez');
+
         // "sold" alanı olmayan sayfalarda (etstur-dışı) boş döner
         $this->assertSame([], $this->invoke('harvestSoldOutDates', ['"departureDate":{"year":2026,"month":8,"day":25}']));
     }
