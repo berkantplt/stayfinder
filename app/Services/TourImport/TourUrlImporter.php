@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 20;
+    private const CACHE_VERSION = 21;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -1510,7 +1510,10 @@ class TourUrlImporter
                     try {
                       var ar = await fetch('/Tur/ajax/tour-availability?packageCode=' + pkgM[1] + '&adultCount=2&departCode=' + pp.departCode, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
                       var aj = await ar.json();
-                      av.push({ d: iso2, ok: !!(aj && aj.success) });
+                      // Satılabilirlik = success TEK BAŞINA DEĞİL: İtalya vakasında
+                      // tükenmiş 25 Temmuz success:true ama products:[] BOŞ döndü
+                      // (UI rozeti de products'a bakıyor). Kural: success && ürün var.
+                      av.push({ d: iso2, ok: !!(aj && aj.success && (aj.products || []).length > 0) });
                     } catch (e2) { av.push({ d: iso2, ok: null }); }
                     flushAv();
                   }

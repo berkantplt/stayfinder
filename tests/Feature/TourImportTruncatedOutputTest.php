@@ -45,6 +45,6 @@ class TourImportTruncatedOutputTest extends TestCase
         $this->assertStringContainsString('çıkarım', mb_strtolower($warningText));
 
         // Sağlıksız (başlıksız) sonuç cache'lenmedi → tekrar denemede taze koşar
-        $this->assertNull(Cache::get('tour_import:v20:'.md5('https://1.1.1.1/fethiye-turu|0')));
+        $this->assertNull(Cache::get('tour_import:v21:'.md5('https://1.1.1.1/fethiye-turu|0')));
     }
 }
