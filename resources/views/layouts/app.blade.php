@@ -556,6 +556,293 @@
         </div>
     </div>
 
+    {{-- ===== AI tur kartı: TEK ortak üretici (yüzen widget + tam sayfa sohbet) =====
+         $hideAiChat guard'ının DIŞINDA durur: admin tam sayfa sohbeti açtığında
+         widget gizliyken de tam sayfanın kart üreticisi çalışmalı. --}}
+    <script>
+    window.turxturAiCard = (function () {
+        var CURRENCY = { TRY: '₺', USD: '$', EUR: '€', GBP: '£', AED: 'AED', SAR: 'SAR' };
+
+        // Tema paletleri: dark = yüzen widget (cam panel), light = tam sayfa sohbet
+        var THEMES = {
+            dark: {
+                card: 'position:relative; flex:0 0 220px; min-width:220px; min-height:252px; background:rgba(255,255,255,0.08); border-radius:16px; border:1px solid rgba(255,255,255,0.15); scroll-snap-align:start; transition:transform .3s, box-shadow .3s, opacity .35s; overflow:hidden;',
+                cardClass: 'ai-tour-card',
+                hoverLift: 'translateY(-4px)',
+                hoverShadow: '0 16px 32px rgba(0,0,0,0.3)',
+                link: 'text-decoration:none; color:white; display:flex; flex-direction:column; flex:1; min-height:252px;',
+                imgBox: 'position:relative; width:100%; height:140px; background:#1e293b; flex-shrink:0;',
+                imgFallback: 'linear-gradient(135deg,#0f172a,#134e4a)',
+                gradient: 'linear-gradient(to top, rgba(15,23,42,0.8), transparent)',
+                badge: 'position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; color:#34d399; z-index:2;',
+                content: 'padding:14px; display:flex; flex-direction:column; flex:1;',
+                dest: 'font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;',
+                title: 'font-size:14px; font-weight:800; margin-top:4px; color:#f8fafc; line-height:1.4;',
+                agency: 'font-size:11px; color:#94a3b8; margin-top:2px;',
+                reason: 'font-size:11px; color:#5eead4; font-style:italic; margin-top:4px; line-height:1.4;',
+                nextDep: 'font-size:11px; color:#94a3b8; margin-top:4px;',
+                chipRow: 'display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;',
+                chipOver: 'font-size:10px; color:#fde68a; font-weight:700; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.4); padding:2px 8px; border-radius:8px;',
+                chipFlex: 'font-size:10px; color:#6ee7b7; font-weight:700; background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.4); padding:2px 8px; border-radius:8px;',
+                bottom: 'display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1); gap:6px;',
+                price: 'font-size:16px; font-weight:900; color:#34d399;',
+                cta: 'font-size:11px; font-weight:700; color:#0f172a; background:#34d399; padding:6px 12px; border-radius:100px; white-space:nowrap;',
+                rejectBtn: 'position:absolute; top:8px; left:8px; width:24px; height:24px; border-radius:50%; border:none; background:rgba(255,255,255,0.18); color:#fff; cursor:pointer; font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); z-index:3;',
+                popup: 'display:none; position:absolute; top:36px; left:8px; background:#0f172a; border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:6px; z-index:4; flex-direction:column; gap:2px; min-width:160px; box-shadow:0 12px 24px rgba(0,0,0,.3);',
+                popupOpt: 'background:transparent; border:none; text-align:left; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px; color:#e2e8f0;',
+                popupOptHover: 'rgba(255,255,255,0.08)'
+            },
+            light: {
+                card: 'position:relative; display:flex; flex-direction:column; background:#fff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; transition:transform .15s, box-shadow .15s, opacity .35s;',
+                cardClass: '',
+                hoverLift: 'translateY(-2px)',
+                hoverShadow: '0 4px 12px rgba(0,0,0,.08)',
+                link: 'text-decoration:none; color:inherit; display:flex; flex-direction:column; flex:1;',
+                imgBox: 'position:relative; width:100%; height:120px; background:#f1f5f9; flex-shrink:0;',
+                imgFallback: 'linear-gradient(135deg,#eef2ff,#ecfdf5)',
+                gradient: null,
+                badge: 'position:absolute; top:8px; right:8px; background:rgba(255,255,255,0.92); padding:3px 9px; border-radius:10px; font-size:11px; font-weight:700; color:#0f766e; z-index:2;',
+                content: 'padding:12px; display:flex; flex-direction:column; flex:1;',
+                dest: 'font-size:11px; color:#6366f1; font-weight:700; text-transform:uppercase;',
+                title: 'font-size:14px; font-weight:700; margin-top:4px; color:#0f172a; line-height:1.3;',
+                agency: 'font-size:12px; color:#64748b; margin-top:2px;',
+                reason: 'font-size:11.5px; color:#0f766e; font-style:italic; margin-top:4px; line-height:1.4;',
+                nextDep: 'font-size:11px; color:#64748b; margin-top:4px;',
+                chipRow: 'display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;',
+                chipOver: 'font-size:11px; color:#92400e; font-weight:700; background:#fffbeb; border:1px solid #fde68a; padding:2px 8px; border-radius:8px;',
+                chipFlex: 'font-size:11px; color:#166534; font-weight:700; background:#ecfdf5; border:1px solid #bbf7d0; padding:2px 8px; border-radius:8px;',
+                bottom: 'display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:10px; border-top:1px solid #f1f5f9; gap:6px;',
+                price: 'font-size:15px; font-weight:800; color:#0f172a;',
+                cta: 'font-size:11px; font-weight:700; color:#fff; background:#6366f1; padding:6px 12px; border-radius:100px; white-space:nowrap;',
+                rejectBtn: 'position:absolute; top:8px; left:8px; width:24px; height:24px; border-radius:50%; border:none; background:rgba(15,23,42,0.55); color:#fff; cursor:pointer; font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); z-index:3;',
+                popup: 'display:none; position:absolute; top:36px; left:8px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:6px; z-index:4; flex-direction:column; gap:2px; min-width:160px; box-shadow:0 8px 24px rgba(0,0,0,.12);',
+                popupOpt: 'background:transparent; border:none; text-align:left; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px; color:#334155;',
+                popupOptHover: '#f1f5f9'
+            }
+        };
+
+        var REJECT_REASONS = [
+            ['too_expensive', '💸 Çok pahalı'],
+            ['wrong_destination', '🗺️ Yanlış destinasyon'],
+            ['wrong_vibe', '🎭 Tarz uymuyor'],
+            ['other', '🤷 Diğer']
+        ];
+
+        async function submitRejection(cardWrap, tourId, reason, logId) {
+            try {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                var res = await fetch('/yapay-zeka-arama/' + logId + '/reddet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ tour_id: tourId, reason: reason })
+                });
+                if (!res.ok) {
+                    console.warn('Reject failed', res.status);
+                    return;
+                }
+                cardWrap.style.opacity = '0';
+                cardWrap.style.transform = 'scale(0.9)';
+                setTimeout(function () { cardWrap.remove(); }, 350);
+            } catch (err) {
+                console.error('Reject error', err);
+            }
+        }
+
+        function buildRejectControl(cardWrap, tourId, logId, T) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.title = 'Bu öneri uymaz';
+            btn.textContent = '✕';
+            btn.style.cssText = T.rejectBtn;
+
+            var popup = document.createElement('div');
+            popup.style.cssText = T.popup;
+
+            REJECT_REASONS.forEach(function (pair) {
+                var opt = document.createElement('button');
+                opt.type = 'button';
+                opt.textContent = pair[1];
+                opt.style.cssText = T.popupOpt;
+                opt.onmouseenter = function () { this.style.background = T.popupOptHover; };
+                opt.onmouseleave = function () { this.style.background = 'transparent'; };
+                opt.onclick = function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    submitRejection(cardWrap, tourId, pair[0], logId);
+                };
+                popup.appendChild(opt);
+            });
+
+            btn.onclick = function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+            };
+
+            var holder = document.createElement('div');
+            holder.appendChild(btn);
+            holder.appendChild(popup);
+            return holder;
+        }
+
+        // Tek kart: her alan textContent ile yazılır (XSS güvenli); tema dışında
+        // iki yüzeyde birebir aynı yapı ve tek CTA formatı ("İncele →").
+        function build(tour, opts) {
+            opts = opts || {};
+            var T = THEMES[opts.theme] || THEMES.dark;
+            var index = opts.index || 0;
+            var logId = opts.logId || null;
+
+            var title = tour.title || 'Tur';
+            var destination = tour.destination || 'Dünya';
+            var price = tour.price ? new Intl.NumberFormat('tr-TR').format(tour.price) : '0';
+            var cur = String(tour.currency || 'TRY').toUpperCase();
+            var duration = tour.duration_days ? tour.duration_days + ' Gün' : '';
+            var rank = (typeof tour.rank === 'number') ? tour.rank : (index + 1);
+            var detailUrl = tour.url
+                || (tour.id ? ('/turlar/' + tour.id) : '')
+                || (tour.slug ? ('/turlar/' + tour.slug) : '/turlar');
+
+            var wrapper = document.createElement('div');
+            if (T.cardClass) wrapper.className = T.cardClass;
+            wrapper.style.cssText = T.card;
+            if (tour.id != null) wrapper.dataset.tourId = String(tour.id);
+            wrapper.onmouseenter = function () { this.style.transform = T.hoverLift; this.style.boxShadow = T.hoverShadow; };
+            wrapper.onmouseleave = function () { this.style.transform = ''; this.style.boxShadow = ''; };
+
+            var link = document.createElement('a');
+            try {
+                var u = new URL(detailUrl, window.location.origin);
+                if (logId) u.searchParams.set('ai_log_id', String(logId));
+                u.searchParams.set('ai_rank', String(rank));
+                link.href = u.pathname + u.search;
+            } catch (e) { link.href = detailUrl; }
+            link.style.cssText = T.link;
+
+            // Görsel: yoksa/kırıksa nötr yer tutucu — rastgele stok foto tur verisi
+            // değildir, yanlış izlenim vermesin
+            var imgBox = document.createElement('div');
+            imgBox.style.cssText = T.imgBox;
+            var ph = document.createElement('div');
+            ph.style.cssText = 'position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:26px; background:' + T.imgFallback + ';';
+            ph.textContent = '🌍';
+            imgBox.appendChild(ph);
+            if (tour.image) {
+                var img = document.createElement('img');
+                img.src = tour.image;
+                img.alt = title;
+                img.loading = 'lazy';
+                img.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;';
+                img.onerror = function () { this.remove(); };
+                imgBox.appendChild(img);
+            }
+
+            // Uyum rozeti: skor gerçekten varsa göster — yoksa uydurma yüzde yazılmaz
+            var rawScore = (typeof tour.compatibility_score === 'number') ? tour.compatibility_score
+                : (typeof tour.similarity === 'number' ? tour.similarity : null);
+            if (rawScore != null) {
+                var badge = document.createElement('div');
+                badge.style.cssText = T.badge;
+                badge.textContent = '%' + Math.round(Math.max(0, Math.min(1, rawScore)) * 100) + ' Uyumlu';
+                imgBox.appendChild(badge);
+            }
+
+            if (T.gradient) {
+                var gradient = document.createElement('div');
+                gradient.style.cssText = 'position:absolute; bottom:0; left:0; width:100%; height:50%; background:' + T.gradient + '; pointer-events:none;';
+                imgBox.appendChild(gradient);
+            }
+            link.appendChild(imgBox);
+
+            var content = document.createElement('div');
+            if (T.cardClass) content.className = 'ai-tour-card-content';
+            content.style.cssText = T.content;
+
+            var dest = document.createElement('div');
+            dest.style.cssText = T.dest;
+            dest.textContent = destination + (duration ? ' • ' + duration : '');
+            content.appendChild(dest);
+
+            var titleEl = document.createElement('div');
+            titleEl.style.cssText = T.title;
+            titleEl.textContent = title;
+            content.appendChild(titleEl);
+
+            if (tour.agency_name) {
+                var agencyEl = document.createElement('div');
+                agencyEl.style.cssText = T.agency;
+                agencyEl.textContent = tour.agency_name;
+                content.appendChild(agencyEl);
+            }
+
+            // "Neden bu tur?" — kişiye özel tek cümle gerekçe (sunucudan deterministik)
+            if (tour.reason) {
+                var reasonEl = document.createElement('div');
+                reasonEl.style.cssText = T.reason;
+                reasonEl.textContent = '✨ ' + tour.reason;
+                content.appendChild(reasonEl);
+            }
+
+            if (tour.next_departure) {
+                var nextEl = document.createElement('div');
+                nextEl.style.cssText = T.nextDep;
+                nextEl.textContent = '📅 En yakın kalkış: ' + tour.next_departure;
+                content.appendChild(nextEl);
+            }
+
+            // Bütçe çipleri: bütçe üstü uyarısı + başka tarihte bütçeye giren fiyat
+            if (tour.over_budget || (tour.flex_date && tour.flex_date.date)) {
+                var chips = document.createElement('div');
+                chips.style.cssText = T.chipRow;
+                if (tour.over_budget) {
+                    var over = document.createElement('div');
+                    over.style.cssText = T.chipOver;
+                    over.textContent = 'bütçe üstü';
+                    chips.appendChild(over);
+                }
+                if (tour.flex_date && tour.flex_date.date) {
+                    var flex = document.createElement('div');
+                    flex.style.cssText = T.chipFlex;
+                    flex.textContent = '🟢 ' + tour.flex_date.date + ' — ' + tour.flex_date.price + ' bütçende';
+                    chips.appendChild(flex);
+                }
+                content.appendChild(chips);
+            }
+
+            var bottom = document.createElement('div');
+            if (T.cardClass) bottom.className = 'ai-tour-card-bottom';
+            bottom.style.cssText = T.bottom;
+
+            var priceEl = document.createElement('div');
+            priceEl.style.cssText = T.price;
+            priceEl.textContent = price + ' ' + (CURRENCY[cur] || cur);
+            bottom.appendChild(priceEl);
+
+            var btn = document.createElement('div');
+            btn.style.cssText = T.cta;
+            btn.textContent = 'İncele →';
+            bottom.appendChild(btn);
+
+            content.appendChild(bottom);
+            link.appendChild(content);
+            wrapper.appendChild(link);
+
+            // Reddet kontrolü yalnız search akışı sonucu (log_id) olan kartlarda
+            if (logId && tour.id) {
+                wrapper.appendChild(buildRejectControl(wrapper, tour.id, logId, T));
+            }
+
+            return wrapper;
+        }
+
+        return { build: build };
+    })();
+    </script>
+
     @php
         $hideAiChat = request()->is('admin*')
             || request()->is('super-admin*')
@@ -870,12 +1157,15 @@
 
                 const scrollBottom = () => { messages.scrollTop = messages.scrollHeight; };
 
+                const removeLoading = () => {
+                    if (loadingRemoved) return;
+                    if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
+                    loadingRemoved = true;
+                };
+
                 const ensureAiMsg = () => {
                     if (aiMsg) return;
-                    if (!loadingRemoved) {
-                        if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
-                        loadingRemoved = true;
-                    }
+                    removeLoading();
                     aiMsg = document.createElement('div');
                     aiMsg.className = "ai-msg-ai";
                     const labelColor = isClarification ? '#fbbf24' : '#2dd4bf';
@@ -901,16 +1191,22 @@
                         if (data && typeof data === 'object' && !Array.isArray(data) && data.log_id) {
                             lastLogId = data.log_id;
                         }
+                        // Gevşetme notu: sonuçlar neden birebir eşleşme değil, kullanıcı görsün
+                        const relaxNote = (data && !Array.isArray(data)) ? data.relaxation_note : null;
+                        if (relaxNote) {
+                            removeLoading();
+                            const note = document.createElement('div');
+                            note.style.cssText = 'font-size:12.5px; color:#fde68a; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.35); border-radius:10px; padding:8px 12px;';
+                            note.textContent = 'ℹ️ ' + relaxNote;
+                            messages.appendChild(note);
+                        }
                         if (tourList.length > 0) {
-                            if (!loadingRemoved) {
-                                if (loadingMsg && loadingMsg.parentNode) loadingMsg.parentNode.removeChild(loadingMsg);
-                                loadingRemoved = true;
-                            }
+                            removeLoading();
                             const carousel = document.createElement('div');
                             carousel.style.cssText = 'display:flex; flex:0 0 auto; overflow-x:auto; overflow-y:visible; align-items:stretch; gap:10px; padding:4px 0 12px 0; margin-bottom:10px; min-height:252px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;';
                             carousel.className = 'ai-tour-carousel';
                             tourList.forEach((tour, idx) => {
-                                carousel.appendChild(buildTourCard(tour, idx, lastLogId));
+                                carousel.appendChild(window.turxturAiCard.build(tour, { theme: 'dark', index: idx, logId: lastLogId }));
                             });
                             messages.appendChild(carousel);
                             // 7'den fazla eşleşme varsa tam listeye bağlantı ver
@@ -922,6 +1218,97 @@
                                 messages.appendChild(more);
                             }
                             requestAnimationFrame(scrollBottom);
+                        }
+                    } else if (eventName === 'compare') {
+                        // Deterministik kıyas tablosu (sayılar sunucudan, LLM üretmedi)
+                        removeLoading();
+                        const box = document.createElement('div');
+                        box.style.cssText = 'overflow-x:auto; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; -webkit-overflow-scrolling:touch;';
+                        const table = document.createElement('table');
+                        table.style.cssText = 'border-collapse:collapse; font-size:12px; min-width:340px; width:100%;';
+                        const head = document.createElement('tr');
+                        const corner = document.createElement('th');
+                        corner.style.cssText = 'padding:9px 10px;';
+                        head.appendChild(corner);
+                        (data.columns || []).forEach(c => {
+                            const th = document.createElement('th');
+                            th.style.cssText = 'padding:9px 10px; text-align:left;';
+                            const a = document.createElement('a');
+                            a.href = c.url;
+                            a.textContent = c.title;
+                            a.style.cssText = 'color:#2dd4bf; text-decoration:none; font-weight:700;';
+                            th.appendChild(a);
+                            head.appendChild(th);
+                        });
+                        table.appendChild(head);
+                        (data.rows || []).forEach(row => {
+                            const tr = document.createElement('tr');
+                            tr.style.cssText = 'border-top:1px solid rgba(255,255,255,0.08);';
+                            const td0 = document.createElement('td');
+                            td0.style.cssText = 'padding:7px 10px; color:#94a3b8; font-weight:600; white-space:nowrap;';
+                            td0.textContent = row.label;
+                            tr.appendChild(td0);
+                            (row.values || []).forEach(v => {
+                                const td = document.createElement('td');
+                                td.style.cssText = 'padding:7px 10px; color:#f8fafc;';
+                                td.textContent = v;
+                                tr.appendChild(td);
+                            });
+                            table.appendChild(tr);
+                        });
+                        box.appendChild(table);
+                        messages.appendChild(box);
+                        scrollBottom();
+                    } else if (eventName === 'handoff') {
+                        // Acentaya sıcak devir kartı: özet dolu WhatsApp + telefon
+                        removeLoading();
+                        const card = document.createElement('div');
+                        card.style.cssText = 'background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.35); border-radius:12px; padding:14px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;';
+                        const info = document.createElement('div');
+                        info.style.cssText = 'font-size:13px; color:#a7f3d0; font-weight:600; flex:1; min-width:160px;';
+                        info.textContent = '📞 ' + (data.agency_name || 'Acenta') + (data.tour_title ? ' — "' + data.tour_title + '"' : '');
+                        card.appendChild(info);
+                        if (data.whatsapp_link) {
+                            const wa = document.createElement('a');
+                            wa.href = data.whatsapp_link;
+                            wa.target = '_blank';
+                            wa.rel = 'noopener';
+                            wa.style.cssText = 'font-size:12px; font-weight:800; color:#0f172a; background:#34d399; padding:8px 14px; border-radius:100px; text-decoration:none; white-space:nowrap;';
+                            wa.textContent = '📱 WhatsApp\'tan yaz';
+                            card.appendChild(wa);
+                        }
+                        if (data.phone_link) {
+                            const tel = document.createElement('a');
+                            tel.href = data.phone_link;
+                            tel.style.cssText = 'font-size:12px; font-weight:800; color:#e2e8f0; border:1px solid rgba(255,255,255,0.25); padding:8px 14px; border-radius:100px; text-decoration:none; white-space:nowrap;';
+                            tel.textContent = '📞 Ara';
+                            card.appendChild(tel);
+                        }
+                        messages.appendChild(card);
+                        scrollBottom();
+                    } else if (eventName === 'suggestions') {
+                        // Devam önerisi çipleri — tıklayınca mesaj olarak gönderilir
+                        removeLoading();
+                        const wrap = document.createElement('div');
+                        wrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px;';
+                        (data.items || []).forEach(t => {
+                            const chip = document.createElement('button');
+                            chip.type = 'button';
+                            chip.className = 'suggestion-chip';
+                            chip.textContent = t;
+                            chip.onclick = () => {
+                                const inputEl = document.getElementById('ai-chat-input');
+                                inputEl.value = t;
+                                sendAIChatMessage();
+                                // Gönderim gerçekten başladıysa input tüketilmiştir;
+                                // akış sürerken tıklanırsa çipler yerinde kalsın
+                                if (!inputEl.value) wrap.remove();
+                            };
+                            wrap.appendChild(chip);
+                        });
+                        if (wrap.children.length) {
+                            messages.appendChild(wrap);
+                            scrollBottom();
                         }
                     } else if (eventName === 'comment') {
                         ensureAiMsg();
@@ -1020,190 +1407,6 @@
                 if (window._aiWidgetWatchdog) { clearTimeout(window._aiWidgetWatchdog); window._aiWidgetWatchdog = null; }
                 window._aiWidgetController = null;
                 window._aiWidgetSending = false;
-            }
-        }
-
-        // Tur kartı oluşturma fonksiyonu (innerHTML kullanmadan güvenli DOM oluşturma)
-        function buildTourCard(tour, index, logId) {
-            var rawScore = (typeof tour.compatibility_score === 'number')
-                ? tour.compatibility_score
-                : (typeof tour.similarity === 'number' ? tour.similarity : 0.8);
-            var similarity = Math.round(Math.max(0, Math.min(1, rawScore)) * 100);
-            var destination = tour.destination || 'Dünya';
-            var title = tour.title || 'Keşfedilecek Tur';
-            var price = tour.price ? new Intl.NumberFormat('tr-TR').format(tour.price) : '0';
-            var currencyCode = (tour.currency || 'TRY').toUpperCase();
-            var currencySymbols = {
-                TRY: '₺',
-                USD: '$',
-                EUR: '€',
-                GBP: '£',
-                AED: 'AED',
-                SAR: 'SAR'
-            };
-            var currency = currencySymbols[currencyCode] || currencyCode;
-            var slug = tour.slug || '';
-            var detailUrl = tour.url
-                || (tour.id ? ('/turlar/' + tour.id) : '')
-                || (slug ? ('/turlar/' + slug) : '/turlar');
-            var duration = tour.duration_days ? tour.duration_days + ' Gün' : '';
-            var image = tour.image || 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600';
-            var rank = typeof tour.rank === 'number' ? tour.rank : (index + 1);
-
-            // Ana kart wrapper — sabit genişlik, kare format
-            var wrapper = document.createElement('div');
-            wrapper.className = 'ai-tour-card';
-            wrapper.style.cssText = 'flex:0 0 220px; flex-shrink:0; min-width:220px; min-height:252px; background:rgba(255,255,255,0.08); border-radius:16px; border:1px solid rgba(255,255,255,0.15); scroll-snap-align:start; transition:transform 0.3s, box-shadow 0.3s; overflow:hidden;';
-            wrapper.onmouseenter = function() { this.style.transform = 'translateY(-4px)'; this.style.boxShadow = '0 16px 32px rgba(0,0,0,0.3)'; };
-            wrapper.onmouseleave = function() { this.style.transform = ''; this.style.boxShadow = ''; };
-
-            // Link
-            var link = document.createElement('a');
-            var finalUrl = new URL(detailUrl, window.location.origin);
-            if (logId) finalUrl.searchParams.set('ai_log_id', String(logId));
-            finalUrl.searchParams.set('ai_rank', String(rank));
-            link.href = finalUrl.pathname + finalUrl.search;
-            link.style.cssText = 'text-decoration:none; color:white; display:flex; flex-direction:column; min-height:252px;';
-
-            // Görsel container — kare görsel
-            var imgContainer = document.createElement('div');
-            imgContainer.style.cssText = 'position:relative; width:100%; height:140px; background:#1e293b;';
-
-            var img = document.createElement('img');
-            img.src = image;
-            img.alt = title;
-            img.style.cssText = 'width:100%; height:140px; object-fit:cover; display:block;';
-            img.onerror = function() { this.src = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600'; };
-            imgContainer.appendChild(img);
-
-            // Uyumluluk badge
-            var badge = document.createElement('div');
-            badge.style.cssText = 'position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; color:#34d399;';
-            badge.textContent = '%' + similarity + ' Uyumlu';
-            imgContainer.appendChild(badge);
-
-            // Gradient overlay
-            var gradient = document.createElement('div');
-            gradient.style.cssText = 'position:absolute; bottom:0; left:0; width:100%; height:50%; background:linear-gradient(to top, rgba(15,23,42,0.8), transparent);';
-            imgContainer.appendChild(gradient);
-
-            link.appendChild(imgContainer);
-
-            // İçerik bölümü
-            var content = document.createElement('div');
-            content.className = 'ai-tour-card-content';
-            content.style.cssText = 'padding:14px; display:flex; flex-direction:column; flex:1;';
-
-            var dest = document.createElement('div');
-            dest.style.cssText = 'font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;';
-            dest.textContent = destination + (duration ? ' • ' + duration : '');
-            content.appendChild(dest);
-
-            var titleEl = document.createElement('div');
-            titleEl.style.cssText = 'font-size:14px; font-weight:800; margin-top:4px; color:#f8fafc; line-height:1.4;';
-            titleEl.textContent = title;
-            content.appendChild(titleEl);
-
-            // "Neden bu tur?" — kişiye özel tek cümle gerekçe (sunucudan deterministik)
-            if (tour.reason) {
-                var reasonEl = document.createElement('div');
-                reasonEl.style.cssText = 'font-size:11px; color:#5eead4; font-style:italic; margin-top:4px; line-height:1.4;';
-                reasonEl.textContent = '✨ ' + tour.reason;
-                content.appendChild(reasonEl);
-            }
-
-            // Alt satır: fiyat + incele butonu
-            var bottom = document.createElement('div');
-            bottom.className = 'ai-tour-card-bottom';
-            bottom.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);';
-
-            var priceEl = document.createElement('div');
-            priceEl.style.cssText = 'font-size:16px; font-weight:900; color:#34d399;';
-            priceEl.textContent = price + ' ' + currency;
-            bottom.appendChild(priceEl);
-
-            var btn = document.createElement('div');
-            btn.style.cssText = 'font-size:11px; font-weight:700; color:#0f172a; background:#34d399; padding:6px 12px; border-radius:100px;';
-            btn.textContent = 'İncele →';
-            bottom.appendChild(btn);
-
-            content.appendChild(bottom);
-            link.appendChild(content);
-            wrapper.appendChild(link);
-
-            // Reject button + reason popup (sadece log_id varsa, yani search akışı sonucu)
-            if (logId && tour.id) {
-                wrapper.appendChild(buildAiRejectControl(wrapper, tour.id, logId));
-            }
-
-            return wrapper;
-        }
-
-        function buildAiRejectControl(cardWrap, tourId, logId) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.title = 'Bu öneri uymaz';
-            btn.textContent = '✕';
-            btn.style.cssText = 'position:absolute; top:8px; left:8px; width:24px; height:24px; border-radius:50%; border:none; background:rgba(255,255,255,0.18); color:#fff; cursor:pointer; font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); z-index:3;';
-
-            var popup = document.createElement('div');
-            popup.style.cssText = 'display:none; position:absolute; top:36px; left:8px; background:#0f172a; border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:6px; z-index:4; flex-direction:column; gap:2px; min-width:160px; box-shadow:0 12px 24px rgba(0,0,0,.3);';
-
-            var reasons = [
-                ['too_expensive', '💸 Çok pahalı'],
-                ['wrong_destination', '🗺️ Yanlış destinasyon'],
-                ['wrong_vibe', '🎭 Tarz uymuyor'],
-                ['other', '🤷 Diğer'],
-            ];
-            reasons.forEach(function (pair) {
-                var opt = document.createElement('button');
-                opt.type = 'button';
-                opt.textContent = pair[1];
-                opt.style.cssText = 'background:transparent; border:none; text-align:left; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px; color:#e2e8f0;';
-                opt.onmouseenter = function () { this.style.background = 'rgba(255,255,255,0.08)'; };
-                opt.onmouseleave = function () { this.style.background = 'transparent'; };
-                opt.onclick = function (e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    submitAiRejection(cardWrap, tourId, pair[0], logId);
-                };
-                popup.appendChild(opt);
-            });
-
-            btn.onclick = function (e) {
-                e.stopPropagation();
-                e.preventDefault();
-                popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
-            };
-
-            var holder = document.createElement('div');
-            holder.appendChild(btn);
-            holder.appendChild(popup);
-            return holder;
-        }
-
-        async function submitAiRejection(cardWrap, tourId, reason, logId) {
-            try {
-                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                var res = await fetch('/yapay-zeka-arama/' + logId + '/reddet', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ tour_id: tourId, reason: reason }),
-                });
-                if (!res.ok) {
-                    console.warn('Reject failed', await res.text());
-                    return;
-                }
-                cardWrap.style.transition = 'opacity .35s, transform .35s';
-                cardWrap.style.opacity = '0';
-                cardWrap.style.transform = 'scale(0.9)';
-                setTimeout(function () { cardWrap.remove(); }, 350);
-            } catch (err) {
-                console.error('Reject error', err);
             }
         }
 
