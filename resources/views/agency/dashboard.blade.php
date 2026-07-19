@@ -207,6 +207,30 @@
                     @endif
                 </div>
                 @endif
+
+                {{-- AI Lead'leri: sohbetten ad+telefon bırakan sıcak müşteriler --}}
+                @if(isset($aiLeads) && $aiLeads->isNotEmpty())
+                <div class="stat-card" style="padding:24px;margin-top:24px;">
+                    <h3 style="font-size:16px;font-weight:700;margin-bottom:6px;color:#0f172a;">📞 AI Sohbet Lead'leri</h3>
+                    <div style="font-size:12px;color:#94a3b8;margin-bottom:16px;">Yapay zeka asistanına ad-telefon bırakan müşteriler — en kısa sürede arayın</div>
+                    @foreach($aiLeads as $lead)
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:#475569;padding:8px 0;border-bottom:1px solid #f8fafc;">
+                            <span style="background:{{ $lead->status === 'new' ? '#dcfce7' : '#f1f5f9' }};color:{{ $lead->status === 'new' ? '#15803d' : '#64748b' }};border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;">{{ $lead->status === 'new' ? 'Yeni' : ucfirst($lead->status) }}</span>
+                            <span style="font-weight:700;color:#0f172a;">{{ $lead->name }}</span>
+                            <a href="tel:{{ $lead->phone }}" style="color:var(--accent);font-weight:600;">{{ $lead->phone }}</a>
+                            <span style="background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:11px;">{{ $lead->intentLabel() }}</span>
+                            @if($lead->tour)
+                                <span style="color:#94a3b8;">·</span>
+                                <span>{{ \Illuminate\Support\Str::limit($lead->tour->title, 40) }}</span>
+                            @endif
+                            <span style="margin-left:auto;color:#94a3b8;font-size:11px;">{{ $lead->created_at->diffForHumans() }}</span>
+                        </div>
+                        @if($lead->note)
+                            <div style="font-size:11px;color:#94a3b8;padding:2px 0 6px;">{{ \Illuminate\Support\Str::limit($lead->note, 120) }}</div>
+                        @endif
+                    @endforeach
+                </div>
+                @endif
             </div>
         </div>
         </div>

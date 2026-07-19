@@ -3,9 +3,13 @@
 namespace App\Services\AiSearch;
 
 use App\Http\Controllers\AiSearchController;
+use App\Models\AiLead;
 use App\Models\AiSearchConversation;
 use App\Models\AiSearchMessage;
+use App\Models\Favorite;
 use App\Models\Tour;
+use App\Models\User;
+use App\Notifications\NewAiLeadNotification;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -116,10 +120,12 @@ class ConversationService
     {
         $text = $this->normalizeTr($userMessage);
 
+        // NOT: "beni arayın/arasın" artık LEAD yakalama akışına gider (ad+telefon
+        // alınıp acentaya kalıcı kayıt düşülür) — buradan bilinçli çıkarıldı.
         foreach ([
             'temsilci', 'yetkiliyle', 'yetkili biri', 'insanla konus', 'gercek biri',
-            'acentayla konus', 'acenta ile konus', 'acentayi ara', 'beni arayin',
-            'beni arasin', 'telefonla gorus', 'whatsapp', 'watsap', 'iletisime gec',
+            'acentayla konus', 'acenta ile konus', 'acentayi ara',
+            'telefonla gorus', 'whatsapp', 'watsap', 'iletisime gec', 'pazarlik',
         ] as $pattern) {
             if (str_contains($text, $pattern)) {
                 return true;
@@ -186,9 +192,9 @@ class ConversationService
      *
      * @return array{type: string, user: AiSearchMessage, assistant: AiSearchMessage}
      */
-    private function respondHandoffStreamed(AiSearchConversation $conversation, string $userMessage, \Closure $emit, array $handoff): array
+    private function respondHandoffStreamed(AiSearchConversation $conversation, string $userMessage, \Closure $emit, array $handoff, ?string $content = null): array
     {
-        $content = 'Tabii — seni '.$handoff['agency_name'].' ile buluşturayım. "'.$handoff['tour_title'].'" turu için konuşmamızın özetini hazırladım; aşağıdaki bağlantıyla tek dokunuşta iletebilirsin. Telefon: '.$handoff['phone'];
+        $content ??= 'Tabii — seni '.$handoff['agency_name'].' ile buluşturayım. "'.$handoff['tour_title'].'" turu için konuşmamızın özetini hazırladım; aşağıdaki bağlantıyla tek dokunuşta iletebilirsin. Telefon: '.$handoff['phone'];
 
         [$userMsg, $assistantMsg] = DB::transaction(function () use ($conversation, $userMessage, $content, $handoff) {
             $u = AiSearchMessage::create([
@@ -223,6 +229,292 @@ class ConversationService
         $emit('done', ['is_clarification' => false, 'assistant_message_id' => $assistantMsg->id]);
 
         return ['type' => 'handoff', 'user' => $userMsg, 'assistant' => $assistantMsg];
+    }
+
+    /** Şikayet / iade / ödeme sorunu — satış modu kapanır, insana yönlendirilir. */
+    private function detectComplaint(string $userMessage): bool
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach ([
+            'sikayet', 'magdur', 'rezalet', 'berbat bir', 'dolandir',
+            'iade istiyorum', 'param iade', 'ucret iadesi', 'paramizi',
+            'iptal etmek istiyorum', 'rezervasyonumu iptal', 'kaydimi iptal',
+            'odeme sorunu', 'odeme yapamiyorum', 'odemem gecti',
+        ] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Geri arama / opsiyon talebi — ad+telefon toplanıp acentaya lead düşülür. */
+    private function detectLeadIntent(string $userMessage): ?string
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach (['opsiyon koy', 'opsiyon yap', 'on kayit', 'yer ayir', 'yer tut', 'rezerve et'] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return AiLead::INTENT_OPTION;
+            }
+        }
+        foreach (['beni arayin', 'beni arasin', 'beni arar', 'geri arama', 'geri arayin', 'geri donun', 'geri donus yapin', 'numarami birakayim', 'telefon birakayim'] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return AiLead::INTENT_CALLBACK;
+            }
+        }
+
+        return null;
+    }
+
+    /** Fiyat düşünce / yer açılınca haber isteği. */
+    private function wantsPriceAlert(string $userMessage): bool
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach ([
+            'fiyat dusunce', 'fiyati dusunce', 'fiyat duserse', 'fiyati duserse',
+            'ucuzlayinca', 'ucuzlarsa', 'indirime girince', 'indirime girerse',
+            'yer acilinca', 'yer acilirsa', 'kontenjan acilinca',
+        ] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Bekleyen lead sorusundan vazgeçme kalıpları. */
+    private function declinesLeadContact(string $userMessage): bool
+    {
+        $text = $this->normalizeTr($userMessage);
+
+        foreach (['istemiyorum', 'vazgectim', 'gerek yok', 'gerek kalmadi', 'sonra veririm', 'simdi degil', 'birakalim', 'istemem'] as $pattern) {
+            if (str_contains($text, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Mesajdan TR cep telefonu çıkarır (0/+90 önekli 5xx). Bulamazsa null. */
+    private function extractPhone(string $userMessage): ?string
+    {
+        if (! preg_match('/(?:\+?9\s*0[\s\-.]?)?0?[\s\-.]?(5\d{2})[\s\-.]?(\d{3})[\s\-.]?(\d{2})[\s\-.]?(\d{2})(?!\d)/', $userMessage, $m)) {
+            return null;
+        }
+
+        return '0'.$m[1].$m[2].$m[3].$m[4];
+    }
+
+    /**
+     * Basit tek-mesajlık tur: kullanıcı+asistan mesajı kaydedilir, intent
+     * yamalanır, (varsa) SSE olayları basılır. Lead/güvenlik akışlarının
+     * LLM'siz cevapları bu ortak yoldan döner.
+     *
+     * @param  array<string, mixed>  $intentPatch  null değerli anahtar intent'ten SİLİNİR
+     * @return array{type: string, user: AiSearchMessage, assistant: AiSearchMessage}
+     */
+    private function respondPlainTurn(AiSearchConversation $conversation, string $userMessage, ?\Closure $emit, string $content, array $intentPatch = []): array
+    {
+        [$userMsg, $assistantMsg] = DB::transaction(function () use ($conversation, $userMessage, $content, $intentPatch) {
+            $u = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_USER,
+                'content' => $userMessage,
+            ]);
+            $a = AiSearchMessage::create([
+                'conversation_id' => $conversation->id,
+                'role' => AiSearchMessage::ROLE_ASSISTANT,
+                'content' => $content,
+            ]);
+
+            $intent = (array) ($conversation->current_intent ?? []);
+            foreach ($intentPatch as $key => $value) {
+                if ($value === null) {
+                    unset($intent[$key]);
+                } else {
+                    $intent[$key] = $value;
+                }
+            }
+            $conversation->update([
+                'current_intent' => $intent ?: null,
+                'last_message_at' => now(),
+                'title' => $conversation->title ?: Str::limit($userMessage, 60),
+            ]);
+
+            return [$u, $a];
+        });
+
+        if ($emit !== null) {
+            $emit('search', [
+                'conversation_uuid' => $conversation->uuid,
+                'user_message' => [
+                    'id' => $userMsg->id, 'role' => $userMsg->role,
+                    'content' => $userMsg->content,
+                    'created_at' => $userMsg->created_at?->toIso8601String(),
+                ],
+            ]);
+            $emit('comment', ['delta' => $content, 'final' => $content]);
+            $emit('done', ['is_clarification' => false, 'assistant_message_id' => $assistantMsg->id]);
+        }
+
+        return ['type' => 'plain', 'user' => $userMsg, 'assistant' => $assistantMsg];
+    }
+
+    /** Plain turu senkron (JSON) cevap zarfına çevirir. */
+    private function wrapPlainPayload(array $turn): array
+    {
+        return [
+            'user' => $turn['user'],
+            'assistant' => $turn['assistant'],
+            'payload' => [
+                'aiComment' => $turn['assistant']->content,
+                'results' => [],
+                'is_answer' => true,
+            ],
+        ];
+    }
+
+    /**
+     * Lead için ad+telefon isteme turu: _awaiting_lead bayrağı kurulur, amaç
+     * açıkça söylenir (KVKK: veri yalnız belirtilen amaç için istenir).
+     */
+    private function askLeadContact(AiSearchConversation $conversation, string $userMessage, ?\Closure $emit, string $intent, ?string $note = null, bool $complaint = false): array
+    {
+        $lastIds = array_values(array_filter(array_map('intval', (array) ($conversation->last_result_tour_ids ?? []))));
+        $tourId = $lastIds[0] ?? null;
+
+        $question = match (true) {
+            $complaint => 'Bunu yaşadığın için üzgünüm. Konuyu hemen yetkili arkadaşımıza iletiyorum — sana dönüş yapabilmemiz için ad-soyad ve telefon numaranı yazar mısın? (Örn: Ayşe Yılmaz 0532 123 45 67)',
+            $intent === AiLead::INTENT_OPTION => 'Opsiyon talebini iletmem için ad-soyad ve telefon numaranı alabilir miyim? Temsilcimiz onay için seni arayacak. (Örn: Ayşe Yılmaz 0532 123 45 67)',
+            $intent === AiLead::INTENT_PRICE_ALERT => 'Fiyat değişince haber verebilmemiz için ad-soyad ve telefon numaranı yazar mısın? (Örn: Ayşe Yılmaz 0532 123 45 67) 🔔',
+            default => 'Tabii! Temsilcimizin seni arayabilmesi için ad-soyad ve telefon numaranı yazar mısın? (Örn: Ayşe Yılmaz 0532 123 45 67) 📞',
+        };
+
+        return $this->respondPlainTurn($conversation, $userMessage, $emit, $question, [
+            '_awaiting_lead' => [
+                'intent' => $intent,
+                'tour_id' => $tourId,
+                'note' => $note,
+                'reminded' => false,
+            ],
+        ]);
+    }
+
+    /**
+     * _awaiting_lead bekleyen cevabı işler. Lead oluşursa/vazgeçilirse/tekrar
+     * sorulursa plain tur döner; null dönerse bayrak temizlenmiştir ve mesaj
+     * normal akışta (router/arama) işlenmeye devam eder.
+     */
+    private function handleAwaitingLead(Request $request, AiSearchConversation $conversation, string $userMessage, ?\Closure $emit): ?array
+    {
+        $awaiting = (array) (($conversation->current_intent ?? [])['_awaiting_lead'] ?? []);
+        if (empty($awaiting['intent'])) {
+            return null;
+        }
+
+        if ($this->declinesLeadContact($userMessage)) {
+            return $this->respondPlainTurn($conversation, $userMessage, $emit,
+                'Sorun değil, istediğin an tekrar yazman yeterli 😊 Tatil planına devam edelim mi?',
+                ['_awaiting_lead' => null]);
+        }
+
+        $phone = $this->extractPhone($userMessage);
+        if ($phone === null) {
+            if (empty($awaiting['reminded'])) {
+                $awaiting['reminded'] = true;
+
+                return $this->respondPlainTurn($conversation, $userMessage, $emit,
+                    'Telefon numaranı yakalayamadım — "Ad Soyad 05xx xxx xx xx" şeklinde yazabilir misin? İstemezsen "gerek yok" demen yeterli.',
+                    ['_awaiting_lead' => $awaiting]);
+            }
+
+            // İkinci denemede de yok: ısrar etme, bayrağı bırak ve mesajı normal işle
+            $intent = (array) ($conversation->current_intent ?? []);
+            unset($intent['_awaiting_lead']);
+            $conversation->update(['current_intent' => $intent ?: null]);
+            $conversation->refresh();
+
+            return null;
+        }
+
+        // Ad: telefon ve ayraçlar çıkarıldıktan sonra kalan metin
+        $name = trim((string) preg_replace('/[\d\+\-\.\(\)]+/', ' ', $userMessage));
+        $name = trim((string) preg_replace('/\s{2,}/', ' ', $name));
+        if (mb_strlen($name) < 3) {
+            $name = $request->user()?->name ?? 'Ad belirtilmedi';
+        }
+        $name = Str::limit($name, 120, '');
+
+        $tour = ! empty($awaiting['tour_id']) ? Tour::with('agency')->find((int) $awaiting['tour_id']) : null;
+
+        $ci = (array) ($conversation->current_intent ?? []);
+        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        $noteBits = array_filter([
+            $awaiting['note'] ?? null,
+            $tour?->title ? 'Tur: '.$tour->title : null,
+            ! empty($ci['preferred_month']) ? 'Ay: '.($monthNames[(int) $ci['preferred_month']] ?? '') : null,
+            ! empty($ci['max_budget']) ? 'Bütçe: ~'.number_format((int) $ci['max_budget'], 0, ',', '.').' TL' : null,
+            ! empty($ci['traveler_profile']) ? 'Profil: '.str_replace('_', ' ', (string) $ci['traveler_profile']) : null,
+        ]);
+
+        $lead = AiLead::create([
+            'conversation_id' => $conversation->id,
+            'tour_id' => $tour?->id,
+            'agency_id' => $tour?->agency_id,
+            'name' => $name,
+            'phone' => $phone,
+            'intent' => (string) $awaiting['intent'],
+            'note' => $noteBits !== [] ? Str::limit(implode(' · ', $noteBits), 1000, '') : null,
+        ]);
+
+        if ($tour?->agency_id) {
+            User::where('agency_id', $tour->agency_id)->get()
+                ->each(fn (User $u) => $u->notify(new NewAiLeadNotification($lead)));
+        }
+
+        // Fiyat alarmı + girişli kullanıcı: favoriye de ekle ki mevcut fiyat-düşüş
+        // bildirimi otomatik devreye girsin.
+        if ($awaiting['intent'] === AiLead::INTENT_PRICE_ALERT && $request->user() && $tour) {
+            Favorite::firstOrCreate(['user_id' => $request->user()->id, 'tour_id' => $tour->id]);
+        }
+
+        $confirm = match ($awaiting['intent']) {
+            AiLead::INTENT_OPTION => 'Aldım! '.($tour?->title ? '"'.$tour->title.'" için opsiyon talebini' : 'Opsiyon talebini').' acentaya ilettim — temsilci en kısa sürede seni arayacak. Bu arada başka bir şey bakalım mı?',
+            AiLead::INTENT_PRICE_ALERT => 'Tamamdır! '.($tour?->title ? '"'.$tour->title.'" turunda' : 'Bu turda').' fiyat değişirse sana haber vereceğiz 🔔 Başka bir konuda yardımcı olayım mı?',
+            default => 'Notunu aldım, teşekkürler! Temsilcimiz en kısa sürede '.$phone.' numarasından sana dönecek. Beklerken başka bir şeye bakalım mı?',
+        };
+
+        return $this->respondPlainTurn($conversation, $userMessage, $emit, $confirm, ['_awaiting_lead' => null]);
+    }
+
+    /**
+     * Fiyat alarmı başlangıcı: girişli + tur bilinen kullanıcıda tek adımda
+     * favori+onay; aksi halde telefon istenir.
+     */
+    private function startPriceAlert(Request $request, AiSearchConversation $conversation, string $userMessage, ?\Closure $emit): array
+    {
+        $lastIds = array_values(array_filter(array_map('intval', (array) ($conversation->last_result_tour_ids ?? []))));
+        $tour = ! empty($lastIds) ? Tour::active()->find($lastIds[0]) : null;
+
+        if ($tour === null) {
+            return $this->respondPlainTurn($conversation, $userMessage, $emit,
+                'Fiyat alarmı için önce bir tur seçelim 😊 Nasıl bir tatil arıyorsun — birlikte bulalım, sonra alarmı kurarım.');
+        }
+
+        if ($request->user()) {
+            Favorite::firstOrCreate(['user_id' => $request->user()->id, 'tour_id' => $tour->id]);
+
+            return $this->respondPlainTurn($conversation, $userMessage, $emit,
+                'Tamamdır! "'.$tour->title.'" turunu takibe aldım — fiyatı düşerse bildirim göndereceğim 🔔 Başka bir şey bakalım mı?');
+        }
+
+        return $this->askLeadContact($conversation, $userMessage, $emit, AiLead::INTENT_PRICE_ALERT);
     }
 
     private function wantsDifferentResults(string $userMessage): bool
@@ -495,7 +787,41 @@ class ConversationService
             // tamamlanmış olabilir, intent değişmiş olabilir.
             $conversation->refresh();
 
-            // İnsan devri (streaming yoldakiyle aynı)
+            // Phase 0-PII: kart/TC maskesi — hassas numara HAM olarak ne DB'ye
+            // ne OpenAI'ye gider. Yakalanırsa LLM'siz güvenlik cevabı döner.
+            $pii = PiiMasker::mask($userMessage);
+            if ($pii['types'] !== []) {
+                return $this->wrapPlainPayload($this->respondPlainTurn($conversation, $pii['text'], null,
+                    'Güvenliğin için kart veya kimlik numarası gibi bilgileri sohbette işleyemiyorum — mesajındaki numarayı maskeledim. Ödeme yalnızca güvenli rezervasyon sayfasında yapılır. Tatil planına dönelim mi?'));
+            }
+
+            // Phase 0-lead-bekleyen: önceki turda ad+telefon istendiyse cevabı işle
+            $leadTurn = $this->handleAwaitingLead($request, $conversation, $userMessage, null);
+            if ($leadTurn !== null) {
+                return $this->wrapPlainPayload($leadTurn);
+            }
+
+            // Phase 0-şikayet: satış modu kapanır — devir kartı (emojisiz) ya da
+            // geri-arama kaydı ile insana yönlendirilir
+            if ($this->detectComplaint($userMessage)) {
+                $handoff = $this->buildHandoffPayload($conversation);
+                if ($handoff !== null) {
+                    $turn = $this->respondHandoffStreamed($conversation, $userMessage, function () {}, $handoff,
+                        'Bunu yaşadığın için üzgünüm. Seni hemen '.$handoff['agency_name'].' ile buluşturuyorum; konuşmamızın özetini de ilettim. Telefon: '.$handoff['phone']);
+
+                    return [
+                        'user' => $turn['user'],
+                        'assistant' => $turn['assistant'],
+                        'payload' => ['aiComment' => $turn['assistant']->content, 'results' => [], 'handoff' => $handoff],
+                    ];
+                }
+                $turn = $this->askLeadContact($conversation, $userMessage, null, AiLead::INTENT_CALLBACK, 'Şikayet/İade talebi', complaint: true);
+
+                return $this->wrapPlainPayload($turn);
+            }
+
+            // İnsan devri (streaming yoldakiyle aynı) — açıkça acenta/temsilci
+            // isteyen mesajda devir, genel "beni arayın" lead'inden ÖNCE gelir
             if ($this->wantsHumanHandoff($userMessage)) {
                 $handoff = $this->buildHandoffPayload($conversation);
                 if ($handoff !== null) {
@@ -511,6 +837,14 @@ class ConversationService
                         ],
                     ];
                 }
+            }
+
+            // Phase 0c: fiyat alarmı / geri arama-opsiyon lead'i (LLM'siz)
+            if ($this->wantsPriceAlert($userMessage)) {
+                return $this->wrapPlainPayload($this->startPriceAlert($request, $conversation, $userMessage, null));
+            }
+            if (($leadIntent = $this->detectLeadIntent($userMessage)) !== null) {
+                return $this->wrapPlainPayload($this->askLeadContact($conversation, $userMessage, null, $leadIntent));
             }
 
             // Mesaj yönlendirici (streaming yoldakiyle aynı): arama-dışı mesajlar
@@ -667,6 +1001,35 @@ class ConversationService
         return $lock->block(self::LOCK_BLOCK_SECONDS, function () use ($request, $conversation, $userMessage, $emit) {
             $conversation->refresh();
 
+            // Phase 0-PII: kart/TC maskesi — hassas numara HAM olarak ne DB'ye
+            // ne OpenAI'ye gider. Yakalanırsa LLM'siz güvenlik cevabı döner.
+            $pii = PiiMasker::mask($userMessage);
+            if ($pii['types'] !== []) {
+                return $this->respondPlainTurn($conversation, $pii['text'], $emit,
+                    'Güvenliğin için kart veya kimlik numarası gibi bilgileri sohbette işleyemiyorum — mesajındaki numarayı maskeledim. Ödeme yalnızca güvenli rezervasyon sayfasında yapılır. Tatil planına dönelim mi?');
+            }
+
+            // Phase 0-lead-bekleyen: önceki turda ad+telefon istendiyse cevabı işle
+            $leadTurn = $this->handleAwaitingLead($request, $conversation, $userMessage, $emit);
+            if ($leadTurn !== null) {
+                return $leadTurn;
+            }
+
+            // Phase 0-şikayet: satış modu kapanır — devir kartı (emojisiz) ya da
+            // geri-arama kaydı ile insana yönlendirilir
+            if ($this->detectComplaint($userMessage)) {
+                $handoff = $this->buildHandoffPayload($conversation);
+                if ($handoff !== null) {
+                    $turn = $this->respondHandoffStreamed($conversation, $userMessage, $emit, $handoff,
+                        'Bunu yaşadığın için üzgünüm. Seni hemen '.$handoff['agency_name'].' ile buluşturuyorum; konuşmamızın özetini de ilettim. Telefon: '.$handoff['phone']);
+
+                    return $turn;
+                }
+                $turn = $this->askLeadContact($conversation, $userMessage, $emit, AiLead::INTENT_CALLBACK, 'Şikayet/İade talebi', complaint: true);
+
+                return $turn;
+            }
+
             // Phase 0a: insan devri — kullanıcı acenta/temsilci istiyorsa sohbet
             // özetiyle dolu WhatsApp/telefon köprüsü kur (LLM'siz)
             if ($this->wantsHumanHandoff($userMessage)) {
@@ -674,6 +1037,14 @@ class ConversationService
                 if ($handoff !== null) {
                     return $this->respondHandoffStreamed($conversation, $userMessage, $emit, $handoff);
                 }
+            }
+
+            // Phase 0c: fiyat alarmı / geri arama-opsiyon lead'i (LLM'siz)
+            if ($this->wantsPriceAlert($userMessage)) {
+                return $this->startPriceAlert($request, $conversation, $userMessage, $emit);
+            }
+            if (($leadIntent = $this->detectLeadIntent($userMessage)) !== null) {
+                return $this->askLeadContact($conversation, $userMessage, $emit, $leadIntent);
             }
 
             // Phase 0b: mesaj yönlendirici — arama-dışı mesajlar (tur sorusu/kıyas/

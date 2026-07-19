@@ -72,10 +72,17 @@ class DashboardController extends Controller
 
         [$unmetDemand, $missedMatches] = $this->buildDemandRadar($agency->id);
 
+        // AI sohbetinden düşen sıcak lead'ler (geri arama / opsiyon / fiyat alarmı)
+        $aiLeads = \App\Models\AiLead::with('tour')
+            ->where('agency_id', $agency->id)
+            ->latest()
+            ->take(10)
+            ->get();
+
         return view('agency.dashboard', compact(
             'agency', 'totalClicks', 'todayClicks', 'weekClicks', 'monthClicks',
             'tourClicks', 'chartLabels', 'chartData', 'hourLabels', 'hourData',
-            'unmetDemand', 'missedMatches'
+            'unmetDemand', 'missedMatches', 'aiLeads'
         ));
     }
 
