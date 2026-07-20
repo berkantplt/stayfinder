@@ -566,7 +566,7 @@
         // Tema paletleri: dark = yüzen widget (cam panel), light = tam sayfa sohbet
         var THEMES = {
             dark: {
-                card: 'position:relative; flex:0 0 220px; min-width:220px; min-height:252px; background:rgba(255,255,255,0.08); border-radius:16px; border:1px solid rgba(255,255,255,0.15); scroll-snap-align:start; transition:transform .3s, box-shadow .3s, opacity .35s; overflow:hidden;',
+                card: 'position:relative; display:flex; flex-direction:column; flex:0 0 220px; min-width:220px; min-height:252px; background:rgba(255,255,255,0.08); border-radius:16px; border:1px solid rgba(255,255,255,0.15); scroll-snap-align:start; transition:transform .3s, box-shadow .3s, opacity .35s; overflow:hidden;',
                 cardClass: 'ai-tour-card',
                 hoverLift: 'translateY(-4px)',
                 hoverShadow: '0 16px 32px rgba(0,0,0,0.3)',
@@ -1297,11 +1297,13 @@
                             chip.className = 'suggestion-chip';
                             chip.textContent = t;
                             chip.onclick = () => {
+                                // Akış sürerken kullanıcının yazmakta olduğu taslağı ezme
+                                if (window._aiWidgetSending) return;
                                 const inputEl = document.getElementById('ai-chat-input');
                                 inputEl.value = t;
                                 sendAIChatMessage();
                                 // Gönderim gerçekten başladıysa input tüketilmiştir;
-                                // akış sürerken tıklanırsa çipler yerinde kalsın
+                                // başlamadıysa çipler yerinde kalsın
                                 if (!inputEl.value) wrap.remove();
                             };
                             wrap.appendChild(chip);

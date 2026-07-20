@@ -36,7 +36,7 @@
                                     <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ $tour->agency->name }}</div>
                                 @endif
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px solid #f1f5f9;gap:6px;">
-                                    <div style="font-size:15px;font-weight:800;color:#0f172a;">{{ number_format((float) $tour->price, 0, ',', '.') }} {{ $tour->currency }}</div>
+                                    <div style="font-size:15px;font-weight:800;color:#0f172a;">{{ $tour->formatted_price }}</div>
                                     <div style="font-size:11px;font-weight:700;color:#fff;background:#6366f1;padding:6px 12px;border-radius:100px;white-space:nowrap;">İncele →</div>
                                 </div>
                             </div>
