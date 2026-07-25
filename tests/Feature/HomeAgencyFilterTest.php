@@ -59,8 +59,8 @@ class HomeAgencyFilterTest extends TestCase
             ->get(route('home', ['agency' => 'Jolly']))
             ->assertOk();
 
-        $response->assertSee('Jolly Antalya Turu');
-        $response->assertDontSee('ETS Bodrum Turu');
+        $this->assertStringContainsString('Jolly Antalya Turu', $response->json('html'));
+        $this->assertStringNotContainsString('ETS Bodrum Turu', $response->json('html'));
     }
 
     public function test_partial_agency_match_works(): void
@@ -75,8 +75,8 @@ class HomeAgencyFilterTest extends TestCase
             ->get(route('home', ['agency' => 'cora']))
             ->assertOk();
 
-        $response->assertSee('Coral Mısır Turu');
-        $response->assertDontSee('Tatil Sepeti Yunan');
+        $this->assertStringContainsString('Coral Mısır Turu', $response->json('html'));
+        $this->assertStringNotContainsString('Tatil Sepeti Yunan', $response->json('html'));
     }
 
     public function test_empty_agency_filter_does_not_restrict_tours(): void
@@ -90,8 +90,8 @@ class HomeAgencyFilterTest extends TestCase
             ->get(route('home', ['agency' => '']))
             ->assertOk();
 
-        $response->assertSee('T1');
-        $response->assertSee('T2');
+        $this->assertStringContainsString('T1', $response->json('html'));
+        $this->assertStringContainsString('T2', $response->json('html'));
     }
 
     public function test_agency_filter_combined_with_destination(): void
@@ -104,8 +104,8 @@ class HomeAgencyFilterTest extends TestCase
             ->get(route('home', ['agency' => 'Jolly', 'destination' => 'Antalya']))
             ->assertOk();
 
-        $response->assertSee('Jolly Antalya');
-        $response->assertDontSee('Jolly Bodrum');
+        $this->assertStringContainsString('Jolly Antalya', $response->json('html'));
+        $this->assertStringNotContainsString('Jolly Bodrum', $response->json('html'));
     }
 
     private function makeAgency(string $name): Agency

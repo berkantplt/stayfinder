@@ -98,72 +98,116 @@
 </div>
 
 <div class="container" id="homeMain">
-    {{-- Filter Bar --}}
+    {{-- Yatay Filtre Barı (Etstur uyarlaması G2): hap butonlar + count'lu paneller + canlı sayaç --}}
     <div class="filter-bar-wrapper">
-        <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar">
-            <input type="hidden" name="category" id="selected-category" value="">
-            
-            {{-- Ana Kategoriler (1. Satır) --}}
-            <div class="category-tabs-container">
-                <div class="category-tabs" id="categoryTabs">
-                    <button type="button" class="category-tab active" data-category="" data-children='[]'>
-                        <span class="category-icon">🏷️</span>
-                        <span class="category-name">Tümü</span>
+        <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar yfilter-card">
+            <input type="hidden" name="category" id="selected-category" value="{{ request('category') }}">
+
+            <div class="ybar" id="yBar">
+                <button type="button" class="ybtn" data-ypop="ypCat">🏷️ Kategoriler <b class="ybadge" data-yb="category"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypDest">📍 Destinasyon <b class="ybadge" data-yb="destinations"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypMonth">🗓️ Dönem <b class="ybadge" data-yb="months"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypSpecial">🎉 Özel Günler <b class="ybadge" data-yb="special"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypVisa">🛂 Vize <b class="ybadge" data-yb="visa"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypDays">⏱️ Süre <b class="ybadge" data-yb="days"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypDep">🛫 Kalkış <b class="ybadge" data-yb="departures"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypBudget">💸 Bütçe <b class="ybadge" data-yb="budget_max"></b> <span>▾</span></button>
+                <button type="button" class="ybtn" data-ypop="ypAgency">🏢 Acenta <b class="ybadge" data-yb="agency"></b> <span>▾</span></button>
+
+                <span class="ycount">Canlı: <b id="yLiveCount">{{ number_format($filteredCount, 0, ',', '.') }}</b> tur</span>
+                <select name="sort" class="ysort" aria-label="Sıralama">
+                    <option value="price_asc" {{ request('sort', 'price_asc') === 'price_asc' ? 'selected' : '' }}>Fiyat ↑</option>
+                    <option value="price_desc" {{ request('sort') === 'price_desc' ? 'selected' : '' }}>Fiyat ↓</option>
+                    <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Tarihe göre</option>
+                </select>
+                <button type="button" class="yreset" id="yReset">Sıfırla</button>
+            </div>
+            <div class="ychips" id="yChips"></div>
+
+            {{-- Paneller: gerçek form alanları içerir; JS yoksa "Uygula" ile GET submit çalışır --}}
+            <div class="ypop" id="ypCat" role="group" aria-label="Kategoriler">
+                <h5>Kategoriler</h5>
+                <button type="button" class="ycat-item {{ request('category') ? '' : 'sel' }}" data-cat="">🏷️ Tümü</button>
+                @foreach($categories as $cat)
+                    <button type="button" class="ycat-item {{ request('category') === $cat->slug ? 'sel' : '' }}" data-cat="{{ $cat->slug }}">
+                        {{ $cat->icon }} {{ $cat->name }} <i>{{ $facets['categories'][$cat->id] ?? 0 }}</i>
                     </button>
-                    @foreach($categories as $cat)
-                    <button type="button" class="category-tab" data-category="{{ $cat->slug }}" data-children='@json($cat->children->map(fn($c) => ["slug" => $c->slug, "name" => $c->name, "icon" => $c->icon]))'>
-                        <span class="category-icon">{{ $cat->icon }}</span>
-                        <span class="category-name">{{ $cat->name }}</span>
-                    </button>
+                    @foreach($cat->children as $child)
+                        <button type="button" class="ycat-item ycat-child {{ request('category') === $child->slug ? 'sel' : '' }}" data-cat="{{ $child->slug }}">
+                            {{ $child->icon }} {{ $child->name }} <i>{{ $facets['categories'][$child->id] ?? 0 }}</i>
+                        </button>
+                    @endforeach
+                @endforeach
+            </div>
+
+            <div class="ypop" id="ypDest" role="group" aria-label="Destinasyon">
+                <h5>Destinasyon</h5>
+                @forelse($facets['destinations'] as $row)
+                    <label class="yopt"><input type="checkbox" name="destinations[]" value="{{ $row['city'] }}" {{ in_array($row['city'], (array) request('destinations'), true) ? 'checked' : '' }}> {{ $row['city'] }} <i>{{ $row['count'] }}</i></label>
+                @empty
+                    <div class="yopt-empty">Envanter hazırlanıyor…</div>
+                @endforelse
+            </div>
+
+            <div class="ypop" id="ypMonth" role="group" aria-label="Dönem">
+                <h5>Hangi ay?</h5>
+                <div class="ymonths">
+                    @foreach(['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'] as $i => $ay)
+                        <label class="ymonth {{ in_array($i + 1, array_map('intval', (array) request('months')), true) ? 'on' : '' }}">
+                            <input type="checkbox" name="months[]" value="{{ $i + 1 }}" {{ in_array($i + 1, array_map('intval', (array) request('months')), true) ? 'checked' : '' }}>{{ $ay }}
+                        </label>
                     @endforeach
                 </div>
             </div>
 
-            {{-- Alt Kategoriler (2. Satır — dinamik) --}}
-            <div class="subcategory-row" id="subcategoryRow">
-                <div class="subcategory-tabs" id="subcategoryTabs"></div>
+            <div class="ypop" id="ypSpecial" role="group" aria-label="Özel günler">
+                <h5>Özel günler</h5>
+                <label class="yopt"><input type="radio" name="special" value="" {{ request('special') ? '' : 'checked' }}> Farketmez</label>
+                @foreach($specialPeriods as $key => $period)
+                    <label class="yopt"><input type="radio" name="special" value="{{ $key }}" {{ request('special') === $key ? 'checked' : '' }}> {{ $period['label'] }}</label>
+                @endforeach
             </div>
 
-            <div class="filter-dropdowns">
-                <div class="filter-select-group">
-                    <select name="destination" class="home-filter-select">
-                        <option value="">Destinasyon Seç</option>
-                        @foreach($allDestinations as $dest)
-                            <option value="{{ $dest }}" {{ request('destination') === $dest ? 'selected' : '' }}>{{ $dest }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="filter-select-group filter-agency-group" style="position:relative;">
-                    <input
-                        type="text"
-                        name="agency"
-                        list="agency-options"
-                        autocomplete="off"
-                        placeholder="🏢 Acenta ara..."
-                        value="{{ request('agency') }}"
-                        class="home-filter-select home-filter-agency"
-                    >
-                    <datalist id="agency-options">
-                        @foreach($activeAgencies as $agency)
-                            <option value="{{ $agency->name }}"></option>
-                        @endforeach
-                    </datalist>
-                    @if(request('agency'))
-                        <button
-                            type="button"
-                            onclick="clearAgencyFilter()"
-                            title="Temizle"
-                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;line-height:1;padding:4px;"
-                        >✕</button>
-                    @endif
-                </div>
-                <div class="filter-select-group">
-                    <select name="sort" class="home-filter-select">
-                        <option value="price_asc" {{ request('sort') === 'price_asc' ? 'selected' : '' }}>Fiyat (En Düşük)</option>
-                        <option value="price_desc" {{ request('sort') === 'price_desc' ? 'selected' : '' }}>Fiyat (En Yüksek)</option>
-                    </select>
-                </div>
+            <div class="ypop" id="ypVisa" role="group" aria-label="Vize durumu">
+                <h5>Vize durumu</h5>
+                <label class="yopt"><input type="checkbox" name="visa[]" value="vizesiz" {{ in_array('vizesiz', (array) request('visa'), true) ? 'checked' : '' }}> ✈️ Vizesiz turlar <i>{{ $facets['visa']['vizesiz'] }}</i></label>
+                <label class="yopt"><input type="checkbox" name="visa[]" value="vizeli" {{ in_array('vizeli', (array) request('visa'), true) ? 'checked' : '' }}> Vizeli turlar <i>{{ $facets['visa']['vizeli'] }}</i></label>
             </div>
+
+            <div class="ypop" id="ypDays" role="group" aria-label="Süre">
+                <h5>Kaç gün?</h5>
+                @foreach($facets['days'] as $band => $count)
+                    <label class="yopt"><input type="checkbox" name="days[]" value="{{ $band }}" {{ in_array($band, (array) request('days'), true) ? 'checked' : '' }}> {{ $band }} gün <i>{{ $count }}</i></label>
+                @endforeach
+            </div>
+
+            <div class="ypop" id="ypDep" role="group" aria-label="Kalkış noktası">
+                <h5>Kalkış noktası</h5>
+                @forelse($facets['departures'] as $city => $count)
+                    <label class="yopt"><input type="checkbox" name="departures[]" value="{{ $city }}" {{ in_array($city, (array) request('departures'), true) ? 'checked' : '' }}> {{ $city }} <i>{{ $count }}</i></label>
+                @empty
+                    <div class="yopt-empty">Kalkış bilgisi olan tur yok</div>
+                @endforelse
+            </div>
+
+            <div class="ypop" id="ypBudget" role="group" aria-label="Bütçe">
+                <h5>Kişi başı bütçe</h5>
+                <input type="range" min="5" max="100" step="5" value="{{ (int) request('budget_max') ?: 100 }}" id="yBudgetRange" style="width:100%;accent-color:var(--accent);">
+                <input type="hidden" name="budget_max" id="yBudgetInput" value="{{ (int) request('budget_max') ?: '' }}">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);"><span>5.000 ₺</span><b id="yBudgetLabel" style="color:var(--accent);">{{ (int) request('budget_max') ? '≤ '.(int) request('budget_max').'.000 ₺' : 'sınırsız' }}</b></div>
+            </div>
+
+            <div class="ypop" id="ypAgency" role="group" aria-label="Acenta">
+                <h5>Acenta ara</h5>
+                <input type="text" name="agency" list="agency-options" autocomplete="off" placeholder="🏢 Acenta adı..." value="{{ request('agency') }}" class="yagency-input">
+                <datalist id="agency-options">
+                    @foreach($activeAgencies as $agency)
+                        <option value="{{ $agency->name }}"></option>
+                    @endforeach
+                </datalist>
+            </div>
+
+            <noscript><button type="submit" class="yreset" style="margin-top:8px;">Filtrele</button></noscript>
         </form>
     </div>
 
@@ -450,37 +494,48 @@
 
         /* ── Home Filter Bar ── */
         .filter-bar-wrapper { margin-top:-40px; position:relative; z-index:10; margin-bottom:32px; }
-        .filter-bar { background:white; border-radius:20px; box-shadow:0 15px 40px -10px rgba(0,0,0,0.12); padding:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; border:1px solid #f1f5f9; }
-        
-        .category-tabs-container { flex:1; overflow:hidden; position:relative; }
-        .category-tabs { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; -ms-overflow-style:none; }
-        .category-tabs::-webkit-scrollbar { display:none; }
-        
-        .category-tab { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:10px 18px; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:inherit; font-weight:600; font-size:14px; color:#475569; }
-        .category-tab:hover { background:#f1f5f9; border-color:#cbd5e1; color:var(--text); }
-        .category-tab.active { background:var(--accent-light); border-color:var(--accent); color:var(--accent-dark); box-shadow:0 4px 12px rgba(13,148,136,0.1); }
-        .category-icon { font-size:18px; }
+        .filter-bar { background:white; border-radius:20px; box-shadow:0 15px 40px -10px rgba(0,0,0,0.12); padding:12px; border:1px solid #f1f5f9; }
 
-        .filter-dropdowns { display:flex; gap:12px; }
-        .home-filter-select { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:10px 16px; font-family:inherit; font-weight:600; font-size:14px; color:#475569; outline:none; cursor:pointer; min-width:160px; transition:all 0.2s; }
-        .home-filter-select:focus { border-color:var(--accent); background:white; box-shadow:0 0 0 3px rgba(13,148,136,0.08); }
+        /* ── Yatay filtre barı (Etstur uyarlaması G2) ── */
+        .yfilter-card { position:relative; display:block; }
+        .ybar { display:flex; gap:8px; align-items:center; overflow-x:auto; padding:2px; scrollbar-width:none; -ms-overflow-style:none; }
+        .ybar::-webkit-scrollbar { display:none; }
+        .ybtn { display:inline-flex; align-items:center; gap:6px; border:1.5px solid #e2e8f0; background:#f8fafc; border-radius:100px; padding:9px 14px; font-size:13px; font-weight:700; color:#334155; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; transition:all .15s; }
+        .ybtn:hover { border-color:#cbd5e1; background:#f1f5f9; }
+        .ybtn.set { border-color:var(--accent); background:#f0fdfa; color:var(--accent-dark); }
+        .ybtn > span { color:#94a3b8; font-size:10px; }
+        .ybadge { display:none; font-style:normal; background:var(--accent); color:#fff; border-radius:100px; padding:1px 7px; font-size:10.5px; font-weight:800; }
+        .ybadge.show { display:inline-block; }
+        .ycount { margin-left:auto; font-size:12.5px; color:#475569; font-weight:700; white-space:nowrap; flex-shrink:0; padding-left:8px; }
+        .ycount b { color:var(--accent); }
+        .ysort { border:1.5px solid #e2e8f0; background:#f8fafc; border-radius:100px; padding:8px 12px; font-size:12.5px; font-weight:700; color:#475569; cursor:pointer; font-family:inherit; outline:none; flex-shrink:0; }
+        .yreset { border:none; background:none; color:#94a3b8; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline; font-family:inherit; flex-shrink:0; }
+        .ychips { display:none; gap:5px; flex-wrap:wrap; margin-top:8px; }
+        .ychips.show { display:flex; }
+        .ychips span { background:var(--accent-light); color:var(--accent-dark); border-radius:100px; padding:3px 10px; font-size:11.5px; font-weight:800; cursor:pointer; }
 
-        /* ── Subcategory Row (2nd tier) ── */
-        .subcategory-row { width:100%; max-height:0; overflow:hidden; transition:max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease; opacity:0; margin-top:0; }
-        .subcategory-row.open { max-height:60px; opacity:1; margin-top:10px; }
-        .subcategory-tabs { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding:2px 0; }
-        .subcategory-tabs::-webkit-scrollbar { display:none; }
-        .subcategory-tab { background:#f1f5f9; border:1px solid #e2e8f0; border-radius:100px; padding:6px 16px; display:flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:inherit; font-weight:500; font-size:13px; color:#64748b; }
-        .subcategory-tab:hover { background:#e2e8f0; color:#334155; }
-        .subcategory-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
-        .subcategory-icon { font-size:14px; }
+        .ypop { display:none; position:absolute; top:calc(100% + 6px); left:12px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 18px 40px rgba(15,23,42,.18); padding:14px; z-index:60; width:260px; max-height:340px; overflow-y:auto; }
+        .ypop.open { display:block; }
+        .ypop h5 { margin:0 0 8px; font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:#94a3b8; }
+        .yopt { display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; padding:5px 0; cursor:pointer; font-weight:500; }
+        .yopt input { accent-color:var(--accent); width:15px; height:15px; }
+        .yopt i { margin-left:auto; font-style:normal; font-size:10.5px; font-weight:700; color:#94a3b8; }
+        .yopt-empty { font-size:12px; color:#94a3b8; padding:4px 0; }
+        .ycat-item { width:100%; display:flex; align-items:center; gap:6px; border:none; background:none; padding:7px 8px; border-radius:9px; font-size:13px; font-weight:600; color:#334155; cursor:pointer; text-align:left; font-family:inherit; }
+        .ycat-item:hover { background:#f1f5f9; }
+        .ycat-item.sel { background:var(--accent-light); color:var(--accent-dark); font-weight:800; }
+        .ycat-item i { margin-left:auto; font-style:normal; font-size:10.5px; font-weight:700; color:#94a3b8; }
+        .ycat-child { padding-left:26px; font-weight:500; font-size:12.5px; }
+        .ymonths { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+        .ymonth { display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; background:#fff; border-radius:9px; padding:7px 0; font-size:11.5px; font-weight:700; cursor:pointer; color:#475569; }
+        .ymonth input { position:absolute; opacity:0; pointer-events:none; }
+        .ymonth.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .yagency-input { width:100%; border:1px solid #e2e8f0; border-radius:10px; padding:9px 12px; font-size:13px; font-family:inherit; outline:none; }
+        .yagency-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(13,148,136,0.08); }
 
         @media(max-width:992px) {
-            .filter-bar { padding:16px; }
-            .category-tabs-container { order:1; width:100%; }
-            .subcategory-row { order:2; }
-            .filter-dropdowns { order:3; width:100%; justify-content:space-between; }
-            .home-filter-select { flex:1; }
+            .ycount { display:none; }
+            .ypop { left:8px; right:8px; width:auto; }
         }
 
         /* ── iPhone Style Story Cards ── */
@@ -720,155 +775,231 @@
     input.addEventListener('blur', () => { if (input.value === '') { charIdx = 0; deleting = false; setTimeout(tick, 500); } });
 })();
 
-// --- Home Filter AJAX Logic ---
+// --- Yatay Filtre Barı (G2 Etstur uyarlaması): panel + canlı sayaç + AJAX ---
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('home-filter-form');
     if (!filterForm) return;
 
-    const categoryTabs = document.querySelectorAll('.category-tab');
-    const categoryInput = document.getElementById('selected-category');
     const tourGridContainer = document.getElementById('tour-grid-container');
     const loadingSpinner = document.getElementById('loading-spinner');
-    const subcategoryRow = document.getElementById('subcategoryRow');
-    const subcategoryTabs = document.getElementById('subcategoryTabs');
+    const categoryInput = document.getElementById('selected-category');
+    const liveCount = document.getElementById('yLiveCount');
+    const chipsRow = document.getElementById('yChips');
 
-    // Filtre aktif mi? (kategori/destinasyon/acenta — sıralama tek başına sayılmaz)
-    function filtersAreActive() {
-        if (!filterForm) return false;
+    // ---- panel aç/kapa ----
+    document.querySelectorAll('#yBar .ybtn').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pop = document.getElementById(btn.dataset.ypop);
+        const wasOpen = pop.classList.contains('open');
+        filterForm.querySelectorAll('.ypop').forEach(p => p.classList.remove('open'));
+        if (!wasOpen) {
+            const maxLeft = Math.max(12, filterForm.clientWidth - 280);
+            pop.style.left = Math.min(btn.offsetLeft, maxLeft) + 'px';
+            pop.classList.add('open');
+        }
+    }));
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.ypop') && !e.target.closest('.ybtn'))
+            filterForm.querySelectorAll('.ypop').forEach(p => p.classList.remove('open'));
+    });
+
+    // ---- form durumu okuma ----
+    function formState() {
         const fd = new FormData(filterForm);
-        return ['category', 'destination', 'agency'].some(k => ((fd.get(k) || '') + '').trim() !== '');
+        return {
+            category: (fd.get('category') || '').trim(),
+            destinations: fd.getAll('destinations[]'),
+            months: fd.getAll('months[]'),
+            special: (fd.get('special') || '').trim(),
+            visa: fd.getAll('visa[]'),
+            days: fd.getAll('days[]'),
+            departures: fd.getAll('departures[]'),
+            budget_max: (fd.get('budget_max') || '').trim(),
+            agency: (fd.get('agency') || '').trim(),
+        };
     }
 
-    // Filtre aktifken storyler mini şeride büzülür, destinasyonlar gizlenir (CSS: body.filters-active)
+    function filtersAreActive() {
+        const s = formState();
+        return !!(s.category || s.destinations.length || s.months.length || s.special
+            || s.visa.length || s.days.length || s.departures.length || s.budget_max || s.agency);
+    }
+
     function updateStoriesCompact() {
         document.body.classList.toggle('filters-active', filtersAreActive());
     }
 
-    function fetchFilteredTours() {
-        if (!filterForm || !tourGridContainer) return;
+    // ---- rozetler + çipler ----
+    const AY = ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    const SPECIAL_LABELS = @json(collect($specialPeriods)->map(fn ($p) => $p['label']));
 
+    function setBadge(key, count) {
+        const b = document.querySelector('[data-yb="' + key + '"]');
+        if (!b) return;
+        b.textContent = count;
+        b.classList.toggle('show', count > 0);
+        b.closest('.ybtn').classList.toggle('set', count > 0);
+    }
+
+    function chip(label, onRemove) {
+        const s = document.createElement('span');
+        s.textContent = label + ' ✕';
+        s.addEventListener('click', () => { onRemove(); onChanged(); });
+        chipsRow.appendChild(s);
+    }
+
+    function refreshBarUi() {
+        const s = formState();
+        setBadge('category', s.category ? 1 : 0);
+        setBadge('destinations', s.destinations.length);
+        setBadge('months', s.months.length);
+        setBadge('special', s.special ? 1 : 0);
+        setBadge('visa', s.visa.length);
+        setBadge('days', s.days.length);
+        setBadge('departures', s.departures.length);
+        setBadge('budget_max', s.budget_max ? 1 : 0);
+        setBadge('agency', s.agency ? 1 : 0);
+
+        chipsRow.innerHTML = '';
+        const selCat = filterForm.querySelector('.ycat-item.sel');
+        if (s.category && selCat) chip(selCat.textContent.replace(/\d+\s*$/, '').trim(), () => selectCategory(''));
+        s.destinations.forEach(v => chip('📍 ' + v, () => uncheck('destinations[]', v)));
+        s.months.forEach(v => chip('🗓️ ' + (AY[parseInt(v, 10)] || v), () => uncheck('months[]', v)));
+        if (s.special) chip('🎉 ' + (SPECIAL_LABELS[s.special] || s.special), () => {
+            const r = filterForm.querySelector('input[name="special"][value=""]');
+            if (r) r.checked = true;
+        });
+        s.visa.forEach(v => chip(v === 'vizesiz' ? '✈️ Vizesiz' : '🛂 Vizeli', () => uncheck('visa[]', v)));
+        s.days.forEach(v => chip('⏱️ ' + v + ' gün', () => uncheck('days[]', v)));
+        s.departures.forEach(v => chip('🛫 ' + v, () => uncheck('departures[]', v)));
+        if (s.budget_max) chip('💸 ≤ ' + s.budget_max + '.000 ₺', clearBudget);
+        if (s.agency) chip('🏢 ' + s.agency, () => { filterForm.querySelector('input[name="agency"]').value = ''; });
+        const anyChip = chipsRow.children.length > 0;
+        if (anyChip) {
+            const c = document.createElement('span');
+            c.style.background = 'transparent'; c.style.color = '#94a3b8'; c.style.textDecoration = 'underline';
+            c.textContent = 'Temizle';
+            c.addEventListener('click', resetAll);
+            chipsRow.appendChild(c);
+        }
+        chipsRow.classList.toggle('show', anyChip);
+    }
+
+    function uncheck(name, value) {
+        filterForm.querySelectorAll('input[name="' + name + '"]').forEach(i => {
+            if (i.value === value) i.checked = false;
+        });
+        syncMonthPills();
+    }
+
+    // ---- AJAX ----
+    let fetchTimer = null;
+    function fetchFilteredTours() {
+        if (!tourGridContainer) return;
         updateStoriesCompact();
 
-        const formData = new FormData(filterForm);
-        const params = new URLSearchParams(formData);
-        
-        // Show loading
-        if (loadingSpinner) loadingSpinner.style.display = 'block';
-        if (tourGridContainer) tourGridContainer.style.opacity = '0.5';
+        const params = new URLSearchParams(new FormData(filterForm));
+        for (const [k, v] of [...params]) { if (!v) params.delete(k); }
+        const qs = params.toString();
+        history.replaceState({}, '', qs ? (filterForm.action + '?' + qs) : filterForm.action);
 
-        fetch(`${filterForm.action}?${params.toString()}`, {
+        if (loadingSpinner) loadingSpinner.style.display = 'block';
+        tourGridContainer.style.opacity = '0.5';
+
+        fetch(filterForm.action + (qs ? '?' + qs : ''), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(response => response.text())
-        .then(html => {
-            if (tourGridContainer) {
-                // View Transition varsa liste yumuşak geçişle değişir (app hissi)
-                const swap = () => {
-                    tourGridContainer.innerHTML = html;
-                    tourGridContainer.style.opacity = '1';
-                };
-                if (document.startViewTransition) document.startViewTransition(swap);
-                else swap();
+        .then(r => r.json())
+        .then(data => {
+            const swap = () => {
+                tourGridContainer.innerHTML = data.html;
+                tourGridContainer.style.opacity = '1';
+            };
+            if (document.startViewTransition) document.startViewTransition(swap);
+            else swap();
+            if (liveCount && typeof data.count === 'number') {
+                liveCount.textContent = new Intl.NumberFormat('tr-TR').format(data.count);
             }
         })
         .catch(err => {
             console.error('Filter error:', err);
-            if (tourGridContainer) tourGridContainer.style.opacity = '1';
+            tourGridContainer.style.opacity = '1';
         })
         .finally(() => {
             if (loadingSpinner) loadingSpinner.style.display = 'none';
         });
     }
 
-    function showSubcategories(children, parentSlug) {
-        subcategoryTabs.innerHTML = '';
-        if (!children || children.length === 0) {
-            subcategoryRow.classList.remove('open');
-            return;
-        }
-        // "Tümü" for parent
-        const allBtn = document.createElement('button');
-        allBtn.type = 'button';
-        allBtn.className = 'subcategory-tab active';
-        allBtn.dataset.category = parentSlug;
-        allBtn.innerHTML = '<span class="subcategory-icon">📋</span> Tümü';
-        allBtn.addEventListener('click', () => selectSubcategory(allBtn, parentSlug));
-        subcategoryTabs.appendChild(allBtn);
-
-        children.forEach(child => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'subcategory-tab';
-            btn.dataset.category = child.slug;
-            const icon = child.icon ? `<span class="subcategory-icon">${child.icon}</span> ` : '';
-            btn.innerHTML = `${icon}${child.name}`;
-            btn.addEventListener('click', () => selectSubcategory(btn, child.slug));
-            subcategoryTabs.appendChild(btn);
-        });
-
-        subcategoryRow.classList.add('open');
+    function onChanged(debounceMs) {
+        refreshBarUi();
+        clearTimeout(fetchTimer);
+        fetchTimer = setTimeout(fetchFilteredTours, debounceMs || 0);
     }
 
-    function selectSubcategory(btn, slug) {
-        document.querySelectorAll('.subcategory-tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
+    // ---- kategori (tek seçim) ----
+    function selectCategory(slug) {
         categoryInput.value = slug;
-        fetchFilteredTours();
+        filterForm.querySelectorAll('.ycat-item').forEach(b => b.classList.toggle('sel', b.dataset.cat === slug));
+    }
+    filterForm.querySelectorAll('.ycat-item').forEach(b => b.addEventListener('click', () => {
+        selectCategory(b.dataset.cat === categoryInput.value ? '' : b.dataset.cat);
+        onChanged();
+    }));
+
+    // ---- ay çipleri (checkbox + görsel durum) ----
+    function syncMonthPills() {
+        filterForm.querySelectorAll('.ymonth').forEach(l => {
+            const i = l.querySelector('input');
+            l.classList.toggle('on', i.checked);
+        });
+    }
+    filterForm.querySelectorAll('.ymonth input').forEach(i => i.addEventListener('change', () => {
+        syncMonthPills(); onChanged();
+    }));
+
+    // ---- diğer alanlar ----
+    filterForm.querySelectorAll('#ypDest input, #ypSpecial input, #ypVisa input, #ypDays input, #ypDep input')
+        .forEach(i => i.addEventListener('change', () => onChanged()));
+    filterForm.querySelector('.ysort').addEventListener('change', () => onChanged());
+
+    const budgetRange = document.getElementById('yBudgetRange');
+    const budgetInput = document.getElementById('yBudgetInput');
+    const budgetLabel = document.getElementById('yBudgetLabel');
+    budgetRange.addEventListener('input', () => {
+        const v = parseInt(budgetRange.value, 10);
+        budgetInput.value = v >= 100 ? '' : v;
+        budgetLabel.textContent = v >= 100 ? 'sınırsız' : '≤ ' + v + '.000 ₺';
+        onChanged(250);
+    });
+    function clearBudget() {
+        budgetRange.value = 100; budgetInput.value = '';
+        budgetLabel.textContent = 'sınırsız';
     }
 
-    categoryTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            categoryTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const slug = tab.dataset.category;
-            categoryInput.value = slug;
-
-            // Parse children and show subcategory row
-            let children = [];
-            try { children = JSON.parse(tab.dataset.children || '[]'); } catch(e) {}
-            showSubcategories(children, slug);
-
-            fetchFilteredTours();
-        });
-    });
-
-    // Destination / Sort select'leri anında filtrele
-    filterForm.querySelectorAll('select[name="destination"], select[name="sort"]').forEach(sel => {
-        sel.addEventListener('change', fetchFilteredTours);
-    });
-
-    // Acenta search input: 300ms debounce + datalist seçimi anında
     const agencyInput = filterForm.querySelector('input[name="agency"]');
-    if (agencyInput) {
-        let agencyTimer;
-        const debouncedFetch = () => {
-            clearTimeout(agencyTimer);
-            agencyTimer = setTimeout(fetchFilteredTours, 300);
-        };
-        agencyInput.addEventListener('input', debouncedFetch);
-        agencyInput.addEventListener('change', () => {
-            clearTimeout(agencyTimer);
-            fetchFilteredTours();
-        });
-        // Datalist'ten seçilen değer için de anlık tetikleme
-        agencyInput.addEventListener('blur', () => {
-            clearTimeout(agencyTimer);
-            fetchFilteredTours();
-        });
+    agencyInput.addEventListener('input', () => onChanged(300));
+    agencyInput.addEventListener('change', () => onChanged());
+
+    // ---- sıfırla ----
+    function resetAll() {
+        selectCategory('');
+        filterForm.querySelectorAll('input[type="checkbox"]').forEach(i => i.checked = false);
+        const noSpecial = filterForm.querySelector('input[name="special"][value=""]');
+        if (noSpecial) noSpecial.checked = true;
+        clearBudget();
+        agencyInput.value = '';
+        syncMonthPills();
+        onChanged();
     }
+    document.getElementById('yReset').addEventListener('click', resetAll);
 
-    // Acenta filtresini sıfırla (✕ butonu)
-    window.clearAgencyFilter = function () {
-        if (agencyInput) {
-            agencyInput.value = '';
-            fetchFilteredTours();
-        }
-    };
-
-    // Sayfa URL parametreleriyle (?destination=...) geldiyse kompakt durumla başla
+    // Sayfa URL parametreleriyle geldiyse rozet/çip/kompakt durumla başla
+    refreshBarUi();
     updateStoriesCompact();
+});
 
-// --- Instagram Story Logic ---
+// --- Instagram Story Logic (kendi DOMContentLoaded sarmalayıcısında; kapanışı window.* atamalarından sonraki `});`) ---
+document.addEventListener('DOMContentLoaded', function() {
 let currentCityIndex = 0;
 let currentSlideIndex = 0;
 let storyTimer = null;
