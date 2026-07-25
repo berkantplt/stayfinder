@@ -112,7 +112,6 @@
                 <button type="button" class="ybtn" data-ypop="ypDays">⏱️ Süre <b class="ybadge" data-yb="days"></b> <span>▾</span></button>
                 <button type="button" class="ybtn" data-ypop="ypDep">🛫 Kalkış <b class="ybadge" data-yb="departures"></b> <span>▾</span></button>
                 <button type="button" class="ybtn" data-ypop="ypBudget">💸 Bütçe <b class="ybadge" data-yb="budget_max"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypAgency">🏢 Acenta <b class="ybadge" data-yb="agency"></b> <span>▾</span></button>
 
                 <span class="ycount">Canlı: <b id="yLiveCount">{{ number_format($filteredCount, 0, ',', '.') }}</b> tur</span>
                 <select name="sort" class="ysort" aria-label="Sıralama">
@@ -195,16 +194,6 @@
                 <input type="range" min="5" max="100" step="5" value="{{ (int) request('budget_max') ?: 100 }}" id="yBudgetRange" style="width:100%;accent-color:var(--accent);">
                 <input type="hidden" name="budget_max" id="yBudgetInput" value="{{ (int) request('budget_max') ?: '' }}">
                 <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);"><span>5.000 ₺</span><b id="yBudgetLabel" style="color:var(--accent);">{{ (int) request('budget_max') ? '≤ '.(int) request('budget_max').'.000 ₺' : 'sınırsız' }}</b></div>
-            </div>
-
-            <div class="ypop" id="ypAgency" role="group" aria-label="Acenta">
-                <h5>Acenta ara</h5>
-                <input type="text" name="agency" list="agency-options" autocomplete="off" placeholder="🏢 Acenta adı..." value="{{ request('agency') }}" class="yagency-input">
-                <datalist id="agency-options">
-                    @foreach($activeAgencies as $agency)
-                        <option value="{{ $agency->name }}"></option>
-                    @endforeach
-                </datalist>
             </div>
 
             <noscript><button type="submit" class="yreset" style="margin-top:8px;">Filtrele</button></noscript>
@@ -530,8 +519,6 @@
         .ymonth { display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; background:#fff; border-radius:9px; padding:7px 0; font-size:11.5px; font-weight:700; cursor:pointer; color:#475569; }
         .ymonth input { position:absolute; opacity:0; pointer-events:none; }
         .ymonth.on { background:var(--accent); color:#fff; border-color:var(--accent); }
-        .yagency-input { width:100%; border:1px solid #e2e8f0; border-radius:10px; padding:9px 12px; font-size:13px; font-family:inherit; outline:none; }
-        .yagency-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(13,148,136,0.08); }
 
         @media(max-width:992px) {
             .ycount { display:none; }
@@ -815,14 +802,13 @@ document.addEventListener('DOMContentLoaded', function() {
             days: fd.getAll('days[]'),
             departures: fd.getAll('departures[]'),
             budget_max: (fd.get('budget_max') || '').trim(),
-            agency: (fd.get('agency') || '').trim(),
         };
     }
 
     function filtersAreActive() {
         const s = formState();
         return !!(s.category || s.destinations.length || s.months.length || s.special
-            || s.visa.length || s.days.length || s.departures.length || s.budget_max || s.agency);
+            || s.visa.length || s.days.length || s.departures.length || s.budget_max);
     }
 
     function updateStoriesCompact() {
@@ -858,7 +844,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setBadge('days', s.days.length);
         setBadge('departures', s.departures.length);
         setBadge('budget_max', s.budget_max ? 1 : 0);
-        setBadge('agency', s.agency ? 1 : 0);
 
         chipsRow.innerHTML = '';
         const selCat = filterForm.querySelector('.ycat-item.sel');
@@ -873,7 +858,6 @@ document.addEventListener('DOMContentLoaded', function() {
         s.days.forEach(v => chip('⏱️ ' + v + ' gün', () => uncheck('days[]', v)));
         s.departures.forEach(v => chip('🛫 ' + v, () => uncheck('departures[]', v)));
         if (s.budget_max) chip('💸 ≤ ' + s.budget_max + '.000 ₺', clearBudget);
-        if (s.agency) chip('🏢 ' + s.agency, () => { filterForm.querySelector('input[name="agency"]').value = ''; });
         const anyChip = chipsRow.children.length > 0;
         if (anyChip) {
             const c = document.createElement('span');
@@ -976,10 +960,6 @@ document.addEventListener('DOMContentLoaded', function() {
         budgetLabel.textContent = 'sınırsız';
     }
 
-    const agencyInput = filterForm.querySelector('input[name="agency"]');
-    agencyInput.addEventListener('input', () => onChanged(300));
-    agencyInput.addEventListener('change', () => onChanged());
-
     // ---- sıfırla ----
     function resetAll() {
         selectCategory('');
@@ -987,7 +967,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const noSpecial = filterForm.querySelector('input[name="special"][value=""]');
         if (noSpecial) noSpecial.checked = true;
         clearBudget();
-        agencyInput.value = '';
         syncMonthPills();
         onChanged();
     }

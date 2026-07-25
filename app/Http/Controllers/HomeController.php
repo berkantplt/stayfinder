@@ -108,12 +108,6 @@ class HomeController extends Controller
             ->distinct()
             ->pluck('destination');
 
-        // Acenta arama datalist'i için aktif + onaylı acentalar
-        $activeAgencies = Agency::active()
-            ->approved()
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug']);
-
         // All active categories (parent → children tree)
         $categories = Category::active()
             ->parents()
@@ -167,7 +161,7 @@ class HomeController extends Controller
         $facets = $this->filterBarFacets($categories);
         $specialPeriods = config('special_periods', []);
 
-        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'activeAgencies', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities', 'tourDrops', 'liveDrop', 'travelerCount', 'filteredCount', 'facets', 'specialPeriods'));
+        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities', 'tourDrops', 'liveDrop', 'travelerCount', 'filteredCount', 'facets', 'specialPeriods'));
     }
 
     /**
@@ -284,11 +278,6 @@ class HomeController extends Controller
         $budget = (int) request('budget_max');
         if ($budget > 0) {
             $query->where('price_try', '<=', $budget * 1000);
-        }
-
-        // Acenta arama (kısmi eşleşme — kullanıcı "Jolly" yazabilir "Jolly Tur" bulunur)
-        if ($agencyQuery = trim((string) request('agency'))) {
-            $query->whereHas('agency', fn ($aQ) => $aQ->where('name', 'like', '%'.$agencyQuery.'%'));
         }
     }
 
