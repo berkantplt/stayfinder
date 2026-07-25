@@ -47,8 +47,9 @@ class Tour extends Model
     /**
      * Tur karakteri şeması değişince mevcut kayıtlar bu versiyonun altında kalır;
      * TourObserver / app:enrich-tour-characters onları yeniden üretir.
+     * v2 (2026-07-25): üretim modeli gpt-4o-mini → gpt-5.4-mini geçişi.
      */
-    public const CURRENT_CHARACTER_VERSION = 1;
+    public const CURRENT_CHARACTER_VERSION = 2;
 
     protected $fillable = [
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',

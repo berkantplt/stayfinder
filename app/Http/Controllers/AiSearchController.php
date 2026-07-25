@@ -8,6 +8,7 @@ use App\Models\Tour;
 use App\Services\AiSearch\ConversationService;
 use App\Services\AiSearch\DestinationProfileService;
 use App\Services\KnowledgeService;
+use App\Support\OpenAiChatParams;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -494,9 +495,9 @@ class AiSearchController extends Controller
             // Niyet önbelleği: aynı sorgu + aynı önceki-niyet bağlamı deterministik
             // olarak aynı intent'i üretir — popüler sorgular ("vizesiz turlar" vb.)
             // 24 saat boyunca API'ye gitmeden cevaplanır.
-            $intentModel = config('ai.intent_model', 'gpt-4o');
+            $intentModel = config('ai.intent_model', 'gpt-5.4-mini');
             // Cache anahtarı normalize sorgudan: "Kapadokya Turu" ile "kapadokya turu"
-            // aynı 24 saatlik girdiye düşer → isabet artar, gpt-4o maliyeti düşer
+            // aynı 24 saatlik girdiye düşer → isabet artar, intent model maliyeti düşer
             $intentCacheKey = 'ai:intent:'.md5($intentModel.'|'.$this->normalizeText($query).'|'.json_encode($previousIntent ?? []));
 
             // Cache::remember DEĞİL: parse hatasında boş [] 24 saat cache'lenip
@@ -504,15 +505,11 @@ class AiSearchController extends Controller
             // değil) cache'e yaz; boşsa cache'leme, bir sonraki denemede taze koşsun.
             $analysis = Cache::get($intentCacheKey);
             if (! is_array($analysis) || $analysis === []) {
-                $analysisResponse = OpenAI::chat()->create([
-                    'model' => $intentModel,
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $this->wrapUserInputSafely($query)],
-                    ],
-                    'response_format' => ['type' => 'json_object'],
-                    'max_tokens' => 600, // intent JSON'u kompakt — kaçak uzun çıktıya tavan
-                ]);
+                // intent JSON'u kompakt — 600 token kaçak uzun çıktıya tavan
+                $analysisResponse = OpenAI::chat()->create(OpenAiChatParams::json($intentModel, [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $this->wrapUserInputSafely($query)],
+                ], 600));
 
                 $analysis = json_decode($analysisResponse->choices[0]->message->content, true) ?: [];
                 if ($analysis !== []) {

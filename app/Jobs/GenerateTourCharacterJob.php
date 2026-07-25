@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Services\AiSearch\DestinationProfileService;
+use App\Support\OpenAiChatParams;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -44,15 +45,14 @@ class GenerateTourCharacterJob implements ShouldQueue
         }
 
         try {
-            $response = OpenAI::chat()->create([
-                'model' => config('ai.tour_character_model', 'gpt-4o-mini'),
-                'messages' => [
+            $response = OpenAI::chat()->create(OpenAiChatParams::json(
+                config('ai.tour_character_model', 'gpt-5.4-mini'),
+                [
                     ['role' => 'system', 'content' => $this->systemPrompt()],
                     ['role' => 'user', 'content' => $this->tourContext($tour)],
                 ],
-                'response_format' => ['type' => 'json_object'],
-                'max_tokens' => 300,
-            ]);
+                300,
+            ));
 
             $payload = json_decode($response->choices[0]->message->content ?? '', true);
             if (! is_array($payload)) {

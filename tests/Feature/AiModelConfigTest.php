@@ -18,10 +18,14 @@ class AiModelConfigTest extends TestCase
 
     public function test_config_defaults_match_spec(): void
     {
-        $this->assertSame('gpt-4o', config('ai.intent_model'));
+        // 2026-07 geçişi: doğruluk-kritik/tek-seferlik görevler gpt-5.4-mini,
+        // hacimli canlı görevler (yorum/router) gpt-4o-mini'de kalır.
+        $this->assertSame('gpt-5.4-mini', config('ai.intent_model'));
         $this->assertSame('gpt-4o-mini', config('ai.comment_model'));
+        $this->assertSame('gpt-4o-mini', config('ai.router_model'));
         $this->assertSame('text-embedding-3-small', config('ai.embedding_model'));
-        $this->assertSame('gpt-4o-mini', config('ai.destination_enrichment_model'));
+        $this->assertSame('gpt-5.4-mini', config('ai.destination_enrichment_model'));
+        $this->assertSame('gpt-5.4-mini', config('ai.tour_character_model'));
     }
 
     public function test_destination_enrichment_job_uses_configured_model(): void

@@ -8,19 +8,24 @@ return [
     |--------------------------------------------------------------------------
     |
     | Sistem farklı görevler için farklı OpenAI modellerini kullanabilsin
-    | diye burada merkezleştirildi. Pahalı görevler (intent extraction'da
-    | doğruluk kritik) için gpt-4o; ucuz/yüksek-hacimli görevler için
-    | gpt-4o-mini default.
+    | diye burada merkezleştirildi. Doğruluk-kritik ve tek-seferlik görevler
+    | gpt-5.4-mini; yüksek-hacimli + gecikmeye duyarlı canlı görevler
+    | (yorum stream'i, router) gpt-4o-mini default.
     |
-    | Maliyet kabaca (input tokens, 2026 Q1 fiyatları):
-    |   gpt-4o          ~$2.50 / 1M
-    |   gpt-4o-mini     ~$0.15 / 1M  (16-17x daha ucuz)
+    | Maliyet kabaca (input / output, 1M token, 2026 Q3 fiyatları):
+    |   gpt-4o (legacy)  $2.50 / $10.00
+    |   gpt-5.4-mini     $0.75 / $4.50  (görünmez düşünme tokenları output'tan sayılır)
+    |   gpt-4o-mini      $0.15 / $0.60
+    |
+    | gpt-5/o-serisi çağrıları max_tokens + temperature kabul etmez —
+    | parametreler App\Support\OpenAiChatParams üzerinden kurulmalı.
     |
     */
 
     // Intent extraction — niyet çıkarma kalitesi search sonucunun ~%40'ını belirler.
-    // Negasyon, çelişki ve çoklu kriter doğruluğu için gpt-4o tercih edilir.
-    'intent_model' => env('AI_INTENT_MODEL', 'gpt-4o'),
+    // 2026-07: gpt-4o → gpt-5.4-mini (import'taki kanıt sonrası; girdi 3.3x,
+    // çıktı 2.2x ucuz ve güncel nesil). Geri dönüş: AI_INTENT_MODEL=gpt-4o.
+    'intent_model' => env('AI_INTENT_MODEL', 'gpt-5.4-mini'),
 
     // AI yorum üretimi — RAG bağlamı yeterince güçlü olduğu için gpt-4o-mini yeterli.
     'comment_model' => env('AI_COMMENT_MODEL', 'gpt-4o-mini'),
@@ -36,12 +41,14 @@ return [
     // Tur embedding'i — embeddings ayrı model ailesi.
     'embedding_model' => env('AI_EMBEDDING_MODEL', 'text-embedding-3-small'),
 
-    // Destinasyon zenginleştirme job'ı — yüksek hacim, mini yeterli.
-    'destination_enrichment_model' => env('AI_DEST_MODEL', 'gpt-4o-mini'),
+    // Destinasyon zenginleştirme job'ı — şehir başına tek çağrı, kalıcı veri
+    // üretir (arka plan, gecikme önemsiz): kalite için gpt-5.4-mini.
+    'destination_enrichment_model' => env('AI_DEST_MODEL', 'gpt-5.4-mini'),
 
     // Tur karakteri job'ı — tur başına ömür boyu 1 çağrı (tempo + karakter özeti);
-    // şehir profilleri hazır veri olarak verilir, model uydurmaz.
-    'tour_character_model' => env('AI_TOUR_CHARACTER_MODEL', env('AI_DEST_MODEL', 'gpt-4o-mini')),
+    // şehir profilleri hazır veri olarak verilir, model uydurmaz. Kalıcı veri →
+    // destinasyon profiliyle aynı gerekçeyle gpt-5.4-mini (AI_DEST_MODEL'i izler).
+    'tour_character_model' => env('AI_TOUR_CHARACTER_MODEL', env('AI_DEST_MODEL', 'gpt-5.4-mini')),
 
     // Tur URL'sinden içe aktarma — karışık HTML metninden çoklu alan çıkarımı.
     // 2026-07: gpt-4o → gpt-5.4-mini (gpt-4o wind-down sürecinde; 5.4-mini zeka

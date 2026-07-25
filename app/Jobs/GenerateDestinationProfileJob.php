@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\DestinationProfile;
+use App\Support\OpenAiChatParams;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -30,9 +31,9 @@ class GenerateDestinationProfileJob implements ShouldQueue
         $normalized = DestinationProfile::normalize($city);
 
         try {
-            $response = OpenAI::chat()->create([
-                'model' => config('ai.destination_enrichment_model', 'gpt-4o-mini'),
-                'messages' => [
+            $response = OpenAI::chat()->create(OpenAiChatParams::json(
+                config('ai.destination_enrichment_model', 'gpt-5.4-mini'),
+                [
                     [
                         'role' => 'system',
                         'content' => $this->systemPrompt(),
@@ -42,9 +43,8 @@ class GenerateDestinationProfileJob implements ShouldQueue
                         'content' => 'Şehir: ' . mb_substr($city, 0, 100, 'UTF-8'),
                     ],
                 ],
-                'response_format' => ['type' => 'json_object'],
-                'max_tokens' => 900,
-            ]);
+                900,
+            ));
 
             $payload = json_decode($response->choices[0]->message->content, true);
             if (!is_array($payload)) {
