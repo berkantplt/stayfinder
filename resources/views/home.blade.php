@@ -128,14 +128,24 @@
                 <h5>Kategoriler</h5>
                 <button type="button" class="ycat-item {{ request('category') ? '' : 'sel' }}" data-cat="">🏷️ Tümü</button>
                 @foreach($categories as $cat)
-                    <button type="button" class="ycat-item {{ request('category') === $cat->slug ? 'sel' : '' }}" data-cat="{{ $cat->slug }}">
+                    @php
+                        // Akordeon: seçili kategori bu üst ya da onun bir altıysa dal açık başlar
+                        $branchOpen = request('category') === $cat->slug
+                            || $cat->children->contains(fn ($c) => request('category') === $c->slug);
+                    @endphp
+                    <button type="button" class="ycat-item {{ request('category') === $cat->slug ? 'sel' : '' }} {{ $branchOpen && $cat->children->isNotEmpty() ? 'open' : '' }}" data-cat="{{ $cat->slug }}" @if($cat->children->isNotEmpty()) data-parent="1" aria-expanded="{{ $branchOpen ? 'true' : 'false' }}" @endif>
                         {{ $cat->icon }} {{ $cat->name }} <i>{{ $facets['categories'][$cat->id] ?? 0 }}</i>
+                        @if($cat->children->isNotEmpty())<span class="ycat-caret" aria-hidden="true">▸</span>@endif
                     </button>
-                    @foreach($cat->children as $child)
-                        <button type="button" class="ycat-item ycat-child {{ request('category') === $child->slug ? 'sel' : '' }}" data-cat="{{ $child->slug }}">
-                            {{ $child->icon }} {{ $child->name }} <i>{{ $facets['categories'][$child->id] ?? 0 }}</i>
-                        </button>
-                    @endforeach
+                    @if($cat->children->isNotEmpty())
+                        <div class="ycat-children {{ $branchOpen ? 'open' : '' }}" data-children-of="{{ $cat->slug }}">
+                            @foreach($cat->children as $child)
+                                <button type="button" class="ycat-item ycat-child {{ request('category') === $child->slug ? 'sel' : '' }}" data-cat="{{ $child->slug }}">
+                                    {{ $child->icon }} {{ $child->name }} <i>{{ $facets['categories'][$child->id] ?? 0 }}</i>
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
                 @endforeach
             </div>
 
@@ -515,6 +525,10 @@
         .ycat-item.sel { background:var(--accent-light); color:var(--accent-dark); font-weight:800; }
         .ycat-item i { margin-left:auto; font-style:normal; font-size:10.5px; font-weight:700; color:#94a3b8; }
         .ycat-child { padding-left:26px; font-weight:500; font-size:12.5px; }
+        .ycat-children { display:none; }
+        .ycat-children.open { display:block; }
+        .ycat-caret { font-size:10px; color:#94a3b8; transition:transform .15s; display:inline-block; }
+        .ycat-item.open .ycat-caret { transform:rotate(90deg); }
         .ymonths { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
         .ymonth { display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; background:#fff; border-radius:9px; padding:7px 0; font-size:11.5px; font-weight:700; cursor:pointer; color:#475569; }
         .ymonth input { position:absolute; opacity:0; pointer-events:none; }
@@ -920,13 +934,33 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchTimer = setTimeout(fetchFilteredTours, debounceMs || 0);
     }
 
-    // ---- kategori (tek seçim) ----
+    // ---- kategori (tek seçim + üst kategori akordeonu) ----
+    function collapseCategoryBranches() {
+        filterForm.querySelectorAll('.ycat-children.open').forEach(p => p.classList.remove('open'));
+        filterForm.querySelectorAll('.ycat-item.open').forEach(b => {
+            b.classList.remove('open');
+            b.setAttribute('aria-expanded', 'false');
+        });
+    }
     function selectCategory(slug) {
         categoryInput.value = slug;
         filterForm.querySelectorAll('.ycat-item').forEach(b => b.classList.toggle('sel', b.dataset.cat === slug));
+        if (!slug) collapseCategoryBranches(); // Tümü/temizle: dallar kapanır
     }
     filterForm.querySelectorAll('.ycat-item').forEach(b => b.addEventListener('click', () => {
-        selectCategory(b.dataset.cat === categoryInput.value ? '' : b.dataset.cat);
+        const deselecting = b.dataset.cat === categoryInput.value;
+        selectCategory(deselecting ? '' : b.dataset.cat);
+        // Üst kategori: seçilince kendi dalı açılır (diğerleri kapanır),
+        // tekrar tıklanıp bırakılınca kapanır; alt kategori dalları etkilemez
+        if (b.hasAttribute('data-parent')) {
+            const panel = filterForm.querySelector('.ycat-children[data-children-of="' + b.dataset.cat + '"]');
+            collapseCategoryBranches();
+            if (panel && !deselecting) {
+                panel.classList.add('open');
+                b.classList.add('open');
+                b.setAttribute('aria-expanded', 'true');
+            }
+        }
         onChanged();
     }));
 
