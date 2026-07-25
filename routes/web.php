@@ -56,6 +56,8 @@ Route::get('/yapay-zeka-arama/{log}/turlar', [AiSearchController::class, 'showRe
     ->name('ai.search.results');
 Route::get('/yapay-zeka-arama/{uuid}', [AiSearchController::class, 'chat'])->name('ai.search.show')->whereUuid('uuid');
 Route::middleware('throttle:ai_search')->group(function () {
+    Route::get('/tatil-karakteri', [\App\Http\Controllers\RecreationQuizController::class, 'definition'])->name('recreation.quiz.definition');
+    Route::post('/tatil-karakteri', [\App\Http\Controllers\RecreationQuizController::class, 'submit'])->name('recreation.quiz.submit');
     Route::post('/yapay-zeka-arama/mesaj', [AiSearchController::class, 'sendMessage'])->name('ai.search.message');
     Route::post('/yapay-zeka-arama/mesaj/akis', [AiSearchController::class, 'streamMessage'])->name('ai.search.message.stream');
     Route::get('/yapay-zeka-arama-api', [AiSearchController::class, 'searchApi'])->name('ai.search.api');

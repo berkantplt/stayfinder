@@ -59,6 +59,7 @@
                             </div>
                         @endif
                         <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+                            <button type="button" class="btn btn-outline btn-sm" id="quiz-entry" style="border-color:#0d9488;color:#0d9488;">🧭 Tatil Karakteri Testi</button>
                             <button type="button" class="btn btn-outline btn-sm" data-suggest>Eylül'de Avrupa'da kültür turu, 30K bütçe</button>
                             <button type="button" class="btn btn-outline btn-sm" data-suggest>Kalabalıktan kaçayım, doğa olsun, 5 gün</button>
                             <button type="button" class="btn btn-outline btn-sm" data-suggest>Yurt içi, plaj, vize istemiyorum</button>
@@ -248,6 +249,32 @@
         if (sendBtn) { sendBtn.disabled = on; sendBtn.textContent = on ? '...' : 'Gönder'; }
         if (!on) input.focus();
     }
+
+    // Tatil Karakteri Testi girişi (boş-konuşma ekranındaki çip)
+    document.getElementById('quiz-entry')?.addEventListener('click', () => {
+        if (sending) return;
+        window.turxturQuiz.open({
+            container: messages,
+            theme: 'light',
+            conversationUuid: () => uuidInput.value || null,
+            onUuid: (uuid) => { uuidInput.value = uuid; },
+            onDone: (result) => {
+                // Akış sürerken gönderim sessizce düşerdi — kilit açılana dek
+                // bekle, kullanıcının taslağını koru
+                const followup = result.followup_query || 'Bana uygun turları göster';
+                let tries = 0;
+                const fire = () => {
+                    if (sending) { if (++tries < 25) setTimeout(fire, 600); return; }
+                    const draft = input.value;
+                    input.value = followup;
+                    form.requestSubmit();
+                    input.value = draft;
+                };
+                fire();
+            },
+        });
+        messages.scrollTop = messages.scrollHeight;
+    });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();

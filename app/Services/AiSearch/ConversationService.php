@@ -419,6 +419,22 @@ class ConversationService
      * @param  array<string, mixed>  $intentPatch  null değerli anahtar intent'ten SİLİNİR
      * @return array{type: string, user: AiSearchMessage, assistant: AiSearchMessage}
      */
+    /**
+     * Arama merge'i intent'i LLM çıktısından yeniden kurar ve '_' önekli meta
+     * anahtarları içermez — Tatil Karakteri profili konuşmanın KALICI meta'sıdır,
+     * her intent yazımında korunmalı (yoksa ilk arama profili kalıcı silerdi).
+     */
+    private function preserveRecreationMeta(array $intent, AiSearchConversation $conversation): array
+    {
+        $metaKey = RecreationQuizService::META_KEY;
+        $profile = ($conversation->current_intent ?? [])[$metaKey] ?? null;
+        if ($profile !== null && ! isset($intent[$metaKey])) {
+            $intent[$metaKey] = $profile;
+        }
+
+        return $intent;
+    }
+
     private function respondPlainTurn(AiSearchConversation $conversation, string $userMessage, ?\Closure $emit, string $content, array $intentPatch = [], array $suggestions = []): array
     {
         [$userMsg, $assistantMsg] = DB::transaction(function () use ($conversation, $userMessage, $content, $intentPatch) {
@@ -1080,7 +1096,7 @@ class ConversationService
                 'latency_ms' => $searchResult['latency_ms'] ?? null,
             ]);
 
-            $mergedIntent = $searchResult['intent'] ?? $previousIntent;
+            $mergedIntent = $this->preserveRecreationMeta($searchResult['intent'] ?? $previousIntent, $conversation);
             // Başarılı arama: soru hakkı yenilenir (yeni konuya geçince tekrar
             // sorulabilsin) ve biriken soru-cevap bağlamı intent'e taşındığı için düşülür.
             unset($mergedIntent['_pending_context']);
@@ -1299,7 +1315,7 @@ class ConversationService
                     'latency_ms' => $searchResult['latency_ms'] ?? null,
                 ]);
 
-                $mergedIntent = $searchResult['intent'] ?? $previousIntent;
+                $mergedIntent = $this->preserveRecreationMeta($searchResult['intent'] ?? $previousIntent, $conversation);
                 // Başarılı arama: soru hakkı yenilenir, biriken bağlam düşülür
                 unset($mergedIntent['_pending_context']);
                 $mergedIntent['_clarifications'] = 0;

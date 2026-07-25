@@ -452,6 +452,11 @@ class AiSearchController extends Controller
             return null;
         }
 
+        // Tatil Karakteri profili meta'da (_recreation_profile) yaşar — aşağıdaki
+        // meta temizliği onu sileceği için ÖNCE yakalanır (skorlama bonusu için).
+        $recreationProfile = app(\App\Services\AiSearch\RecreationQuizService::class)
+            ->profileFor($request->user(), $previousIntent);
+
         // Meta anahtarlar (_clarifications, _model, _pending_context) LLM promptuna,
         // cache anahtarına ve merge'e sızmasın — yalnızca gerçek niyet alanları bağlamdır.
         if (! empty($previousIntent)) {
@@ -722,7 +727,7 @@ class AiSearchController extends Controller
             $tours = $this->topKByCosine($toursQuery, $queryVector, 100, $cleanQuery);
 
             // 4. Hibrit skor: semantic + kullanıcı niyeti odaklı kriterler
-            $rankedTours = $tours->map(function ($tour) use ($queryVector, $maxBudget, $isInternational, $requiresVisa, $minDays, $maxDays, $wantsNature, $avoidCrowdedCity, $wantsLively, $preferredMonth, $preferredDestination, $excludedDestinations, $rejectionAvgEmbedding, $profileVector) {
+            $rankedTours = $tours->map(function ($tour) use ($queryVector, $maxBudget, $isInternational, $requiresVisa, $minDays, $maxDays, $wantsNature, $avoidCrowdedCity, $wantsLively, $preferredMonth, $preferredDestination, $excludedDestinations, $rejectionAvgEmbedding, $profileVector, $recreationProfile) {
                 // Pre-computed similarity varsa onu kullan (topKByCosine attach etti),
                 // yoksa fallback olarak yeniden hesapla.
                 $semanticScore = $tour->similarity ?? $this->cosineSimilarity($queryVector, $tour->embedding);
@@ -852,12 +857,17 @@ class AiSearchController extends Controller
                     $tour->profile_bonus = 0.04;
                 }
 
+                // Tatil Karakteri Testi eşleşmesi: tempo/pace mesafesi + yenilik→yurt
+                // dışı + sosyallik/sükûnet↔destinasyon canlılığı (±0.05 sınırlı)
+                $tour->recreation_bonus = $this->scoreRecreationFit($recreationProfile, $tour, $destProfile);
+
                 $tour->compatibility_score = max(0.0, min(1.0,
                     (float) $tour->compatibility_score
                     + $tour->seasonal_bonus
                     + $tour->vibe_score
                     + $tour->rejection_penalty
                     + $tour->profile_bonus
+                    + $tour->recreation_bonus
                     // "Gösterildi ama tıklanmadı" öğrenimi (gece hesaplanır, ±0.03 sınırlı)
                     + max(-0.03, min(0.03, (float) ($tour->ai_ctr_bonus ?? 0)))
                 ));
@@ -1044,6 +1054,7 @@ class AiSearchController extends Controller
                     'month_score' => round((float) ($tour->month_score ?? 1.0), 6),
                     'vibe_score' => round((float) ($tour->vibe_score ?? 0.0), 6),
                     'seasonal_bonus' => round((float) ($tour->seasonal_bonus ?? 0.0), 6),
+                    'recreation_bonus' => round((float) ($tour->recreation_bonus ?? 0.0), 6),
                     'rejection_penalty' => round((float) ($tour->rejection_penalty ?? 0.0), 6),
                 ];
             });
@@ -1091,6 +1102,7 @@ class AiSearchController extends Controller
                         'month_score' => round((float) ($tour->month_score ?? 1.0), 6),
                         'vibe_score' => round((float) ($tour->vibe_score ?? 0.0), 6),
                         'seasonal_bonus' => round((float) ($tour->seasonal_bonus ?? 0.0), 6),
+                        'recreation_bonus' => round((float) ($tour->recreation_bonus ?? 0.0), 6),
                         'rejection_penalty' => round((float) ($tour->rejection_penalty ?? 0.0), 6),
                     ];
                 })->values()->all(),
@@ -2621,6 +2633,48 @@ class AiSearchController extends Controller
         }
 
         return $score;
+    }
+
+    /**
+     * Tatil Karakteri Testi profili ile tur arasında deterministik eşleşme
+     * bonusu (±0.05 sınırlı). Profil yoksa 0 — mevcut sıralama değişmez.
+     *
+     * - Tempo: turun pace_score'u kullanıcının tempo tercihine yakınsa artı,
+     *   uzaksa eksi (±0.03 merkezli formül).
+     * - Yenilik >= 0.7 + yurt dışı tur => +0.02 (yön intent'te sabitse zaten
+     *   filtre uygulanmıştır, bu yalnız yönsüz aramalarda ayrıştırır).
+     * - Sosyallik yüksek + canlı destinasyon => +0.02; sükûnet yüksek + sakin
+     *   destinasyon => +0.02.
+     */
+    private function scoreRecreationFit(?array $profile, Tour $tour, array $destProfile): float
+    {
+        if (empty($profile['vector']) || ! is_array($profile['vector'])) {
+            return 0.0;
+        }
+
+        $vector = $profile['vector'];
+        $bonus = 0.0;
+
+        if ($tour->pace_score !== null && isset($profile['tempo'])) {
+            $paceFit = 1.0 - abs((float) $tour->pace_score - ((int) $profile['tempo']) / 100);
+            $bonus += ($paceFit - 0.5) * 0.06;
+        }
+
+        if (($vector['yenilik'] ?? 0) >= 0.7 && $tour->is_international) {
+            $bonus += 0.02;
+        }
+
+        $lively = $destProfile['lively'] ?? null;
+        if (is_numeric($lively)) {
+            if (($vector['sosyal'] ?? 0) >= 0.6 && (float) $lively >= 0.6) {
+                $bonus += 0.02;
+            }
+            if (($vector['sukunet'] ?? 0) >= 0.6 && (float) $lively <= 0.4) {
+                $bonus += 0.02;
+            }
+        }
+
+        return max(-0.05, min(0.05, $bonus));
     }
 
     private function scoreCityEscape(string $destination, ?bool $avoidCrowdedCity): float
