@@ -12,6 +12,20 @@ class DestinationProfileService
     public const DEFAULT_CROWD = 0.50;
     public const DEFAULT_LIVELY = 0.50;
 
+    /** vibe_tags whitelist'inin Türkçe karşılıkları (kullanıcıya dönük metin). */
+    public const VIBE_LABELS_TR = [
+        'beach' => 'plaj', 'luxury' => 'lüks', 'shopping' => 'alışveriş',
+        'nightlife' => 'gece hayatı', 'cultural' => 'kültür', 'historical' => 'tarih',
+        'nature' => 'doğa', 'family' => 'aile dostu', 'adventure' => 'macera',
+        'spa' => 'spa/termal', 'religious' => 'inanç turizmi',
+        'winter_sport' => 'kış sporu', 'cruise' => 'gemi turu',
+    ];
+
+    public const MONTH_NAMES_TR = [
+        1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+    ];
+
     /** Yeni şehir kayıtlarının cache TTL'i — aynı request'te tekrar çağırma maliyeti olmasın. */
     private const CACHE_TTL_SECONDS = 300;
 
@@ -66,6 +80,66 @@ class DestinationProfileService
         Cache::put('dest_profile:' . $normalized, $result, self::CACHE_TTL_SECONDS);
 
         return $result;
+    }
+
+    /**
+     * Sayısal kalabalık skorunu kullanıcıya dönük Türkçe niteleyiciye çevirir.
+     * Eşikler seeder'daki elle kalibre değerlerle hizalı (İstanbul 0.98,
+     * Kapadokya 0.54, Rize 0.42).
+     */
+    public static function crowdLabel(float $crowd): string
+    {
+        return match (true) {
+            $crowd >= 0.80 => 'çok kalabalık ve turistik',
+            $crowd >= 0.60 => 'hareketli, turist yoğunluğu yüksek',
+            $crowd <= 0.45 => 'sakin ve dingin',
+            default => 'orta yoğunlukta',
+        };
+    }
+
+    /** Canlılık/gece hayatı skorunu Türkçe niteleyiciye çevirir. */
+    public static function livelyLabel(float $lively): string
+    {
+        return match (true) {
+            $lively >= 0.75 => 'gece hayatı ve eğlence çok hareketli',
+            $lively >= 0.55 => 'gece hayatı canlı',
+            $lively <= 0.40 => 'gece hayatı sakin, dinlenme ağırlıklı',
+            default => 'gece hayatı orta seviyede',
+        };
+    }
+
+    /** @param array<int, string>|null $vibeTags */
+    public static function vibeLabelsTr(?array $vibeTags): array
+    {
+        return collect($vibeTags ?? [])
+            ->map(fn ($tag) => self::VIBE_LABELS_TR[$tag] ?? null)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Profili kullanıcıya/prompta dönük tek satırlık Türkçe karakter metnine
+     * çevirir. Zenginleşmemiş (default) profilde skorlar orta olduğundan yanlış
+     * niteleyici yazmamak için null döner — "asla yanlış veri" kuralı.
+     */
+    public static function describeProfile(array $profile): ?string
+    {
+        if (($profile['source'] ?? null) === \App\Models\DestinationProfile::SOURCE_DEFAULT) {
+            return null;
+        }
+
+        $bits = [
+            self::crowdLabel((float) ($profile['crowd'] ?? self::DEFAULT_CROWD)),
+            self::livelyLabel((float) ($profile['lively'] ?? self::DEFAULT_LIVELY)),
+        ];
+
+        $vibes = self::vibeLabelsTr($profile['vibe_tags'] ?? null);
+        if ($vibes !== []) {
+            $bits[] = 'öne çıkan: '.implode(', ', array_slice($vibes, 0, 5));
+        }
+
+        return implode('; ', $bits);
     }
 
     /**

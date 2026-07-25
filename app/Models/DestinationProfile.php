@@ -66,6 +66,30 @@ class DestinationProfile extends Model
         return preg_replace('/\s+/', ' ', $normalized);
     }
 
+    /**
+     * Çok-şehirli destinasyon string'ini ("Paris, Roma ve Floransa") tekil
+     * şehirlere böler. TourObserver enrichment'ı ve envanter servisi aynı
+     * bölme kuralını paylaşır.
+     *
+     * @return array<int, string>
+     */
+    public static function splitCities(string $destination): array
+    {
+        $destination = trim($destination);
+        if ($destination === '') {
+            return [];
+        }
+
+        $parts = preg_split('/\s*[,;\/&]\s*|\s+ve\s+/u', $destination) ?: [$destination];
+
+        return collect($parts)
+            ->map(fn ($part) => trim((string) $part))
+            ->filter(fn ($part) => $part !== '' && mb_strlen($part, 'UTF-8') >= 3)
+            ->unique(fn ($part) => self::normalize($part))
+            ->values()
+            ->all();
+    }
+
     public function needsEnrichment(): bool
     {
         return ($this->enrichment_version ?? 1) < self::CURRENT_ENRICHMENT_VERSION;

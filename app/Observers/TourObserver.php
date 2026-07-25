@@ -4,11 +4,14 @@ namespace App\Observers;
 
 use App\Console\Commands\SyncKnowledgeBase;
 use App\Jobs\GenerateDestinationProfileJob;
+use App\Jobs\GenerateTourCharacterJob;
 use App\Jobs\GenerateTourEmbeddingJob;
 use App\Models\Announcement;
 use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Notifications\PriceDropNotification;
+use App\Services\AiSearch\DestinationKnowledgeService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -24,6 +27,8 @@ class TourObserver
         GenerateTourEmbeddingJob::dispatch($tour->id)->onQueue('default');
 
         $this->dispatchDestinationEnrichmentIfNeeded((string) $tour->destination);
+        $this->dispatchTourCharacterEnrichment($tour);
+        $this->flushDestinationInventoryCaches();
         $this->syncKnowledgeChunkFor($tour);
         $this->announceNewTour($tour);
     }
@@ -60,6 +65,21 @@ class TourObserver
 
         if ($tour->wasChanged('destination')) {
             $this->dispatchDestinationEnrichmentIfNeeded((string) $tour->destination);
+        }
+
+        // Tur karakteri: içerik alanları değiştiyse özet bayatlamasın
+        $characterFields = ['title', 'destination', 'description', 'itinerary', 'included', 'extras', 'duration_days'];
+        foreach ($characterFields as $field) {
+            if ($tour->wasChanged($field)) {
+                $this->dispatchTourCharacterEnrichment($tour);
+                break;
+            }
+        }
+
+        // Envanter cevabı ("nerelere turunuz var") görünürlük/destinasyon
+        // değişiminde bayatlamasın
+        if ($tour->wasChanged('destination') || $tour->wasChanged('is_active') || $tour->wasChanged('departure_date')) {
+            $this->flushDestinationInventoryCaches();
         }
 
         // Knowledge chunk: içerik alanları VEYA is_active değiştiyse RAG bağlamı
@@ -124,8 +144,32 @@ class TourObserver
     public function deleted(Tour $tour): void
     {
         Log::info("[TourObserver] Tur silindi: #{$tour->id} ({$tour->title}). Destinasyon cache + RAG chunk temizleniyor...");
-        cache()->forget('ai_search_known_destinations_v1');
+        $this->flushDestinationInventoryCaches();
         \App\Models\KnowledgeChunk::where('source_type', 'tour')->where('source_id', $tour->id)->delete();
+    }
+
+    /**
+     * Chatbot'un destinasyon bilgisi cache'leri: bilinen destinasyon listesi
+     * (metin eşleştirme) + şehir bazlı envanter ("nerelere turunuz var").
+     */
+    private function flushDestinationInventoryCaches(): void
+    {
+        cache()->forget('ai_search_known_destinations_v1');
+        DestinationKnowledgeService::flushInventory();
+    }
+
+    /**
+     * Tur karakteri üretimi: tek seferlik LLM job'ı (mini). 600 sn kilidiyle
+     * ardışık kaydetmelerde tekrar dispatch önlenir; job sonucu query-builder
+     * update ile yazdığından observer döngüsü oluşmaz.
+     */
+    private function dispatchTourCharacterEnrichment(Tour $tour): void
+    {
+        if (! Cache::add(GenerateTourCharacterJob::DISPATCH_LOCK_PREFIX.$tour->id, 1, 600)) {
+            return;
+        }
+
+        GenerateTourCharacterJob::dispatch($tour->id)->onQueue('default');
     }
 
     /**
@@ -168,15 +212,8 @@ class TourObserver
             return;
         }
 
-        // Multi-city destination: virgül/ile ile böl, her şehri ayrı ele al
-        $parts = preg_split('/\s*[,;\/&]\s*|\s+ve\s+/u', $destination) ?: [$destination];
-
-        foreach ($parts as $part) {
-            $part = trim($part);
-            if ($part === '' || mb_strlen($part, 'UTF-8') < 3) {
-                continue;
-            }
-
+        // Multi-city destination: ortak bölme kuralı (envanter servisiyle aynı)
+        foreach (DestinationProfile::splitCities($destination) as $part) {
             $normalized = DestinationProfile::normalize($part);
             $profile = DestinationProfile::where('normalized_city', $normalized)->first();
 

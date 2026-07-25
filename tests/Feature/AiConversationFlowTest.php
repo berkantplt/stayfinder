@@ -145,7 +145,7 @@ class AiConversationFlowTest extends TestCase
             $mock->shouldNotReceive('performAiSearch');
         });
 
-        $svc = \Mockery::mock(ConversationService::class, [$controller])->makePartial();
+        $svc = \Mockery::mock(ConversationService::class, [$controller, app(\App\Services\AiSearch\DestinationKnowledgeService::class)])->makePartial();
         $svc->shouldReceive('maybeAskClarification')
             ->once()
             ->andReturn('Tatil için bir bütçe aralığın var mı?');
@@ -264,7 +264,7 @@ class AiConversationFlowTest extends TestCase
             $mock->shouldReceive('performAiSearch')->once()->andReturn($turn);
         });
 
-        $svc = \Mockery::mock(ConversationService::class, [$controller])->makePartial();
+        $svc = \Mockery::mock(ConversationService::class, [$controller, app(\App\Services\AiSearch\DestinationKnowledgeService::class)])->makePartial();
         $svc->shouldNotReceive('maybeAskClarification');
         $this->app->instance(ConversationService::class, $svc);
 
@@ -280,7 +280,7 @@ class AiConversationFlowTest extends TestCase
     private function stubConversationServiceWithoutClarification(): void
     {
         $controller = app(AiSearchController::class);
-        $svc = \Mockery::mock(ConversationService::class, [$controller])->makePartial();
+        $svc = \Mockery::mock(ConversationService::class, [$controller, app(\App\Services\AiSearch\DestinationKnowledgeService::class)])->makePartial();
         $svc->shouldReceive('maybeAskClarification')->andReturn(null);
         $this->app->instance(ConversationService::class, $svc);
     }

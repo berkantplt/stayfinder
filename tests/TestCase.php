@@ -4,6 +4,7 @@ namespace Tests;
 
 use App\Jobs\GenerateDestinationProfileJob;
 use App\Jobs\GenerateKnowledgeEmbeddingJob;
+use App\Jobs\GenerateTourCharacterJob;
 use App\Jobs\GenerateTourEmbeddingJob;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Queue;
@@ -24,6 +25,7 @@ abstract class TestCase extends BaseTestCase
             GenerateTourEmbeddingJob::class,
             GenerateKnowledgeEmbeddingJob::class,
             GenerateDestinationProfileJob::class,
+            GenerateTourCharacterJob::class,
         ]);
     }
 }

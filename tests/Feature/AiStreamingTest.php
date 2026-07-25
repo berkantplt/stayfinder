@@ -105,7 +105,7 @@ class AiStreamingTest extends TestCase
             $mock->shouldNotReceive('streamComment');
         });
 
-        $svc = \Mockery::mock(ConversationService::class, [$controller])->makePartial();
+        $svc = \Mockery::mock(ConversationService::class, [$controller, app(\App\Services\AiSearch\DestinationKnowledgeService::class)])->makePartial();
         $svc->shouldReceive('maybeAskClarification')->once()->andReturn('Bütçen ne kadar?');
         $this->app->instance(ConversationService::class, $svc);
 
@@ -128,7 +128,7 @@ class AiStreamingTest extends TestCase
     private function stubConversationServiceWithoutClarification(): void
     {
         $controller = app(AiSearchController::class);
-        $svc = \Mockery::mock(ConversationService::class, [$controller])->makePartial();
+        $svc = \Mockery::mock(ConversationService::class, [$controller, app(\App\Services\AiSearch\DestinationKnowledgeService::class)])->makePartial();
         $svc->shouldReceive('maybeAskClarification')->andReturn(null);
         $this->app->instance(ConversationService::class, $svc);
     }

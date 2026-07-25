@@ -34,7 +34,10 @@ class ConversationService
      * TODO: AiSearchController içindeki search logic'ini bağımsız bir TourSearchService'e
      * çıkardığında bu çağrıyı oraya yönlendir.
      */
-    public function __construct(private readonly AiSearchController $searchController) {}
+    public function __construct(
+        private readonly AiSearchController $searchController,
+        private readonly DestinationKnowledgeService $destinations,
+    ) {}
 
     public function startOrLoad(Request $request, ?string $uuid = null): AiSearchConversation
     {
@@ -302,6 +305,103 @@ class ConversationService
     }
 
     /** Mesajdan TR cep telefonu çıkarır (0/+90 önekli 5xx). Bulamazsa null. */
+    /**
+     * Mesajda arama kriteri/öneri isteği sinyali var mı? Varsa Phase-0d'nin
+     * destinasyon kestirmeleri DEVRE DIŞI kalır — "Eylülde 30 bin bütçeyle
+     * nereye tur önerirsin?" envanter dökümü değil, kriterli ARAMADIR (intent'e
+     * ay+bütçe işlenmeli). Belirsizlikte arama güvenli varsayılandır.
+     */
+    private function hasSearchCriteriaSignal(string $normalized): bool
+    {
+        if (preg_match('/\d/', $normalized) === 1) {
+            return true; // bütçe / gün sayısı / tarih
+        }
+
+        foreach ([
+            'oner', 'tavsiye', 'butce', 'balayi', 'aile', 'cocuk', 'arkadas', 'romantik',
+            'ocak', 'subat', 'mart', 'nisan', 'mayis', 'haziran',
+            'temmuz', 'agustos', 'eylul', 'ekim', 'kasim', 'aralik',
+        ] as $signal) {
+            if (str_contains($normalized, $signal)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * "Nerelere turunuz var?" tarzı envanter sorusu — deterministik listeyle
+     * cevaplanır (LLM'siz, her zaman doğru ve eksiksiz). Kriterli öneri
+     * istekleri ("balayı için nereye gidebiliriz") bilerek DIŞARIDA: onlar
+     * arama pipeline'ında küratörlü sonuç almalı.
+     */
+    private function wantsDestinationList(string $userMessage): bool
+    {
+        $normalized = $this->normalizeTr($userMessage);
+
+        if ($this->hasSearchCriteriaSignal($normalized)) {
+            return false;
+        }
+
+        foreach ([
+            'nerelere tur', 'nereye tur',
+            'hangi sehirlere', 'hangi ulkelere', 'hangi bolgelere',
+            'hangi destinasyon', 'destinasyonlariniz', 'destinasyonlar neler',
+            'nereler var', 'nerelere gidiyorsunuz',
+        ] as $pattern) {
+            if (str_contains($normalized, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * "İstanbul nasıl bir şehir? / kalabalık mı? / vize gerekiyor mu?" tarzı,
+     * turdan bağımsız destinasyon sorusu: karakter-soru kalıbı + mesajda
+     * bilinen bir şehir. Profil verisinden LLM'siz cevaplanır.
+     *
+     * @return array{city: string, normalized: string, count: int}|null
+     */
+    private function detectDestinationQuestion(string $userMessage): ?array
+    {
+        $normalized = $this->normalizeTr($userMessage);
+
+        // "tur" kelimesi geçen mesaj TUR hakkındadır, şehir hakkında değil:
+        // "İstanbul turu hakkında bilgi", "Kapadokya turunu anlatır mısın",
+        // "İstanbul'da gece hayatı olan tur öner" → router/arama işlesin.
+        // Kriter sinyali (bütçe/ay/öner) de aramayı işaret eder.
+        if (preg_match('/\btur\p{L}*\b/u', $normalized) === 1
+            || str_contains($normalized, 'paket')
+            || $this->hasSearchCriteriaSignal($normalized)) {
+            return null;
+        }
+
+        $hasQuestionPattern = false;
+        foreach ([
+            'nasil bir yer', 'nasil bir sehir', 'nasil bi yer', 'nasil bi sehir', 'nasildir',
+            'kalabalik mi', 'kalabalik midir', 'sakin mi', 'sakin midir',
+            'gece hayati', 'eglencesi nasil', 'eglence var mi', 'eglence nasil',
+            'ne zaman gidilir', 'hangi ayda gid', 'en iyi ay',
+            'vize gerekiyor mu', 'vize gerekli mi', 'vize var mi', 'vize lazim mi',
+            'vizesiz mi', 'vize istiyor mu', 'vize isteniyor mu',
+            'hakkinda bilgi', 'anlatir misin', 'anlatsana', 'biraz anlat',
+        ] as $pattern) {
+            if (str_contains($normalized, $pattern)) {
+                $hasQuestionPattern = true;
+                break;
+            }
+        }
+
+        if (! $hasQuestionPattern) {
+            return null;
+        }
+
+        return $this->destinations->findCityInMessage($userMessage);
+    }
+
     private function extractPhone(string $userMessage): ?string
     {
         if (! preg_match('/(?:\+?9\s*0[\s\-.]?)?0?[\s\-.]?(5\d{2})[\s\-.]?(\d{3})[\s\-.]?(\d{2})[\s\-.]?(\d{2})(?!\d)/', $userMessage, $m)) {
@@ -319,7 +419,7 @@ class ConversationService
      * @param  array<string, mixed>  $intentPatch  null değerli anahtar intent'ten SİLİNİR
      * @return array{type: string, user: AiSearchMessage, assistant: AiSearchMessage}
      */
-    private function respondPlainTurn(AiSearchConversation $conversation, string $userMessage, ?\Closure $emit, string $content, array $intentPatch = []): array
+    private function respondPlainTurn(AiSearchConversation $conversation, string $userMessage, ?\Closure $emit, string $content, array $intentPatch = [], array $suggestions = []): array
     {
         [$userMsg, $assistantMsg] = DB::transaction(function () use ($conversation, $userMessage, $content, $intentPatch) {
             $u = AiSearchMessage::create([
@@ -360,23 +460,31 @@ class ConversationService
                 ],
             ]);
             $emit('comment', ['delta' => $content, 'final' => $content]);
+            if ($suggestions !== []) {
+                $emit('suggestions', ['items' => $suggestions]);
+            }
             $emit('done', ['is_clarification' => false, 'assistant_message_id' => $assistantMsg->id]);
         }
 
-        return ['type' => 'plain', 'user' => $userMsg, 'assistant' => $assistantMsg];
+        return ['type' => 'plain', 'user' => $userMsg, 'assistant' => $assistantMsg, 'suggestions' => $suggestions];
     }
 
     /** Plain turu senkron (JSON) cevap zarfına çevirir. */
     private function wrapPlainPayload(array $turn): array
     {
+        $payload = [
+            'aiComment' => $turn['assistant']->content,
+            'results' => [],
+            'is_answer' => true,
+        ];
+        if (! empty($turn['suggestions'])) {
+            $payload['suggestions'] = $turn['suggestions'];
+        }
+
         return [
             'user' => $turn['user'],
             'assistant' => $turn['assistant'],
-            'payload' => [
-                'aiComment' => $turn['assistant']->content,
-                'results' => [],
-                'is_answer' => true,
-            ],
+            'payload' => $payload,
         ];
     }
 
@@ -581,6 +689,7 @@ class ConversationService
             ."\n- tour_question: GÖSTERİLEN turlardan biri hakkında soru ('otel nasıl', 'programın 3. günü ne', '2. turda neler dahil')"
             ."\n- compare: gösterilen iki+ turu karşılaştırma isteği ('hangisi daha iyi', 'ilkiyle üçüncüyü kıyasla')"
             ."\n- site_question: site/işleyiş sorusu (iptal politikası, ödeme, rezervasyon süreci)"
+            ."\n- destination_question: belirli bir şehir/ülke HAKKINDA genel soru — tur değil yer sorulur ('İstanbul nasıl bir şehir', 'Roma kalabalık mı', 'Dubai'de gece hayatı var mı')"
             ."\n- chitchat: selamlaşma/teşekkür/geyik"
             ."\ntour_numbers: bahsedilen turların listedeki numaraları ('ilki'→[1], 'son ikisi'→son iki numara, tur adı geçiyorsa adıyla eşleştir); yoksa []."
             ."\nEmin değilsen action=search."
@@ -604,7 +713,7 @@ class ConversationService
             return ['action' => 'search', 'tour_ids' => []];
         }
 
-        $action = in_array($data['action'] ?? '', ['search', 'tour_question', 'compare', 'site_question', 'chitchat'], true)
+        $action = in_array($data['action'] ?? '', ['search', 'tour_question', 'compare', 'site_question', 'destination_question', 'chitchat'], true)
             ? $data['action']
             : 'search';
 
@@ -847,9 +956,31 @@ class ConversationService
                 return $this->wrapPlainPayload($this->askLeadContact($conversation, $userMessage, null, $leadIntent));
             }
 
+            // Phase 0d: destinasyon bilgisi (streaming yoldakiyle aynı) —
+            // envanter listesi / şehir karakteri LLM'siz cevaplanır
+            if ($this->wantsDestinationList($userMessage)) {
+                $answer = $this->destinations->answerInventoryQuestion();
+
+                return $this->wrapPlainPayload($this->respondPlainTurn($conversation, $userMessage, null, $answer['text'], [], $answer['suggestions']));
+            }
+            if (($cityMatch = $this->detectDestinationQuestion($userMessage)) !== null) {
+                $answer = $this->destinations->answerCityQuestion($cityMatch);
+
+                return $this->wrapPlainPayload($this->respondPlainTurn($conversation, $userMessage, null, $answer['text'], [], $answer['suggestions']));
+            }
+
             // Mesaj yönlendirici (streaming yoldakiyle aynı): arama-dışı mesajlar
             // arama pipeline'ına girmeden yanıtlanır
             $route = $this->routeMessage($conversation, $userMessage);
+            if ($route['action'] === 'destination_question') {
+                $cityMatch = $this->destinations->findCityInMessage($userMessage);
+                if ($cityMatch !== null) {
+                    $answer = $this->destinations->answerCityQuestion($cityMatch);
+
+                    return $this->wrapPlainPayload($this->respondPlainTurn($conversation, $userMessage, null, $answer['text'], [], $answer['suggestions']));
+                }
+                $route = ['action' => 'search', 'tour_ids' => []];
+            }
             if ($route['action'] !== 'search') {
                 return $this->respondNonSearch($conversation, $userMessage, $route);
             }
@@ -1047,9 +1178,34 @@ class ConversationService
                 return $this->askLeadContact($conversation, $userMessage, $emit, $leadIntent);
             }
 
+            // Phase 0d: destinasyon bilgisi — envanter ("nerelere turunuz var")
+            // ve şehir karakteri ("İstanbul nasıl bir şehir") LLM'siz, gerçek
+            // envanter + profil verisinden cevaplanır
+            if ($this->wantsDestinationList($userMessage)) {
+                $answer = $this->destinations->answerInventoryQuestion();
+
+                return $this->respondPlainTurn($conversation, $userMessage, $emit, $answer['text'], [], $answer['suggestions']);
+            }
+            if (($cityMatch = $this->detectDestinationQuestion($userMessage)) !== null) {
+                $answer = $this->destinations->answerCityQuestion($cityMatch);
+
+                return $this->respondPlainTurn($conversation, $userMessage, $emit, $answer['text'], [], $answer['suggestions']);
+            }
+
             // Phase 0b: mesaj yönlendirici — arama-dışı mesajlar (tur sorusu/kıyas/
             // site sorusu/sohbet) arama pipeline'ına girmeden ucuz yoldan yanıtlanır
             $route = $this->routeMessage($conversation, $userMessage);
+            if ($route['action'] === 'destination_question') {
+                // Router regex'in kaçırdığı ifadeyi yakaladı; şehir çözülürse
+                // aynı deterministik cevap, çözülemezse güvenli varsayılan (arama)
+                $cityMatch = $this->destinations->findCityInMessage($userMessage);
+                if ($cityMatch !== null) {
+                    $answer = $this->destinations->answerCityQuestion($cityMatch);
+
+                    return $this->respondPlainTurn($conversation, $userMessage, $emit, $answer['text'], [], $answer['suggestions']);
+                }
+                $route = ['action' => 'search', 'tour_ids' => []];
+            }
             if ($route['action'] !== 'search') {
                 return $this->respondNonSearchStreamed($conversation, $userMessage, $emit, $route);
             }

@@ -44,6 +44,12 @@ class Tour extends Model
         return self::ROOM_TYPES;
     }
 
+    /**
+     * Tur karakteri şeması değişince mevcut kayıtlar bu versiyonun altında kalır;
+     * TourObserver / app:enrich-tour-characters onları yeniden üretir.
+     */
+    public const CURRENT_CHARACTER_VERSION = 1;
+
     protected $fillable = [
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
         'price', 'currency', 'duration_days', 'departure_date',
@@ -52,6 +58,7 @@ class Tour extends Model
         'departure_points', 'itinerary', 'hotel_info', 'extras',
         'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
         'departure_city', 'stop_cities',
+        'character_summary', 'pace_score', 'character_version',
     ];
 
     protected $casts = [
@@ -68,7 +75,14 @@ class Tour extends Model
         'pricing_blocks' => 'array', // [{dates:[], packages:[{hotel, prices:{type:{old,new}}}]}]
         'stop_cities' => 'array', // yol üstünde yolcu alınan iller
         'images' => 'array', // sıralı galeri (/storage yolları), images[0] = kapak
+        'pace_score' => 'float', // 0-1: program yoğunluğu (düşük=dinlenme, yüksek=tempolu gezi)
+        'character_version' => 'integer',
     ];
+
+    public function needsCharacterEnrichment(): bool
+    {
+        return ($this->character_version ?? 0) < self::CURRENT_CHARACTER_VERSION;
+    }
 
     protected static function booted(): void
     {

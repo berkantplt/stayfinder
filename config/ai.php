@@ -39,6 +39,10 @@ return [
     // Destinasyon zenginleştirme job'ı — yüksek hacim, mini yeterli.
     'destination_enrichment_model' => env('AI_DEST_MODEL', 'gpt-4o-mini'),
 
+    // Tur karakteri job'ı — tur başına ömür boyu 1 çağrı (tempo + karakter özeti);
+    // şehir profilleri hazır veri olarak verilir, model uydurmaz.
+    'tour_character_model' => env('AI_TOUR_CHARACTER_MODEL', env('AI_DEST_MODEL', 'gpt-4o-mini')),
+
     // Tur URL'sinden içe aktarma — karışık HTML metninden çoklu alan çıkarımı.
     // 2026-07: gpt-4o → gpt-5.4-mini (gpt-4o wind-down sürecinde; 5.4-mini zeka
     // endeksi 40 vs 11, maliyet ~%65 düşük; reasoning parametreleri chatParams'ta).

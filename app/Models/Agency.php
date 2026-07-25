@@ -46,6 +46,15 @@ class Agency extends Model
                 $agency->slug = $slug;
             }
         });
+
+        // Acenta pasifleşince turları görünmez olur — chatbot envanteri ve
+        // bilinen destinasyon listesi bayat kalmasın
+        static::updated(function (Agency $agency) {
+            if ($agency->wasChanged('is_active')) {
+                cache()->forget('ai_search_known_destinations_v1');
+                \App\Services\AiSearch\DestinationKnowledgeService::flushInventory();
+            }
+        });
     }
 
     public function tours(): HasMany

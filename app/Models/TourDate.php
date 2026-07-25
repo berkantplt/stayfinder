@@ -15,5 +15,13 @@ class TourDate extends Model
         'price'          => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        // Chatbot envanteri satılabilirliği tarih listesinden okur — tarih
+        // eklenince/silinince "nerelere turunuz var" cevabı bayat kalmasın
+        static::saved(fn () => \App\Services\AiSearch\DestinationKnowledgeService::flushInventory());
+        static::deleted(fn () => \App\Services\AiSearch\DestinationKnowledgeService::flushInventory());
+    }
+
     public function tour(): BelongsTo { return $this->belongsTo(Tour::class); }
 }
