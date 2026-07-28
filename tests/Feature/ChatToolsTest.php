@@ -72,7 +72,17 @@ class ChatToolsTest extends TestCase
         // reasoning ailesi: max_tokens/temperature yok
         $this->assertArrayNotHasKey('max_tokens', $params);
         $this->assertSame(4800, $params['max_completion_tokens']);
-        $this->assertSame('low', $params['reasoning_effort']);
+        // API kısıtı: araç varken reasoning_effort 'none' olmak ZORUNDA, yoksa
+        // "Function tools with reasoning_effort are not supported" hatası gelir
+        $this->assertSame('none', $params['reasoning_effort']);
+    }
+
+    public function test_araclar_kapaliyken_reasoning_effort_korunur(): void
+    {
+        $params = OpenAiChatParams::tools('gpt-5.4', [['role' => 'user', 'content' => 'x']], [], 500, 'auto', 'medium');
+
+        // Son cevap turunda araç yok → düşünme seviyesi kullanılabilir
+        $this->assertSame('medium', $params['reasoning_effort']);
     }
 
     public function test_tools_bos_ise_tool_alanlari_dusurulur(): void

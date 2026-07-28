@@ -77,7 +77,12 @@ final class OpenAiChatParams
 
         if (self::isReasoningModel($model)) {
             $params['max_completion_tokens'] = $maxTokens + 4000;
-            $params['reasoning_effort'] = $reasoningEffort;
+            // API kısıtı: /v1/chat/completions'ta araç (function tools) ile
+            // reasoning_effort BİRLİKTE desteklenmiyor —
+            // "Function tools with reasoning_effort are not supported ...
+            //  set reasoning_effort to 'none'". Araç varken 'none' zorunlu;
+            // araçsız son cevap turunda istenen seviye kullanılabilir.
+            $params['reasoning_effort'] = $tools !== [] ? 'none' : $reasoningEffort;
         } else {
             $params['max_tokens'] = $maxTokens;
         }
