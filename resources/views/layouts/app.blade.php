@@ -1893,6 +1893,200 @@
     </script>
     @endif
 
+    @php
+        // v2 sohbet: v1'den BAĞIMSIZ bayrak (v1 dondurulmuşken kademeli açılabilsin)
+        $showChatV2 = config('ai.chat_v2_enabled')
+            && ! request()->is('admin*')
+            && ! request()->is('super-admin*')
+            && ! request()->is('superadmin*')
+            && ! request()->is('acenta*')
+            && ! request()->routeIs('agency.*')
+            && ! (auth()->check() && in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'], true));
+    @endphp
+
+    @if($showChatV2)
+    {{-- Chatbot v2 — araç çağırma mimarisi (CHATBOT_V2.md) --}}
+    <div id="cv2" style="position:fixed; bottom:24px; right:24px; z-index:2000; font-family:var(--font); max-width:calc(100vw - 32px);">
+        <button type="button" id="cv2-trigger" aria-label="Tur danışmanını aç" aria-expanded="false"
+            style="display:flex; align-items:center; gap:10px; background:rgba(15,23,42,0.9); backdrop-filter:blur(20px); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:10px 18px; border-radius:100px; cursor:pointer; box-shadow:0 10px 40px rgba(0,0,0,0.25); font-family:inherit;">
+            <span style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#0d9488,#2dd4bf); display:flex; align-items:center; justify-content:center; font-size:16px;">🧭</span>
+            <span style="font-size:13px; font-weight:600;">Tur danışmanı</span>
+        </button>
+
+        <div id="cv2-panel" role="dialog" aria-modal="true" aria-label="Tur danışmanı" hidden
+            style="position:absolute; bottom:56px; right:0; width:min(420px, calc(100vw - 32px)); height:min(600px, calc(100vh - 120px)); background:rgba(15,23,42,0.97); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.15); border-radius:20px; box-shadow:0 24px 64px rgba(0,0,0,0.4); display:flex; flex-direction:column; overflow:hidden;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <span style="color:#fff; font-size:14px; font-weight:700;">🧭 Tur danışmanı</span>
+                <span>
+                    <button type="button" id="cv2-reset" title="Konuşmayı sıfırla" aria-label="Konuşmayı sıfırla"
+                        style="background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer; font-size:12px; padding:4px 8px;">sıfırla</button>
+                    <button type="button" id="cv2-close" aria-label="Kapat"
+                        style="background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer; font-size:18px; padding:4px 8px;">×</button>
+                </span>
+            </div>
+
+            <div id="cv2-msgs" aria-live="polite" style="flex:1; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px;">
+                <div class="cv2-ai">Merhaba! Nasıl bir tatil hayal ediyorsun? Anlat bana — sessizlik mi, hareket mi, yoksa lezzet peşinde misin?</div>
+            </div>
+
+            <div style="padding:12px 14px; border-top:1px solid rgba(255,255,255,0.1);">
+                <form id="cv2-form" style="display:flex; gap:8px; align-items:flex-end;">
+                    <textarea id="cv2-input" rows="1" required aria-label="Mesajınız" placeholder="Hayalindeki tatili anlat..."
+                        style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:10px 12px; color:#fff; font-size:14px; font-family:inherit; resize:none; max-height:110px; outline:none;"></textarea>
+                    <button type="submit" id="cv2-send" aria-label="Gönder"
+                        style="background:linear-gradient(135deg,#0d9488,#2dd4bf); border:none; width:40px; height:40px; border-radius:12px; color:#fff; cursor:pointer; flex-shrink:0; font-size:16px;">↑</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #cv2-msgs .cv2-user { align-self:flex-end; max-width:85%; background:linear-gradient(135deg,#0d9488,#2dd4bf); color:#fff; padding:10px 14px; border-radius:16px 16px 4px 16px; font-size:14px; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
+        #cv2-msgs .cv2-ai { align-self:flex-start; max-width:90%; background:rgba(255,255,255,0.07); color:#e2e8f0; padding:11px 14px; border-radius:16px 16px 16px 4px; font-size:14px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+        #cv2-msgs .cv2-err { align-self:flex-start; max-width:90%; background:rgba(239,68,68,0.15); color:#fca5a5; padding:10px 14px; border-radius:14px; font-size:13px; }
+        #cv2-msgs .cv2-cards { display:flex; gap:10px; overflow-x:auto; padding:4px 2px 8px; max-width:100%; scroll-snap-type:x mandatory; }
+        #cv2-trigger:hover { transform:translateY(-2px); }
+        #cv2-trigger { transition:transform .25s; }
+    </style>
+
+    <script>
+    (function () {
+        const trigger = document.getElementById('cv2-trigger');
+        const panel = document.getElementById('cv2-panel');
+        const msgs = document.getElementById('cv2-msgs');
+        const form = document.getElementById('cv2-form');
+        const input = document.getElementById('cv2-input');
+        const sendBtn = document.getElementById('cv2-send');
+        let sending = false;
+
+        function el(cls, text) {
+            const d = document.createElement('div');
+            d.className = cls;
+            if (text !== undefined) d.textContent = text;   // XSS: her zaman textContent
+            msgs.appendChild(d);
+            msgs.scrollTop = msgs.scrollHeight;
+            return d;
+        }
+
+        function togglePanel(open) {
+            panel.hidden = !open;
+            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) input.focus();
+        }
+        trigger.onclick = () => togglePanel(panel.hidden);
+        document.getElementById('cv2-close').onclick = () => { togglePanel(false); trigger.focus(); };
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { togglePanel(false); trigger.focus(); } });
+
+        document.getElementById('cv2-reset').onclick = async () => {
+            if (sending) return;
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            try { await fetch('/sohbet/sifirla', { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' } }); } catch (e) {}
+            msgs.replaceChildren();
+            el('cv2-ai', 'Baştan başlayalım — nasıl bir tatil istiyorsun?');
+        };
+
+        input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 110) + 'px'; });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+        });
+
+        function setSending(on) {
+            sending = on;
+            input.disabled = on;
+            sendBtn.disabled = on;
+            sendBtn.textContent = on ? '…' : '↑';
+            if (!on) input.focus();
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (sending) return;
+            const text = input.value.trim();
+            if (!text) return;
+
+            el('cv2-user', text);
+            input.value = '';
+            input.style.height = 'auto';
+            setSending(true);
+
+            const bubble = el('cv2-ai', 'Düşünüyorum…');
+            let ilkParca = true;
+
+            // Bekçi: 90 sn boyunca hiç veri gelmezse iptal et (araç turları uzun sürebilir)
+            const controller = new AbortController();
+            let watchdog = setTimeout(() => controller.abort(), 90000);
+            const resetWatchdog = () => { clearTimeout(watchdog); watchdog = setTimeout(() => controller.abort(), 90000); };
+
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const res = await fetch('/sohbet/akis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'text/event-stream' },
+                    body: JSON.stringify({ message: text }),
+                    signal: controller.signal,
+                });
+                if (!res.ok) throw new Error('http ' + res.status);
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    resetWatchdog();
+                    buffer += decoder.decode(value, { stream: true });
+
+                    const bloklar = buffer.split('\n\n');
+                    buffer = bloklar.pop() || '';
+
+                    for (const blok of bloklar) {
+                        let event = null, dataRaw = '';
+                        for (const satir of blok.split('\n')) {
+                            if (satir.startsWith('event:')) event = satir.slice(6).trim();
+                            else if (satir.startsWith('data:')) dataRaw += satir.slice(5).trim();
+                        }
+                        if (!event || !dataRaw) continue;
+                        let data; try { data = JSON.parse(dataRaw); } catch (e) { continue; }
+
+                        if (event === 'delta') {
+                            if (ilkParca) { bubble.textContent = ''; ilkParca = false; }
+                            bubble.textContent += data.text || '';
+                            msgs.scrollTop = msgs.scrollHeight;
+                        } else if (event === 'tours') {
+                            const row = document.createElement('div');
+                            row.className = 'cv2-cards';
+                            (data.items || []).forEach((t, i) => {
+                                try { row.appendChild(window.turxturAiCard.build(t, { theme: 'dark', index: i })); } catch (err) {}
+                            });
+                            if (row.children.length) { msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight; }
+                        } else if (event === 'error') {
+                            el('cv2-err', data.message || 'Bir sorun oluştu.');
+                        }
+                    }
+                }
+
+                // Sessiz ölüm: hiç veri gelmeden akış bittiyse kullanıcı takılmasın
+                if (ilkParca) {
+                    bubble.remove();
+                    el('cv2-err', 'Bağlantı kesildi — mesajını tekrar gönderir misin?');
+                    input.value = text;
+                }
+            } catch (err) {
+                bubble.remove();
+                el('cv2-err', err.name === 'AbortError'
+                    ? 'Yanıt çok uzun sürdü, tekrar dener misin?'
+                    : 'Bağlanamadım — mesajını tekrar gönderir misin?');
+                input.value = text;
+            } finally {
+                clearTimeout(watchdog);
+                setSending(false);
+            }
+        });
+    })();
+    </script>
+    @endif
+
     @stack('scripts')
 
     <script>

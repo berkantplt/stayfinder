@@ -29,6 +29,10 @@ return [
     // ETKİLENMEZ: tur eşleştirme testi (/tatil-karakteri) ve rubrik puanlama.
     'chat_enabled' => env('AI_CHAT_ENABLED', false),
 
+    // v2 KENDİ bayrağı: chat_enabled v1'i kapatıyor, aynı bayrak kullanılırsa
+    // v1 kapalıyken v2 canlıda denenemezdi. İkisi bağımsız açılıp kapanır.
+    'chat_v2_enabled' => env('AI_CHAT_V2_ENABLED', false),
+
     // ---- Chatbot v2 (araç çağırma mimarisi, bkz. CHATBOT_V2.md) ----
     // Konuşan yüzey GÜÇLÜ model ister: v1'de burası gpt-4o-mini'ydi ve
     // "istediğim zekada değil" şikayetinin birinci sebebiydi. Mesaj başına

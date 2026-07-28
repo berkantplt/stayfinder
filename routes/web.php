@@ -56,6 +56,12 @@ Route::middleware('throttle:ai_search')->group(function () {
     Route::post('/tatil-karakteri', [\App\Http\Controllers\RecreationQuizController::class, 'submit'])->name('recreation.quiz.submit');
 });
 
+// Chatbot v2 (araç çağırma) — AI_CHAT_V2_ENABLED ile ayrı açılır
+Route::middleware([\App\Http\Middleware\EnsureAiChatV2Enabled::class, 'throttle:ai_search'])->group(function () {
+    Route::post('/sohbet/akis', [\App\Http\Controllers\ChatV2Controller::class, 'stream'])->name('chat.v2.stream');
+    Route::post('/sohbet/sifirla', [\App\Http\Controllers\ChatV2Controller::class, 'reset'])->name('chat.v2.reset');
+});
+
 // ❄️ Sohbet asistanı uçları — AI_CHAT_ENABLED kapalıyken 404 (bkz. config/ai.php)
 Route::middleware(\App\Http\Middleware\EnsureAiChatEnabled::class)->group(function () {
     Route::get('/yapay-zeka-arama', [AiSearchController::class, 'chat'])->name('ai.search');
