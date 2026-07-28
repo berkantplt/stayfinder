@@ -114,7 +114,7 @@ class ScoreTourRubricJob implements ShouldQueue
     private function scoreOnce(string $input): array
     {
         $response = OpenAI::chat()->create(OpenAiChatParams::json(
-            config('ai.tour_character_model', 'gpt-5.4-mini'),
+            config('ai.rubric_model', 'gpt-5.4-mini'),
             [
                 ['role' => 'system', 'content' => self::prompt()],
                 ['role' => 'user', 'content' => "DEĞERLENDİRİLECEK TUR:\n".$input],

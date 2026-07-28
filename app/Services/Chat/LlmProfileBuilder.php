@@ -41,8 +41,10 @@ class LlmProfileBuilder
 
             // Kanıt zorunlu ve transkriptte geçmeli. Transkript verilmediyse
             // (birim test / API kullanımı) doğrulama atlanır ama kanıt yine şart.
+            // Kanıt anlamlı uzunlukta olmalı: tek harf/kelime alıntı transkriptte
+            // her zaman geçer ve disiplini pratikte atlatırdı
             $kanit = is_string($girdi['kanit'] ?? null) ? trim($girdi['kanit']) : '';
-            if ($kanit === '') {
+            if (mb_strlen($kanit, 'UTF-8') < 8 || ! str_contains($kanit, ' ')) {
                 $dusurulen[] = $d;
 
                 continue;

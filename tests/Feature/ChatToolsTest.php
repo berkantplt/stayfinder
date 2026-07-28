@@ -165,7 +165,7 @@ class ChatToolsTest extends TestCase
         $this->makeTour('Ankara Turu', [], ['destination' => 'Ankara']);
 
         $sonuc = app(TurAra::class)->run([
-            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'x']],
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
             'filtre' => ['destinasyon' => 'İzmir'],
         ]);
 

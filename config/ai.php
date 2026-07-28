@@ -29,6 +29,20 @@ return [
     // ETKİLENMEZ: tur eşleştirme testi (/tatil-karakteri) ve rubrik puanlama.
     'chat_enabled' => env('AI_CHAT_ENABLED', false),
 
+    // ---- Chatbot v2 (araç çağırma mimarisi, bkz. CHATBOT_V2.md) ----
+    // Konuşan yüzey GÜÇLÜ model ister: v1'de burası gpt-4o-mini'ydi ve
+    // "istediğim zekada değil" şikayetinin birinci sebebiydi. Mesaj başına
+    // ~1,5 kuruş; eval setiyle mini'ye düşürmeyi denemek serbest.
+    'chat_agent_model' => env('AI_CHAT_AGENT_MODEL', 'gpt-5.4'),
+
+    // Araç döngüsü üst sınırı — aşılırsa model elindekiyle cevap yazmak zorunda
+    // kalır (sonsuz döngü ve süresiz bekleme koruması).
+    'chat_max_tool_rounds' => (int) env('AI_CHAT_MAX_TOOL_ROUNDS', 3),
+
+    // Rubrik tur puanlama — kendi anahtarı olsun ki tur karakterini ucuzlatmak
+    // rubriği de düşürmesin (ikisi varsayılanda aynı modele çıkar).
+    'rubric_model' => env('AI_RUBRIC_MODEL', env('AI_DEST_MODEL', 'gpt-5.4-mini')),
+
     // Intent extraction — niyet çıkarma kalitesi search sonucunun ~%40'ını belirler.
     // 2026-07: gpt-4o → gpt-5.4-mini (import'taki kanıt sonrası; girdi 3.3x,
     // çıktı 2.2x ucuz ve güncel nesil). Geri dönüş: AI_INTENT_MODEL=gpt-4o.

@@ -106,6 +106,9 @@ class TurAra implements ChatTool
 
         return [
             'turlar' => $sonuc['tours'],
+            // Hafıza bunu okur: modelin İDDİASI değil, kanıtı doğrulanıp KABUL
+            // EDİLEN profil. Reddedilen boyut bir sonraki tura sızmasın.
+            'kabul_edilen_degerler' => $profil['degerler'],
             'kapsam' => $sonuc['kapsam'],
             'taban_alti' => $sonuc['below_floor'],
             'karsilanmayan' => array_map(fn ($d) => Rubric::label($d), $sonuc['karsilanmayan']),
