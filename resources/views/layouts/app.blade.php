@@ -1152,7 +1152,9 @@
     </script>
 
     @php
-        $hideAiChat = request()->is('admin*')
+        // ❄️ Sohbet asistanı dondurulmuş durumda (config/ai.php: chat_enabled)
+        $hideAiChat = ! config('ai.chat_enabled')
+            || request()->is('admin*')
             || request()->is('super-admin*')
             || request()->is('superadmin*')
             || request()->is('acenta*')

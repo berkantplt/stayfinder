@@ -22,6 +22,13 @@ return [
     |
     */
 
+    // ❄️ CHATBOT DONDURULDU (2026-07-28, kullanıcı kararı): v1 sohbet asistanı
+    // yayından kaldırıldı — yerine yeni mimari kurulacak. Kod ve veri yerinde
+    // duruyor; geri açmak için .env'e AI_CHAT_ENABLED=true yazmak yeterli.
+    // Kapsam: yüzen widget + /yapay-zeka-arama sayfası + mesaj uçları.
+    // ETKİLENMEZ: tur eşleştirme testi (/tatil-karakteri) ve rubrik puanlama.
+    'chat_enabled' => env('AI_CHAT_ENABLED', false),
+
     // Intent extraction — niyet çıkarma kalitesi search sonucunun ~%40'ını belirler.
     // 2026-07: gpt-4o → gpt-5.4-mini (import'taki kanıt sonrası; girdi 3.3x,
     // çıktı 2.2x ucuz ve güncel nesil). Geri dönüş: AI_INTENT_MODEL=gpt-4o.

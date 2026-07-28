@@ -102,7 +102,9 @@
                         @foreach($aiContext['checks'] as $check)
                             <span>· {{ $check }}</span>
                         @endforeach
-                        <a href="{{ route('ai.search') }}" style="margin-left:auto;font-weight:700;color:#4338ca;text-decoration:none;white-space:nowrap;">← Sohbete dön</a>
+                        @if(config('ai.chat_enabled'))
+                            <a href="{{ route('ai.search') }}" style="margin-left:auto;font-weight:700;color:#4338ca;text-decoration:none;white-space:nowrap;">← Sohbete dön</a>
+                        @endif
                     </div>
                 @endif
 
