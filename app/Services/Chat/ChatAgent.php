@@ -46,7 +46,7 @@ class ChatAgent
 
     /**
      * @param  array<int, array{role: string, content: string}>  $gecmis
-     * @return array{metin: string, turlar: array, durum: ConversationState, arac_turlari: int, dusurulen: string[], hata: bool}
+     * @return array{metin: string, turlar: array, durum: ConversationState, arac_turlari: int, dusurulen: string[], hata: bool, iz: array}
      */
     public function handle(string $mesaj, array $gecmis = [], ?ConversationState $durum = null, ?\Closure $emit = null): array
     {
@@ -76,6 +76,7 @@ class ChatAgent
         $turlar = [];
         $akitilan = '';   // kullanıcıya gerçekten gösterilen metin (geçmişe bu kaydedilir)
         $aracTuru = 0;
+        $iz = [];         // araç çağrı dizisi — eval assert'leri metinde değil BURADA yapılır
 
         for ($tur = 0; $tur <= $maxTur; $tur++) {
             $sonTur = $tur === $maxTur; // son turda araçlar kapanır: model cevabı YAZMAK zorunda
@@ -87,14 +88,14 @@ class ChatAgent
             } catch (\Throwable $e) {
                 Log::warning('[ChatAgent] LLM çağrısı başarısız', ['error' => $e->getMessage(), 'tur' => $tur]);
 
-                return $this->finalize('', $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan, true);
+                return $this->finalize('', $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan, true, $iz);
             }
 
             $message = $response->choices[0]->message ?? null;
             $toolCalls = $message->toolCalls ?? [];
 
             if ($toolCalls === []) {
-                return $this->finalize((string) ($message->content ?? ''), $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan);
+                return $this->finalize((string) ($message->content ?? ''), $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan, false, $iz);
             }
 
             // Model araç çağırırken yanına cümle de yazdıysa (yansıtma) anında akıt —
@@ -130,6 +131,17 @@ class ChatAgent
                 $sonuc = $this->runTool($ad, $args, $transkript, $durum);
                 $durum->absorb($ad, $args, $sonuc);
                 $aracSonuclari[] = $sonuc;
+                $iz[] = [
+                    'arac' => $ad,
+                    'args' => $args,
+                    'tur_sayisi' => count($sonuc['turlar'] ?? []),
+                    'tur_basliklari' => array_column($sonuc['turlar'] ?? [], 'title'),
+                    'hata' => $sonuc['hata'] ?? null,
+                    'sor' => $sonuc['sor'] ?? null,
+                    'taban_alti' => $sonuc['taban_alti'] ?? null,
+                    'olculemeyen_boyutlar' => $sonuc['olculemeyen_boyutlar'] ?? [],
+                    'veri_var' => $sonuc['veri_var'] ?? null,
+                ];
 
                 // Kartlar HER başarılı aramada tazelenir: daraltılmış ikinci arama
                 // boş dönerse "bulamadım" metninin altında eski kartlar kalmasın.
@@ -148,7 +160,7 @@ class ChatAgent
             $aracTuru++;
         }
 
-        return $this->finalize('', $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan);
+        return $this->finalize('', $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan, false, $iz);
     }
 
     private function runTool(string $ad, array $args, string $transkript, ConversationState $durum): array
@@ -175,7 +187,7 @@ class ChatAgent
         }
     }
 
-    /** @return array{metin: string, turlar: array, durum: ConversationState, arac_turlari: int, dusurulen: string[], hata: bool} */
+    /** @return array{metin: string, turlar: array, durum: ConversationState, arac_turlari: int, dusurulen: string[], hata: bool, iz: array} */
     private function finalize(
         string $ham,
         array $aracSonuclari,
@@ -185,6 +197,7 @@ class ChatAgent
         ?\Closure $emit,
         string $akitilan = '',
         bool $hata = false,
+        array $iz = [],
     ): array {
         $temiz = $this->validator->temizle($ham, $aracSonuclari, $durum->bilinenSayilar());
         $metin = $temiz['metin'];
@@ -217,6 +230,7 @@ class ChatAgent
             'arac_turlari' => $aracTuru,
             'dusurulen' => $temiz['dusurulen'],
             'hata' => $hata,
+            'iz' => $iz,
         ];
     }
 

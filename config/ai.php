@@ -43,6 +43,10 @@ return [
     // kalır (sonsuz döngü ve süresiz bekleme koruması).
     'chat_max_tool_rounds' => (int) env('AI_CHAT_MAX_TOOL_ROUNDS', 3),
 
+    // Eval hakemi — değerlendirdiği botla AYNI model olmasın: model kendi
+    // hatasını onaylama eğilimindedir. Ayrıca hakem işi ucuz (tek JSON kararı).
+    'eval_judge_model' => env('AI_EVAL_JUDGE_MODEL', 'gpt-5.4-mini'),
+
     // Rubrik tur puanlama — kendi anahtarı olsun ki tur karakterini ucuzlatmak
     // rubriği de düşürmesin (ikisi varsayılanda aynı modele çıkar).
     'rubric_model' => env('AI_RUBRIC_MODEL', env('AI_DEST_MODEL', 'gpt-5.4-mini')),
