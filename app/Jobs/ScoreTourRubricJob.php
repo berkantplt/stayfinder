@@ -160,20 +160,27 @@ class ScoreTourRubricJob implements ShouldQueue
         return $temiz;
     }
 
-    /** Girdi sözleşmesi (brif §3.1): pazarlama alanları AYIKLANIR. */
+    /**
+     * Girdi sözleşmesi (brif §3.1): pazarlama alanları AYIKLANIR.
+     *
+     * Kırpma sınırları bilerek geniş: tempo ve fiziksel boyutlarının kanıtı
+     * (kaç durak, ne kadar yürüyüş) gün metninin ORTASINDA/SONUNDA geçiyor.
+     * Dar kırpmada model kanıt bulamayıp o boyutları null bırakıyordu.
+     * Girdi büyümesi maliyeti tur başına kuruş mertebesinde (ömür boyu 2 çağrı).
+     */
     public static function sanitizedInput(Tour $tour): string
     {
         $itinerary = collect(is_array($tour->itinerary) ? $tour->itinerary : [])
-            ->map(fn ($day, $i) => ($i + 1).'. Gün — '.($day['title'] ?? '').': '.Str::limit(strip_tags((string) ($day['content'] ?? '')), 300))
+            ->map(fn ($day, $i) => ($i + 1).'. Gün — '.($day['title'] ?? '').': '.Str::limit(strip_tags((string) ($day['content'] ?? '')), 1000))
             ->implode("\n");
 
         return implode("\n", array_filter([
             'Toplam süre: '.$tour->duration_days.' gün',
             'Ziyaret edilen yerler: '.$tour->destination,
-            $tour->hotel_info ? 'Konaklama: '.Str::limit(strip_tags((string) $tour->hotel_info), 400) : null,
-            $tour->included ? 'Dahil olan hizmet/aktiviteler: '.Str::limit(strip_tags((string) $tour->included), 500) : null,
-            $tour->extras ? 'Opsiyonel aktiviteler: '.Str::limit(strip_tags((string) $tour->extras), 300) : null,
-            $itinerary !== '' ? "GÜN GÜN PROGRAM:\n".Str::limit($itinerary, 4000) : null,
+            $tour->hotel_info ? 'Konaklama: '.Str::limit(strip_tags((string) $tour->hotel_info), 600) : null,
+            $tour->included ? 'Dahil olan hizmet/aktiviteler: '.Str::limit(strip_tags((string) $tour->included), 800) : null,
+            $tour->extras ? 'Opsiyonel aktiviteler: '.Str::limit(strip_tags((string) $tour->extras), 500) : null,
+            $itinerary !== '' ? "GÜN GÜN PROGRAM:\n".Str::limit($itinerary, 10000) : null,
         ]));
     }
 

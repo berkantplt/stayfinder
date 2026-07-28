@@ -72,11 +72,15 @@ class TourMatcher
         $havuz = $belowFloor ? $sirali : $tabanUstu;
 
         // Çeşitlilik: ilk 3'te aynı doga_sehir bandından en fazla 2
-        $secilen = $this->applyDiversity($havuz, $rules);
+        $topN = max(1, (int) ($baglam['top_n'] ?? $rules['top_n']));
+        $secilen = $this->applyDiversity($havuz, ['top_n' => $topN] + $rules);
 
         return [
             'tours' => $secilen->map(fn ($t) => $this->card($t, $profil, $baglam))->all(),
             'relaxation_notes' => $notlar,
+            'kapsam' => $this->kapsam($secilen, $profil),
+            'karsilanmayan' => $this->karsilanmayan($secilen, $profil),
+            'sor' => $this->sorulacakSoru($secilen, $baglam),
             'below_floor' => $belowFloor && $secilen->isNotEmpty(),
         ];
     }
@@ -233,8 +237,22 @@ class TourMatcher
             if (! empty($baglam['butce_max_try'])) {
                 $q->where('price_try', '<=', ((float) $baglam['butce_max_try']) * $butceCarpan);
             }
+            if (isset($baglam['yurt_disi']) && $baglam['yurt_disi'] !== null) {
+                $q->where('is_international', (bool) $baglam['yurt_disi']);
+            }
 
             $sonuc = $q->get();
+
+            // Destinasyon da PHP tarafında elenir (aynı Türkçe 'İ' gerekçesi):
+            // "İzmir" araması SQL LOWER() ile hiçbir zaman eşleşmezdi.
+            if (! empty($baglam['destinasyon'])) {
+                $dest = self::normalizeTr((string) $baglam['destinasyon']);
+                if ($dest !== '') {
+                    $sonuc = $sonuc->filter(
+                        fn (Tour $t) => str_contains(self::normalizeTr((string) $t->destination), $dest)
+                    )->values();
+                }
+            }
 
             // Kalkış şehri PHP tarafında elenir: SQL LOWER() ile PHP mb_strtolower
             // Türkçe 'İ' harfinde ayrışıyor (U+0130 → "i̇" iki kod noktası) ve
@@ -309,6 +327,94 @@ class TourMatcher
         }
 
         return $secilen;
+    }
+
+    /**
+     * Ölçülebilen ağırlık oranı (0-1). Kullanıcının önemsediği boyutların ne
+     * kadarı turda gerçekten ölçülebilmiş? Düşükse skor ŞİŞMİŞ demektir:
+     * formül aktif ağırlığa böldüğü için 2 boyut aktifken ortalama bir tur bile
+     * %90+ alır ve "%92 uyumlu" rozeti kullanıcıya yalan söyler.
+     */
+    private function kapsam(Collection $secilen, array $profil): float
+    {
+        $istenen = array_sum(array_filter($profil['agirliklar'] ?? []));
+        if ($istenen <= 0 || $secilen->isEmpty()) {
+            return 0.0;
+        }
+
+        $olculen = 0.0;
+        foreach ($profil['agirliklar'] as $d => $w) {
+            if ($w > 0 && $secilen->first()->rubric?->value100($d) !== null) {
+                $olculen += $w;
+            }
+        }
+
+        return round($olculen / $istenen, 2);
+    }
+
+    /**
+     * Karşılanamayan istekler: kullanıcının önemsediği ama gösterilen turların
+     * HİÇBİRİNDE tutmayan boyutlar. Şartname madde 3'teki "böyle bir turum yok
+     * ama…" köprüsünün tek makine-okunur kaynağı — model bunu tahminle kurarsa
+     * negatif yönde uydurma yapmış olur.
+     *
+     * @return string[] boyut anahtarları
+     */
+    private function karsilanmayan(Collection $secilen, array $profil): array
+    {
+        if ($secilen->isEmpty()) {
+            return array_keys(array_filter($profil['agirliklar'] ?? []));
+        }
+
+        $sonuc = [];
+        foreach (($profil['agirliklar'] ?? []) as $d => $w) {
+            if ($w <= 0) {
+                continue;
+            }
+            $hedef = $profil['degerler'][$d] ?? null;
+            if ($hedef === null) {
+                continue;
+            }
+
+            // Hiçbir turda 25 puandan yakın değilse o istek karşılanamamıştır
+            $enYakin = $secilen
+                ->map(fn ($t) => $t->rubric?->value100($d))
+                ->filter(fn ($v) => $v !== null)
+                ->map(fn ($v) => abs($v - $hedef))
+                ->min();
+
+            if ($enYakin === null || $enYakin > 25) {
+                $sonuc[] = $d;
+            }
+        }
+
+        return $sonuc;
+    }
+
+    /**
+     * Soru sorma kararı MODELDEN alınır, veriden türetilir (şartname madde 8).
+     * Model "sorayım mı" diye karar verirse ya boğar ya hiç sormaz; tutarlılık
+     * olmaz. Burada soru sonuç dağılımından doğar: fiyatlar çok ayrışıyorsa
+     * bütçe sorulur, aday havuzu çok genişse tarih sorulur.
+     */
+    private function sorulacakSoru(Collection $secilen, array $baglam): ?string
+    {
+        if ($secilen->count() < 2) {
+            return null;
+        }
+
+        if (empty($baglam['butce_max_try'])) {
+            $fiyatlar = $secilen->map(fn ($t) => (float) ($t->price_try ?? $t->price))->filter()->values();
+            if ($fiyatlar->count() >= 2 && $fiyatlar->min() > 0 && $fiyatlar->max() / $fiyatlar->min() >= 2.0) {
+                return 'butce';
+            }
+        }
+
+        if (empty($baglam['aylar'])) {
+            return 'ay';
+        }
+
+        return null;
     }
 
     /**

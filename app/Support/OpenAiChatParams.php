@@ -40,6 +40,51 @@ final class OpenAiChatParams
         return $params;
     }
 
+    /**
+     * Araç çağırma (tool calling) parametreleri.
+     *
+     * json()'dan farkı: response_format GÖNDERİLMEZ. json_object ile tools
+     * birlikte gönderilince model içeriği JSON'a zorlanır ve araç akışı bozulur.
+     *
+     * @param  array<int, array<string, mixed>>  $messages
+     * @param  array<int, array<string, mixed>>  $tools  OpenAI function şemaları
+     * @param  string|array<string, mixed>  $toolChoice  'auto' | 'none' | 'required' | {type:function,...}
+     * @return array<string, mixed>
+     */
+    public static function tools(
+        string $model,
+        array $messages,
+        array $tools,
+        int $maxTokens,
+        string|array $toolChoice = 'auto',
+        string $reasoningEffort = 'low',
+        bool $parallelToolCalls = true,
+    ): array {
+        $params = [
+            'model' => $model,
+            'messages' => $messages,
+            'tools' => $tools,
+            'tool_choice' => $toolChoice,
+        ];
+
+        // Araçsız çağrıda (son cevap turu) tool_choice göndermenin anlamı yok
+        if ($tools === []) {
+            unset($params['tools'], $params['tool_choice']);
+        } elseif ($parallelToolCalls) {
+            // Bağımsız araçlar tek turda paralel çağrılsın — gecikme yarıya iner
+            $params['parallel_tool_calls'] = true;
+        }
+
+        if (self::isReasoningModel($model)) {
+            $params['max_completion_tokens'] = $maxTokens + 4000;
+            $params['reasoning_effort'] = $reasoningEffort;
+        } else {
+            $params['max_tokens'] = $maxTokens;
+        }
+
+        return $params;
+    }
+
     public static function isReasoningModel(string $model): bool
     {
         return (bool) preg_match('/^(gpt-5|o\d)/i', $model);
