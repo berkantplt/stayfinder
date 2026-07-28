@@ -1913,8 +1913,10 @@
             <span style="font-size:13px; font-weight:600;">Tur danışmanı</span>
         </button>
 
+        {{-- display:none satır içinde: satır içi display:flex, [hidden] özniteliğini
+             ezip paneli kapanmaz hale getiriyordu. Açılış togglePanel'de yapılır. --}}
         <div id="cv2-panel" role="dialog" aria-modal="true" aria-label="Tur danışmanı" hidden
-            style="position:absolute; bottom:56px; right:0; width:min(420px, calc(100vw - 32px)); height:min(600px, calc(100vh - 120px)); background:rgba(15,23,42,0.97); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.15); border-radius:20px; box-shadow:0 24px 64px rgba(0,0,0,0.4); display:flex; flex-direction:column; overflow:hidden;">
+            style="position:absolute; bottom:56px; right:0; width:min(420px, calc(100vw - 32px)); height:min(600px, calc(100vh - 120px)); background:rgba(15,23,42,0.97); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.15); border-radius:20px; box-shadow:0 24px 64px rgba(0,0,0,0.4); display:none; flex-direction:column; overflow:hidden;">
             <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.1);">
                 <span style="color:#fff; font-size:14px; font-weight:700;">🧭 Tur danışmanı</span>
                 <span>
@@ -1968,14 +1970,20 @@
             return d;
         }
 
+        function acikMi() {
+            return panel.style.display !== 'none';
+        }
         function togglePanel(open) {
+            // hidden + display birlikte: hidden erişilebilirlik için, display
+            // görsel için (satır içi stil [hidden] kuralını ezdiğinden ikisi şart)
             panel.hidden = !open;
+            panel.style.display = open ? 'flex' : 'none';
             trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
             if (open) input.focus();
         }
-        trigger.onclick = () => togglePanel(panel.hidden);
+        trigger.onclick = () => togglePanel(! acikMi());
         document.getElementById('cv2-close').onclick = () => { togglePanel(false); trigger.focus(); };
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { togglePanel(false); trigger.focus(); } });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && acikMi()) { togglePanel(false); trigger.focus(); } });
 
         document.getElementById('cv2-reset').onclick = async () => {
             if (sending) return;
