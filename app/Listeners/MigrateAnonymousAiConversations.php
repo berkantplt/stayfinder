@@ -38,23 +38,5 @@ class MigrateAnonymousAiConversations
         AiSearchLog::whereNull('user_id')
             ->where('session_id', $sessionId)
             ->update(['user_id' => $userId]);
-
-        // Anonimken çözülen Tatil Karakteri Testi kullanıcı hesabına taşınır —
-        // konuşma meta'sındaki profil kalıcı users.recreation_profile olur.
-        // Kullanıcının zaten profili varsa (daha taze/onaylı) üzerine yazılmaz.
-        $user = $event->user;
-        if ($user instanceof \App\Models\User && $user->recreation_profile === null) {
-            $withProfile = AiSearchConversation::where('user_id', $userId)
-                ->where('session_id', $sessionId)
-                ->latest('updated_at')
-                ->get()
-                ->first(fn ($c) => ! empty(($c->current_intent ?? [])[\App\Services\AiSearch\RecreationQuizService::META_KEY]['vector']));
-
-            if ($withProfile) {
-                $user->forceFill([
-                    'recreation_profile' => $withProfile->current_intent[\App\Services\AiSearch\RecreationQuizService::META_KEY],
-                ])->save();
-            }
-        }
     }
 }

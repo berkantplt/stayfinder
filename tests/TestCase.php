@@ -6,6 +6,7 @@ use App\Jobs\GenerateDestinationProfileJob;
 use App\Jobs\GenerateKnowledgeEmbeddingJob;
 use App\Jobs\GenerateTourCharacterJob;
 use App\Jobs\GenerateTourEmbeddingJob;
+use App\Jobs\ScoreTourRubricJob;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Queue;
 
@@ -26,6 +27,7 @@ abstract class TestCase extends BaseTestCase
             GenerateKnowledgeEmbeddingJob::class,
             GenerateDestinationProfileJob::class,
             GenerateTourCharacterJob::class,
+            ScoreTourRubricJob::class,
         ]);
     }
 }

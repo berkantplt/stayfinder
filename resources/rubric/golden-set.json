@@ -1,0 +1,11 @@
+{
+    "_readme": "Elle puanlanmış altın küme. Prompt/model değişince app:rubric-golden-mae ile MAE ölçülür; hedef < 0.5 (5'li ölçekte). Editör 25-30 tura tamamlamalı — aşağıdaki 3 örnek format şablonudur ve GERÇEK katalog turlarıyla değiştirilmelidir (tour_id gerçek id olmalı).",
+    "rubric_version": "v1",
+    "entries": [
+        {
+            "tour_id": null,
+            "isim": "ÖRNEK — editör dolduracak",
+            "scores": {"tempo": 3, "fiziksel": 2, "kultur": 4, "doga_sehir": 2, "adrenalin": 1, "gastronomi": 2, "sosyallik": 3, "konfor": 3, "yapilandirilmislik": 4, "kalabaliklik": 4}
+        }
+    ]
+}

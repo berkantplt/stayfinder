@@ -18,7 +18,7 @@ final class OpenAiChatParams
      * @param  array<int, array<string, string>>  $messages
      * @return array<string, mixed>
      */
-    public static function json(string $model, array $messages, int $maxTokens): array
+    public static function json(string $model, array $messages, int $maxTokens, ?float $temperature = null): array
     {
         $params = [
             'model' => $model,
@@ -27,10 +27,14 @@ final class OpenAiChatParams
         ];
 
         if (self::isReasoningModel($model)) {
+            // Reasoning ailesi temperature kabul etmez — istense de gönderilmez
             $params['max_completion_tokens'] = $maxTokens + 4000;
             $params['reasoning_effort'] = 'low';
         } else {
             $params['max_tokens'] = $maxTokens;
+            if ($temperature !== null) {
+                $params['temperature'] = $temperature;
+            }
         }
 
         return $params;

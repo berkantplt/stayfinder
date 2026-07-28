@@ -1,0 +1,46 @@
+{
+    "rubric_version": "v1",
+    "scale_note": "LLM 1-5 puanlar; 0-100 dönüşümü kodda: (value-1)*25",
+    "dimensions": {
+        "tempo": {"ad": "Tempo", "tip": "mesafe", "uc0": "sakin, boş vakit çok", "uc100": "yoğun program, çok durak"},
+        "fiziksel": {"ad": "Fiziksel zorluk", "tip": "tavan", "uc0": "yürüyüş yok", "uc100": "uzun/dik yürüyüş"},
+        "kultur": {"ad": "Kültürel yoğunluk", "tip": "mesafe", "uc0": "yok", "uc100": "ana eksen"},
+        "doga_sehir": {"ad": "Doğa–şehir ekseni", "tip": "mesafe", "uc0": "tamamen kentsel", "uc100": "tamamen doğa"},
+        "adrenalin": {"ad": "Adrenalin", "tip": "tavan", "uc0": "risk yok", "uc100": "ana eksen"},
+        "gastronomi": {"ad": "Gastronomi ağırlığı", "tip": "mesafe", "uc0": "sadece beslenme", "uc100": "ana eksen"},
+        "sosyallik": {"ad": "Sosyallik", "tip": "mesafe", "uc0": "bireysel, sessiz", "uc100": "büyük grup"},
+        "konfor": {"ad": "Konfor seviyesi", "tip": "taban", "uc0": "sade", "uc100": "lüks"},
+        "yapilandirilmislik": {"ad": "Yapılandırılmışlık", "tip": "mesafe", "uc0": "tamamen serbest", "uc100": "dakikası belli"},
+        "kalabaliklik": {"ad": "Kalabalıklık", "tip": "mesafe", "uc0": "bilinmeyen rota", "uc100": "popüler, turistik"}
+    },
+    "penalty": {"tavan_asim": 2.5, "tavan_alti": 0.4, "taban_alti": 2.5, "taban_ustu": 0.4, "mesafe": 1.0, "olcek": 1.15},
+    "weight_bounds": {"min": 0.25, "max": 2.5, "beyan_carpani": 2.0, "tutarsizlik_carpani": 0.5, "tutarsizlik_esigi": 30},
+    "result_rules": {"top_n": 3, "min_score": 60, "diversity_axis": "doga_sehir", "diversity_max_same_band": 2, "relax_step": 0.2, "min_candidates": 3},
+    "anchor_tours": [
+        {
+            "isim": "Kaçkar Zirve Trekking (zorlu doğa)",
+            "program": "6 gün. Gün 1: Ayder'e transfer, ekipman kontrolü. Gün 2-5: günde 12-18 km, 500-900 m tırmanış, kamp konaklama, yemekler kamp mutfağı. Gün 6: dönüş. Grup 8-12 kişi, dağ rehberi. Ön koşul: yüksek irtifa yürüyüş deneyimi.",
+            "scores": {"tempo": 4, "fiziksel": 5, "kultur": 1, "doga_sehir": 5, "adrenalin": 4, "gastronomi": 1, "sosyallik": 3, "konfor": 1, "yapilandirilmislik": 4, "kalabaliklik": 1}
+        },
+        {
+            "isim": "Antalya 5* Her Şey Dahil (resort tatili)",
+            "program": "7 gece 5 yıldız resort. Program yok; isteğe bağlı günlük havuz/plaj, SPA ücretli. Havalimanı özel transfer dahil. Açık büfe sabah-akşam.",
+            "scores": {"tempo": 1, "fiziksel": 1, "kultur": 1, "doga_sehir": 2, "adrenalin": 1, "gastronomi": 2, "sosyallik": 2, "konfor": 5, "yapilandirilmislik": 1, "kalabaliklik": 4}
+        },
+        {
+            "isim": "Klasik İtalya Turu (yoğun kültür)",
+            "program": "8 gün Roma-Floransa-Venedik. Her gün 07:30 kahvaltı, 08:30 çıkış; günde 4-6 durak: Kolezyum, Vatikan müzeleri, Uffizi, San Marco; profesyonel sanat tarihi rehberi. 4 yıldız merkezi oteller. Grup 24-30 kişi. Akşamları 1-2 saat serbest.",
+            "scores": {"tempo": 5, "fiziksel": 3, "kultur": 5, "doga_sehir": 1, "adrenalin": 1, "gastronomi": 2, "sosyallik": 4, "konfor": 3, "yapilandirilmislik": 5, "kalabaliklik": 5}
+        },
+        {
+            "isim": "Gaziantep Lezzet Rotası (gastronomi)",
+            "program": "3 gün. Baklava ustası atölyesi, Zeugma 2 saat, kahvaltı sofrası, bakırcılar çarşısı, akşam kebap ustası eşliğinde tadım menüsü, yemek pazarı turu yerel şefle. Butik otel. Grup 10-14 kişi. Günde 3-4 durak, öğle uzun tutulur.",
+            "scores": {"tempo": 3, "fiziksel": 2, "kultur": 3, "doga_sehir": 1, "adrenalin": 1, "gastronomi": 5, "sosyallik": 3, "konfor": 3, "yapilandirilmislik": 4, "kalabaliklik": 3}
+        },
+        {
+            "isim": "Bozcaada Hafta Sonu Kaçamağı (sakin kasaba)",
+            "program": "2 gece taş konak pansiyon. Program: cumartesi bağ gezisi ve tadım (2 saat), gerisi serbest; bisiklet kiralama opsiyonel. Bireysel veya çift, rehber yok, transfer feribotla kendi aracıyla.",
+            "scores": {"tempo": 1, "fiziksel": 2, "kultur": 2, "doga_sehir": 3, "adrenalin": 1, "gastronomi": 3, "sosyallik": 1, "konfor": 2, "yapilandirilmislik": 1, "kalabaliklik": 2}
+        }
+    ]
+}

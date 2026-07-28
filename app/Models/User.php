@@ -29,7 +29,6 @@ class User extends Authenticatable
             'birth_date' => 'date',
             'announcements_seen_at' => 'datetime',
             'ai_preference' => 'array', // AI tercih profili (gece komutu üretir)
-            'recreation_profile' => 'array', // Tatil Karakteri Testi çıktısı
         ];
     }
 

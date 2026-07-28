@@ -28,6 +28,7 @@ class TourObserver
 
         $this->dispatchDestinationEnrichmentIfNeeded((string) $tour->destination);
         $this->dispatchTourCharacterEnrichment($tour);
+        $this->dispatchRubricScoring($tour);
         $this->flushDestinationInventoryCaches();
         $this->syncKnowledgeChunkFor($tour);
         $this->announceNewTour($tour);
@@ -72,6 +73,16 @@ class TourObserver
         foreach ($characterFields as $field) {
             if ($tour->wasChanged($field)) {
                 $this->dispatchTourCharacterEnrichment($tour);
+                break;
+            }
+        }
+
+        // Rubrik puanları: eşleştirme girdisi değiştiyse yeniden puanlansın
+        // (job içi input_hash kontrolü gereksiz LLM tekrarını zaten eler)
+        $rubricFields = ['destination', 'itinerary', 'included', 'extras', 'duration_days', 'hotel_info'];
+        foreach ($rubricFields as $field) {
+            if ($tour->wasChanged($field)) {
+                $this->dispatchRubricScoring($tour);
                 break;
             }
         }
@@ -170,6 +181,16 @@ class TourObserver
         }
 
         GenerateTourCharacterJob::dispatch($tour->id)->onQueue('default');
+    }
+
+    /** Rubrik puanlama job'ı — aynı kilit deseni (600 sn dispatch fırtınası önleme). */
+    private function dispatchRubricScoring(Tour $tour): void
+    {
+        if (! Cache::add(\App\Jobs\ScoreTourRubricJob::DISPATCH_LOCK_PREFIX.$tour->id, 1, 600)) {
+            return;
+        }
+
+        \App\Jobs\ScoreTourRubricJob::dispatch($tour->id)->onQueue('default');
     }
 
     /**

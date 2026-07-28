@@ -1,0 +1,112 @@
+{
+    "quiz_version": "v1",
+    "rubric_version": "v1",
+    "_kurallar": "Her şık ilgili boyutlara DOĞRUDAN 0-100 değer yazar (arketip/persona yok). 'fark etmez' şıkkı zorunlu: agirliksizlastir listesindeki boyutlar eşleştirmeden tamamen çıkar. 8. soru en fazla 2 seçim, ağırlık çarpanı 2.0.",
+    "tercih_sorulari": [
+        {
+            "key": "q1",
+            "soru": "Tatilde ideal bir gün nasıl geçer?",
+            "boyutlar": ["tempo", "yapilandirilmislik"],
+            "secenekler": [
+                {"metin": "Geç kalkarım, plan yapmam — gün kendi akışında geçer", "yazar": {"tempo": 15, "yapilandirilmislik": 10}},
+                {"metin": "Bir iki planlı şey olsun, gerisi serbest", "yazar": {"tempo": 40, "yapilandirilmislik": 40}},
+                {"metin": "Sabah erken çıkıp gün boyu gezmek isterim", "yazar": {"tempo": 80, "yapilandirilmislik": 70}},
+                {"metin": "Fark etmez", "yazar": {}, "agirliksizlastir": ["tempo", "yapilandirilmislik"]}
+            ]
+        },
+        {
+            "key": "q2",
+            "soru": "Yürüyüş ve fiziksel efor konusunda neredesin?",
+            "boyutlar": ["fiziksel"],
+            "secenekler": [
+                {"metin": "Minimum yürüyüş — araç kapıya gelsin", "yazar": {"fiziksel": 10}},
+                {"metin": "Şehir/gezi yürüyüşü sorun değil", "yazar": {"fiziksel": 40}},
+                {"metin": "Uzun yürüyüş ve tırmanış tam benlik", "yazar": {"fiziksel": 85}},
+                {"metin": "Fark etmez", "yazar": {}, "agirliksizlastir": ["fiziksel"]}
+            ]
+        },
+        {
+            "key": "q3",
+            "soru": "Kendini nerede hayal ediyorsun?",
+            "boyutlar": ["doga_sehir", "kalabaliklik"],
+            "secenekler": [
+                {"metin": "Şehrin göbeğinde, meşhur yerlerde", "yazar": {"doga_sehir": 15, "kalabaliklik": 80}},
+                {"metin": "Sakin bir kasabada, kalabalıktan uzakta", "yazar": {"doga_sehir": 55, "kalabaliklik": 20}},
+                {"metin": "Tamamen doğanın içinde, keşfedilmemiş yerlerde", "yazar": {"doga_sehir": 90, "kalabaliklik": 10}},
+                {"metin": "Fark etmez", "yazar": {}, "agirliksizlastir": ["doga_sehir", "kalabaliklik"]}
+            ]
+        },
+        {
+            "key": "q4",
+            "soru": "Bu tatilde seni en çok ne çeker?",
+            "boyutlar": ["kultur", "gastronomi"],
+            "secenekler": [
+                {"metin": "Tarih, müzeler, hikâyeler", "yazar": {"kultur": 85, "gastronomi": 35}},
+                {"metin": "Yerel mutfak, pazarlar, tadımlar", "yazar": {"kultur": 35, "gastronomi": 85}},
+                {"metin": "İkisi de olsun, dozunda", "yazar": {"kultur": 60, "gastronomi": 60}},
+                {"metin": "İkisi de öncelik değil", "yazar": {"kultur": 15, "gastronomi": 15}},
+                {"metin": "Fark etmez", "yazar": {}, "agirliksizlastir": ["kultur", "gastronomi"]}
+            ]
+        },
+        {
+            "key": "q5",
+            "soru": "Konaklamada önceliğin ne?",
+            "boyutlar": ["konfor"],
+            "secenekler": [
+                {"metin": "Temiz yatak yeter, parayı geziye harcarım", "yazar": {"konfor": 20}},
+                {"metin": "Rahat, iyi bir otel olsun", "yazar": {"konfor": 55}},
+                {"metin": "Konfor benim için tatilin kendisi — üst segment", "yazar": {"konfor": 90}},
+                {"metin": "Fark etmez", "yazar": {}, "agirliksizlastir": ["konfor"]}
+            ]
+        },
+        {
+            "key": "q6",
+            "soru": "Grup ve heyecan konusunda?",
+            "boyutlar": ["sosyallik", "adrenalin"],
+            "secenekler": [
+                {"metin": "Küçük ve sakin olsun, riskli işlere girmem", "yazar": {"sosyallik": 25, "adrenalin": 10}},
+                {"metin": "Kalabalık eğlenceli grup, ama adrenalin şart değil", "yazar": {"sosyallik": 80, "adrenalin": 25}},
+                {"metin": "Rafting, dalış, paraşüt — heyecan olsun", "yazar": {"sosyallik": 50, "adrenalin": 80}},
+                {"metin": "Fark etmez", "yazar": {}, "agirliksizlastir": ["sosyallik", "adrenalin"]}
+            ]
+        },
+        {
+            "key": "q7",
+            "soru": "Kimlerle gidiyorsun?",
+            "boyutlar": ["sosyallik"],
+            "not": "Sert filtre alanlarını da besler (grup tipi, çocuk)",
+            "secenekler": [
+                {"metin": "Tek başıma", "yazar": {"sosyallik": 30}, "filtre": {"grup_tipi": "tek"}},
+                {"metin": "Partnerimle", "yazar": {"sosyallik": 35}, "filtre": {"grup_tipi": "cift"}},
+                {"metin": "Ailemle (çocuklu)", "yazar": {"sosyallik": 55}, "filtre": {"grup_tipi": "aile_cocuklu"}},
+                {"metin": "Arkadaş grubuyla", "yazar": {"sosyallik": 75}, "filtre": {"grup_tipi": "arkadas"}},
+                {"metin": "Fark etmez", "yazar": {}, "agirliksizlastir": ["sosyallik"]}
+            ]
+        }
+    ],
+    "onem_sorusu": {
+        "key": "q8",
+        "soru": "Senin için en önemli iki şey hangisi?",
+        "max_secim": 2,
+        "secenekler": [
+            {"metin": "Rahat bir tempo", "boyut": "tempo"},
+            {"metin": "Konfor", "boyut": "konfor"},
+            {"metin": "Yemekler", "boyut": "gastronomi"},
+            {"metin": "Doğada olmak", "boyut": "doga_sehir"},
+            {"metin": "Tarih ve kültür", "boyut": "kultur"},
+            {"metin": "Heyecan", "boyut": "adrenalin"},
+            {"metin": "Yeni insanlar tanımak", "boyut": "sosyallik"},
+            {"metin": "Kalabalıktan uzak olmak", "boyut": "kalabaliklik"}
+        ]
+    },
+    "baglam_sorulari": {
+        "not": "Sert filtre — vektöre girmez",
+        "alanlar": [
+            {"key": "ay", "soru": "Hangi ay(lar)?", "tip": "ay_coklu", "zorunlu": false},
+            {"key": "gun_araligi", "soru": "Kaç gün?", "tip": "secim", "secenekler": [{"metin": "1-3 gün", "min": 1, "max": 3}, {"metin": "4-7 gün", "min": 4, "max": 7}, {"metin": "8+ gün", "min": 8, "max": 60}, {"metin": "Fark etmez", "min": null, "max": null}], "zorunlu": false},
+            {"key": "butce_bandi", "soru": "Kişi başı bütçe?", "tip": "secim", "secenekler": [{"metin": "≤ 15.000 ₺", "max_try": 15000}, {"metin": "≤ 35.000 ₺", "max_try": 35000}, {"metin": "≤ 75.000 ₺", "max_try": 75000}, {"metin": "Fark etmez", "max_try": null}], "zorunlu": false},
+            {"key": "kalkis_sehri", "soru": "Nereden kalkacaksın?", "tip": "metin", "zorunlu": false},
+            {"key": "erisilebilirlik", "soru": "Erişilebilirlik ihtiyacın var mı? (opsiyonel)", "tip": "secim", "secenekler": [{"metin": "Hayır", "deger": false}, {"metin": "Evet", "deger": true}], "zorunlu": false}
+        ]
+    }
+}

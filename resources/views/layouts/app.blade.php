@@ -593,7 +593,7 @@
                 popupOptHover: 'rgba(255,255,255,0.08)'
             },
             light: {
-                card: 'position:relative; display:flex; flex-direction:column; background:#fff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; transition:transform .15s, box-shadow .15s, opacity .35s;',
+                card: 'position:relative; display:flex; flex-direction:column; flex:0 0 220px; min-width:220px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; transition:transform .15s, box-shadow .15s, opacity .35s;',
                 cardClass: '',
                 hoverLift: 'translateY(-2px)',
                 hoverShadow: '0 4px 12px rgba(0,0,0,.08)',
@@ -843,14 +843,16 @@
     })();
 
     /**
-     * turxturQuiz — Tatil Karakteri Testi bileşeni (LLM'siz).
-     * turxturAiCard gibi guard DIŞINDA: widget (dark) ve tam sayfa sohbet (light)
-     * aynı bileşeni kullanır. Tüm içerik textContent ile yazılır (XSS güvenli);
-     * soru tanımı sunucudan gelir, ağırlık/puanlama yalnız sunucudadır.
+     * turxturQuiz — Tur eşleştirme testi (brif v1, tamamen LLM'siz).
+     * 7 tercih sorusu (+zorunlu "fark etmez") + önem sorusu (≤2) + bağlam
+     * adımı (sert filtreler) → sunucu eşleştirmesi → ilk 3 tur + gerekçe.
+     * Arketip/persona yok; sonuç oturum bazlıdır, kalıcı profile yazılmaz.
+     * Tüm içerik textContent ile yazılır (XSS güvenli).
      */
     window.turxturQuiz = (function () {
         let defCache = null;
         let activeCard = null;
+        const AYLAR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
         async function definition() {
             if (defCache) return defCache;
@@ -878,23 +880,21 @@
             return node;
         }
 
-        // opts: { container, theme, conversationUuid(), onUuid(uuid), onDone({followup_query, persona}) }
+        // opts: { container, theme }
         async function open(opts) {
             if (activeCard && activeCard.isConnected) {
                 if (opts.container.contains(activeCard)) {
                     activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     return;
                 }
-                // Başka yüzeyde (ör. kapatılmış widget'ta) açık kalan kart bu
-                // yüzeyin girişini kilitlemesin: eskisi iptal, burada taze aç
                 activeCard.remove();
                 activeCard = null;
             }
 
             const P = palette(opts.theme || 'light');
-            const card = el('div', 'border:1px solid ' + P.border + '; border-radius:16px; padding:18px; background:' + P.card + '; color:' + P.text + '; font-size:14px; max-width:520px;');
+            const card = el('div', 'border:1px solid ' + P.border + '; border-radius:16px; padding:18px; background:' + P.card + '; color:' + P.text + '; font-size:14px; max-width:540px;');
             card.setAttribute('role', 'group');
-            card.setAttribute('aria-label', 'Tatil Karakteri Testi');
+            card.setAttribute('aria-label', 'Tur eşleştirme testi');
             activeCard = card;
             opts.container.appendChild(card);
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -903,8 +903,6 @@
             try {
                 def = await definition();
             } catch (e) {
-                // Kart pasif hata mesajına döner; activeCard bırakılır ki giriş
-                // butonu kilitlenmesin, retry taze bir açılış yapar
                 activeCard = null;
                 card.appendChild(el('div', 'color:' + P.sub + ';', 'Test şu an yüklenemedi — birazdan tekrar dener misin?'));
                 const retry = el('button', 'margin-top:8px; border:1px solid ' + P.border + '; background:' + P.chipBg + '; color:' + P.text + '; border-radius:999px; padding:6px 14px; cursor:pointer; font-size:12px;', 'Tekrar dene');
@@ -914,55 +912,36 @@
                 return;
             }
 
-            const answers = {};
+            const prefs = def.tercih_sorulari;
+            const onem = def.onem_sorusu;
+            const answers = { [onem.key]: [] };
+            const baglam = { aylar: [], gun: null, butce: null, kalkis: '', eris: null };
+            const totalSteps = prefs.length + 2; // + önem + bağlam
             let stepIdx = 0;
-            let result = null;      // sunucu skoru
-            let adjusted = false;   // ± düzeltme yapıldı mı
 
-            function visibleSteps() {
-                const s7 = def.steps.find(s => s.key === 's7');
-                const expCode = (answers.s7 !== undefined && s7 && s7.codes) ? s7.codes[answers.s7] : null;
-                return def.steps.filter(s => {
-                    if (!s.branch_of) return true;
-                    return expCode !== null && (s.branch_when || []).includes(expCode);
-                });
-            }
-
-            async function post(extra) {
-                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                const res = await fetch('/tatil-karakteri', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify(Object.assign({
-                        answers: answers,
-                        conversation_uuid: (opts.conversationUuid && opts.conversationUuid()) || null,
-                    }, extra || {})),
-                });
-                if (!res.ok) throw new Error('quiz submit ' + res.status);
-                return res.json();
+            function chipStyle(on) {
+                return 'border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; border:1px solid ' + (on ? P.accent : P.border) + '; background:' + (on ? P.chipSel : P.chipBg) + '; color:' + P.text + ';';
             }
 
             function header(label) {
-                const steps = visibleSteps();
                 const wrap = el('div');
                 const row = el('div', 'display:flex; justify-content:space-between; font-size:11px; color:' + P.sub + '; margin-bottom:4px;');
                 row.appendChild(el('span', '', label));
-                row.appendChild(el('span', '', '🧭 Tatil Karakteri'));
+                row.appendChild(el('span', '', '🧭 Tur Eşleştirme'));
                 wrap.appendChild(row);
                 const bar = el('div', 'height:4px; border-radius:2px; background:' + P.track + '; margin-bottom:14px; overflow:hidden;');
-                const fill = el('div', 'height:100%; width:' + Math.round((stepIdx / steps.length) * 100) + '%; background:' + P.accent + '; border-radius:2px;');
-                bar.appendChild(fill);
+                bar.appendChild(el('div', 'height:100%; width:' + Math.round((Math.min(stepIdx, totalSteps) / totalSteps) * 100) + '%; background:' + P.accent + '; border-radius:2px;'));
                 wrap.appendChild(bar);
                 return wrap;
             }
 
-            function navRow(nextEnabled, onNext) {
+            function navRow(nextEnabled, onNext, nextLabel) {
                 const row = el('div', 'display:flex; justify-content:space-between; align-items:center; margin-top:14px;');
                 const back = el('button', 'background:none; border:none; color:' + P.sub + '; cursor:pointer; font-size:12px; padding:4px;', '← Geri');
                 back.type = 'button';
                 back.style.visibility = stepIdx === 0 ? 'hidden' : 'visible';
                 back.onclick = () => { stepIdx = Math.max(0, stepIdx - 1); render(); };
-                const next = el('button', 'border:1px solid ' + P.border + '; background:' + (nextEnabled ? P.accent : P.chipBg) + '; color:' + (nextEnabled ? '#0f172a' : P.sub) + '; border-radius:999px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer;', 'Devam →');
+                const next = el('button', 'border:1px solid ' + P.border + '; background:' + (nextEnabled ? P.accent : P.chipBg) + '; color:' + (nextEnabled ? '#0f172a' : P.sub) + '; border-radius:999px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer;', nextLabel || 'Devam →');
                 next.type = 'button';
                 next.disabled = !nextEnabled;
                 next.onclick = onNext;
@@ -973,142 +952,196 @@
 
             function render() {
                 card.replaceChildren();
-                const steps = visibleSteps();
+                if (stepIdx < prefs.length) return renderPref(prefs[stepIdx]);
+                if (stepIdx === prefs.length) return renderImportance();
+                return renderContext();
+            }
 
-                if (stepIdx >= steps.length) { return renderResult(); }
+            function renderPref(soru) {
+                card.appendChild(header('Soru ' + (stepIdx + 1) + '/' + totalSteps));
+                card.appendChild(el('div', 'font-weight:600; margin-bottom:10px;', soru.soru));
+                const wrap = el('div', 'display:flex; flex-wrap:wrap; gap:8px;');
+                soru.secenekler.forEach((opt, i) => {
+                    const chip = el('button', chipStyle(answers[soru.key] === i), opt.metin);
+                    chip.type = 'button';
+                    chip.setAttribute('aria-pressed', answers[soru.key] === i ? 'true' : 'false');
+                    chip.onclick = () => { answers[soru.key] = i; stepIdx++; render(); };
+                    wrap.appendChild(chip);
+                });
+                card.appendChild(wrap);
+                card.appendChild(navRow(Number.isInteger(answers[soru.key]), () => { stepIdx++; render(); }));
+            }
 
-                const step = steps[stepIdx];
-                card.appendChild(header('Soru ' + (stepIdx + 1) + '/' + steps.length));
-                card.appendChild(el('div', 'font-weight:600; margin-bottom:10px;', step.q));
+            function renderImportance() {
+                card.appendChild(header('Soru ' + (stepIdx + 1) + '/' + totalSteps));
+                card.appendChild(el('div', 'font-weight:600; margin-bottom:2px;', onem.soru));
+                card.appendChild(el('div', 'font-size:12px; color:' + P.sub + '; margin-bottom:10px;', 'En fazla ' + onem.max_secim + ' seçim — bunların ağırlığı artar.'));
+                const secili = answers[onem.key];
+                const wrap = el('div', 'display:flex; flex-wrap:wrap; gap:8px;');
+                const uyari = el('div', 'font-size:12px; color:' + P.sub + '; margin-top:8px; min-height:16px;', '');
+                onem.secenekler.forEach((opt, i) => {
+                    const secildi = secili.includes(i);
+                    const chip = el('button', chipStyle(secildi), opt.metin);
+                    chip.type = 'button';
+                    chip.setAttribute('aria-pressed', secildi ? 'true' : 'false');
+                    chip.onclick = () => {
+                        const ix = secili.indexOf(i);
+                        if (ix >= 0) {
+                            secili.splice(ix, 1);
+                        } else if (secili.length < onem.max_secim) {
+                            secili.push(i);
+                        } else {
+                            // Sessizce yutma: sınıra gelindiğini kullanıcıya söyle
+                            uyari.textContent = 'En fazla ' + onem.max_secim + ' seçebilirsin — birini kaldırıp tekrar dene.';
+                            return;
+                        }
+                        render();
+                    };
+                    wrap.appendChild(chip);
+                });
+                card.appendChild(wrap);
+                card.appendChild(uyari);
+                card.appendChild(navRow(true, () => { stepIdx++; render(); }));
+            }
 
-                if (step.type === 'slider') {
-                    const row = el('div', 'display:flex; align-items:center; gap:10px;');
-                    row.appendChild(el('span', 'font-size:12px; color:' + P.sub + '; white-space:nowrap;', step.l));
-                    const slider = document.createElement('input');
-                    slider.type = 'range'; slider.min = '0'; slider.max = '100'; slider.step = '10';
-                    slider.value = answers[step.key] !== undefined ? answers[step.key] : 50;
-                    slider.style.cssText = 'flex:1; accent-color:' + P.accent + ';';
-                    slider.setAttribute('aria-label', step.q);
-                    slider.oninput = () => { answers[step.key] = parseInt(slider.value, 10); };
-                    row.appendChild(slider);
-                    row.appendChild(el('span', 'font-size:12px; color:' + P.sub + '; white-space:nowrap;', step.r));
-                    card.appendChild(row);
-                    card.appendChild(navRow(true, () => {
-                        if (answers[step.key] === undefined) answers[step.key] = 50;
-                        stepIdx++; render();
-                    }));
-                } else if (step.type === 'cards') {
-                    const grid = el('div', 'display:flex; flex-wrap:wrap; gap:8px;');
-                    const selected = answers[step.key] || (answers[step.key] = []);
-                    (step.cards || []).forEach(c => {
-                        const btn = el('button', 'width:112px; border-radius:12px; padding:10px 6px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; border:1px solid ' + P.border + '; background:' + P.chipBg + '; color:' + P.text + ';');
-                        btn.type = 'button';
-                        btn.appendChild(el('span', 'font-size:26px; line-height:1;', c.em));
-                        btn.appendChild(el('span', 'font-size:11.5px; font-weight:600;', c.t));
-                        btn.appendChild(el('span', 'font-size:9.5px; color:' + P.sub + ';', c.s));
-                        const paint = () => {
-                            const on = selected.includes(c.id);
-                            btn.style.background = on ? P.chipSel : P.chipBg;
-                            btn.style.borderColor = on ? P.accent : P.border;
-                            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-                        };
-                        btn.onclick = () => {
-                            const ix = selected.indexOf(c.id);
-                            if (ix >= 0) selected.splice(ix, 1);
-                            else if (selected.length < step.pick) selected.push(c.id);
-                            render();
-                        };
-                        paint();
-                        grid.appendChild(btn);
-                    });
-                    card.appendChild(grid);
-                    card.appendChild(el('div', 'font-size:11px; color:' + P.sub + '; margin-top:6px;', selected.length + '/' + step.pick + ' seçildi'));
-                    card.appendChild(navRow(selected.length === step.pick, () => { stepIdx++; render(); }));
-                } else { // chips
-                    const wrap = el('div', 'display:flex; flex-wrap:wrap; gap:8px;');
-                    (step.opts || []).forEach((label, i) => {
-                        const on = answers[step.key] === i;
-                        const chip = el('button', 'border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; border:1px solid ' + (on ? P.accent : P.border) + '; background:' + (on ? P.chipSel : P.chipBg) + '; color:' + P.text + ';', label);
+            function renderContext() {
+                card.appendChild(header('Son adım'));
+                card.appendChild(el('div', 'font-weight:600; margin-bottom:2px;', 'Pratik detaylar'));
+                card.appendChild(el('div', 'font-size:12px; color:' + P.sub + '; margin-bottom:10px;', 'Bunlar filtre olarak kullanılır — boş bırakabilirsin.'));
+
+                const section = (label) => card.appendChild(el('div', 'font-size:12px; font-weight:600; color:' + P.sub + '; margin:10px 0 6px;', label));
+
+                section('Hangi ay(lar)?');
+                const ayWrap = el('div', 'display:flex; flex-wrap:wrap; gap:6px;');
+                AYLAR.forEach((ay, i) => {
+                    const on = baglam.aylar.includes(i + 1);
+                    const chip = el('button', chipStyle(on) + ' padding:6px 10px; font-size:12px;', ay);
+                    chip.type = 'button';
+                    chip.onclick = () => {
+                        const ix = baglam.aylar.indexOf(i + 1);
+                        if (ix >= 0) baglam.aylar.splice(ix, 1); else baglam.aylar.push(i + 1);
+                        render();
+                    };
+                    ayWrap.appendChild(chip);
+                });
+                card.appendChild(ayWrap);
+
+                const alanlar = def.baglam_sorulari.alanlar;
+                const gunAlan = alanlar.find(a => a.key === 'gun_araligi');
+                if (gunAlan) {
+                    section(gunAlan.soru);
+                    const wrap = el('div', 'display:flex; flex-wrap:wrap; gap:6px;');
+                    gunAlan.secenekler.forEach((opt, i) => {
+                        const chip = el('button', chipStyle(baglam.gun === i) + ' font-size:12px;', opt.metin);
                         chip.type = 'button';
-                        chip.onclick = () => {
-                            answers[step.key] = i;
-                            // Dallanma sorusu değişince yanlış dalın eski cevabı temizlenir
-                            if (step.key === 's7') { delete answers.s8a; delete answers.s8b; }
-                            stepIdx++; render();
-                        };
+                        chip.onclick = () => { baglam.gun = baglam.gun === i ? null : i; render(); };
                         wrap.appendChild(chip);
                     });
                     card.appendChild(wrap);
-                    card.appendChild(navRow(answers[step.key] !== undefined, () => { stepIdx++; render(); }));
+                }
+
+                const butceAlan = alanlar.find(a => a.key === 'butce_bandi');
+                if (butceAlan) {
+                    section(butceAlan.soru);
+                    const wrap = el('div', 'display:flex; flex-wrap:wrap; gap:6px;');
+                    butceAlan.secenekler.forEach((opt, i) => {
+                        const chip = el('button', chipStyle(baglam.butce === i) + ' font-size:12px;', opt.metin);
+                        chip.type = 'button';
+                        chip.onclick = () => { baglam.butce = baglam.butce === i ? null : i; render(); };
+                        wrap.appendChild(chip);
+                    });
+                    card.appendChild(wrap);
+                }
+
+                section('Nereden kalkacaksın? (opsiyonel)');
+                const kalkis = document.createElement('input');
+                kalkis.type = 'text';
+                kalkis.value = baglam.kalkis;
+                kalkis.placeholder = 'İstanbul, Ankara…';
+                kalkis.style.cssText = 'width:100%; border:1px solid ' + P.border + '; background:' + P.chipBg + '; color:' + P.text + '; border-radius:10px; padding:8px 12px; font-size:13px; font-family:inherit; outline:none;';
+                kalkis.setAttribute('aria-label', 'Kalkış şehri');
+                kalkis.oninput = () => { baglam.kalkis = kalkis.value; };
+                card.appendChild(kalkis);
+
+                card.appendChild(navRow(true, submit, 'Turları eşleştir ✨'));
+            }
+
+            async function submit() {
+                card.replaceChildren();
+                card.appendChild(header('Eşleştiriliyor'));
+                card.appendChild(el('div', 'color:' + P.sub + ';', 'Cevapların turlarla karşılaştırılıyor…'));
+
+                const alanlar = def.baglam_sorulari.alanlar;
+                const gunSec = baglam.gun !== null ? alanlar.find(a => a.key === 'gun_araligi')?.secenekler[baglam.gun] : null;
+                const butceSec = baglam.butce !== null ? alanlar.find(a => a.key === 'butce_bandi')?.secenekler[baglam.butce] : null;
+
+                const payload = {
+                    answers: answers,
+                    baglam: {
+                        aylar: baglam.aylar,
+                        gun_min: gunSec?.min ?? null,
+                        gun_max: gunSec?.max ?? null,
+                        butce_max_try: butceSec?.max_try ?? null,
+                        kalkis_sehri: baglam.kalkis.trim() || null,
+                    },
+                };
+
+                try {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    const res = await fetch('/tatil-karakteri', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) throw new Error('quiz submit ' + res.status);
+                    renderResults(await res.json());
+                } catch (e) {
+                    card.replaceChildren();
+                    card.appendChild(header('Hata'));
+                    const cokIstek = String(e && e.message || '').includes('429');
+                    card.appendChild(el('div', 'color:' + P.sub + ';', cokIstek
+                        ? 'Çok fazla istek gönderildi — bir dakika sonra tekrar dener misin?'
+                        : 'Eşleştirme yapılamadı — tekrar dener misin?'));
+                    const satir = el('div', 'display:flex; gap:8px; align-items:center; margin-top:10px;');
+                    const geri = el('button', 'background:none; border:none; color:' + P.sub + '; cursor:pointer; font-size:12px; padding:4px;', '← Cevaplara dön');
+                    geri.type = 'button';
+                    // Cevaplar korunur: son adıma dönülür, hiçbir şey kaybolmaz
+                    geri.onclick = () => { stepIdx = totalSteps - 1; render(); };
+                    const retry = el('button', 'border:1px solid ' + P.border + '; background:' + P.chipBg + '; color:' + P.text + '; border-radius:999px; padding:6px 14px; cursor:pointer; font-size:12px;', 'Tekrar dene');
+                    retry.type = 'button';
+                    retry.onclick = submit;
+                    satir.appendChild(geri);
+                    satir.appendChild(retry);
+                    card.appendChild(satir);
                 }
             }
 
-            async function renderResult() {
-                card.replaceChildren();
-                card.appendChild(header('Profil'));
+            function renderResults(res) {
+                activeCard = null;
+                card.remove();
 
-                if (!result) {
-                    card.appendChild(el('div', 'color:' + P.sub + ';', 'Profilin hesaplanıyor…'));
-                    try {
-                        result = await post();
-                        if (opts.onUuid && result.conversation_uuid) opts.onUuid(result.conversation_uuid);
-                    } catch (e) {
-                        card.replaceChildren();
-                        card.appendChild(el('div', 'color:' + P.sub + ';', 'Profil kaydedilemedi — tekrar dener misin?'));
-                        const retry = el('button', 'margin-top:8px; border:1px solid ' + P.border + '; background:' + P.chipBg + '; color:' + P.text + '; border-radius:999px; padding:6px 14px; cursor:pointer;', 'Tekrar dene');
-                        retry.type = 'button';
-                        retry.onclick = () => { renderResult(); };
-                        card.appendChild(retry);
-                        return;
-                    }
-                    return renderResult();
-                }
-
-                const badge = el('div', 'border-radius:12px; padding:12px 14px; background:' + P.chipSel + '; margin-bottom:12px;');
-                badge.appendChild(el('div', 'font-size:16px; font-weight:700;', result.persona.label));
-                badge.appendChild(el('div', 'font-size:11.5px; color:' + P.sub + '; margin-top:2px;', 'Profilini aşağıdan düzeltebilirsin — onayladığında sana uygun turları getireceğim.'));
-                card.appendChild(badge);
-
-                Object.entries(def.axis_labels).forEach(([axis, label]) => {
-                    const val = result.vector[axis] ?? 0;
-                    const row = el('div', 'display:flex; align-items:center; gap:8px; margin:5px 0;');
-                    row.appendChild(el('span', 'width:118px; font-size:12px; color:' + P.sub + ';', label));
-                    const track = el('div', 'flex:1; height:7px; border-radius:4px; background:' + P.track + '; overflow:hidden;');
-                    track.appendChild(el('div', 'height:100%; width:' + Math.round(val * 100) + '%; background:' + P.accent + '; border-radius:4px;'));
-                    row.appendChild(track);
-                    [['−', -0.1], ['+', 0.1]].forEach(([sym, delta]) => {
-                        const adj = el('button', 'width:22px; height:22px; border-radius:6px; border:1px solid ' + P.border + '; background:transparent; color:' + P.text + '; cursor:pointer; font-size:12px; line-height:1;', sym);
-                        adj.type = 'button';
-                        adj.setAttribute('aria-label', label + ' ' + (delta > 0 ? 'artır' : 'azalt'));
-                        adj.onclick = () => {
-                            result.vector[axis] = Math.max(0, Math.min(1, Math.round(((result.vector[axis] ?? 0) + delta) * 10) / 10));
-                            adjusted = true;
-                            renderResult();
-                        };
-                        row.appendChild(adj);
-                    });
-                    card.appendChild(row);
+                const tourList = res.tours || [];
+                const bubble = el('div', 'border:1px solid ' + P.border + '; border-radius:16px; padding:14px 16px; background:' + P.card + '; color:' + P.text + '; font-size:14px; max-width:540px;');
+                // Boş sonuçta sunucunun olumlu mesajı çelişkili olurdu
+                bubble.appendChild(el('div', 'font-weight:600;', tourList.length
+                    ? (res.message || 'Eşleşmeler hazır 🧭')
+                    : 'Filtrelerine uyan puanlanmış tur bulamadım.'));
+                (res.relaxation_notes || []).forEach(n => {
+                    bubble.appendChild(el('div', 'font-size:12px; color:' + P.sub + '; margin-top:4px;', 'ℹ️ ' + n));
                 });
+                opts.container.appendChild(bubble);
 
-                const confirm = el('button', 'margin-top:14px; width:100%; border:none; background:' + P.accent + '; color:#0f172a; border-radius:12px; padding:11px; font-size:14px; font-weight:700; cursor:pointer;', 'Onayla, turları getir ✨');
-                confirm.type = 'button';
-                confirm.onclick = async () => {
-                    confirm.disabled = true;
-                    confirm.textContent = 'Kaydediliyor…';
-                    try {
-                        if (adjusted) {
-                            result = await post({ adjusted_vector: result.vector });
-                            if (opts.onUuid && result.conversation_uuid) opts.onUuid(result.conversation_uuid);
-                        }
-                        activeCard = null;
-                        card.remove();
-                        if (opts.onDone) opts.onDone(result);
-                    } catch (e) {
-                        confirm.disabled = false;
-                        confirm.textContent = 'Onayla, turları getir ✨';
-                    }
-                };
-                card.appendChild(confirm);
+                const tours = tourList;
+                if (tours.length && window.turxturAiCard) {
+                    const row = el('div', 'display:flex; gap:10px; overflow-x:auto; padding:10px 2px; max-width:100%;');
+                    tours.forEach((t, i) => {
+                        try { row.appendChild(window.turxturAiCard.build(t, { theme: opts.theme || 'light', index: i })); } catch (e) {}
+                    });
+                    opts.container.appendChild(row);
+                } else if (!tours.length) {
+                    bubble.appendChild(el('div', 'font-size:12px; color:' + P.sub + '; margin-top:6px;', 'Şu an filtrelerine uyan puanlanmış tur yok — sohbete ne aradığını yazarsan birlikte bakalım.'));
+                }
+                bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
             render();
@@ -1164,7 +1197,7 @@
                 
                 {{-- Suggestion Chips --}}
                 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">
-                    <button onclick="openTurxturQuizWidget()" class="suggestion-chip" style="border-color:rgba(45,212,191,0.5);">🧭 Tatil Karakteri Testi</button>
+                    <button onclick="openTurxturQuizWidget()" class="suggestion-chip" style="border-color:rgba(45,212,191,0.5);">🧭 Tur Eşleştirme Testi</button>
                     <button onclick="setSuggestion('Vizesiz en iyi yurt dışı turları hangileri?')" class="suggestion-chip">🌍 Vizesiz Turlar</button>
                     <button onclick="setSuggestion('20.000 TL bütçe ile tatil önerisi.')" class="suggestion-chip">💰 Bütçe Dostu</button>
                     <button onclick="setSuggestion('Huzurlu bir doğa ve deniz tatili istiyorum.')" class="suggestion-chip">🌿 Doğa & Deniz</button>
@@ -1348,68 +1381,13 @@
             }
         }
 
-        // Tatil Karakteri Testi: widget içinde quiz kartını açar; onaylanınca
-        // profil kaydedilir ve takip sorgusu normal LLM hattından gönderilir.
+        // Tur eşleştirme testi (brif v1): sonuçlar bileşenin içinde LLM'siz
+        // render edilir — konuşma/takip sorgusu bağlantısı yok, oturum bazlı.
         function openTurxturQuizWidget() {
+            // Akış sürerken kart mesaj listesinin ortasına girmesin
             if (window._aiWidgetSending) return;
             const messages = document.getElementById('ai-chat-messages');
-            const STORAGE_KEY = 'turxtur_ai_conv';
-            window.turxturQuiz.open({
-                container: messages,
-                theme: 'dark',
-                conversationUuid: () => {
-                    try {
-                        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-                        // sendAIChatMessage ile aynı tazelik kuralı: 30 dk idle
-                        // sonrası eski konuşma diriltilmez (bayat intent merge'i)
-                        if (parsed?.uuid && parsed.lastTs && (Date.now() - parsed.lastTs) < 30 * 60 * 1000) {
-                            return parsed.uuid;
-                        }
-                        return null;
-                    } catch (e) { return null; }
-                },
-                onUuid: (uuid) => {
-                    // Takip araması AYNI konuşmada akmalı — profil meta'sı orada
-                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ uuid: uuid, lastTs: Date.now() })); } catch (e) {}
-                },
-                onDone: (result) => {
-                    // Akış sürerken gönderim düşer ve taslak ezilirdi (5970dc9
-                    // dersi): kilit açılana dek bekle, taslağı koru; uzarsa
-                    // manuel çip bırak.
-                    const followup = result.followup_query || 'Bana uygun turları göster';
-                    let tries = 0;
-                    const fire = () => {
-                        if (window._aiWidgetSending) {
-                            if (++tries < 25) { setTimeout(fire, 600); return; }
-                            const wrap = document.createElement('div');
-                            wrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px;';
-                            const chip = document.createElement('button');
-                            chip.type = 'button';
-                            chip.className = 'suggestion-chip';
-                            chip.textContent = '🧭 Profilime uygun turları göster';
-                            chip.onclick = () => {
-                                if (window._aiWidgetSending) return;
-                                const inputEl = document.getElementById('ai-chat-input');
-                                inputEl.value = followup;
-                                sendAIChatMessage();
-                                if (!inputEl.value) wrap.remove();
-                            };
-                            wrap.appendChild(chip);
-                            messages.appendChild(wrap);
-                            messages.scrollTop = messages.scrollHeight;
-                            return;
-                        }
-                        const inputEl = document.getElementById('ai-chat-input');
-                        const draft = inputEl.value;
-                        inputEl.value = followup;
-                        sendAIChatMessage();
-                        // Gönderim input'u tüketti → kullanıcının taslağı geri gelsin;
-                        // gönderilemediyse followup'ı taslağın üstüne bırakma
-                        inputEl.value = draft;
-                    };
-                    fire();
-                },
-            });
+            window.turxturQuiz.open({ container: messages, theme: 'dark' });
             messages.scrollTop = messages.scrollHeight;
         }
 
