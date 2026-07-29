@@ -123,8 +123,10 @@ class HomeFilterTest extends TestCase
 
     public function test_ay_filtresi_tekil_tarih_ve_tarih_listesini_kapsar(): void
     {
-        // Tekil kalkış: 3 ay sonrası
-        $target = today()->addMonths(3);
+        // Hedef ayın ORTASI kullanılır: today()->addMonths(3) ayın 29'una denk
+        // gelirse +3 gün bir sonraki aya taşıyor ve test ayın sonunda kendi
+        // kendine kırılıyordu (filtre değil, kurgu hatasıydı).
+        $target = today()->addMonths(3)->startOfMonth()->addDays(9);
         $this->makeTour(['title' => 'Tekil Tarihli', 'departure_date' => $target]);
         // Tarih listesi: departure_date başka ayda ama dates içinde hedef ay var
         $other = $this->makeTour(['title' => 'Coklu Tarihli', 'departure_date' => today()->addMonths(5)]);
