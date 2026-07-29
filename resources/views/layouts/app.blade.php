@@ -2057,7 +2057,11 @@
                         if (!event || !dataRaw) continue;
                         let data; try { data = JSON.parse(dataRaw); } catch (e) { continue; }
 
-                        if (event === 'delta') {
+                        if (event === 'faz') {
+                            // Araç koşarken ne yapıldığını göster; ilk gerçek
+                            // metin gelince bu yazı yerini cevaba bırakır
+                            if (ilkParca) bubble.textContent = data.text || 'Bakıyorum…';
+                        } else if (event === 'delta') {
                             if (ilkParca) { bubble.textContent = ''; ilkParca = false; }
                             bubble.textContent += data.text || '';
                             msgs.scrollTop = msgs.scrollHeight;

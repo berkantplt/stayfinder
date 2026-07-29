@@ -48,7 +48,15 @@ class ChatAgent
      * @param  array<int, array{role: string, content: string}>  $gecmis
      * @return array{metin: string, turlar: array, durum: ConversationState, arac_turlari: int, dusurulen: string[], hata: bool, iz: array}
      */
-    public function handle(string $mesaj, array $gecmis = [], ?ConversationState $durum = null, ?\Closure $emit = null): array
+    /** Araç adı → kullanıcıya gösterilecek faz metni (SSE "faz" olayı). */
+    private const FAZ_METINLERI = [
+        'tur_ara' => 'Turları tarıyorum…',
+        'tur_detay' => 'Tur detayına bakıyorum…',
+        'sehir_bilgisi' => 'Destinasyonu inceliyorum…',
+        'envanter_ozeti' => 'Katalogda ne var bakıyorum…',
+    ];
+
+    public function handle(string $mesaj, array $gecmis = [], ?ConversationState $durum = null, ?\Closure $emit = null, ?\Closure $faz = null): array
     {
         $durum ??= new ConversationState();
         $model = config('ai.chat_agent_model', 'gpt-5.4');
@@ -126,6 +134,13 @@ class ChatAgent
                 if (! is_array($args)) {
                     Log::warning('[ChatAgent] Araç argümanı ayrıştırılamadı', ['arac' => $ad]);
                     $args = [];
+                }
+
+                // Faz bildirimi: model yansıtma cümlesi yazmadığında kullanıcı
+                // araçlar koşarken tamamen sessizlik görüyordu. Aynı zamanda
+                // istemci bekçisini (90 sn) diri tutar.
+                if ($faz && isset(self::FAZ_METINLERI[$ad])) {
+                    $faz(self::FAZ_METINLERI[$ad]);
                 }
 
                 $sonuc = $this->runTool($ad, $args, $transkript, $durum);

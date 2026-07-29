@@ -118,6 +118,26 @@ class ChatV2StreamTest extends TestCase
         $this->assertStringContainsString('Sakin Koy Turu', $govde);
     }
 
+    /** Araçlar koşarken kullanıcı sessizlik görmemeli — faz olayı akmalı. */
+    public function test_arac_kosarken_faz_olayi_akitilir(): void
+    {
+        $this->makeTour('Sakin Koy Turu');
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => ['tempo' => ['deger' => 20, 'kanit' => 'kafamı dinlemek istiyorum']],
+            ]),
+            $this->textResponse('Buldum.'),
+        ]);
+
+        $govde = $this->sse($this->post('/sohbet/akis', ['message' => 'kafamı dinlemek istiyorum']));
+
+        $this->assertStringContainsString('event: faz', $govde);
+        $this->assertStringContainsString('Turları tarıyorum', $govde);
+        // Faz, nihai cevaptan ÖNCE gelmeli
+        $this->assertLessThan(strpos($govde, 'Buldum'), strpos($govde, 'event: faz'));
+    }
+
     public function test_gecmis_ve_durum_oturumda_tutulur_db_ye_yazilmaz(): void
     {
         OpenAI::fake([$this->textResponse('Anladım.')]);

@@ -76,6 +76,9 @@ class ChatV2Controller extends Controller
                     $gecmis,
                     $durum,
                     fn (string $parca) => $emit('delta', ['text' => $parca]),
+                    // Araçlar koşarken ne yaptığını göster — sessizlik hem kötü
+                    // deneyim hem istemci bekçisini tetikliyordu
+                    fn (string $metin) => $emit('faz', ['text' => $metin]),
                 );
 
                 if ($sonuc['turlar'] !== []) {
