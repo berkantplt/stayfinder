@@ -85,7 +85,9 @@
         "diversity_max_same_band": 2,
         "relax_step": 0.2,
         "min_candidates": 3,
-        "expanded_n": 20
+        "expanded_n": 20,
+        "min_display_score": 40,
+        "below_floor_n": 3
     },
     "anchor_tours": [
         {

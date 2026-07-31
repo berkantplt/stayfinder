@@ -66,10 +66,14 @@ class TourMatcher
         })->values();
 
         // %60 tabanı (brif §6): taban altı turlar "önerilen" diye gösterilmez.
-        // Taban üstü hiç yoksa en yakınlar gösterilir ve below_floor işaretlenir.
+        // Taban üstü hiç yoksa "en yakınlar" gösterilir — ama HER ŞEY değil:
+        // %25'lik bir tur "en yakın" bile sayılmaz, göstermek güveni bitirir.
+        // min_display_score altındakiler taban altı modda da elenir.
         $tabanUstu = $sirali->filter(fn ($t) => $t->match_score >= $rules['min_score'])->values();
         $belowFloor = $tabanUstu->isEmpty();
-        $havuz = $belowFloor ? $sirali : $tabanUstu;
+        $havuz = $belowFloor
+            ? $sirali->filter(fn ($t) => $t->match_score >= ($rules['min_display_score'] ?? 40))->values()
+            : $tabanUstu;
 
         // Zaten gösterilmiş turlar dışlanır ("diğerleri" görünümü). Konum atlamak
         // yerine KİMLİK dışlamak şart: çeşitlilik kuralı sıralamayı değiştirdiği
@@ -82,13 +86,15 @@ class TourMatcher
         // Çeşitlilik yalnız KÜRATÖRLÜ ilk listede uygulanır. Genişletilmiş
         // listede kapatılır: "en fazla 2" kuralı 20'lik listeyi 6-8 turda
         // tıkardı ve kullanıcı zaten "hepsini göster" demiş oluyor.
-        $topN = max(1, (int) ($baglam['top_n'] ?? $rules['top_n']));
+        // Taban altı modda liste KISA tutulur: zayıf eşleşmeleri 5'e tamamlamak
+        // "bunlar sana uygun" izlenimi verir; 3 tanesi dürüst bir "en yakınlar".
+        $topN = max(1, (int) ($baglam['top_n'] ?? ($belowFloor ? ($rules['below_floor_n'] ?? 3) : $rules['top_n'])));
         $secilen = ($baglam['cesitlilik'] ?? true)
             ? $this->applyDiversity($havuz, ['top_n' => $topN] + $rules)
             : $havuz->take($topN);
 
         return [
-            'tours' => $secilen->map(fn ($t) => $this->card($t, $profil, $baglam))->all(),
+            'tours' => $secilen->map(fn ($t) => $this->card($t, $profil, $baglam, $belowFloor))->all(),
             // Katalogda yayınlanabilir puanı olan tur sayısı: 0 ise sistem HAZIR
             // DEĞİL demektir, "uyan tur yok" ile karıştırılmamalı
             'katalog_puanli_tur' => $scores->count(),
@@ -447,7 +453,7 @@ class TourMatcher
         return str_replace("\u{0307}", '', $metin);
     }
 
-    private function card(Tour $tour, array $profil, array $baglam = []): array
+    private function card(Tour $tour, array $profil, array $baglam = [], bool $belowFloor = false): array
     {
         // Bütçe gevşetildiyse kullanıcıya dürüstçe işaretlenir
         $butce = (float) ($baglam['butce_max_try'] ?? 0);
@@ -463,7 +469,10 @@ class TourMatcher
             'image' => $tour->image,
             'url' => route('tours.show', $tour->id),
             'agency_name' => $tour->agency?->name,
-            'compatibility_score' => $tour->match_score / 100,
+            // Taban altı modda uyum rozeti BASILMAZ: "%25 Uyumlu" yazısı zayıf
+            // eşleşmeyi öneri gibi gösterip güveni bitiriyor. Kart yine görünür
+            // ama "en yakınlar" çerçevesinde, rakamsız.
+            'compatibility_score' => $belowFloor ? null : $tour->match_score / 100,
             'match_percent' => $tour->match_score,
             'over_budget' => $overBudget,
             'reason' => $this->reason($tour->rubric, $profil['degerler'], $profil['agirliklar']),

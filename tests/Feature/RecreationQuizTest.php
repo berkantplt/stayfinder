@@ -285,6 +285,30 @@ class RecreationQuizTest extends TestCase
         }
     }
 
+    /** Çok zayıf eşleşme "en yakını" bile sayılmaz: taban altı modda bile
+     *  min_display_score altındaki tur GÖSTERİLMEZ ve rozet basılmaz. */
+    public function test_cok_zayif_eslesme_gosterilmez(): void
+    {
+        // Kullanıcının istediğinin tam tersi bir tur
+        $this->makeTour('Uyumsuz', ['tempo' => 5, 'fiziksel' => 5, 'sosyallik' => 5,
+            'konfor' => 1, 'kalabaliklik' => 5, 'adrenalin' => 5]);
+
+        $response = $this->postJson('/tatil-karakteri', ['answers' => [
+            'q1' => 0, 'q2' => 0, 'q3' => 0, 'q4' => 0, 'q5' => 2, 'q6' => 0, 'q7' => 0, 'q8' => [],
+        ]])->assertOk();
+
+        foreach ($response->json('tours') as $t) {
+            $this->assertGreaterThanOrEqual(40, $t['match_percent'], 'Çok zayıf eşleşme gösterilmemeli');
+        }
+
+        // Taban altı gösterimde uyum rozeti basılmaz (yanıltıcı "%25 Uyumlu")
+        if ($response->json('below_floor')) {
+            foreach ($response->json('tours') as $t) {
+                $this->assertNull($t['compatibility_score']);
+            }
+        }
+    }
+
     /** needs_review işaretli puanlar canlı eşleştirmede kullanılmaz (brif §3.5). */
     public function test_needs_review_puanlar_canlida_kullanilmaz(): void
     {
