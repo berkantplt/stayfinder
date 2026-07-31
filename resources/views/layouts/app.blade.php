@@ -1946,7 +1946,10 @@
         #cv2-msgs .cv2-user { align-self:flex-end; max-width:85%; background:linear-gradient(135deg,#0d9488,#2dd4bf); color:#fff; padding:10px 14px; border-radius:16px 16px 4px 16px; font-size:14px; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
         #cv2-msgs .cv2-ai { align-self:flex-start; max-width:90%; background:rgba(255,255,255,0.07); color:#e2e8f0; padding:11px 14px; border-radius:16px 16px 16px 4px; font-size:14px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
         #cv2-msgs .cv2-err { align-self:flex-start; max-width:90%; background:rgba(239,68,68,0.15); color:#fca5a5; padding:10px 14px; border-radius:14px; font-size:13px; }
-        #cv2-msgs .cv2-cards { display:flex; gap:10px; overflow-x:auto; padding:4px 2px 8px; max-width:100%; scroll-snap-type:x mandatory; }
+        /* flex-shrink:0 ŞART: #cv2-msgs bir flex sütunu; şerit ezilebilir öğe
+           olduğu için kartlar dikeyde kırpılıp yalnız üst kısımları görünüyordu. */
+        #cv2-msgs .cv2-cards { display:flex; align-items:flex-start; gap:10px; overflow-x:auto; overflow-y:hidden; padding:4px 2px 10px; max-width:100%; scroll-snap-type:x mandatory; flex:0 0 auto; min-height:266px; }
+        #cv2-msgs .cv2-cards > * { flex:0 0 220px; }
         #cv2-trigger:hover { transform:translateY(-2px); }
         #cv2-trigger { transition:transform .25s; }
     </style>
