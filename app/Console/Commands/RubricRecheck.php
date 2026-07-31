@@ -36,6 +36,7 @@ class RubricRecheck extends Command
 
         $kurtarilan = 0;
         $korunan = 0;
+        $istatistik = [];
 
         foreach ($kayitlar as $kayit) {
             if ($kayit->review_status !== TourRubricScore::STATUS_NEEDS_REVIEW) {
@@ -54,18 +55,13 @@ class RubricRecheck extends Command
                     $dogrulanmayan++;
                 }
             }
+            $istatistik[] = ['tur' => $kayit->tour_id, 'puanli' => $puanli, 'dogrulanmayan' => $dogrulanmayan];
 
-            // Yeni kural (brif §3.5'in birebir okunuşu): iki geçiş ayrışması
-            // O BOYUTU düşürür, turu bloklamaz. Dolayısıyla eski kayıtlarda
-            // "alıntı sorunu yok ama işaretli" = uyuşmazlık kaynaklı → yayına alınır.
-            // Tur düzeyinde koruma yalnız SİSTEMATİK alıntı sorununda sürer.
-            $sistematik = $puanli > 0 && ($dogrulanmayan / $puanli) > 0.5;
-
-            if ($sistematik) {
-                $korunan++;
-
-                continue;
-            }
+            // Yeni kural: hiçbir KANIT kontrolü turu bloklamaz — ne alıntı
+            // doğrulaması ne iki-geçiş ayrışması. İkisi de yalnız ilgili BOYUTU
+            // etkiler. Eski kayıtlar bu yüzden koşulsuz yayına alınır; tur
+            // düzeyinde blok yalnız yeni puanlamalarda (sistemik kararsızlık)
+            // oluşabilir ve o bilgi kayıtta saklanmıyor.
 
             if (! $this->option('dry')) {
                 $kayit->update(['review_status' => TourRubricScore::STATUS_AUTO]);
@@ -80,6 +76,16 @@ class RubricRecheck extends Command
         $this->info(($this->option('dry') ? '[DRY] ' : '')
             ."{$kurtarilan} kayıt yayına alındı, {$korunan} kayıt incelemede bırakıldı.");
         $this->line("Şu an YAYINLANABİLİR (chat kart gösterebilir): {$yayinlanabilir} / {$kayitlar->count()}");
+
+        // Teşhis: neden bloke olmuşlardı? (0/36 gibi durumlarda kör kalmayalım)
+        if ($istatistik !== []) {
+            $toplamPuanli = array_sum(array_column($istatistik, 'puanli'));
+            $toplamDogrulanmayan = array_sum(array_column($istatistik, 'dogrulanmayan'));
+            $this->line(sprintf(
+                'Teşhis → işaretli kayıt: %d | puanlı boyut: %d | alıntısı doğrulanamayan boyut: %d',
+                count($istatistik), $toplamPuanli, $toplamDogrulanmayan
+            ));
+        }
 
         if ($kurtarilan > 0) {
             $this->comment('Not: eski kayıtlarda HANGİ boyutun ayrıştığı saklanmadığı için o '

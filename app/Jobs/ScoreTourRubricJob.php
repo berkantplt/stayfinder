@@ -100,16 +100,22 @@ class ScoreTourRubricJob implements ShouldQueue
 
             // Tur düzeyinde inceleme YALNIZ sistemik kararsızlıkta: boyutların
             // yarıdan fazlası ayrıştıysa bu turun verisine güvenilmez.
+            //
+            // ALINTI DOĞRULAMASI TURU BLOKLAMAZ: aynı hata iki kez yapıldı —
+            // model alıntıyı kırpıp/başka sözcüklerle verdiğinde bayrak düşüyor
+            // ve tüm katalog kilitleniyordu. Doğrulanamayan alıntı yalnız o
+            // boyutun kaydına işlenir (editör panelinde görünür), yayına engel
+            // değildir. Kural: BİR KONTROL BOYUTU ETKİLER, TURU DEĞİL.
             if (count($ayrisan) > count(Rubric::dimensions()) / 2) {
                 $needsReview = true;
             }
 
-            // Alıntı doğrulaması TEK BAŞINA turu bloklamaz: model alıntıyı
-            // kırpabiliyor/noktalamasını değiştirebiliyor ve tek bir sapma tüm
-            // turu incelemeye düşürüyordu (36 turun tamamı bloke olmuştu).
-            // Yalnız SİSTEMATİK uydurma şüphesinde escalate edilir.
-            if ($puanli > 0 && ($dogrulanmayan / $puanli) > 0.5) {
-                $needsReview = true;
+            if ($dogrulanmayan > 0) {
+                Log::info('[TourRubric] Doğrulanamayan alıntı', [
+                    'tour_id' => $tour->id,
+                    'adet' => $dogrulanmayan,
+                    'puanli_boyut' => $puanli,
+                ]);
             }
 
             TourRubricScore::updateOrCreate(

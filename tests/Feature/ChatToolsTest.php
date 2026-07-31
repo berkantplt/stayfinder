@@ -197,8 +197,9 @@ class ChatToolsTest extends TestCase
         $this->assertSame(TourRubricScore::STATUS_AUTO, $scores->fresh()->review_status);
     }
 
-    /** Yarıdan fazlası doğrulanamadıysa (sistematik uydurma şüphesi) korunmalı. */
-    public function test_sistematik_dogrulanmama_incelemede_kalir(): void
+    /** Alıntı doğrulaması hiçbir durumda turu BLOKLAMAZ (kural: kontrol boyutu
+     *  etkiler, turu değil) — ama teşhis çıktısında görünür kalır. */
+    public function test_alinti_sorunu_turu_bloklamaz_ama_raporlanir(): void
     {
         $tour = $this->makeTour('Şüpheli Tur');
         $scores = TourRubricScore::where('tour_id', $tour->id)->firstOrFail();
@@ -209,9 +210,12 @@ class ChatToolsTest extends TestCase
         }
         $scores->update(['scores' => $payload, 'review_status' => TourRubricScore::STATUS_NEEDS_REVIEW]);
 
-        $this->artisan('app:rubric-recheck')->assertSuccessful();
+        $this->artisan('app:rubric-recheck')
+            ->expectsOutputToContain('alıntısı doğrulanamayan boyut: 7')
+            ->assertSuccessful();
 
-        $this->assertSame(TourRubricScore::STATUS_NEEDS_REVIEW, $scores->fresh()->review_status);
+        // Yayına alınır: 36 turluk katalogun tamamı bu kural yüzünden kilitlenmişti
+        $this->assertSame(TourRubricScore::STATUS_AUTO, $scores->fresh()->review_status);
     }
 
     public function test_tur_ara_bos_boyutla_hata_dondurur(): void
