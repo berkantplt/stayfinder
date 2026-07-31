@@ -2009,6 +2009,41 @@
             if (!on) input.focus();
         }
 
+        // "Diğerleri": chat'teki ilk 5'ten sonraki turları getirir. LLM'e gitmez —
+        // sunucu oturumdaki profili yeniden kullanır, sıralama birebir tutarlı kalır.
+        function digerleriButonu(row, kalan) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Diğer ' + kalan + ' tur →';
+            btn.style.cssText = 'align-self:flex-start; background:rgba(255,255,255,0.07); color:#2dd4bf; border:1px solid rgba(45,212,191,0.35); border-radius:999px; padding:7px 16px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;';
+            btn.onclick = async () => {
+                btn.disabled = true;
+                btn.textContent = 'Getiriliyor…';
+                try {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    const res = await fetch('/sohbet/digerleri', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                    });
+                    if (!res.ok) throw new Error('http ' + res.status);
+                    const data = await res.json();
+                    const items = data.items || [];
+                    if (!items.length) { btn.textContent = 'Başka tur yok'; return; }
+
+                    // Aynı şeride ekle: tek yatay kaydırma, kopuk ikinci sıra olmasın
+                    items.forEach((t, i) => {
+                        try { row.appendChild(window.turxturAiCard.build(t, { theme: 'dark', index: 5 + i })); } catch (err) {}
+                    });
+                    btn.remove();
+                    msgs.scrollTop = msgs.scrollHeight;
+                } catch (err) {
+                    btn.disabled = false;
+                    btn.textContent = 'Tekrar dene →';
+                }
+            };
+            return btn;
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (sending) return;
@@ -2074,7 +2109,11 @@
                             (data.items || []).forEach((t, i) => {
                                 try { row.appendChild(window.turxturAiCard.build(t, { theme: 'dark', index: i })); } catch (err) {}
                             });
-                            if (row.children.length) { msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight; }
+                            if (row.children.length) {
+                                msgs.appendChild(row);
+                                if ((data.kalan || 0) > 0) msgs.appendChild(digerleriButonu(row, data.kalan));
+                                msgs.scrollTop = msgs.scrollHeight;
+                            }
                         } else if (event === 'error') {
                             el('cv2-err', data.message || 'Bir sorun oluştu.');
                         }

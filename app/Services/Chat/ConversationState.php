@@ -28,6 +28,8 @@ class ConversationState
     public function __construct(
         /** @var array<string, float> KABUL EDİLEN boyut değerleri (kanıtı doğrulananlar) */
         public array $degerler = [],
+        /** @var array<string, float> aynı aramanın ağırlıkları ("diğerleri" için) */
+        public array $agirliklar = [],
         /** @var array<string, mixed> sert filtreler (beyaz listeli) */
         public array $kisitlar = [],
         /** @var array<int, array{id: int, baslik: string}> gösterilen turlar */
@@ -42,6 +44,11 @@ class ConversationState
         foreach ((array) ($data['degerler'] ?? []) as $d => $v) {
             if (is_string($d) && is_numeric($v)) {
                 $durum->degerler[$d] = (float) $v;
+            }
+        }
+        foreach ((array) ($data['agirliklar'] ?? []) as $d => $v) {
+            if (is_string($d) && is_numeric($v)) {
+                $durum->agirliklar[$d] = (float) $v;
             }
         }
         $durum->kisitlar = $durum->temizFiltre((array) ($data['kisitlar'] ?? []));
@@ -63,6 +70,7 @@ class ConversationState
     {
         return [
             'degerler' => $this->degerler,
+            'agirliklar' => $this->agirliklar,
             'kisitlar' => $this->kisitlar,
             'gosterilen_turlar' => array_values($this->gosterilenTurlar),
             'sehirler' => $this->sehirler,
@@ -84,6 +92,11 @@ class ConversationState
             foreach ((array) ($result['kabul_edilen_degerler'] ?? []) as $d => $v) {
                 if (is_string($d) && is_numeric($v)) {
                     $this->degerler[$d] = (float) $v;
+                }
+            }
+            foreach ((array) ($result['kabul_edilen_agirliklar'] ?? []) as $d => $v) {
+                if (is_string($d) && is_numeric($v)) {
+                    $this->agirliklar[$d] = (float) $v;
                 }
             }
             foreach ((array) ($result['turlar'] ?? []) as $t) {

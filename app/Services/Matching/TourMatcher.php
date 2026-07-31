@@ -71,15 +71,30 @@ class TourMatcher
         $belowFloor = $tabanUstu->isEmpty();
         $havuz = $belowFloor ? $sirali : $tabanUstu;
 
-        // Çeşitlilik: ilk 3'te aynı doga_sehir bandından en fazla 2
+        // Zaten gösterilmiş turlar dışlanır ("diğerleri" görünümü). Konum atlamak
+        // yerine KİMLİK dışlamak şart: çeşitlilik kuralı sıralamayı değiştirdiği
+        // için "ilk 5'i atla" bazı turların hiç görünmemesine yol açardı.
+        if (! empty($baglam['haric'])) {
+            $haric = array_map('intval', (array) $baglam['haric']);
+            $havuz = $havuz->reject(fn ($t) => in_array($t->id, $haric, true))->values();
+        }
+
+        // Çeşitlilik yalnız KÜRATÖRLÜ ilk listede uygulanır. Genişletilmiş
+        // listede kapatılır: "en fazla 2" kuralı 20'lik listeyi 6-8 turda
+        // tıkardı ve kullanıcı zaten "hepsini göster" demiş oluyor.
         $topN = max(1, (int) ($baglam['top_n'] ?? $rules['top_n']));
-        $secilen = $this->applyDiversity($havuz, ['top_n' => $topN] + $rules);
+        $secilen = ($baglam['cesitlilik'] ?? true)
+            ? $this->applyDiversity($havuz, ['top_n' => $topN] + $rules)
+            : $havuz->take($topN);
 
         return [
             'tours' => $secilen->map(fn ($t) => $this->card($t, $profil, $baglam))->all(),
             // Katalogda yayınlanabilir puanı olan tur sayısı: 0 ise sistem HAZIR
             // DEĞİL demektir, "uyan tur yok" ile karıştırılmamalı
             'katalog_puanli_tur' => $scores->count(),
+            // Sert filtreleri geçip puanlanabilen TÜM adaylar — "diğerleri"
+            // butonunun kaç tur daha olduğunu söyleyebilmesi için
+            'toplam_eslesme' => $sirali->count(),
             'relaxation_notes' => $notlar,
             'kapsam' => $this->kapsam($secilen, $profil),
             'karsilanmayan' => $this->karsilanmayan($secilen, $profil),

@@ -150,6 +150,7 @@ class ChatAgent
                     'arac' => $ad,
                     'args' => $args,
                     'tur_sayisi' => count($sonuc['turlar'] ?? []),
+                    'toplam_eslesme' => $sonuc['toplam_eslesme'] ?? null,
                     'tur_basliklari' => array_column($sonuc['turlar'] ?? [], 'title'),
                     'hata' => $sonuc['hata'] ?? null,
                     'sor' => $sonuc['sor'] ?? null,

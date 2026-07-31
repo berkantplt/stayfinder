@@ -178,6 +178,85 @@ class ChatV2StreamTest extends TestCase
         $this->assertNull(session('chat_v2'));
     }
 
+    /** Chat 5 kart gösterir; kalan sayısı "diğerleri" butonu için bildirilir. */
+    public function test_bes_kart_gosterilir_kalan_bildirilir(): void
+    {
+        for ($i = 1; $i <= 9; $i++) {
+            $this->makeTour('Tur '.$i);
+        }
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            ]),
+            $this->textResponse('Buldum.'),
+        ]);
+
+        $govde = $this->sse($this->post('/sohbet/akis', ['message' => 'normal bir tempo olsun']));
+
+        preg_match('/event: tours\ndata: (.*)/', $govde, $m);
+        $veri = json_decode($m[1], true);
+
+        $this->assertCount(5, $veri['items']);
+        $this->assertSame(9, $veri['toplam']);
+        $this->assertSame(4, $veri['kalan']);   // 9 - 5
+    }
+
+    /** "Diğerleri" LLM'e gitmez ve chat'te gösterilenleri TEKRARLAMAZ. */
+    public function test_digerleri_kalan_turlari_tekrarsiz_getirir(): void
+    {
+        for ($i = 1; $i <= 9; $i++) {
+            $this->makeTour('Tur '.$i);
+        }
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            ]),
+            $this->textResponse('Buldum.'),
+        ]);
+        $ilk = $this->sse($this->post('/sohbet/akis', ['message' => 'normal bir tempo olsun']));
+        preg_match('/event: tours\ndata: (.*)/', $ilk, $m);
+        $ilkIdler = array_column(json_decode($m[1], true)['items'], 'id');
+
+        // Boş fake: bu uç LLM'e HİÇ gitmemeli
+        OpenAI::fake([]);
+        $response = $this->postJson('/sohbet/digerleri')->assertOk();
+
+        $digerIdler = array_column($response->json('items'), 'id');
+        $this->assertNotEmpty($digerIdler);
+        $this->assertSame([], array_intersect($ilkIdler, $digerIdler), 'Chat\'te gösterilen tur tekrarlanmamalı');
+    }
+
+    /** Çeşitlilik kuralı genişletilmiş listeyi tıkamamalı: aynı banttan çok tur
+     *  olsa bile "diğerleri" dolu gelmeli (kural yalnız ilk 5 için geçerli). */
+    public function test_digerleri_cesitlilik_kuralindan_tikanmaz(): void
+    {
+        // Hepsi aynı doga_sehir bandında (varsayılan 3 → orta bant)
+        for ($i = 1; $i <= 14; $i++) {
+            $this->makeTour('Aynı Bant '.$i);
+        }
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            ]),
+            $this->textResponse('Buldum.'),
+        ]);
+        $this->sse($this->post('/sohbet/akis', ['message' => 'normal bir tempo olsun']));
+
+        OpenAI::fake([]);
+        $items = $this->postJson('/sohbet/digerleri')->assertOk()->json('items');
+
+        // Çeşitlilik açık kalsaydı 2 turda tıkanırdı
+        $this->assertGreaterThan(3, count($items));
+    }
+
+    public function test_digerleri_profil_yokken_bos_doner(): void
+    {
+        $this->postJson('/sohbet/digerleri')->assertOk()->assertJson(['items' => []]);
+    }
+
     public function test_bayrak_kapaliyken_404(): void
     {
         config(['ai.chat_v2_enabled' => false]);

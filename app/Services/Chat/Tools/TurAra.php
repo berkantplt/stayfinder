@@ -125,6 +125,10 @@ class TurAra implements ChatTool
             // Hafıza bunu okur: modelin İDDİASI değil, kanıtı doğrulanıp KABUL
             // EDİLEN profil. Reddedilen boyut bir sonraki tura sızmasın.
             'kabul_edilen_degerler' => $profil['degerler'],
+            // Ağırlıklar da durumda saklanır: "diğerleri" görünümü aynı profili
+            // yeniden kurup listeyi genişletebilsin (LLM'e tekrar sormadan)
+            'kabul_edilen_agirliklar' => $profil['agirliklar'],
+            'toplam_eslesme' => $sonuc['toplam_eslesme'],
             'kapsam' => $sonuc['kapsam'],
             'taban_alti' => $sonuc['below_floor'],
             'karsilanmayan' => array_map(fn ($d) => Rubric::label($d), $sonuc['karsilanmayan']),

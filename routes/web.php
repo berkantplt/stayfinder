@@ -59,6 +59,7 @@ Route::middleware('throttle:ai_search')->group(function () {
 // Chatbot v2 (araç çağırma) — AI_CHAT_V2_ENABLED ile ayrı açılır
 Route::middleware([\App\Http\Middleware\EnsureAiChatV2Enabled::class, 'throttle:ai_search'])->group(function () {
     Route::post('/sohbet/akis', [\App\Http\Controllers\ChatV2Controller::class, 'stream'])->name('chat.v2.stream');
+    Route::post('/sohbet/digerleri', [\App\Http\Controllers\ChatV2Controller::class, 'more'])->name('chat.v2.more');
     Route::post('/sohbet/sifirla', [\App\Http\Controllers\ChatV2Controller::class, 'reset'])->name('chat.v2.reset');
 });
 

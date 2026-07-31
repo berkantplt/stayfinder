@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\AiSearch\PiiMasker;
 use App\Services\Chat\ChatAgent;
 use App\Services\Chat\ConversationState;
+use App\Services\Matching\TourMatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,6 +22,9 @@ class ChatV2Controller extends Controller
 
     /** Bağlam penceresi: son N tur. Yapısal durum zaten ayrı taşınıyor. */
     private const GECMIS_LIMITI = 12;
+
+    /** "Diğerleri" görünümünde toplam kaç tur gösterilir (chat'teki 5 dahil). */
+    private const GENISLETILMIS_LIMIT = 20;
 
     public function __construct(private readonly ChatAgent $agent) {}
 
@@ -82,7 +86,16 @@ class ChatV2Controller extends Controller
                 );
 
                 if ($sonuc['turlar'] !== []) {
-                    $emit('tours', ['items' => $sonuc['turlar']]);
+                    // toplam: "diğerleri" butonunun kaç tur daha olduğunu bilmesi için
+                    $toplam = 0;
+                    foreach ($sonuc['iz'] as $adim) {
+                        $toplam = max($toplam, (int) ($adim['toplam_eslesme'] ?? 0));
+                    }
+                    $emit('tours', [
+                        'items' => $sonuc['turlar'],
+                        'toplam' => $toplam,
+                        'kalan' => max(0, min($toplam, self::GENISLETILMIS_LIMIT) - count($sonuc['turlar'])),
+                    ]);
                 }
 
                 // Oturuma yaz: kullanıcının GÖRDÜĞÜ metin geçmişe girer, yoksa
@@ -108,6 +121,38 @@ class ChatV2Controller extends Controller
             'Cache-Control' => 'no-cache, no-transform',
             'X-Accel-Buffering' => 'no',
             'Connection' => 'keep-alive',
+        ]);
+    }
+
+    /**
+     * "Diğerleri": chat'te gösterilen 5 turdan sonrakiler.
+     *
+     * LLM'e hiç gidilmez — oturumdaki profil (değerler + ağırlıklar + kısıtlar)
+     * yeniden kullanılıp aynı eşleştirici daha uzun listeyle çalıştırılır.
+     * Böylece hem ücretsiz hem sıralama chat'tekiyle birebir tutarlı.
+     */
+    public function more(Request $request, TourMatcher $matcher)
+    {
+        $oturum = (array) $request->session()->get(self::OTURUM_ANAHTARI, []);
+        $durum = ConversationState::fromArray($oturum['durum'] ?? null);
+
+        if ($durum->agirliklar === [] || array_sum($durum->agirliklar) <= 0) {
+            return response()->json(['items' => [], 'not' => 'Önce bir tatil tarifi gerekiyor.']);
+        }
+
+        $gosterilen = $durum->gosterilenIdler();
+        $sonuc = $matcher->match(
+            ['degerler' => $durum->degerler, 'agirliklar' => $durum->agirliklar],
+            $durum->varsayilanFiltre() + [
+                'top_n' => max(1, self::GENISLETILMIS_LIMIT - count($gosterilen)),
+                'haric' => $gosterilen,   // konum değil KİMLİK dışlama
+                'cesitlilik' => false,    // genişletilmiş liste saf sıralama
+            ],
+        );
+
+        return response()->json([
+            'items' => $sonuc['tours'],
+            'toplam' => $sonuc['toplam_eslesme'],
         ]);
     }
 
