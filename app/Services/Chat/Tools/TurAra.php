@@ -104,6 +104,22 @@ class TurAra implements ChatTool
         $baglam = is_array($args['filtre'] ?? null) ? $args['filtre'] : [];
         $sonuc = $this->matcher->match($profil, $baglam);
 
+        // Katalogda hiç yayınlanabilir puan yoksa bu bir SİSTEM durumu, kullanıcının
+        // isteğiyle ilgisi yok. Ayırt edilmezse bot "sana uyan tur yok" diyerek
+        // yanlış bilgi verir (aslında hiçbir tur aranabilir durumda değildir).
+        if (($sonuc['katalog_puanli_tur'] ?? 0) === 0) {
+            \Illuminate\Support\Facades\Log::warning('[TurAra] Katalogda yayınlanabilir rubrik puanı yok — arama yapılamıyor');
+
+            return [
+                'turlar' => [],
+                'katalog_hazir_degil' => true,
+                'hata' => 'Katalog araması şu an kullanılamıyor (teknik). Kullanıcıya '
+                    .'"sana uyan tur yok" DEME — bu onun isteğiyle ilgili değil. '
+                    .'Kısaca sistemsel bir aksaklık olduğunu söyle ve biraz sonra tekrar '
+                    .'denemesini öner.',
+            ];
+        }
+
         return [
             'turlar' => $sonuc['tours'],
             // Hafıza bunu okur: modelin İDDİASI değil, kanıtı doğrulanıp KABUL

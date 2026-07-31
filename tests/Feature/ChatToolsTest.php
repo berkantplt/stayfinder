@@ -134,6 +134,30 @@ class ChatToolsTest extends TestCase
 
     // ---- TurAra ----
 
+    /** Katalogda hiç puanlı tur yoksa bu SİSTEM durumu — "sana uyan tur yok"
+     *  ile karıştırılmamalı, yoksa bot kullanıcıya yanlış bilgi verir. */
+    public function test_puanli_tur_yoksa_katalog_hazir_degil_sinyali(): void
+    {
+        // Tur var ama rubrik puanı YOK
+        $agency = Agency::create([
+            'name' => 'A', 'slug' => 'a-'.uniqid(), 'email' => uniqid().'@x.com',
+            'is_active' => true, 'legacy_category_access' => true,
+        ]);
+        Tour::create([
+            'agency_id' => $agency->id, 'title' => 'Puansız Tur', 'destination' => 'Antalya',
+            'description' => 'd', 'price' => 10000, 'currency' => 'TRY', 'duration_days' => 5,
+            'departure_date' => today()->addDays(10), 'return_date' => today()->addDays(15),
+            'is_active' => true,
+        ]);
+
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 20, 'kanit' => 'sakin bir tatil istiyorum']],
+        ]);
+
+        $this->assertTrue($sonuc['katalog_hazir_degil']);
+        $this->assertStringContainsString('DEME', $sonuc['hata']); // modele açık talimat
+    }
+
     public function test_tur_ara_bos_boyutla_hata_dondurur(): void
     {
         $sonuc = app(TurAra::class)->run(['boyutlar' => []]);

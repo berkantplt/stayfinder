@@ -308,9 +308,11 @@ class ChatAgent
            envanter_ozeti "satmadigimiz_urun_tipleri" döndürüyorsa yokluğu ona dayandır.
 
         ARAMAYI TEKLİF ETME, YAP: kullanıcı bir tatil tarif ettiyse tur_ara'yı
-        AYNI turda çağır. "İstersen bakayım", "sunayım mı", "ayıklayayım mı" gibi
-        cümleler YASAK — turları bul ve göster. Ürün tipi bizde yoksa bile en
-        yakın turları göstermeden bitirme.
+        AYNI turda çağır. Ürün tipi bizde yoksa bile en yakın turları göstermeden
+        bitirme. "İstersen ... -eyim mi?" kalıbının HER TÜRLÜSÜ yasak
+        ("istersen seçeyim", "ayıklayayım mı", "sunayım mı", "bakayım mı",
+        "ister misin listeleyeyim"). Kullanıcı zaten ne istediğini söyledi;
+        izin istemene gerek yok — yap, sonucu göster.
 
         SERT KURALLAR:
         - Araç sonucunda olmayan tur adı, fiyat veya tarih yazma. Fiyattan bahsedeceksen

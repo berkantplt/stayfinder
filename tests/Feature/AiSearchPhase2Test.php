@@ -90,10 +90,10 @@ class AiSearchPhase2Test extends TestCase
     public function test_ay_tercihi_sert_filtre_kalkisi_olmayan_gosterilmez(): void
     {
         $eylul = $this->makeTour(['title' => 'Eylül Turu', 'departure_date' => null]);
-        TourDate::create(['tour_id' => $eylul->id, 'departure_date' => now()->setMonth(9)->setDay(14)->addYear()->toDateString(), 'return_date' => now()->setMonth(9)->setDay(18)->addYear()->toDateString(), 'price' => 9000]);
+        TourDate::create(['tour_id' => $eylul->id, 'departure_date' => now()->setDay(14)->setMonth(9)->addYear()->toDateString(), 'return_date' => now()->setDay(18)->setMonth(9)->addYear()->toDateString(), 'price' => 9000]);
 
         $agustos = $this->makeTour(['title' => 'Ağustos Turu', 'departure_date' => null]);
-        TourDate::create(['tour_id' => $agustos->id, 'departure_date' => now()->setMonth(8)->setDay(10)->addYear()->toDateString(), 'return_date' => now()->setMonth(8)->setDay(14)->addYear()->toDateString(), 'price' => 9000]);
+        TourDate::create(['tour_id' => $agustos->id, 'departure_date' => now()->setDay(10)->setMonth(8)->addYear()->toDateString(), 'return_date' => now()->setDay(14)->setMonth(8)->addYear()->toDateString(), 'price' => 9000]);
 
         $result = $this->search('eylülde tur', ['preferred_month' => 9]);
 
@@ -104,7 +104,7 @@ class AiSearchPhase2Test extends TestCase
 
     public function test_ay_bulunamazsa_gevseterek_nedenini_soyler(): void
     {
-        $this->makeTour(['title' => 'Sadece Ağustos', 'departure_date' => now()->setMonth(8)->setDay(10)->addYear()]);
+        $this->makeTour(['title' => 'Sadece Ağustos', 'departure_date' => now()->setDay(10)->setMonth(8)->addYear()]);
 
         $result = $this->search('aralıkta tur', ['preferred_month' => 12]);
 

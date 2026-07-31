@@ -77,6 +77,9 @@ class TourMatcher
 
         return [
             'tours' => $secilen->map(fn ($t) => $this->card($t, $profil, $baglam))->all(),
+            // Katalogda yayınlanabilir puanı olan tur sayısı: 0 ise sistem HAZIR
+            // DEĞİL demektir, "uyan tur yok" ile karıştırılmamalı
+            'katalog_puanli_tur' => $scores->count(),
             'relaxation_notes' => $notlar,
             'kapsam' => $this->kapsam($secilen, $profil),
             'karsilanmayan' => $this->karsilanmayan($secilen, $profil),
