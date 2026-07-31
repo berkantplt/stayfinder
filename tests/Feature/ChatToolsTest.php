@@ -158,6 +158,43 @@ class ChatToolsTest extends TestCase
         $this->assertStringContainsString('DEME', $sonuc['hata']); // modele açık talimat
     }
 
+    /** Tek bir doğrulanamayan alıntı tüm turu incelemeye düşürmemeli —
+     *  bu kural 36 turluk katalogun tamamını bloke etmişti. */
+    public function test_tek_dogrulanmayan_alinti_turu_bloklamaz(): void
+    {
+        $tour = $this->makeTour('Tur');
+        $scores = TourRubricScore::where('tour_id', $tour->id)->firstOrFail();
+
+        // 10 boyuttan yalnız 1'i doğrulanamamış → sistematik değil
+        $payload = $scores->scores;
+        $boyutlar = Rubric::dimensions();
+        foreach ($boyutlar as $i => $d) {
+            $payload[$d]['evidence_verified'] = $i === 0 ? false : true;
+        }
+        $scores->update(['scores' => $payload, 'review_status' => TourRubricScore::STATUS_NEEDS_REVIEW]);
+
+        $this->artisan('app:rubric-recheck')->assertSuccessful();
+
+        $this->assertSame(TourRubricScore::STATUS_AUTO, $scores->fresh()->review_status);
+    }
+
+    /** Yarıdan fazlası doğrulanamadıysa (sistematik uydurma şüphesi) korunmalı. */
+    public function test_sistematik_dogrulanmama_incelemede_kalir(): void
+    {
+        $tour = $this->makeTour('Şüpheli Tur');
+        $scores = TourRubricScore::where('tour_id', $tour->id)->firstOrFail();
+
+        $payload = $scores->scores;
+        foreach (Rubric::dimensions() as $i => $d) {
+            $payload[$d]['evidence_verified'] = $i < 7 ? false : true; // 7/10 doğrulanmadı
+        }
+        $scores->update(['scores' => $payload, 'review_status' => TourRubricScore::STATUS_NEEDS_REVIEW]);
+
+        $this->artisan('app:rubric-recheck')->assertSuccessful();
+
+        $this->assertSame(TourRubricScore::STATUS_NEEDS_REVIEW, $scores->fresh()->review_status);
+    }
+
     public function test_tur_ara_bos_boyutla_hata_dondurur(): void
     {
         $sonuc = app(TurAra::class)->run(['boyutlar' => []]);

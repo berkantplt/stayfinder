@@ -65,18 +65,32 @@ class ScoreTourRubricJob implements ShouldQueue
             $pass2 = $this->scoreOnce($input);
 
             $needsReview = false;
+            $puanli = 0;
+            $dogrulanmayan = 0;
+
             foreach (Rubric::dimensions() as $d) {
                 $v1 = $pass1[$d]['value'] ?? null;
                 $v2 = $pass2[$d]['value'] ?? null;
                 if (is_numeric($v1) && is_numeric($v2) && abs($v1 - $v2) > 1) {
-                    $needsReview = true;
+                    $needsReview = true; // brif §3.5: iki geçiş ayrıştı
                 } elseif (is_numeric($v1) !== is_numeric($v2)) {
                     $needsReview = true; // biri null biri değil — kararsız kanıt
                 }
-                // Alıntı girdide bulunamadıysa (uydurma şüphesi) editör baksın
-                if (($pass1[$d]['evidence_verified'] ?? null) === false) {
-                    $needsReview = true;
+
+                if (is_numeric($v1)) {
+                    $puanli++;
+                    if (($pass1[$d]['evidence_verified'] ?? null) === false) {
+                        $dogrulanmayan++;
+                    }
                 }
+            }
+
+            // Alıntı doğrulaması TEK BAŞINA turu bloklamaz: model alıntıyı
+            // kırpabiliyor/noktalamasını değiştirebiliyor ve tek bir sapma tüm
+            // turu incelemeye düşürüyordu (36 turun tamamı bloke olmuştu).
+            // Yalnız SİSTEMATİK uydurma şüphesinde escalate edilir.
+            if ($puanli > 0 && ($dogrulanmayan / $puanli) > 0.5) {
+                $needsReview = true;
             }
 
             TourRubricScore::updateOrCreate(
@@ -130,7 +144,14 @@ class ScoreTourRubricJob implements ShouldQueue
         }
 
         // Şema disiplini: yalnız rubrik boyutları; value 1-5 tam sayı veya null
-        $normalize = fn (string $t) => preg_replace('/\s+/u', ' ', mb_strtolower(strip_tags($t), 'UTF-8'));
+        // Normalizasyon noktalamayı da atar: model alıntıyı "…" ekleyerek veya
+        // virgülünü değiştirerek verdiğinde birebir arama boşuna kalıyordu.
+        $normalize = function (string $t): string {
+            $t = mb_strtolower(strip_tags($t), 'UTF-8');
+            $t = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $t) ?? $t;
+
+            return trim(preg_replace('/\s+/u', ' ', $t) ?? $t);
+        };
         $inputNorm = $normalize($input);
 
         $temiz = [];

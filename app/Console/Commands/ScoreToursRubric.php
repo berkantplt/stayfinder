@@ -32,6 +32,18 @@ class ScoreToursRubric extends Command
 
         $scored = TourRubricScore::where('rubric_version', Rubric::VERSION)->get()->keyBy('tour_id');
 
+        // Durum özeti: "kaç tur chat'te kart olarak çıkabilir" sorusunun cevabı.
+        // (Sunucuda tinker --execute tırnak sorunları çıkardığı için buraya kondu.)
+        $incelemede = $scored->where('review_status', TourRubricScore::STATUS_NEEDS_REVIEW)->count();
+        $yayinlanabilir = $scored->count() - $incelemede;
+        $this->line(sprintf(
+            'DURUM → aktif tur: %d | puanlı: %d | YAYINLANABİLİR (chat kart gösterebilir): %d | editör onayı bekleyen: %d',
+            Tour::where('is_active', true)->count(),
+            $scored->count(),
+            $yayinlanabilir,
+            $incelemede,
+        ));
+
         $ids = $query->get(['id', 'duration_days', 'destination', 'hotel_info', 'included', 'extras', 'itinerary'])
             ->filter(function (Tour $tour) use ($scored) {
                 if ($this->option('force')) {
