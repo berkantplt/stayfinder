@@ -55,11 +55,13 @@ class RubricRecheck extends Command
                 }
             }
 
+            // Yeni kural (brif §3.5'in birebir okunuşu): iki geçiş ayrışması
+            // O BOYUTU düşürür, turu bloklamaz. Dolayısıyla eski kayıtlarda
+            // "alıntı sorunu yok ama işaretli" = uyuşmazlık kaynaklı → yayına alınır.
+            // Tur düzeyinde koruma yalnız SİSTEMATİK alıntı sorununda sürer.
             $sistematik = $puanli > 0 && ($dogrulanmayan / $puanli) > 0.5;
 
-            // Alıntı sorunu yoksa işaret muhtemelen iki-geçiş uyuşmazlığından;
-            // --force verilmedikçe dokunulmaz
-            if ($sistematik || (! $this->option('force') && $dogrulanmayan === 0)) {
+            if ($sistematik) {
                 $korunan++;
 
                 continue;
@@ -78,6 +80,12 @@ class RubricRecheck extends Command
         $this->info(($this->option('dry') ? '[DRY] ' : '')
             ."{$kurtarilan} kayıt yayına alındı, {$korunan} kayıt incelemede bırakıldı.");
         $this->line("Şu an YAYINLANABİLİR (chat kart gösterebilir): {$yayinlanabilir} / {$kayitlar->count()}");
+
+        if ($kurtarilan > 0) {
+            $this->comment('Not: eski kayıtlarda HANGİ boyutun ayrıştığı saklanmadığı için o '
+                .'boyutlar null\'a çekilemedi. Fırsat olunca "app:score-tours-rubric --force" ile '
+                .'yeniden puanlamak veriyi tam kurala oturtur (zorunlu değil).');
+        }
 
         return self::SUCCESS;
     }

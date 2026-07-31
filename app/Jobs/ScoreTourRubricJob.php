@@ -64,17 +64,30 @@ class ScoreTourRubricJob implements ShouldQueue
             $pass1 = $this->scoreOnce($input);
             $pass2 = $this->scoreOnce($input);
 
+            // Brif §3.5: "fark 1'den büyükse O BOYUTU editör onayına düşür".
+            // Uyuşmazlık BOYUT düzeyinde ele alınır: ayrışan boyut null'a çekilir
+            // (eşleştirmede zaten devre dışı kalır), tur bu yüzden bloke edilmez.
+            // Tüm turu düşürmek katalogun tamamını kilitliyordu — 10 boyutta en az
+            // birinin oynaması pratikte kaçınılmaz.
             $needsReview = false;
             $puanli = 0;
             $dogrulanmayan = 0;
+            $ayrisan = [];
 
             foreach (Rubric::dimensions() as $d) {
                 $v1 = $pass1[$d]['value'] ?? null;
                 $v2 = $pass2[$d]['value'] ?? null;
-                if (is_numeric($v1) && is_numeric($v2) && abs($v1 - $v2) > 1) {
-                    $needsReview = true; // brif §3.5: iki geçiş ayrıştı
-                } elseif (is_numeric($v1) !== is_numeric($v2)) {
-                    $needsReview = true; // biri null biri değil — kararsız kanıt
+
+                $ayristiMi = (is_numeric($v1) && is_numeric($v2) && abs($v1 - $v2) > 1)
+                    || (is_numeric($v1) !== is_numeric($v2));
+
+                if ($ayristiMi) {
+                    $ayrisan[] = $d;
+                    $pass1[$d]['value'] = null;   // güvenilmez → eşleştirmeye girmez
+                    $pass1[$d]['confidence'] = 'none';
+                    $pass1[$d]['not'] = 'iki geçiş ayrıştı';
+
+                    continue;
                 }
 
                 if (is_numeric($v1)) {
@@ -83,6 +96,12 @@ class ScoreTourRubricJob implements ShouldQueue
                         $dogrulanmayan++;
                     }
                 }
+            }
+
+            // Tur düzeyinde inceleme YALNIZ sistemik kararsızlıkta: boyutların
+            // yarıdan fazlası ayrıştıysa bu turun verisine güvenilmez.
+            if (count($ayrisan) > count(Rubric::dimensions()) / 2) {
+                $needsReview = true;
             }
 
             // Alıntı doğrulaması TEK BAŞINA turu bloklamaz: model alıntıyı
@@ -115,6 +134,7 @@ class ScoreTourRubricJob implements ShouldQueue
                 'tour_id' => $tour->id,
                 'needs_review' => $needsReview,
                 'null_dimensions' => $nulls,
+                'ayrisan_boyutlar' => $ayrisan,   // iki geçişin uyuşmadığı boyutlar
             ]);
         } catch (\Throwable $e) {
             Log::warning('[TourRubric] Puanlama hatası', ['tour_id' => $tour->id, 'error' => $e->getMessage()]);

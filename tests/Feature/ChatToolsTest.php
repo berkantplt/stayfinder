@@ -178,6 +178,25 @@ class ChatToolsTest extends TestCase
         $this->assertSame(TourRubricScore::STATUS_AUTO, $scores->fresh()->review_status);
     }
 
+    /** İki-geçiş uyuşmazlığından işaretlenen eski kayıtlar da yayına alınmalı:
+     *  yeni kuralda uyuşmazlık BOYUTU düşürür, turu bloklamaz (brif §3.5). */
+    public function test_uyusmazliktan_isaretli_kayit_yayina_alinir(): void
+    {
+        $tour = $this->makeTour('Uyuşmazlık Turu');
+        $scores = TourRubricScore::where('tour_id', $tour->id)->firstOrFail();
+
+        // Alıntı sorunu YOK — işaret yalnız iki geçiş ayrışmasından
+        $payload = $scores->scores;
+        foreach (Rubric::dimensions() as $d) {
+            $payload[$d]['evidence_verified'] = true;
+        }
+        $scores->update(['scores' => $payload, 'review_status' => TourRubricScore::STATUS_NEEDS_REVIEW]);
+
+        $this->artisan('app:rubric-recheck')->assertSuccessful();
+
+        $this->assertSame(TourRubricScore::STATUS_AUTO, $scores->fresh()->review_status);
+    }
+
     /** Yarıdan fazlası doğrulanamadıysa (sistematik uydurma şüphesi) korunmalı. */
     public function test_sistematik_dogrulanmama_incelemede_kalir(): void
     {
