@@ -129,9 +129,10 @@
                 @if($boardingCities->count())
                     <div style="margin-bottom:16px;font-size:14px;color:var(--text-sec);">
                         <strong>🚌 Kalkış Şehirleri:</strong>
-                        @foreach($boardingCities as $city)
-                            <a href="{{ route('tours.index', ['departure_city' => $city]) }}" style="color:var(--accent);text-decoration:none;">{{ $city }}</a>{{ ! $loop->last ? ',' : '' }}
-                        @endforeach
+                        {{-- Bilgi amaçlı: tıklanabilir değil. Şehre tıklayınca o
+                             şehrin tüm turlarına gitmek kullanıcıyı incelediği
+                             turdan koparıyordu. --}}
+                        {{ $boardingCities->implode(', ') }}
                     </div>
                 @endif
 
