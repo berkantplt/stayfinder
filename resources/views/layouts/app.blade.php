@@ -1909,7 +1909,7 @@
     <div id="cv2" style="position:fixed; bottom:24px; right:24px; z-index:2000; font-family:var(--font); max-width:calc(100vw - 32px);">
         <button type="button" id="cv2-trigger" aria-label="Tur danışmanını aç" aria-expanded="false"
             style="display:flex; align-items:center; gap:10px; background:rgba(15,23,42,0.9); backdrop-filter:blur(20px); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:10px 18px; border-radius:100px; cursor:pointer; box-shadow:0 10px 40px rgba(0,0,0,0.25); font-family:inherit;">
-            <span style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#0d9488,#2dd4bf); display:flex; align-items:center; justify-content:center; font-size:16px;">🧭</span>
+            <span style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#0d9488,#2dd4bf); display:flex; align-items:center; justify-content:center; font-size:16px;">🤖</span>
             <span style="font-size:13px; font-weight:600;">Tur danışmanı</span>
         </button>
 
@@ -1952,13 +1952,16 @@
         #cv2-msgs .cv2-cards > * { flex:0 0 220px; }
         #cv2-trigger:hover { transform:translateY(-2px); }
         #cv2-trigger { transition:transform .25s; }
-        /* Mobil: tetik hapı ekranda daha az yer kaplasın (satır içi stiller
-           olduğu için ezmeler !important). */
+        /* Mobil: yazı yok, yalnız yuvarlak amblem (satır içi stiller olduğu
+           için ezmeler !important). */
         @media(max-width:768px) {
-            #cv2-trigger { gap:6px !important; padding:5px 12px 5px 5px !important; }
-            #cv2-trigger > span:first-child { width:24px !important; height:24px !important; font-size:13px !important; }
-            #cv2-trigger > span:last-child { font-size:12px !important; }
+            #cv2-trigger { gap:0 !important; padding:0 !important; width:54px; height:54px; justify-content:center; border-radius:50% !important; }
+            #cv2-trigger > span:first-child { width:100% !important; height:100% !important; font-size:26px !important; }
+            #cv2-trigger > span:last-child { display:none !important; }
         }
+        /* Sürüklenebilir tetik: parmak/fare hareketi sayfayı kaydırmasın */
+        #cv2-trigger { touch-action:none; -webkit-user-select:none; user-select:none; }
+        #cv2.cv2-suruklenirken #cv2-trigger { transition:none; transform:none !important; cursor:grabbing; }
     </style>
 
     <script>
@@ -1989,9 +1992,120 @@
             panel.hidden = !open;
             panel.style.display = open ? 'flex' : 'none';
             trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (open) input.focus();
+            if (open) { panelKonumla(); input.focus(); }
         }
         trigger.onclick = () => togglePanel(! acikMi());
+        // Sürükleme bitişi tık sayılmasın. Süre ile: fare imleci butondan çıkarak
+        // bırakıldığında click hiç doğmuyor, bayrak açık kalsa sonraki gerçek
+        // tıklamayı da yutardı.
+        trigger.addEventListener('click', (e) => {
+            if (performance.now() - sonSuruklemeBitisi < 300) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            }
+        }, true);
+
+        // ---- Panel yerleşimi: tetik nereye taşındıysa ona göre aç ----
+        // Tetik sürüklenebildiği için panelin sabit "sağ alt" varsayımı geçersiz;
+        // panel ekranda kalacak şekilde tetiğe göre hesaplanır.
+        function panelKonumla() {
+            if (panel.style.display === 'none') return;
+            const t = trigger.getBoundingClientRect();
+            const p = panel.getBoundingClientRect();
+            const bosluk = 8;
+            const vw = window.innerWidth, vh = window.innerHeight;
+            // max dıştaki kasıtlı: panel ekrandan büyükse bile sol/üst kenarı
+            // görünür kalsın (min dışta olsaydı eksi değere düşerdi)
+            const sinirla = (v, ustSinir) => Math.max(Math.min(v, ustSinir), bosluk);
+            const yatayHiza = () => {
+                let s = t.right - p.width;                  // önce sağ kenarlar hizalı
+                if (s < bosluk) s = t.left;                 // sığmıyorsa sol kenarlara
+                return sinirla(s, vw - p.width - bosluk);
+            };
+            let sol, ust;
+            if (t.top - bosluk - p.height >= bosluk) {                  // üstte yer var
+                ust = t.top - bosluk - p.height; sol = yatayHiza();
+            } else if (t.bottom + bosluk + p.height <= vh - bosluk) {   // altta yer var
+                ust = t.bottom + bosluk; sol = yatayHiza();
+            } else if (t.left - bosluk - p.width >= bosluk) {           // solunda yer var
+                sol = t.left - bosluk - p.width; ust = sinirla(t.top, vh - p.height - bosluk);
+            } else if (t.right + bosluk + p.width <= vw - bosluk) {     // sağında yer var
+                sol = t.right + bosluk; ust = sinirla(t.top, vh - p.height - bosluk);
+            } else {                                                     // hiçbir yana sığmıyor (mobil): örtüşmesine izin ver
+                sol = yatayHiza(); ust = sinirla(t.top, vh - p.height - bosluk);
+            }
+            panel.style.position = 'fixed';
+            panel.style.left = sol + 'px';
+            panel.style.top = ust + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+        }
+
+        // ---- Sürüklenebilir tetik: bırakınca en yakın yan kenara yaslanır ----
+        const kap = document.getElementById('cv2');
+        const KENAR = 16, ESIK = 6, KONUM_ANAHTAR = 'cv2-konum';
+        let konum = null;       // {kenar:'sol'|'sag', oran:0..1} — dikeyde oransal, ekran değişince bozulmaz
+        let sur = null, sonSuruklemeBitisi = 0;
+
+        try { konum = JSON.parse(localStorage.getItem(KONUM_ANAHTAR) || 'null'); } catch (e) {}
+
+        function konumUygula() {
+            if (!konum) return;
+            const r = trigger.getBoundingClientRect();
+            const x = konum.kenar === 'sol' ? KENAR : window.innerWidth - r.width - KENAR;
+            const gezinti = Math.max(window.innerHeight - r.height - KENAR * 2, 0);
+            kap.style.left = x + 'px';
+            kap.style.top = (KENAR + konum.oran * gezinti) + 'px';
+            kap.style.right = 'auto';
+            kap.style.bottom = 'auto';
+        }
+        konumUygula();
+
+        trigger.addEventListener('pointerdown', (e) => {
+            if (e.button) return;                            // yalnız sol tuş / dokunuş
+            const r = kap.getBoundingClientRect();
+            sur = { dx: e.clientX - r.left, dy: e.clientY - r.top, w: r.width, h: r.height, x0: e.clientX, y0: e.clientY, tasindi: false };
+            trigger.setPointerCapture(e.pointerId);
+        });
+
+        trigger.addEventListener('pointermove', (e) => {
+            if (!sur) return;
+            if (!sur.tasindi) {
+                if (Math.abs(e.clientX - sur.x0) < ESIK && Math.abs(e.clientY - sur.y0) < ESIK) return;
+                sur.tasindi = true;
+                kap.classList.add('cv2-suruklenirken');
+                if (acikMi()) togglePanel(false);            // sürüklerken panel açık kalmasın
+            }
+            const x = Math.min(Math.max(e.clientX - sur.dx, 0), window.innerWidth - sur.w);
+            const y = Math.min(Math.max(e.clientY - sur.dy, 0), window.innerHeight - sur.h);
+            kap.style.left = x + 'px';
+            kap.style.top = y + 'px';
+            kap.style.right = 'auto';
+            kap.style.bottom = 'auto';
+        });
+
+        function surumuBitir() {
+            if (!sur) return;
+            const tasindi = sur.tasindi;
+            sur = null;
+            kap.classList.remove('cv2-suruklenirken');
+            if (!tasindi) return;
+            sonSuruklemeBitisi = performance.now();          // ardından gelen click'i yut
+            const r = kap.getBoundingClientRect();
+            const gezinti = Math.max(window.innerHeight - r.height - KENAR * 2, 0);
+            konum = {
+                kenar: (r.left + r.width / 2) < window.innerWidth / 2 ? 'sol' : 'sag',
+                oran: gezinti ? Math.min(Math.max((r.top - KENAR) / gezinti, 0), 1) : 0,
+            };
+            try { localStorage.setItem(KONUM_ANAHTAR, JSON.stringify(konum)); } catch (e) {}
+            kap.style.transition = 'left .22s cubic-bezier(.2,.8,.2,1), top .22s cubic-bezier(.2,.8,.2,1)';
+            konumUygula();
+            setTimeout(() => { kap.style.transition = ''; }, 260);
+        }
+        trigger.addEventListener('pointerup', surumuBitir);
+        trigger.addEventListener('pointercancel', surumuBitir);
+
+        window.addEventListener('resize', () => { konumUygula(); panelKonumla(); });
         document.getElementById('cv2-close').onclick = () => { togglePanel(false); trigger.focus(); };
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && acikMi()) { togglePanel(false); trigger.focus(); } });
 
