@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Console\Commands\SyncKnowledgeBase;
+use App\Http\Controllers\HomeController;
 use App\Jobs\GenerateDestinationProfileJob;
 use App\Jobs\GenerateTourCharacterJob;
 use App\Jobs\GenerateTourEmbeddingJob;
@@ -167,6 +168,8 @@ class TourObserver
     {
         cache()->forget('ai_search_known_destinations_v1');
         DestinationKnowledgeService::flushInventory();
+        // Ana sayfa filtre barı: yeni kalkış/durak şehri 5 dk beklemeden görünsün
+        cache()->forget(HomeController::FACETS_CACHE_KEY);
     }
 
     /**

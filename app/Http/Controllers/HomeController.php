@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
+    /** Filtre barı sayaç cache'i — TourObserver tur değişiminde bunu düşürür. */
+    public const FACETS_CACHE_KEY = 'home_filter_facets_v1';
+
     /** Yatay filtre barındaki gün bantları (etiket => [min, max]). */
     public const DAY_BANDS = [
         '1-3' => [1, 3],
@@ -307,7 +310,7 @@ class HomeController extends Controller
      */
     private function filterBarFacets($categories): array
     {
-        $facets = Cache::remember('home_filter_facets_v1', 300, function () {
+        $facets = Cache::remember(self::FACETS_CACHE_KEY, 300, function () {
             $base = fn () => Tour::query()->active();
 
             // Kategori başına tur sayısı (üst = kendi + çocukları, PHP'de toplanır)
@@ -339,20 +342,29 @@ class HomeController extends Controller
                 $days[$label] = $base()->whereBetween('duration_days', [$min, $max])->count();
             }
 
-            // Kalkış: en yaygın 6 şehir; sayı filtreyle AYNI kuralla (kalkış + durak)
-            $topCities = $base()->whereNotNull('departure_city')
-                ->where('departure_city', '!=', '')
-                ->selectRaw('departure_city, count(*) as c')
-                ->groupBy('departure_city')
-                ->orderByDesc('c')
-                ->limit(6)
-                ->pluck('departure_city');
+            // Kalkış noktaları: yolcunun binebildiği HER şehir — kalkış şehri VE
+            // yol üstü duraklar. Liste yalnız departure_city'den üretilseydi,
+            // sadece durak olarak geçen bir şehir filtrede hiç görünmezdi (oysa
+            // filtreleme ikisini de kapsıyor). Yeni tur eklenince yeni şehir
+            // kendiliğinden listeye girer; sabit şehir listesi yok.
+            //
+            // Sayım SQL yerine PHP'de: şehir başına ayrı sorgu yerine tek çekim.
             $departures = [];
-            foreach ($topCities as $city) {
-                $departures[$city] = $base()
-                    ->where(fn ($q) => $q->where('departure_city', $city)->orWhereJsonContains('stop_cities', $city))
-                    ->count();
-            }
+            $base()->select(['departure_city', 'stop_cities'])
+                ->get()
+                ->each(function ($tour) use (&$departures) {
+                    $sehirler = collect([$tour->departure_city])
+                        ->merge(is_array($tour->stop_cities) ? $tour->stop_cities : [])
+                        ->map(fn ($s) => trim((string) $s))
+                        ->filter()
+                        ->unique();
+
+                    foreach ($sehirler as $sehir) {
+                        $departures[$sehir] = ($departures[$sehir] ?? 0) + 1;
+                    }
+                });
+            arsort($departures);
+            $departures = array_slice($departures, 0, 15, true);
 
             return compact('byCategory', 'visa', 'days', 'departures');
         });

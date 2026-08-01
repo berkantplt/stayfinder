@@ -121,6 +121,25 @@ class HomeFilterTest extends TestCase
         $this->assertStringNotContainsString('Kisa', $r->json('html'));
     }
 
+    /** Kalkış listesi sabit değil: yalnız DURAK olarak geçen şehir de seçenek
+     *  olarak görünmeli ve yeni tur eklenince cache beklemeden gelmeli. */
+    public function test_kalkis_secenekleri_durak_sehirlerini_de_kapsar(): void
+    {
+        $this->makeTour(['title' => 'A', 'departure_city' => 'İstanbul', 'stop_cities' => ['Bolu']]);
+        $this->makeTour(['title' => 'B', 'departure_city' => 'İstanbul']);
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        // Bolu hiçbir turun kalkış şehri DEĞİL, yalnız durak — yine de seçenek olmalı
+        $this->assertStringContainsString('value="Bolu"', $html);
+        $this->assertStringContainsString('value="İstanbul"', $html);
+
+        // Yeni durak şehri eklenince liste kendiliğinden güncellenmeli (cache düşer)
+        $this->makeTour(['title' => 'C', 'departure_city' => 'Ankara', 'stop_cities' => ['Kırıkkale']]);
+        $html2 = $this->get(route('home'))->assertOk()->getContent();
+        $this->assertStringContainsString('value="Kırıkkale"', $html2);
+    }
+
     public function test_ay_filtresi_tekil_tarih_ve_tarih_listesini_kapsar(): void
     {
         // Hedef ayın ORTASI kullanılır: today()->addMonths(3) ayın 29'una denk
