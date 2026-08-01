@@ -28,12 +28,17 @@
 }
 </script>
 <style>
-    .tour-tabs { display:flex; gap:2px; border-bottom:2px solid var(--border); margin:8px 0 20px; overflow-x:auto; scrollbar-width:none; position:sticky; top:70px; background:var(--bg); z-index:50; }
-    .tour-tabs::-webkit-scrollbar { display:none; }
-    .tour-tab { background:none; border:none; cursor:pointer; font-family:var(--font); font-size:13.5px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; padding:12px 16px; color:var(--text-sec); border-bottom:3px solid transparent; margin-bottom:-2px; white-space:nowrap; transition:color .2s, border-color .2s; }
-    .tour-tab:hover { color:var(--accent); }
-    .tour-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    /* Sekme barı: çerçeveli kutular (mobilde 2 sütun, tek kalan buton tam genişlik) */
+    .tour-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0 20px; }
+    .tour-tab { background:var(--white); border:1.5px solid var(--border); border-radius:10px; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; padding:14px 8px; color:var(--text); text-align:center; line-height:1.25; transition:color .2s, border-color .2s, box-shadow .2s; }
+    .tour-tab:last-child:nth-child(odd) { grid-column:1 / -1; }
+    .tour-tab:hover { border-color:var(--accent); color:var(--accent); }
+    .tour-tab.active { color:var(--accent); border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
     .tour-tab-count { display:inline-block; background:var(--accent); color:#fff; font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; margin-left:4px; vertical-align:1px; }
+    @media(min-width:769px) {
+        .tour-tabs { display:flex; flex-wrap:wrap; }
+        .tour-tab { flex:1 1 auto; padding:13px 18px; font-size:13.5px; white-space:nowrap; }
+    }
     .tour-tab-panel[hidden] { display:none; }
 
     /* Mobil kompakt fiyat kartı: tek satır fiyat + acenta, ince buton üçlüsü */
@@ -56,6 +61,22 @@
         #priceCard #campaign-countdown { flex-basis:100%; margin:6px 0 0 !important; padding:6px 10px !important; }
         #priceCard #campaign-countdown div:last-child { font-size:14px !important; }
         #mPriceSlot:not(:empty) { margin-bottom:4px; }
+    }
+
+    /* Mobil: tarih/paket fiyat tablosu dikey karta dönüşür — yatay kaydırma kalkar.
+       Tablo hücrelerinin inline style'ları var, bu yüzden ezmeler !important. */
+    @media(max-width:640px) {
+        .pricing-scroll { overflow-x:visible !important; padding:12px; }
+        .pricing-table { display:block !important; min-width:0 !important; }
+        .pricing-table thead { display:none; }
+        .pricing-table tbody { display:block; }
+        .pricing-table tr { display:block; border:1px solid var(--border) !important; border-radius:10px; overflow:hidden; margin-bottom:10px; }
+        .pricing-table tr:last-child { margin-bottom:0; }
+        .pricing-table td { display:block; text-align:left !important; white-space:normal !important; }
+        .pricing-table td.pkg-name { background:var(--accent-bg); padding:10px 12px !important; }
+        .pricing-table td.pkg-price { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:9px 12px !important; border-top:1px solid var(--border); }
+        .pricing-table td.pkg-price::before { content:attr(data-label); color:var(--text-muted); font-size:12.5px; font-weight:600; }
+        .pricing-table td.pkg-price .pkg-price-val { white-space:nowrap; text-align:right; }
     }
 </style>
 @endpush
@@ -331,8 +352,8 @@
                                         @endforeach
                                         <span style="color:var(--text-muted);font-size:12px;font-weight:500;margin-left:auto;">fiyatları gör ▾</span>
                                     </summary>
-                                    <div style="overflow-x:auto;border-top:1px solid var(--border);">
-                                        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:520px;">
+                                    <div class="pricing-scroll" style="overflow-x:auto;border-top:1px solid var(--border);">
+                                        <table class="pricing-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:520px;">
                                             <thead>
                                                 <tr style="background:var(--accent-bg);">
                                                     <th style="text-align:left;padding:10px 12px;font-weight:700;">Paket / Otel</th>
@@ -344,7 +365,7 @@
                                             <tbody>
                                                 @foreach($packages as $pkg)
                                                     <tr style="border-top:1px solid var(--border);">
-                                                        <td style="padding:10px 12px;font-weight:600;">{{ ($pkg['hotel'] ?? '') !== '' ? $pkg['hotel'] : 'Standart Paket' }}</td>
+                                                        <td class="pkg-name" style="padding:10px 12px;font-weight:600;">{{ ($pkg['hotel'] ?? '') !== '' ? $pkg['hotel'] : 'Standart Paket' }}</td>
                                                         @foreach($activeTypes as $type)
                                                             @php
                                                                 $cell = $pkg['prices'][$type] ?? [];
@@ -352,7 +373,8 @@
                                                                 $new = is_array($cell) ? ($cell['new'] ?? null) : null;
                                                                 $note = is_array($cell) ? trim((string) ($cell['note'] ?? '')) : '';
                                                             @endphp
-                                                            <td style="padding:10px 12px;text-align:right;white-space:nowrap;">
+                                                            <td class="pkg-price" data-label="{{ $roomTypeLabels[$type] }}" style="padding:10px 12px;text-align:right;white-space:nowrap;">
+                                                                <span class="pkg-price-val">
                                                                 @if($old !== null && $new !== null && (float) $old > (float) $new)
                                                                     <s style="color:#94a3b8;font-size:12px;">{{ number_format((float) $old, 0, ',', '.') }}</s>
                                                                     <span style="font-weight:700;color:#166534;margin-left:4px;">{{ number_format((float) $new, 0, ',', '.') }} {{ $priceCurrency }}</span>
@@ -365,6 +387,7 @@
                                                                 @else
                                                                     <span style="color:var(--text-muted);">—</span>
                                                                 @endif
+                                                                </span>
                                                             </td>
                                                         @endforeach
                                                     </tr>
