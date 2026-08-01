@@ -1958,6 +1958,16 @@
             #cv2-trigger { gap:0 !important; padding:0 !important; width:54px; height:54px; justify-content:center; border-radius:50% !important; }
             #cv2-trigger > span:first-child { width:100% !important; height:100% !important; font-size:26px !important; }
             #cv2-trigger > span:last-child { display:none !important; }
+            /* Sohbet açıkken WhatsApp gibi tam ekran: panel sürüklenen butona
+               göre kaymasın, arkadaki sayfa da görünmesin. */
+            #cv2.cv2-acik #cv2-trigger { display:none !important; }
+            #cv2.cv2-acik #cv2-panel {
+                position:fixed !important; left:0 !important; top:0 !important; right:0 !important; bottom:0 !important;
+                width:100% !important; height:100% !important; max-width:none !important;
+                border:none !important; border-radius:0 !important; box-shadow:none !important;
+                background:#0f172a !important;   /* tam ekranda arka sayfa hafifçe sızmasın */
+                padding-bottom:env(safe-area-inset-bottom) !important;
+            }
         }
         /* Sürüklenebilir tetik: parmak/fare hareketi sayfayı kaydırmasın */
         #cv2-trigger { touch-action:none; -webkit-user-select:none; user-select:none; }
@@ -1992,6 +2002,9 @@
             panel.hidden = !open;
             panel.style.display = open ? 'flex' : 'none';
             trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            kap.classList.toggle('cv2-acik', open);
+            // Tam ekran sohbette arkadaki sayfa kaymasın
+            document.body.style.overflow = (open && tamEkranMi()) ? 'hidden' : '';
             if (open) { panelKonumla(); input.focus(); }
         }
         trigger.onclick = () => togglePanel(! acikMi());
@@ -2008,8 +2021,11 @@
         // ---- Panel yerleşimi: tetik nereye taşındıysa ona göre aç ----
         // Tetik sürüklenebildiği için panelin sabit "sağ alt" varsayımı geçersiz;
         // panel ekranda kalacak şekilde tetiğe göre hesaplanır.
+        // Mobilde panel tam ekran açılır (CSS), konum hesabına hiç girilmez
+        function tamEkranMi() { return window.matchMedia('(max-width:768px)').matches; }
+
         function panelKonumla() {
-            if (panel.style.display === 'none') return;
+            if (panel.style.display === 'none' || tamEkranMi()) return;
             const t = trigger.getBoundingClientRect();
             const p = panel.getBoundingClientRect();
             const bosluk = 8;
