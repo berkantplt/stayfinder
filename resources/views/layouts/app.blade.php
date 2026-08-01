@@ -1952,6 +1952,13 @@
         #cv2-msgs .cv2-cards > * { flex:0 0 220px; }
         #cv2-trigger:hover { transform:translateY(-2px); }
         #cv2-trigger { transition:transform .25s; }
+        /* Mobil: tetik hapı ekranda daha az yer kaplasın (satır içi stiller
+           olduğu için ezmeler !important). */
+        @media(max-width:768px) {
+            #cv2-trigger { gap:6px !important; padding:5px 12px 5px 5px !important; }
+            #cv2-trigger > span:first-child { width:24px !important; height:24px !important; font-size:13px !important; }
+            #cv2-trigger > span:last-child { font-size:12px !important; }
+        }
     </style>
 
     <script>
