@@ -612,4 +612,79 @@ class TourImportParserTest extends TestCase
         $this->assertSame([], $this->invoke('harvestJsonDates', ['{"foo":{"year":2020,"bar":1}}']));
         $this->assertSame([], $this->invoke('harvestJsonDates', ['']));
     }
+
+    // ─── B10: MOBİL + MASAÜSTÜ çift render kopyası ────────────────────────────
+    // Bootstrap temalar aynı fiyat tablosunu DOM'a iki kez basar (dikey offcanvas
+    // "Fiyatlar ve Tarihler - (GG-AA-YYYY)" + yatay accordion "Tur Hareket Tarihi:").
+    // Kullanıcı yalnız birini görür; parser ikisini de okuyup her tarihe AYNI paketi
+    // iki kez yazıyordu (canlı vaka: kuzey-ege-turu tek paketliyken "2 paket" geldi).
+
+    public function test_responsive_duplicate_packages_are_merged(): void
+    {
+        $text = (string) file_get_contents(__DIR__.'/../Fixtures/import/page_kuzey_ege_dual_render.txt');
+
+        // Fixture gerçekten çift render içeriyor (test anlamını kaybetmesin)
+        $this->assertGreaterThan(0, substr_count($text, 'Fiyatlar ve Tarihler - ('));
+        $this->assertGreaterThan(0, substr_count($text, 'Tur Hareket Tarihi:'));
+
+        $result = $this->invoke('deterministicPricingBlocks', [$text]);
+        $blocks = $result['blocks'];
+
+        $this->assertNotEmpty($blocks);
+        $this->assertSame('TRY', $result['currency']);
+
+        // Sayfada her tarih için TEK paket ("Bölge Otelleri") var
+        foreach ($blocks as $block) {
+            $this->assertCount(
+                1,
+                $block['packages'],
+                'Mobil/masaüstü çift render tek pakete indirgenmeli: '.implode(',', $block['dates'])
+            );
+            $this->assertSame('Bölge Otelleri', $block['packages'][0]['hotel']);
+        }
+
+        // 6 kalkış tarihi, iki fiyat imzası (Ağustos indirimli, Eylül tek fiyat)
+        $allDates = [];
+        foreach ($blocks as $block) {
+            $allDates = array_merge($allDates, $block['dates']);
+        }
+        sort($allDates);
+        $this->assertSame([
+            '2026-08-02', '2026-08-09', '2026-08-23', '2026-08-30', '2026-09-06', '2026-09-13',
+        ], $allDates);
+
+        // Fiyatlar tekilleştirmeden ETKİLENMEZ
+        $agustos = $blocks[0]['packages'][0]['prices'];
+        $this->assertEquals(29998.0, $agustos['double_pp']['old']);
+        $this->assertEquals(14999.0, $agustos['double_pp']['new']);
+        $this->assertEquals(19999.0, $agustos['single']['new']);
+    }
+
+    public function test_same_name_packages_with_conflicting_prices_are_kept(): void
+    {
+        // Aynı ada sahip ama fiyatı FARKLI iki paket gerçekten ayrıdır — birleşmemeli.
+        $blocks = $this->invoke('normalizePricingBlocks', [[[
+            'dates' => ['2026-09-10'],
+            'packages' => [
+                ['hotel' => 'Standart Paket', 'prices' => ['double_pp' => ['old' => null, 'new' => 10000]]],
+                ['hotel' => 'Standart Paket', 'prices' => ['double_pp' => ['old' => null, 'new' => 12500]]],
+            ],
+        ]]]);
+
+        $this->assertCount(2, $blocks[0]['packages']);
+
+        // Çelişmeyen (biri eksik hücreli) kopya ise birleşir ve eksikler tamamlanır
+        $merged = $this->invoke('normalizePricingBlocks', [[[
+            'dates' => ['2026-09-10'],
+            'packages' => [
+                ['hotel' => 'Bölge Otelleri', 'prices' => ['double_pp' => ['old' => 20000, 'new' => 10000]]],
+                ['hotel' => 'Bölge Otelleri', 'prices' => ['double_pp' => ['old' => null, 'new' => 10000], 'single' => ['old' => null, 'new' => 14000]]],
+            ],
+        ]]]);
+
+        $this->assertCount(1, $merged[0]['packages']);
+        $this->assertEquals(20000.0, $merged[0]['packages'][0]['prices']['double_pp']['old']);
+        $this->assertEquals(10000.0, $merged[0]['packages'][0]['prices']['double_pp']['new']);
+        $this->assertEquals(14000.0, $merged[0]['packages'][0]['prices']['single']['new']);
+    }
 }

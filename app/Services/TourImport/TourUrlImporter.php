@@ -2631,6 +2631,8 @@ JS;
                 $packages[] = ['hotel' => $hotel, 'prices' => $prices];
             }
 
+            $packages = $this->mergeDuplicatePackages($packages);
+
             // Tarihsiz veya paketsiz blok forma anlamlı veri taşımaz.
             if ($dates === [] || $packages === []) {
                 continue;
@@ -2640,6 +2642,81 @@ JS;
         }
 
         return $blocks;
+    }
+
+    /**
+     * RESPONSIVE KOPYA AYIKLAMA: Bootstrap tabanlı temalar (malitur vb.) aynı fiyat
+     * tablosunu DOM'a İKİ KEZ basar — "MOBİL FİYAT LİSTESİ" (dikey offcanvas) ve
+     * "MASAÜSTÜ FİYAT LİSTESİ" (d-md-block yatay accordion). Kullanıcı CSS sayesinde
+     * yalnız birini görür ama metin çıkarımı ikisini de okur → her tarih aynı paketi
+     * iki kez alır (canlı vaka: tek paketli tur "2 paket" olarak içe aktarıldı).
+     * Aynı ada sahip ve fiyatları ÇELİŞMEYEN paketler tek pakettir; eksik hücreler
+     * birleştirilir (iki render farklı zenginlikte olabiliyor: biri üstü çizili eski
+     * fiyatı taşırken diğeri taşımayabiliyor). Fiyatı gerçekten farklı olan iki paket
+     * çelişir → ikisi de korunur.
+     *
+     * @param  array<int, array{hotel: string, prices: array<string, array{old: ?float, new: ?float}>}>  $packages
+     * @return array<int, array{hotel: string, prices: array<string, array{old: ?float, new: ?float}>}>
+     */
+    private function mergeDuplicatePackages(array $packages): array
+    {
+        $kept = [];
+
+        foreach ($packages as $pkg) {
+            $name = $this->foldTr((string) ($pkg['hotel'] ?? ''));
+            $merged = false;
+
+            foreach ($kept as $k => $existing) {
+                if ($this->foldTr((string) ($existing['hotel'] ?? '')) !== $name) {
+                    continue;
+                }
+                $combined = $this->mergeCompatiblePrices($existing['prices'], $pkg['prices']);
+                if ($combined === null) {
+                    continue; // aynı ad ama çelişen fiyat → gerçekten ayrı paket
+                }
+                $kept[$k]['prices'] = $combined;
+                $merged = true;
+                break;
+            }
+
+            if (! $merged) {
+                $kept[] = $pkg;
+            }
+        }
+
+        return array_values($kept);
+    }
+
+    /**
+     * İki fiyat haritasını çelişki yoksa birleştirir (biri boş bıraktığı hücreyi
+     * diğeri doldurur). Ortak bir oda tipinde İKİSİ DE dolu ve farklıysa null döner
+     * — bu iki paketin aynı olmadığının kanıtıdır.
+     *
+     * @param  array<string, array{old: ?float, new: ?float}>  $a
+     * @param  array<string, array{old: ?float, new: ?float}>  $b
+     * @return array<string, array{old: ?float, new: ?float}>|null
+     */
+    private function mergeCompatiblePrices(array $a, array $b): ?array
+    {
+        $out = $a;
+
+        foreach ($b as $type => $cell) {
+            if (! isset($out[$type])) {
+                $out[$type] = $cell;
+
+                continue;
+            }
+            foreach (['old', 'new'] as $key) {
+                $x = $out[$type][$key] ?? null;
+                $y = $cell[$key] ?? null;
+                if ($x !== null && $y !== null && abs($x - $y) > 0.009) {
+                    return null;
+                }
+                $out[$type][$key] = $x ?? $y;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -2781,6 +2858,9 @@ JS;
         $groups = [];
         foreach ($byDate as $iso => $packages) {
             $clean = array_values(array_filter($packages, fn ($p) => $p['prices'] !== []));
+            // Mobil+masaüstü çift render'ı imza HESAPLANMADAN ÖNCE tekille: aksi halde
+            // kopyası olan tarih ile olmayan tarih farklı imza alıp ayrı bloklara düşer.
+            $clean = $this->mergeDuplicatePackages($clean);
             if ($clean === []) {
                 continue;
             }
