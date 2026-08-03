@@ -109,6 +109,40 @@ class TourMatcher
         ];
     }
 
+    /**
+     * Profilsiz liste: tercih vektörü çıkarılamadığında dürüst geri çekilme.
+     *
+     * Rubrik puanı KULLANILMAZ (ağırlık yokken skor null döner, match() boş
+     * liste verir). Yalnız sert filtreleri geçen turlar, kalkışı en yakın olan
+     * başta olmak üzere listelenir. Kartlar taban-altı modda basılır: "%X uyumlu"
+     * rozeti çıkmaz — çünkü ortada ölçülmüş bir uyum yok.
+     *
+     * @return array{tours: array, toplam_eslesme: int}
+     */
+    public function listele(array $baglam = [], int $limit = 5): array
+    {
+        $puanliIdler = TourRubricScore::where('rubric_version', Rubric::VERSION)
+            ->where('review_status', '!=', TourRubricScore::STATUS_NEEDS_REVIEW)
+            ->pluck('tour_id')->all();
+
+        [$adaylar] = $this->hardFilter($baglam, Rubric::resultRules(), [], $puanliIdler);
+
+        $sirali = $adaylar->sort(function (Tour $a, Tour $b) {
+            $aDate = $a->departure_date?->timestamp ?? PHP_INT_MAX;
+            $bDate = $b->departure_date?->timestamp ?? PHP_INT_MAX;
+
+            return $aDate !== $bDate ? $aDate <=> $bDate : $a->id <=> $b->id;
+        })->values();
+
+        $bosProfil = ['degerler' => [], 'agirliklar' => []];
+
+        return [
+            'tours' => $sirali->take(max(1, $limit))
+                ->map(fn (Tour $t) => $this->card($t, $bosProfil, $baglam, true))->all(),
+            'toplam_eslesme' => $sirali->count(),
+        ];
+    }
+
     /** Brif §6 formülü birebir. Aktif ağırlık yoksa null. */
     public function skor(TourRubricScore $rubricScore, array $kullanici, array $agirliklar): ?int
     {
@@ -475,7 +509,8 @@ class TourMatcher
             'compatibility_score' => $belowFloor ? null : $tour->match_score / 100,
             'match_percent' => $tour->match_score,
             'over_budget' => $overBudget,
-            'reason' => $this->reason($tour->rubric, $profil['degerler'], $profil['agirliklar']),
+            // Profilsiz listede rubrik nesnesi yüklenmez; gerekçe de üretilemez
+            'reason' => $tour->rubric ? $this->reason($tour->rubric, $profil['degerler'], $profil['agirliklar']) : '',
             'next_departure' => optional($tour->departure_date)->format('Y-m-d'),
             'flex_date' => null,
         ];

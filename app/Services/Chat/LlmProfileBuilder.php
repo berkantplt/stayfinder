@@ -41,10 +41,14 @@ class LlmProfileBuilder
 
             // Kanıt zorunlu ve transkriptte geçmeli. Transkript verilmediyse
             // (birim test / API kullanımı) doğrulama atlanır ama kanıt yine şart.
-            // Kanıt anlamlı uzunlukta olmalı: tek harf/kelime alıntı transkriptte
-            // her zaman geçer ve disiplini pratikte atlatırdı
+            //
+            // ALT SINIR NEDEN 3: eskiden "≥8 karakter VE boşluk içermeli" idi.
+            // Bu kural tek kelimelik ama gayet net cevapları ("deniz-güneş",
+            // "lüks", "sakin") elemiyordu; kullanıcı kısa yazınca hiçbir boyut
+            // geçmiyor, tur_ara boş dönüyor ve bot aynı soruyu tekrarlıyordu.
+            // Uydurmaya karşı asıl siper zaten transkriptte geçme şartı.
             $kanit = is_string($girdi['kanit'] ?? null) ? trim($girdi['kanit']) : '';
-            if (mb_strlen($kanit, 'UTF-8') < 8 || ! str_contains($kanit, ' ')) {
+            if (mb_strlen($kanit, 'UTF-8') < 3) {
                 $dusurulen[] = $d;
 
                 continue;

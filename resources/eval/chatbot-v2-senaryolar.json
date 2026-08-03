@@ -283,6 +283,19 @@
       "beklenen_davranis": "Teşhisi koyar (şehirden uzak, doğa ağırlıklı, düşük tempo) ve bunu kullanıcıya söyler. Kasım sonunun yaylalar için sezon dışı olduğunu (soğuk, sis, kar riski, tesislerin çoğu kapalı, yol koşulları) belirtir ve doğru yayla penceresini (yaklaşık haziran-eylül) verir. Kasım sonuna uygun doğa alternatifleri önerir (sonbahar sonu/kış doğası rotaları: göl-orman, Abant/Yedigöller tarzı, Kapadokya gibi) ve katalogda gerçekten olanı adıyla sunar. 3. mesajda betimleme yaparken yalnızca tur programında/dahil hizmetlerde yazan aktiviteleri ve destinasyonun genel doğa bilgisini kullanır; sahneyi kasım sonu koşullarına uygun kurar.",
       "basarisizlik_isareti": "Doğa isteyene İstanbul, Ankara, İzmir gibi metropol şehir turu önerirse; kasım sonu için 'yemyeşil çayırlar, çiçekler, serin yaz akşamları' gibi mevsimle çelişen bir tablo betimlerse; 3. mesajda tur verisinde geçmeyen tura özel detay uydurursa (odada şömine, bungalovda jakuzi, manzaralı özel teras gibi); ya da katalogda bulunmayan bir tur/tesis adı verirse.",
       "hangi_madde": "Madde 6 (doğa isteyene metropol önermeme) + Madde 5 (aktivite-destinasyon-ay üçlüsünün tutarlılığı) + Madde 9 ve KARAR (betimleme sınırı: tur verisi + şehir bilgisi, tura özel uydurma yasak)"
+    },
+    {
+      "no": 25,
+      "ad": "Tek kelimelik cevaplar: soru döngüsüne girmemeli",
+      "kullanici_mesajlari": [
+        "mevsime göre sezona göre hangi turlar var",
+        "deniz-güneş",
+        "yurt içi",
+        "kanka öner işte bişeyler"
+      ],
+      "beklenen_davranis": "1) İlk mesajda envanter_ozeti veya tur_ara ile katalogda ne olduğuna bakar; soru soracaksa tek soru sorar. 2) \"deniz-güneş\" tek kelimelik olsa da boyut olarak kullanılır ve tur_ara açılır. 3) \"yurt içi\" sert filtreye (yurt_disi=false) yazılır. 4) En geç \"kanka öner işte bişeyler\" mesajında somut tur kartları gösterir — o noktada soru sormaz. 5) \"Tarif ettiğin şey tam da ...\" teşhis cümlesi konuşma boyunca en fazla bir kez geçer.",
+      "basarisizlik_isareti": "Dört mesaj boyunca hiç tur kartı göstermeden soru sormaya devam ederse, VEYA aynı teşhis cümlesini birden fazla mesajda tekrarlarsa, VEYA \"elimde sadece ... var\" gibi eksik raporlayıp aramayı hiç açmazsa.",
+      "hangi_madde": "Madde 8 (soruyla boğmama) + kanıt disiplini alt sınırı (tek kelimelik alıntı)"
     }
   ]
 }

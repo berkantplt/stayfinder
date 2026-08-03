@@ -93,15 +93,43 @@ class TurAra implements ChatTool
             (string) ($args['transkript'] ?? ''), // ChatAgent enjekte eder, model vermez
         );
 
+        $baglam = is_array($args['filtre'] ?? null) ? $args['filtre'] : [];
+
         if ($profil['agirliklar'] === [] || array_sum($profil['agirliklar']) <= 0) {
+            // Düşen boyutlar her iki dalda da raporlanır: eval "kanıtsız boyut
+            // doldurma denemesi"ni buradan okuyor, sessizce yutulmamalı
+            $dusurulen = array_map(fn ($d) => Rubric::label($d), $profil['dusurulen']);
+
+            // İLK denemede sormak makul. AMA ikinci kez de boyut çıkmadıysa soru
+            // sormaya devam etmek kullanıcıyı döngüye sokuyor (kısa cevap veren
+            // kullanıcıda boyut hiç çıkmayabilir). O noktada eldeki kısıtlarla
+            // dürüst bir liste göstermek, aynı soruyu tekrarlamaktan iyidir.
+            if ($this->kullaniciTuru((string) ($args['transkript'] ?? '')) < 2) {
+                return [
+                    'turlar' => [],
+                    'olculemeyen_boyutlar' => $dusurulen,
+                    'hata' => 'Hiçbir boyut doldurulamadı — kullanıcının ne istediğini anlatan '
+                        .'en az bir alıntı gerekiyor. Ona ne aradığını sor.',
+                ];
+            }
+
+            $liste = $this->matcher->listele($baglam, 5);
+
             return [
-                'turlar' => [],
-                'hata' => 'Hiçbir boyut doldurulamadı — kullanıcının ne istediğini anlatan '
-                    .'en az bir alıntı gerekiyor. Ona ne aradığını sor.',
+                'turlar' => $liste['tours'],
+                // Bilerek 'toplam_eslesme' DEĞİL: o anahtar "diğerleri" butonunu
+                // açıyor, buton ise oturumdaki profille çalışıyor — profil
+                // yokken boş dönerdi. Sayı yalnız modelin bilgisi olarak durur.
+                'toplam_uygun_tur' => $liste['toplam_eslesme'],
+                'olculemeyen_boyutlar' => $dusurulen,
+                'profilsiz_liste' => true,
+                'not' => 'Tercih profili çıkarılamadı; bunlar yalnız verdiği kısıtlara uyan, '
+                    .'kalkışı en yakın turlar. Bunları "sana %X uyumlu" diye sunma — '
+                    .'"elimdekilerden öne çıkanlar" çerçevesinde göster. Soru sorma; '
+                    .'istersen kapanışta tek bir daraltma sorusu sorabilirsin.',
             ];
         }
 
-        $baglam = is_array($args['filtre'] ?? null) ? $args['filtre'] : [];
         $sonuc = $this->matcher->match($profil, $baglam);
 
         // Katalogda hiç yayınlanabilir puan yoksa bu bir SİSTEM durumu, kullanıcının
@@ -136,5 +164,17 @@ class TurAra implements ChatTool
             'sor' => $sonuc['sor'],
             'olculemeyen_boyutlar' => array_map(fn ($d) => Rubric::label($d), $profil['dusurulen']),
         ];
+    }
+
+    /**
+     * Transkript kullanıcı satırlarından oluşur (ChatAgent birleştirir); satır
+     * sayısı kaçıncı kez denendiğini verir. Ayrı sayaç taşımaya gerek yok.
+     */
+    private function kullaniciTuru(string $transkript): int
+    {
+        return count(array_filter(
+            preg_split('/\R/u', trim($transkript)) ?: [],
+            fn ($s) => trim($s) !== '',
+        ));
     }
 }
