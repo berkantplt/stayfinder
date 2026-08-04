@@ -99,7 +99,10 @@ class ConversationState
                     $this->agirliklar[$d] = (float) $v;
                 }
             }
-            foreach ((array) ($result['turlar'] ?? []) as $t) {
+            // Yakın turlar da hatırlanır: kullanıcıya KART olarak gösterildiler,
+            // "bu konuşmada gösterdiklerin" listesinden düşerlerse model onları
+            // yeniden sunar ve "diğerleri" görünümü de tekrar eder.
+            foreach (array_merge((array) ($result['turlar'] ?? []), (array) ($result['yakin_turlar'] ?? [])) as $t) {
                 $this->turEkle($t['id'] ?? null, $t['title'] ?? null);
             }
         }

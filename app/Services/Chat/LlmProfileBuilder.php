@@ -30,6 +30,7 @@ class LlmProfileBuilder
         $degerler = [];
         $agirliklar = [];
         $dusurulen = [];
+        $kabulEdilen = [];   // boyut => normalize edilmiş kanıt
 
         foreach (Rubric::dimensions() as $d) {
             $agirliklar[$d] = 0.0;
@@ -61,13 +62,29 @@ class LlmProfileBuilder
 
             $deger = max(0.0, min(100.0, (float) $girdi['deger']));
             $degerler[$d] = round($deger, 2);
+            $kabulEdilen[$d] = self::normalize($kanit);
+        }
 
+        // Ağırlıklar İKİNCİ geçişte: payda yalnız KABUL EDİLEN boyutlardan
+        // sayılır. İlk geçişte sayılsaydı, kanıtı transkriptte bulunamayıp
+        // düşen bir boyut hayatta kalanın ağırlığını haksız yere yarıya
+        // indirirdi.
+        $kanitPaydasi = array_count_values($kabulEdilen);
+
+        foreach ($kabulEdilen as $d => $kanitNorm) {
             // QuizEvaluator ile aynı formül: uçluk × beyan, clamp(min, max).
             // Tutarlılık çarpanı yok — sohbette tek kaynak var, çelişki olamaz.
-            $ucluk = abs($deger - 50) / 50;
+            //
+            // PAYLAŞIM: aynı alıntıdan türetilen boyutlar ağırlığı BÖLÜŞÜR.
+            // "sessiz sakin" tek ifadesi hem tempo hem kalabaliklik'e yazılınca
+            // kullanıcı tek dileği için iki kez ceza kesiliyordu; çok duraklı
+            // sahil turları bu yüzden eşiğin altında kalıyordu. Bir cümle,
+            // toplamda bir boyut kadar etki etsin.
+            $ucluk = abs($degerler[$d] - 50) / 50;
             $beyan = in_array($d, $onemli, true) ? $bounds['beyan_carpani'] : 1.0;
+            $pay = max(1, $kanitPaydasi[$kanitNorm] ?? 1);
 
-            $agirliklar[$d] = max($bounds['min'], min($bounds['max'], $ucluk * $beyan));
+            $agirliklar[$d] = max($bounds['min'], min($bounds['max'], ($ucluk * $beyan) / $pay));
         }
 
         return ['degerler' => $degerler, 'agirliklar' => $agirliklar, 'dusurulen' => $dusurulen];

@@ -749,6 +749,14 @@
                 badge.style.cssText = T.badge;
                 badge.textContent = '%' + Math.round(Math.max(0, Math.min(1, rawScore)) * 100) + ' Uyumlu';
                 imgBox.appendChild(badge);
+            } else if (tour.yakin) {
+                // Eşiği geçemeyen "en yakın" turlar: yüzde YAZILMAZ (ortada
+                // ölçülmüş bir uyum yok) ama kart sessizce iyi tur gibi de
+                // durmasın — dürüst etiket rozetin yerini alır.
+                var yakinEtiket = document.createElement('div');
+                yakinEtiket.style.cssText = T.badge.replace(/color:#[0-9a-f]+;/i, 'color:#fbbf24;');
+                yakinEtiket.textContent = 'Tam uymuyor';
+                imgBox.appendChild(yakinEtiket);
             }
 
             if (T.gradient) {

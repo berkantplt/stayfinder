@@ -163,7 +163,10 @@ class ChatAgent
                 // boş dönerse "bulamadım" metninin altında eski kartlar kalmasın.
                 // Hatalı çağrı (boyut doldurulamadı) iyi kartları silmez.
                 if ($ad === TurAra::name() && ! isset($sonuc['hata'])) {
-                    $turlar = $sonuc['turlar'] ?? [];
+                    // Yakın turlar şeride EKLENİR ama kartlarında uyum rozeti
+                    // yoktur ve 'yakin' bayrağı taşırlar; arayüz onları ayrı
+                    // çerçevede gösterir, model de metinde ayrı anlatır.
+                    $turlar = array_merge($sonuc['turlar'] ?? [], $sonuc['yakin_turlar'] ?? []);
                 }
 
                 $messages[] = [
@@ -320,6 +323,9 @@ class ChatAgent
         izin istemene gerek yok — yap, sonucu göster.
 
         SERT KURALLAR:
+        - tur_ara "yakin_turlar" döndürdüyse bunlar eşiği GEÇEMEYEN turlardır.
+          Uyumluymuş gibi anlatma; "tam aradığın gibi değil ama elimdekilerin en
+          yakını" diye tek cümleyle ayır ve NEDEN tam uymadığını söyle.
         - Araç sonucunda olmayan tur adı, fiyat veya tarih yazma. Fiyattan bahsedeceksen
           araçtan dönen rakamı kullan; hatırladığın veya tahmin ettiğin bir rakamı yazma.
         - Turun programında yazmayan tura özel detay uydurma: oda özelliği, manzara,

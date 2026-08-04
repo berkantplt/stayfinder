@@ -95,6 +95,11 @@ class TourMatcher
 
         return [
             'tours' => $secilen->map(fn ($t) => $this->card($t, $profil, $baglam, $belowFloor))->all(),
+            // AYRI liste, kasıtlı: brif §6 "taban altı turlar ÖNERİLEN diye
+            // gösterilmez" diyor, o yüzden bunlar tours'a karışmaz. Ama eşiği
+            // geçen 1-2 tur varken listeyi orada kesmek de kullanıcıya katalogu
+            // boş gösteriyordu — "tam uymuyor ama en yakını bu" dürüst orta yol.
+            'yakin_turlar' => $this->yakinTurlar($sirali, $secilen, $tabanUstu, $profil, $baglam, $rules, $belowFloor),
             // Katalogda yayınlanabilir puanı olan tur sayısı: 0 ise sistem HAZIR
             // DEĞİL demektir, "uyan tur yok" ile karıştırılmamalı
             'katalog_puanli_tur' => $scores->count(),
@@ -107,6 +112,48 @@ class TourMatcher
             'sor' => $this->sorulacakSoru($secilen, $baglam),
             'below_floor' => $belowFloor && $secilen->isNotEmpty(),
         ];
+    }
+
+    /**
+     * "Tam uymuyor ama en yakını" turları — yalnız önerilen liste ince kaldığında.
+     *
+     * Taban altı modda ÜRETİLMEZ: orada zaten gösterilen her şey eşik altı,
+     * ikinci bir "yakınlar" listesi aynı şeyi iki kez söylemek olur.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function yakinTurlar(
+        Collection $sirali,
+        Collection $secilen,
+        Collection $tabanUstu,
+        array $profil,
+        array $baglam,
+        array $rules,
+        bool $belowFloor,
+    ): array {
+        $hedef = (int) ($rules['min_candidates'] ?? 3);
+
+        // Ölçüt HAVUZ, gösterilen kart sayısı değil: çağıran top_n=1 verdiğinde
+        // (ör. "diğerleri" görünümünün son sayfası) eşik üstü tur bol olsa bile
+        // liste ince görünür ve boşuna zayıf tur eklenirdi.
+        if ($belowFloor || $tabanUstu->count() >= $hedef || $secilen->count() >= $hedef) {
+            return [];
+        }
+
+        $secilenIdler = $secilen->pluck('id')->all();
+        $haric = array_map('intval', (array) ($baglam['haric'] ?? []));
+
+        return $sirali
+            ->filter(fn ($t) => $t->match_score < $rules['min_score']
+                && $t->match_score >= ($rules['min_display_score'] ?? 40)
+                && ! in_array($t->id, $secilenIdler, true)
+                && ! in_array($t->id, $haric, true))
+            ->take($hedef - $secilen->count())
+            // belowFloor=true ⇒ uyum rozeti basılmaz; 'yakin' bayrağı arayüzün
+            // bunları ayrı çerçevede göstermesi için
+            ->map(fn ($t) => ['yakin' => true] + $this->card($t, $profil, $baglam, true))
+            ->values()
+            ->all();
     }
 
     /**
@@ -359,12 +406,32 @@ class TourMatcher
             return $v < 34 ? 'dusuk' : ($v > 66 ? 'yuksek' : 'orta');
         };
 
+        // Bant kuralı yalnız BİRBİRİNE YAKIN puanlar arasında uygulanır. Eskiden
+        // puan farkına bakılmıyordu: aynı bantta 3. sıradaki %85'lik tur atlanıp
+        // yerine başka banttan %60'lık tur geliyordu — kullanıcı "neden bu geldi"
+        // diye haklı olarak soruyordu. Artık yerine geçecek tur belirgin ölçüde
+        // kötüyse çeşitlilik feda edilir, puan kazanır.
+        $gap = (float) ($rules['diversity_score_gap'] ?? 0);
+        $liste = $sirali->values();
+
         $secilen = collect();
         $bandSayac = [];
-        foreach ($sirali as $tour) {
+        foreach ($liste as $i => $tour) {
             $b = $band($tour);
             if ($b !== 'bilinmiyor' && ($bandSayac[$b] ?? 0) >= $rules['diversity_max_same_band']) {
-                continue;
+                // Bu turun yerine gelebilecek en iyi "başka bant" adayı
+                $alternatif = null;
+                foreach ($liste->slice($i + 1) as $sonraki) {
+                    $sb = $band($sonraki);
+                    if ($sb === 'bilinmiyor' || ($bandSayac[$sb] ?? 0) < $rules['diversity_max_same_band']) {
+                        $alternatif = $sonraki;
+                        break;
+                    }
+                }
+                // Alternatif yeterince iyiyse bant kuralı uygulanır, değilse ezilir
+                if ($alternatif !== null && $alternatif->match_score >= $tour->match_score - $gap) {
+                    continue;
+                }
             }
             $secilen->push($tour);
             $bandSayac[$b] = ($bandSayac[$b] ?? 0) + 1;

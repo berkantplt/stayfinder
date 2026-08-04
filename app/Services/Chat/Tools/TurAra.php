@@ -150,6 +150,10 @@ class TurAra implements ChatTool
 
         return [
             'turlar' => $sonuc['tours'],
+            // Eşiği geçen tur azken doldurulan "tam uymuyor ama en yakını"
+            // listesi. Modelin bunları uyumlu turmuş gibi anlatması YASAK —
+            // sistem promptunda ayrı kural var.
+            'yakin_turlar' => $sonuc['yakin_turlar'] ?? [],
             // Hafıza bunu okur: modelin İDDİASI değil, kanıtı doğrulanıp KABUL
             // EDİLEN profil. Reddedilen boyut bir sonraki tura sızmasın.
             'kabul_edilen_degerler' => $profil['degerler'],
