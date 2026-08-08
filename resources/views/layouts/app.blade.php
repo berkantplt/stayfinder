@@ -1858,7 +1858,17 @@
             }
         });
 
-        // --- Comparison Code Fix ---
+    </script>
+    @endif
+
+    {{-- ⚠️ Tur karşılaştırma: SOHBET GUARD'ININ DIŞINDA durmalı.
+         "+ Karşılaştır" butonları tur listesinde, favorilerde ve tur detayında
+         KOŞULSUZ render ediliyor (compare-bar da öyle, bkz. yukarısı). Bu blok
+         bir dönem $hideAiChat guard'ının içindeydi; sohbet donduğunda (ve admin
+         kullanıcılarda / acenta sayfalarında) fonksiyonlar tanımsız kalıyor,
+         butona basan herkes "toggleCompare is not a function" alıyordu.
+         Sohbetten bağımsız bir özellik — buraya taşındı, geri koymayın. --}}
+    <script>
         let comparedTours = JSON.parse(localStorage.getItem('compared_tours') || '[]');
         const comparePageUrl = @json(route('tours.compare'));
         function updateCompareUI() {
@@ -1874,7 +1884,7 @@
                 else { btn.innerHTML = '+ Karşılaştır'; btn.style.background = '#fff'; btn.style.color = '#475569'; }
             });
         }
-        window.toggleCompare = function(id) { 
+        window.toggleCompare = function(id) {
             id = parseInt(id); const idx = comparedTours.indexOf(id);
             if (idx > -1) comparedTours.splice(idx, 1);
             else if (comparedTours.length < 3) comparedTours.push(id);
@@ -1899,7 +1909,6 @@
         };
         document.addEventListener('DOMContentLoaded', updateCompareUI);
     </script>
-    @endif
 
     @php
         // v2 sohbet: v1'den BAĞIMSIZ bayrak (v1 dondurulmuşken kademeli açılabilsin)
