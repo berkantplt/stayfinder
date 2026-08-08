@@ -535,11 +535,30 @@
                     <div style="font-size:20px;font-weight:800;color:white;margin-bottom:10px;letter-spacing:-0.4px;">tur<span style="color:#2dd4bf;">X</span>tur</div>
                     <p style="font-size:14px;line-height:1.8;">Türkiye'nin en iyi tur acentalarından fiyatları karşılaştırın. En uygun turu bulun.</p>
                 </div>
-                <div><h4>Platform</h4><ul><li><a href="{{ route('tours.index') }}">Turlar</a></li><li><a href="#">Nasıl Çalışır?</a></li></ul></div>
-                <div><h4>Acentalar</h4><ul><li><a href="{{ route('login') }}">Acenta Girişi</a></li><li><a href="{{ route('agency.register') }}">Acenta Ol</a></li></ul></div>
-                <div><h4>Yasal</h4><ul><li><a href="#">Gizlilik</a></li><li><a href="#">Kullanım Koşulları</a></li></ul></div>
+                <div><h4>Platform</h4><ul>
+                    <li><a href="{{ route('tours.index') }}">Turlar</a></li>
+                    <li><a href="{{ route('legal.nasil-calisir') }}">Nasıl Çalışır?</a></li>
+                    <li><a href="{{ route('blog.index') }}">Blog</a></li>
+                    <li><a href="{{ route('legal.iletisim') }}">İletişim</a></li>
+                </ul></div>
+                <div><h4>Acentalar</h4><ul>
+                    <li><a href="{{ route('login') }}">Acenta Girişi</a></li>
+                    <li><a href="{{ route('agency.register') }}">Acenta Ol</a></li>
+                    <li><a href="{{ route('legal.siralama') }}">Sıralama Kriterleri</a></li>
+                </ul></div>
+                <div><h4>Yasal</h4><ul>
+                    <li><a href="{{ route('legal.kvkk') }}">KVKK Aydınlatma Metni</a></li>
+                    <li><a href="{{ route('legal.gizlilik') }}">Gizlilik Politikası</a></li>
+                    <li><a href="{{ route('legal.cerez') }}">Çerez Politikası</a></li>
+                    <li><a href="{{ route('legal.kosullar') }}">Kullanım Koşulları</a></li>
+                </ul></div>
             </div>
-            <div class="footer-bottom">turXtur © 2026 · Tüm hakları saklıdır.</div>
+            <div class="footer-bottom">
+                @if(config('company.legal_name'))
+                    <div style="margin-bottom:4px;">{{ config('company.legal_name') }}</div>
+                @endif
+                turXtur © {{ date('Y') }} · Tüm hakları saklıdır.
+            </div>
         </div>
     </footer>
 
@@ -2369,6 +2388,72 @@
             "eagerness": "moderate"
         }]
     }
+    </script>
+
+    {{-- Çerez rıza banner'ı — KVKK Çerez Rehberi: reddetmek kabul etmek kadar
+         kolay olmalı, bu yüzden iki düğme de aynı görsel ağırlıkta. Zorunlu
+         çerezler rıza gerektirmez ve zaten kapatılamaz. Analitik/pazarlama
+         script'i EKLENİRSE window.turxturCerezOnayi() true dönmeden
+         yüklenmemeli — şu an böyle bir script yok. --}}
+    <div id="cerez-banner" role="dialog" aria-live="polite" aria-label="Çerez tercihi" hidden
+         style="position:fixed;left:0;right:0;bottom:0;z-index:2500;background:#0f172a;color:#e2e8f0;padding:16px 20px;box-shadow:0 -8px 30px rgba(0,0,0,0.25);">
+        <div style="max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:14px;">
+            <p style="flex:1;min-width:260px;margin:0;font-size:13.5px;line-height:1.6;">
+                Sitenin çalışması için zorunlu çerezleri kullanıyoruz. İsteğe bağlı analitik
+                çerezler yalnızca onay verirseniz çalışır.
+                <a href="{{ route('legal.cerez') }}" style="color:#5eead4;text-decoration:underline;">Çerez Politikası</a>
+            </p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                {{-- İki düğme AYNI boyut, aynı ağırlık, aynı tek tık: reddetmek
+                     kabul etmekten zor olmamalı (KVKK Çerez Rehberi). Reddi
+                     soluk/ikincil bir bağlantıya çevirmeyin. --}}
+                <button type="button" data-cerez="zorunlu"
+                        style="border:none;background:#475569;color:#fff;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:150px;">
+                    Yalnızca zorunlu
+                </button>
+                <button type="button" data-cerez="tumu"
+                        style="border:none;background:#0d9488;color:#fff;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:150px;">
+                    Tümünü kabul et
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var AD = 'turxtur_cerez';
+        var banner = document.getElementById('cerez-banner');
+
+        function oku() {
+            var m = document.cookie.match(/(?:^|;\s*)turxtur_cerez=([^;]*)/);
+            return m ? decodeURIComponent(m[1]) : null;
+        }
+        function yaz(deger) {
+            var son = new Date();
+            son.setFullYear(son.getFullYear() + 1);
+            document.cookie = AD + '=' + encodeURIComponent(deger) + ';path=/;expires=' +
+                son.toUTCString() + ';SameSite=Lax' + (location.protocol === 'https:' ? ';Secure' : '');
+        }
+
+        // Analitik script'i eklenirse bu kapıdan geçmeli.
+        window.turxturCerezOnayi = function () { return oku() === 'tumu'; };
+        window.turxturCerezAc = function () { if (banner) banner.hidden = false; };
+
+        if (!oku() && banner) banner.hidden = false;
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-cerez]');
+            if (btn) {
+                yaz(btn.dataset.cerez);
+                if (banner) banner.hidden = true;
+                return;
+            }
+            // Çerez Politikası sayfasındaki "tercihimi değiştir" düğmesi
+            if (e.target.closest('.js-cookie-reopen')) {
+                e.preventDefault();
+                window.turxturCerezAc();
+            }
+        });
+    })();
     </script>
 </body>
 </html>

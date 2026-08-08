@@ -50,6 +50,16 @@ Route::get('/acentalar/{agency}', [AgencyController::class, 'show'])->name('agen
 Route::get('/destinasyonlar/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show');
 Route::get('/blog', [PostController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('blog.show');
+
+// Yasal / kurumsal sayfalar — hepsi statik view, controller gerektirmiyor.
+// Künye bilgileri config/company.php'den gelir (.env COMPANY_* anahtarları).
+Route::view('/nasil-calisir', 'legal.nasil-calisir')->name('legal.nasil-calisir');
+Route::view('/iletisim', 'legal.iletisim')->name('legal.iletisim');
+Route::view('/gizlilik', 'legal.gizlilik')->name('legal.gizlilik');
+Route::view('/kvkk-aydinlatma-metni', 'legal.kvkk')->name('legal.kvkk');
+Route::view('/cerez-politikasi', 'legal.cerez-politikasi')->name('legal.cerez');
+Route::view('/kullanim-kosullari', 'legal.kullanim-kosullari')->name('legal.kosullar');
+Route::view('/siralama-kriterleri', 'legal.siralama-kriterleri')->name('legal.siralama');
 // Tur eşleştirme testi — chatbot dondurmasından ETKİLENMEZ (LLM'siz çalışır)
 Route::middleware('throttle:ai_search')->group(function () {
     Route::get('/tatil-karakteri', [\App\Http\Controllers\RecreationQuizController::class, 'definition'])->name('recreation.quiz.definition');
