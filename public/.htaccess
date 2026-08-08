@@ -5,6 +5,12 @@
 
     RewriteEngine On
 
+    # /storage altı kullanıcı yüklemesidir — orada hiçbir şey çalıştırılmaz.
+    # Uzantı zaten TourImageService'te içerik tipinden türetiliyor; bu ikinci
+    # savunma hattı. NOT: sunucu nginx ise .htaccess yok sayılır, karşılığı:
+    #   location ^~ /storage/ { location ~ \.(php|phar|phtml)$ { deny all; } }
+    RewriteRule ^storage/.*\.(php|phar|phtml|php[0-9]|pl|py|cgi|sh)$ - [F,L,NC]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

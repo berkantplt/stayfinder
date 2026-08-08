@@ -50,9 +50,20 @@ class TourImageService
             throw new RuntimeException('Sadece görsel dosyaları kabul edilir.');
         }
 
-        $ext = strtolower($file->getClientOriginalExtension() ?: '');
-        if ($ext === '') {
-            $ext = self::EXT_BY_MIME[$mime] ?? 'img';
+        // Yüklenen SVG galeriye girmez — uzak indirmede (downloadAndStore) zaten
+        // engelli. SVG, aynı origin'de çalışan script taşıyabilir: depolanan XSS.
+        if ($mime === 'image/svg+xml') {
+            throw new RuntimeException('SVG dosyaları kabul edilmiyor. JPG, PNG, WEBP veya AVIF yükleyin.');
+        }
+
+        // Uzantı YALNIZCA doğrulanmış içerik tipinden türetilir.
+        // getClientOriginalExtension() dosya ADINDAN gelir ve saldırganın
+        // kontrolündedir: "payload.php" + GIF89a başlığı, finfo'yu image/gif
+        // olarak geçip diske .php uzantısıyla yazılıyordu. /storage altında
+        // PHP çalıştırma açık olduğu için bu uzaktan kod çalıştırma demekti.
+        $ext = self::EXT_BY_MIME[$mime] ?? null;
+        if ($ext === null) {
+            throw new RuntimeException('Bu görsel biçimi desteklenmiyor. JPG, PNG, WEBP veya AVIF yükleyin.');
         }
 
         $name = self::DIR.'/'.Str::uuid()->toString().'.'.$ext;

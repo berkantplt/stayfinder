@@ -24,7 +24,8 @@ class CouponController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code',
+            // Kod HTML/JS bağlamlarında basılıyor — karakter kümesi kısıtlı tutuluyor.
+            'code' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:coupons,code'],
             'discount_type' => 'required|in:percent,fixed',
             'discount_value' => 'required|numeric|min:0',
             'min_purchase_amount' => 'nullable|numeric|min:0',

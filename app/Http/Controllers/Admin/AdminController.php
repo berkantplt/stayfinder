@@ -391,30 +391,47 @@ class AdminController extends Controller
 
     public function storeAgency(Request $request)
     {
+        // E-posta ZORUNLU ve benzersiz: eskiden acenta adından türetiliyordu
+        // ("admin@seturege.com") ve şifre sabit 'password' idi — acenta adını
+        // gören herkes panele girebiliyordu. Giriş bilgisi artık tahmin
+        // edilemez ve yalnızca bu isteğin cevabında bir kez gösterilir.
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string',
-            'email' => 'nullable|email',
+            'email' => 'required|email|max:255|unique:users,email',
             'website_url' => 'nullable|url',
             'description' => 'nullable|string',
         ]);
 
-        $agency = Agency::create(array_merge($validated, [
-            'approval_status' => Agency::STATUS_APPROVED,
-            'approved_at' => now(),
-            'approved_by' => auth()->id(),
-        ]));
+        $password = Str::password(16, symbols: false);
 
-        User::create([
-            'name' => $agency->name.' Yönetici',
-            'email' => 'admin@'.strtolower(str_replace(' ', '', $agency->name)).'.com',
-            'password' => Hash::make('password'),
-            'role' => 'agency',
-            'agency_id' => $agency->id,
-        ]);
+        // Acenta + kullanıcı tek işlemde: kullanıcı oluşturma patlarsa
+        // sahipsiz (girilemeyen) bir acenta kaydı kalmasın.
+        $agency = DB::transaction(function () use ($validated, $password) {
+            $agency = Agency::create(array_merge($validated, [
+                'approval_status' => Agency::STATUS_APPROVED,
+                'approved_at' => now(),
+                'approved_by' => auth()->id(),
+            ]));
+
+            User::create([
+                'name' => $agency->name.' Yönetici',
+                'email' => $validated['email'],
+                'password' => Hash::make($password),
+                'role' => 'agency',
+                'agency_id' => $agency->id,
+            ]);
+
+            return $agency;
+        });
 
         return redirect()->route('admin.agencies')
-            ->with('success', 'Acenta oluşturuldu.');
+            ->with('success', 'Acenta oluşturuldu.')
+            ->with('new_agency_credentials', [
+                'agency' => $agency->name,
+                'email' => $validated['email'],
+                'password' => $password,
+            ]);
     }
 
     public function approveAgencyApplication(Request $request, Agency $agency)

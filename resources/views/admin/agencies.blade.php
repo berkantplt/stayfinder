@@ -15,6 +15,28 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
+        {{-- Giriş bilgisi YALNIZCA bir kez gösterilir: şifre hash'lenmiş olarak
+             saklandığı için bu sayfadan ayrıldıktan sonra bir daha görüntülenemez. --}}
+        @if($creds = session('new_agency_credentials'))
+            <div class="card" style="margin-bottom:24px;padding:20px;border:2px solid #0d9488;background:#f0fdfa;">
+                <div style="font-weight:800;color:#0f766e;margin-bottom:6px;">{{ $creds['agency'] }} — giriş bilgileri</div>
+                <p style="font-size:13px;color:#475569;margin-bottom:12px;">
+                    Bu şifre <strong>yalnızca şimdi</strong> görünüyor. Acentaya güvenli bir kanaldan iletin ve
+                    ilk girişte değiştirmelerini isteyin.
+                </p>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                    <div style="flex:1;min-width:220px;">
+                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">E-posta</div>
+                        <div style="font-family:monospace;font-size:15px;font-weight:700;">{{ $creds['email'] }}</div>
+                    </div>
+                    <div style="flex:1;min-width:220px;">
+                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">Geçici şifre</div>
+                        <div style="font-family:monospace;font-size:15px;font-weight:700;">{{ $creds['password'] }}</div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- Search & Filter Form --}}
         <div class="card" style="margin-bottom:24px;padding:20px;max-width:94%;margin-left:auto;margin-right:auto;">
             <form id="search-form" action="{{ route('admin.agencies') }}" method="GET" style="display:flex;gap:15px;align-items:flex-end;flex-wrap:wrap;">

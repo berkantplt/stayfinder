@@ -25,8 +25,11 @@ class TourController extends Controller
      */
     public function uploadImage(Request $request)
     {
+        // 'file' değil 'image' + mimes: ilk kapı burası olmalı.
+        // Uzantı artık servis tarafında içerik tipinden türetiliyor
+        // (TourImageService::storeUpload), bu kural ikinci savunma hattı.
         $request->validate([
-            'image' => 'required|file|max:20480',
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp,avif,gif|max:20480',
         ]);
 
         try {

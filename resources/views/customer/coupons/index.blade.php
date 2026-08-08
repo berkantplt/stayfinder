@@ -54,7 +54,12 @@
                         <div style="padding:14px 18px;border-top:1px dashed {{ $borderColor }};border-bottom:1px dashed {{ $borderColor }};display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fafafa;">
                             @if($isClaimed)
                                 <div style="font-family:monospace;font-size:16px;font-weight:800;color:#0f172a;letter-spacing:1px;flex:1;overflow-x:auto;">{{ $coupon->code }}</div>
-                                <button type="button" onclick="window.copyCouponCode(this, '{{ $coupon->code }}')" style="background:{{ $accentColor }};color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                                {{-- Kod data-* ile taşınır, onclick içinde DEĞİL: attribute'taki
+                                     karakter referansları HTML ayrıştırıcısı tarafından JS'e
+                                     verilmeden önce çözülür, yani Blade'in {{ }} kaçışı bir JS
+                                     string bağlamında yeterli değildir. dataset okuması JS
+                                     bağlamı yaratmadığı için bu yüzeyi tamamen kapatır. --}}
+                                <button type="button" class="js-copy-coupon" data-code="{{ $coupon->code }}" style="background:{{ $accentColor }};color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
                                     📋 Kopyala
                                 </button>
                             @else
@@ -121,6 +126,11 @@
 </style>
 
 <script>
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.js-copy-coupon');
+        if (btn) window.copyCouponCode(btn, btn.dataset.code || '');
+    });
+
     window.copyCouponCode = function (btn, code) {
         const original = btn.innerHTML;
         navigator.clipboard.writeText(code).then(() => {

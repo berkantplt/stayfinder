@@ -215,8 +215,12 @@
                                                 </td>
                                                 <td>
                                                     @if($ownership->subscription)
+                                                        {{-- Kategori adı data-* ile taşınır: adı acenta talep ediyor
+                                                             (CategoryRequest.requested_name → Category.name), yani
+                                                             onsubmit içindeki JS string'ine girdiğinde admin
+                                                             oturumunda kod çalıştırılabiliyordu. --}}
                                                         <form method="POST" action="{{ route('admin.agencies.categories.revoke', [$agency, $ownership->subscription]) }}"
-                                                              onsubmit="return confirm('{{ $ownership->category->name }} aboneliği iptal edilecek ve bu kategorideki turlar yayından kalkacak. Emin misiniz?');"
+                                                              class="js-confirm-revoke" data-category="{{ $ownership->category->name }}"
                                                               style="margin:0;">
                                                             @csrf
                                                             <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;padding:6px 10px;white-space:nowrap;">İptal</button>
@@ -341,3 +345,16 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('submit', function (e) {
+        const form = e.target.closest('.js-confirm-revoke');
+        if (!form) return;
+        const ad = form.dataset.category || 'Bu kategori';
+        if (!confirm(ad + ' aboneliği iptal edilecek ve bu kategorideki turlar yayından kalkacak. Emin misiniz?')) {
+            e.preventDefault();
+        }
+    });
+</script>
+@endpush
