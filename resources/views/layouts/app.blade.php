@@ -1159,6 +1159,54 @@
     })();
     </script>
 
+    {{-- ⚠️ Eşleştirme testinin BAĞIMSIZ giriş noktası — guard'ın DIŞINDA.
+         turxturQuiz modülü sohbetten bağımsız (LLM'siz) çalışıyor ama tek
+         açıcısı bir dönem $hideAiChat guard'ının içindeydi: sohbet donduğunda
+         teste hiçbir yerden ulaşılamıyordu. Bu modal kendi kabını sağladığı
+         için sohbet widget'ı olmadan da açılır. window.openTurxturQuiz()
+         her sayfadan çağrılabilir. --}}
+    <div id="quiz-modal" role="dialog" aria-modal="true" aria-label="Tur eşleştirme testi"
+         style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(15,23,42,0.55); backdrop-filter:blur(4px); padding:20px; overflow-y:auto;">
+        <div style="max-width:580px; margin:40px auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px;">
+                <div style="color:#fff; font-weight:800; font-size:17px; letter-spacing:-0.3px;">Sana uygun turu bulalım</div>
+                <button type="button" id="quiz-modal-close" aria-label="Testi kapat"
+                        style="border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1); color:#fff; border-radius:999px; width:34px; height:34px; font-size:18px; line-height:1; cursor:pointer;">×</button>
+            </div>
+            <div id="quiz-modal-body"></div>
+        </div>
+    </div>
+    <script>
+        window.openTurxturQuiz = function () {
+            const modal = document.getElementById('quiz-modal');
+            const body = document.getElementById('quiz-modal-body');
+            if (!modal || !body || !window.turxturQuiz) return;
+            body.innerHTML = '';
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            window.turxturQuiz.open({ container: body, theme: 'light' });
+        };
+        window.closeTurxturQuiz = function () {
+            const modal = document.getElementById('quiz-modal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            const body = document.getElementById('quiz-modal-body');
+            if (body) body.innerHTML = '';
+        };
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('#quiz-modal-close')) { window.closeTurxturQuiz(); return; }
+            // Karta değil, karartılmış zemine tıklandıysa kapat
+            if (e.target.id === 'quiz-modal') window.closeTurxturQuiz();
+            if (e.target.closest('.js-open-quiz')) { e.preventDefault(); window.openTurxturQuiz(); }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            const modal = document.getElementById('quiz-modal');
+            if (modal && modal.style.display === 'block') window.closeTurxturQuiz();
+        });
+    </script>
+
     @php
         // ❄️ Sohbet asistanı dondurulmuş durumda (config/ai.php: chat_enabled)
         $hideAiChat = ! config('ai.chat_enabled')

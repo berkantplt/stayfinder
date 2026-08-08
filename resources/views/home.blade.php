@@ -334,6 +334,25 @@
     </div>
     @endif
 
+    {{-- Tur eşleştirme testi girişi — .js-open-quiz layouts/app.blade.php'deki
+         global açıcıya bağlanır, sohbet bayrağından bağımsız çalışır. --}}
+    <div class="section">
+        <div style="border:1px solid var(--border);border-radius:16px;padding:24px;background:linear-gradient(135deg,#f0fdfa,#ecfeff);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;">
+            <div style="flex:1;min-width:260px;">
+                <div style="font-size:19px;font-weight:800;letter-spacing:-0.4px;color:#0f172a;margin-bottom:6px;">
+                    Hangi tur sana uygun, bilmiyor musun?
+                </div>
+                <p style="font-size:14px;color:#475569;line-height:1.6;margin:0;max-width:56ch;">
+                    8 kısa soru cevapla, sana en uygun turları gerekçesiyle birlikte sıralayalım.
+                    Üyelik gerekmez, bir dakika sürer.
+                </p>
+            </div>
+            <button type="button" class="btn btn-primary js-open-quiz" style="white-space:nowrap;padding:12px 22px;font-weight:700;">
+                Testi başlat →
+            </button>
+        </div>
+    </div>
+
     {{-- Popular Tours --}}
     <div class="section" id="tours-section">
         <div class="section-header">
