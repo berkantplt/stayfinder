@@ -54,7 +54,7 @@ class Tour extends Model
 
     protected $fillable = [
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
-        'price', 'currency', 'duration_days', 'duration_nights', 'departure_date',
+        'price', 'currency', 'duration_days', 'duration_nights', 'transport_type', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'images', 'tour_url', 'is_active',
         'views_count', 'clicks_count', 'embedding', 'search_text', 'is_international', 'requires_visa',
         'departure_points', 'itinerary', 'hotel_info', 'extras',
@@ -108,6 +108,60 @@ class Tour extends Model
         }
 
         return $gece.' gece '.$gun.' gün';
+    }
+
+    /** Kabul edilen ulaşım tipleri → kartta gösterilecek ad. */
+    public const TRANSPORT_TYPES = [
+        'ucak' => 'Uçak',
+        'otobus' => 'Otobüs',
+        'feribot' => 'Feribot',
+        'gemi' => 'Gemi',
+        'tren' => 'Tren',
+        'kendi' => 'Kendi aracınızla',
+    ];
+
+    /**
+     * Kart etiketi: "Gidiş Dönüş Otobüs". Tek araçla gidilip dönülmesi
+     * varsayılıyor (bkz. migration notu). Kendi aracıyla gidilen turda
+     * "gidiş dönüş" ifadesi anlamsız olduğu için o tip düz yazılır.
+     */
+    public function getTransportLabelAttribute(): string
+    {
+        $tip = $this->transport_type;
+        if (! $tip || ! isset(self::TRANSPORT_TYPES[$tip])) {
+            return '';
+        }
+
+        if ($tip === 'kendi') {
+            return self::TRANSPORT_TYPES[$tip];
+        }
+
+        return 'Gidiş Dönüş '.self::TRANSPORT_TYPES[$tip];
+    }
+
+    /**
+     * "İstanbul, Ankara çıkışlı" — kalkış ili + yol üstünde yolcu alınan iller.
+     * Kalkış ili boşsa boş döner (kart satırı hiç basılmaz).
+     */
+    public function getDepartureLabelAttribute(): string
+    {
+        $sehirler = array_values(array_filter(array_merge(
+            [$this->departure_city],
+            (array) ($this->stop_cities ?? [])
+        )));
+
+        if ($sehirler === []) {
+            return '';
+        }
+
+        // Kart dar: üçten fazlasını "+N" ile kısalt.
+        if (count($sehirler) > 3) {
+            $gosterilen = array_slice($sehirler, 0, 3);
+
+            return implode(', ', $gosterilen).' +'.(count($sehirler) - 3).' çıkışlı';
+        }
+
+        return implode(', ', $sehirler).' çıkışlı';
     }
 
     public function needsCharacterEnrichment(): bool

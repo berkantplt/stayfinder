@@ -39,7 +39,7 @@
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
                     <div class="price-tag" style="font-size:18px;">{{ $tour->formatted_price }}</div>
-                    <div style="font-size:12px;color:var(--text-muted);">/ kişi</div>
+                    <div style="font-size:12px;color:var(--text-muted);">/ kişi başı</div>
                 </div>
             </a>
             @empty

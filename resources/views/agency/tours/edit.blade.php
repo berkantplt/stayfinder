@@ -267,6 +267,16 @@
                         <div class="form-group"><label>Destinasyon *</label><input type="text" name="destination" value="{{ old('destination', $tour->destination) }}" required></div>
                         <div class="form-group"><label>Süre (gün) *</label><input type="number" id="durationDaysInput" name="duration_days" value="{{ old('duration_days', $tour->duration_days) }}" min="1" required></div>
                         <div class="form-group">
+                            <label>Ulaşım</label>
+                            <select name="transport_type" id="transportTypeInput">
+                                <option value="">Belirtilmedi</option>
+                                @foreach(\App\Models\Tour::TRANSPORT_TYPES as $kod => $ad)
+                                    <option value="{{ $kod }}" {{ old('transport_type', $tour->transport_type) === $kod ? 'selected' : '' }}>{{ $ad }}</option>
+                                @endforeach
+                            </select>
+                            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Kartta "Gidiş Dönüş Otobüs" şeklinde görünür.</div>
+                        </div>
+                        <div class="form-group">
                             <label>Gece</label>
                             <input type="number" id="durationNightsInput" name="duration_nights" value="{{ old('duration_nights', $tour->duration_nights) }}" min="0" max="255" placeholder="Boş = gün − 1">
                             <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Turda "7 gece 8 gün" yazacak. Boş bırakırsan gün−1 varsayılır; konaklamasız günübirlik turda 0 yaz.</div>

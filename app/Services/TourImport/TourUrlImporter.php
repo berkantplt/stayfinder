@@ -2097,6 +2097,10 @@ JS;
         - stop_cities (array): yol üstünde yolcu ALINAN diğer İLLER (81 ilden). Biniş noktası
           ilçeyse bağlı olduğu ili yaz (ör. "Gebze"/"İzmit" → "Kocaeli"; "Söğütözü" → "Ankara").
           Kalkış ilini buraya KOYMA. Sadece il adları; yoksa boş dizi.
+        - transport_type (string|null): turun ULAŞIM aracı. Yalnızca şunlardan biri:
+          "ucak", "otobus", "feribot", "gemi", "tren", "kendi". Başlıkta/sayfada havayolu
+          adı geçiyorsa ("Pegasus ile", "THY ile", "AJet") → "ucak". "Otobüs/lüks otobüs"
+          → "otobus". Kesin değilse null; TAHMİN ETME.
         - hotel_info (string|null): konaklama bilgisi — konaklanacak TÜM otel adlarını
           (ör. "Suhan Cappadocia, Crowne Plaza, Emin Koçak Cappadocia vb.") ve varsa
           özelliklerini (yıldız vb.) yaz. Sayfadaki "Konaklama:" satırını eksiksiz al.
@@ -2565,6 +2569,10 @@ JS;
             'stop_cities' => $stopCities,
             'duration_days' => $duration,
             'duration_nights' => $nights,
+            'transport_type' => $this->normalizeTransportType(
+                $raw['transport_type'] ?? null,
+                (string) ($raw['title'] ?? '')
+            ),
             'currency' => $currency,
             'price' => $price,
             'description' => $this->lines($raw['description'] ?? null, 5000),
@@ -2589,6 +2597,42 @@ JS;
      *
      * @return array<int, array{dates: array<int, string>, packages: array<int, array{hotel: string, prices: array<string, array{old: ?float, new: ?float}>}>}>
      */
+    /**
+     * Ulaşım tipini beyaz listeye indirger. LLM boş bıraktıysa başlıktan
+     * deterministik olarak türetmeyi dener — Türk tur başlıklarının çoğunda
+     * havayolu adı ya da "otobüs" kelimesi geçiyor ("... Pegasus ile 3 Gece").
+     * Emin olunamıyorsa null: yanlış ulaşım bilgisi hiç bilgi olmamasından kötü.
+     */
+    private function normalizeTransportType(mixed $deger, string $title): ?string
+    {
+        $tip = is_string($deger) ? mb_strtolower(trim($deger), 'UTF-8') : '';
+        $tip = strtr($tip, ['ç' => 'c', 'ğ' => 'g', 'ı' => 'i', 'ö' => 'o', 'ş' => 's', 'ü' => 'u']);
+
+        if (isset(Tour::TRANSPORT_TYPES[$tip])) {
+            return $tip;
+        }
+
+        $baslik = mb_strtolower($title, 'UTF-8');
+
+        if (preg_match('/\botob[üu]s\b|l[üu]ks otob[üu]s/u', $baslik)) {
+            return 'otobus';
+        }
+        if (preg_match('/\bu[çc]ak\b|hava\s*yollar[ıi]|havayolu|pegasus|t[üu]rk hava|thy|ajet|sunexpress|anadolujet/u', $baslik)) {
+            return 'ucak';
+        }
+        if (preg_match('/\bferibot\b/u', $baslik)) {
+            return 'feribot';
+        }
+        if (preg_match('/\bgemi\b|cruise/u', $baslik)) {
+            return 'gemi';
+        }
+        if (preg_match('/\btren\b|ekspres/u', $baslik)) {
+            return 'tren';
+        }
+
+        return null;
+    }
+
     private function normalizePricingBlocks(mixed $raw): array
     {
         if (! is_array($raw)) {

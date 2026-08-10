@@ -577,7 +577,7 @@
                         <div class="p-price" style="margin:10px 0 4px;">
                             <span style="text-decoration:line-through;color:var(--text-muted);font-size:16px;">{{ $tour->formatted_price }}</span>
                             <span class="price-tag cheapest" style="font-size:32px;margin-left:8px;color:var(--green);">{{ $campaign->formatted_discount_price }}</span>
-                            <span class="price-sm"> / kişi</span>
+                            <span class="price-sm"> / kişi başı</span>
                         </div>
                         {{-- Countdown --}}
                         <div id="campaign-countdown" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:var(--radius);padding:10px 14px;margin:12px 0 8px;text-align:center;">
@@ -605,7 +605,7 @@
                         </div>
                         <div class="p-price" style="margin:12px 0 4px;">
                             <span class="price-tag cheapest" style="font-size:32px;">{{ $tour->formatted_price }}</span>
-                            <span class="price-sm"> / kişi</span>
+                            <span class="price-sm"> / kişi başı</span>
                         </div>
                     @endif
                     <div class="p-agency" style="margin-bottom:16px;">

@@ -216,6 +216,7 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                             {{ $tour->destination }} · {{ $tour->duration_label }}
                         </div>
+                            @include('partials.tour_card_meta', ['tour' => $tour])
                         @if($tour->dates->count())
                             <div class="card-meta" style="display:flex;align-items:center;gap:4px;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -237,6 +238,7 @@
                                 @else
                                     <div class="price-tag" style="font-size:20px;">{{ $tour->formatted_price }}</div>
                                 @endif
+                                <div style="font-size:12px;color:var(--text-muted);">/ kişi başı</div>
                             </div>
                             <div style="display:flex;gap:8px;">
                                 <button type="button" class="btn btn-outline btn-sm compare-toggle" data-tour-id="{{ $tour->id }}" onclick="event.preventDefault(); window.toggleCompare({{ $tour->id }})" style="border-radius:8px;font-size:12px;padding:6px 10px;">+ Karşılaştır</button>

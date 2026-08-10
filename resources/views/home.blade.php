@@ -404,9 +404,10 @@
                 <div class="card-body">
                     <div class="card-title">{{ $tour->title }}</div>
                     <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_label }}</div>
+                    @include('partials.tour_card_meta', ['tour' => $tour])
                     <div style="margin-top:8px;">
                         <span class="price-tag" style="font-size:18px;">{{ $tour->formatted_price }}</span>
-                        <span class="price-sm"> / kişi</span>
+                        <span class="price-sm"> / kişi başı</span>
                     </div>
                 </div>
             </a>
