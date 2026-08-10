@@ -8,6 +8,7 @@ use App\Models\Tour;
 use App\Services\AiSearch\ConversationService;
 use App\Services\AiSearch\DestinationProfileService;
 use App\Services\KnowledgeService;
+use App\Support\DestinationFilter;
 use App\Support\OpenAiChatParams;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Builder;
@@ -1728,13 +1729,19 @@ class AiSearchController extends Controller
             return;
         }
 
-        $query->where(function (Builder $destinationQuery) use ($terms) {
+        // Kolon ifadesi ile terim AYNI normalizasyondan geçmeli. Eskiden terim
+        // PHP'de, kolon SQL LOWER() ile küçültülüyordu; ikisi 'İ' ve 'ı' harflerinde
+        // ayrışıyor ve "Ayvalık" kaydı hiçbir aramada bulunamıyordu.
+        $destinasyon = DestinationFilter::columnExpression('destination');
+        $baslik = DestinationFilter::columnExpression('title');
+
+        $query->where(function (Builder $destinationQuery) use ($terms, $destinasyon, $baslik) {
             foreach ($terms as $index => $term) {
                 $operator = $index === 0 ? 'whereRaw' : 'orWhereRaw';
-                $like = '%'.$term.'%';
+                $like = '%'.DestinationFilter::normalize($term).'%';
 
-                $destinationQuery->{$operator}('LOWER(destination) LIKE ?', [$like]);
-                $destinationQuery->orWhereRaw('LOWER(title) LIKE ?', [$like]);
+                $destinationQuery->{$operator}("{$destinasyon} LIKE ?", [$like]);
+                $destinationQuery->orWhereRaw("{$baslik} LIKE ?", [$like]);
             }
         });
     }
@@ -1749,10 +1756,12 @@ class AiSearchController extends Controller
             foreach ($excludedDestinations as $destination) {
                 $terms = $this->destinationSearchTerms((string) $destination);
                 foreach ($terms as $term) {
-                    $like = '%'.$term.'%';
-                    $scope->where(function (Builder $row) use ($like) {
-                        $row->whereRaw('LOWER(COALESCE(destination, \'\')) NOT LIKE ?', [$like])
-                            ->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', [$like]);
+                    $like = '%'.DestinationFilter::normalize($term).'%';
+                    $destinasyon = DestinationFilter::columnExpression("COALESCE(destination, '')");
+                    $baslik = DestinationFilter::columnExpression("COALESCE(title, '')");
+                    $scope->where(function (Builder $row) use ($like, $destinasyon, $baslik) {
+                        $row->whereRaw("{$destinasyon} NOT LIKE ?", [$like])
+                            ->whereRaw("{$baslik} NOT LIKE ?", [$like]);
                     });
                 }
             }

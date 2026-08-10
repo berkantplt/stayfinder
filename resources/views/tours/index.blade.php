@@ -78,10 +78,11 @@
 
                 <div class="filter-group">
                     <label class="filter-label">Destinasyon</label>
-                    <select name="destination" class="filter-select">
+                    @include('partials.searchable-select')
+                    <select name="destination" class="filter-select" data-searchable>
                         <option value="">Tümü</option>
                         @foreach($destinations as $dest)
-                            <option value="{{ $dest }}" {{ request('destination') == $dest ? 'selected' : '' }}>{{ $dest }}</option>
+                            <option value="{{ $dest['city'] }}" {{ request('destination') === $dest['city'] ? 'selected' : '' }}>{{ $dest['city'] }} ({{ $dest['count'] }})</option>
                         @endforeach
                     </select>
                 </div>

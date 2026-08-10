@@ -7,6 +7,7 @@ use App\Models\AiSearchLog;
 use App\Models\Category;
 use App\Models\Tour;
 use App\Models\TourView;
+use App\Support\DestinationFilter;
 use App\Support\TurkishCities;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,8 +29,10 @@ class TourController extends Controller
             });
         }
 
+        // Kelime sınırlı eşleşme: "Fethiye" seçimi "Ölüdeniz, Fethiye" turunu da
+        // bulur, ama "Kas" seçimi "Kastamonu"yu getirmez (bkz. DestinationFilter).
         if ($request->filled('destination')) {
-            $query->where('destination', $request->destination);
+            DestinationFilter::apply($query, $request->destination);
         }
 
         // Kalkış şehrim: kalkış şehri VEYA duraklarından biri eşleşen turlar.
@@ -98,8 +101,11 @@ class TourController extends Controller
 
         $tours = $query->paginate(12)->withQueryString();
 
-        $destinations = Tour::active()->select('destination')
-            ->distinct()->orderBy('destination')->pluck('destination');
+        // DISTINCT ham dizge DEĞİL: "Kapadokya, Nevşehir" listeden kalkar, yerine
+        // "Kapadokya" ve "Nevşehir" ayrı ayrı ve seçilebilir olarak gelir.
+        $destinations = DestinationFilter::vocabulary(
+            Tour::active()->whereHas('agency', fn ($q) => $q->active())
+        );
         $agencies = Agency::active()->orderBy('name')->get();
         $categories = Category::active()->parents()->with('children')->orderBy('sort_order')->get();
         $departureCities = TurkishCities::all();
@@ -146,10 +152,16 @@ class TourController extends Controller
             ->orderBy('price_try')
             ->get();
 
-        // Similar tours
-        $similarTours = Tour::with('agency')
-            ->active()
-            ->where('destination', $tour->destination)
+        // Similar tours — turun şehirlerinden HERHANGİ biri eşleşsin. Tam eşleşme
+        // kullanıldığında "Ölüdeniz, Fethiye" gibi turlar hiç benzer tur bulamıyordu;
+        // yalnız ilk şehre bakmak da yetmez (Ölüdeniz'de komşu yok, Fethiye'de var).
+        $sehirler = DestinationFilter::splitCities((string) $tour->destination)
+            ?: [(string) $tour->destination];
+
+        $similarTours = DestinationFilter::apply(
+            Tour::with('agency')->active(),
+            $sehirler
+        )
             ->where('id', '!=', $tour->id)
             ->whereNotIn('id', $otherOffers->pluck('id'))
             ->orderBy('price_try')

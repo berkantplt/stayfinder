@@ -11,12 +11,15 @@ use App\Models\PriceHistory;
 use App\Models\Tour;
 use App\Models\User;
 use App\Services\AiSearch\DestinationKnowledgeService;
+use App\Support\DestinationFilter;
 use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
     /** Filtre barı sayaç cache'i — TourObserver tur değişiminde bunu düşürür. */
-    public const FACETS_CACHE_KEY = 'home_filter_facets_v1';
+    // _v2: destinasyon eşleşmesi kelime sınırlı hale gelince sayılar değişti.
+    // Anahtarı artırmak, deploy sonrası eski sayıların 5 dk görünmesini önler.
+    public const FACETS_CACHE_KEY = 'home_filter_facets_v2';
 
     /** Yatay filtre barındaki gün bantları (etiket => [min, max]). */
     public const DAY_BANDS = [
@@ -97,7 +100,9 @@ class HomeController extends Controller
             ->limit(6)
             ->get()
             ->map(function ($dest) {
-                $stats = Tour::active()->where('destination', $dest->name);
+                // Kart sayacı filtreyle AYNI mantığı kullanmalı: tam eşleşmeyken
+                // "Yunanistan" kartı 2 yazıyor, tıklayınca 3 tur geliyordu.
+                $stats = DestinationFilter::apply(Tour::active(), $dest->name);
                 $dest->tour_count = $stats->count();
                 $dest->min_price = $stats->min('price_try'); // TL-normalize en düşük fiyat
 
@@ -147,7 +152,7 @@ class HomeController extends Controller
                     'country' => $city->country,
                     'link' => $city->link,
                     'images' => $city->images->map(fn ($img) => asset('storage/'.$img->image_path))->toArray(),
-                    'count' => Tour::active()->where('destination', $city->name)->count(),
+                    'count' => DestinationFilter::apply(Tour::active(), $city->name)->count(),
                 ];
             })
             // Show cities that have images, even if they have 0 tours currently
@@ -157,7 +162,7 @@ class HomeController extends Controller
         // Fallback for demo if DB is empty
         if ($featuredCities->isEmpty()) {
             $featuredCities = collect([
-                ['name' => 'Paris', 'country' => 'Fransa', 'images' => [asset('images/featured_cities/paris.png')], 'count' => Tour::active()->where('destination', 'Paris')->count()],
+                ['name' => 'Paris', 'country' => 'Fransa', 'images' => [asset('images/featured_cities/paris.png')], 'count' => DestinationFilter::apply(Tour::active(), 'Paris')->count()],
             ]);
         }
 
@@ -185,18 +190,15 @@ class HomeController extends Controller
 
         // Geriye dönük uyum: eski tekil ?destination= linkleri çalışmaya devam etsin
         if (request('destination')) {
-            $query->where('destination', request('destination'));
+            DestinationFilter::apply($query, request('destination'));
         }
 
         // Destinasyon (çoklu, envanter şehirleri): "Paris, Roma" rotası Paris
-        // seçiminde de bulunur
+        // seçiminde de bulunur. Naif LIKE'tan kelime sınırlı eşleşmeye alındı —
+        // aksi halde "Kos" seçimi "Kosova", "Bali" seçimi "Balıkesir" getiriyordu.
         $destinations = array_filter((array) request('destinations'), 'is_string');
         if ($destinations !== []) {
-            $query->where(function ($q) use ($destinations) {
-                foreach ($destinations as $city) {
-                    $q->orWhere('destination', 'like', '%'.$city.'%');
-                }
-            });
+            DestinationFilter::apply($query, $destinations);
         }
 
         // Ay(lar): tekil kalkış tarihi VEYA tarih listesinde o aya gelecek kalkış
@@ -247,11 +249,7 @@ class HomeController extends Controller
             if ($wanted === []) {
                 $query->whereRaw('1 = 0'); // profil verisi henüz yoksa uydurma sonuç dönme
             } else {
-                $query->where(function ($q) use ($wanted) {
-                    foreach ($wanted as $city) {
-                        $q->orWhere('destination', 'like', '%'.$city.'%');
-                    }
-                });
+                DestinationFilter::apply($query, $wanted);
             }
         }
 
@@ -326,11 +324,9 @@ class HomeController extends Controller
                     return 0;
                 }
 
-                return $base()->where(function ($q) use ($cities) {
-                    foreach ($cities as $city) {
-                        $q->orWhere('destination', 'like', '%'.$city.'%');
-                    }
-                })->count();
+                // Sayaç ile filtre AYNI yardımcıyı kullanmalı, yoksa rozette yazan
+                // sayı ile gelen sonuç sessizce ayrışır.
+                return DestinationFilter::apply($base(), $cities)->count();
             };
             $visa = [
                 'vizesiz' => $visaCount($visaCities['vizesiz']),

@@ -42,7 +42,7 @@
                     <select name="destination" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
                         <option value="">Tümü</option>
                         @foreach($destinations as $dest)
-                            <option value="{{ $dest }}" {{ request('destination') == $dest ? 'selected' : '' }}>{{ $dest }}</option>
+                            <option value="{{ $dest['city'] }}" {{ request('destination') === $dest['city'] ? 'selected' : '' }}>{{ $dest['city'] }} ({{ $dest['count'] }})</option>
                         @endforeach
                     </select>
                 </div>

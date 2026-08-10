@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\TourObserver;
 use App\Support\CategoryLicensing;
+use App\Support\DestinationFilter;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -215,9 +216,14 @@ class Tour extends Model
             });
     }
 
+    /**
+     * Naif LIKE'tı ("Kos" → "Kosova") tek doğru yola devrediyor.
+     * Not: bu scope uzun süre hiçbir yerden çağrılmadı — doğru mantık burada
+     * yazılıydı ama controller'lar tam eşleşme kullanmaya devam ediyordu.
+     */
     public function scopeDestination($query, string $destination)
     {
-        return $query->where('destination', 'like', "%{$destination}%");
+        return DestinationFilter::apply($query, $destination);
     }
 
     /**
