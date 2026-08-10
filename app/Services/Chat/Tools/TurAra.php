@@ -100,16 +100,21 @@ class TurAra implements ChatTool
             // doldurma denemesi"ni buradan okuyor, sessizce yutulmamalı
             $dusurulen = array_map(fn ($d) => Rubric::label($d), $profil['dusurulen']);
 
-            // İLK denemede sormak makul. AMA ikinci kez de boyut çıkmadıysa soru
-            // sormaya devam etmek kullanıcıyı döngüye sokuyor (kısa cevap veren
-            // kullanıcıda boyut hiç çıkmayabilir). O noktada eldeki kısıtlarla
-            // dürüst bir liste göstermek, aynı soruyu tekrarlamaktan iyidir.
-            if ($this->kullaniciTuru((string) ($args['transkript'] ?? '')) < 2) {
+            // Kullanıcı SOMUT kısıt verdiyse (Fethiye / 4-5 gün / bütçe...) elimizde
+            // arama yapacak kadar bilgi VAR — tatil tarzı boyutu çıkmadı diye soru
+            // sormak, cevabı bilerek geri çevirmek olur. Canlı şikayet: "fethiye
+            // turu düşünüyorum 2 kişi 4 veya 5 gün" mesajına tur yerine soru döndü.
+            //
+            // Soru sormak yalnızca ELDE HİÇBİR ŞEY YOKKA makul; orada da ikinci kez
+            // boş dönersek kullanıcıyı döngüye sokmamak için listeye düşülür.
+            $somutKisit = $this->somutKisitVarMi($baglam);
+
+            if (! $somutKisit && $this->kullaniciTuru((string) ($args['transkript'] ?? '')) < 2) {
                 return [
                     'turlar' => [],
                     'olculemeyen_boyutlar' => $dusurulen,
-                    'hata' => 'Hiçbir boyut doldurulamadı — kullanıcının ne istediğini anlatan '
-                        .'en az bir alıntı gerekiyor. Ona ne aradığını sor.',
+                    'hata' => 'Hiçbir boyut doldurulamadı ve elde kısıt da yok — kullanıcının '
+                        .'ne istediğini anlatan en az bir alıntı gerekiyor. Ona ne aradığını sor.',
                 ];
             }
 
@@ -123,10 +128,15 @@ class TurAra implements ChatTool
                 'toplam_uygun_tur' => $liste['toplam_eslesme'],
                 'olculemeyen_boyutlar' => $dusurulen,
                 'profilsiz_liste' => true,
-                'not' => 'Tercih profili çıkarılamadı; bunlar yalnız verdiği kısıtlara uyan, '
-                    .'kalkışı en yakın turlar. Bunları "sana %X uyumlu" diye sunma — '
-                    .'"elimdekilerden öne çıkanlar" çerçevesinde göster. Soru sorma; '
-                    .'istersen kapanışta tek bir daraltma sorusu sorabilirsin.',
+                'not' => $somutKisit
+                    ? 'Kullanıcının verdiği kısıtlara uyan turlar bunlar. ÖNCE BUNLARI GÖSTER — '
+                        .'"boyut çıkmadı", "arama sonuç vermedi" gibi teknik gerekçe ANLATMA, '
+                        .'kullanıcıyı ilgilendirmiyor. "Sana %X uyumlu" da deme (tercih profili '
+                        .'yok). Kartları verdikten SONRA istersen tek bir daraltma sorusu sor.'
+                    : 'Tercih profili çıkarılamadı; bunlar yalnız verdiği kısıtlara uyan, '
+                        .'kalkışı en yakın turlar. Bunları "sana %X uyumlu" diye sunma — '
+                        .'"elimdekilerden öne çıkanlar" çerçevesinde göster. Soru sorma; '
+                        .'istersen kapanışta tek bir daraltma sorusu sorabilirsin.',
             ];
         }
 
@@ -174,6 +184,33 @@ class TurAra implements ChatTool
      * Transkript kullanıcı satırlarından oluşur (ChatAgent birleştirir); satır
      * sayısı kaçıncı kez denendiğini verir. Ayrı sayaç taşımaya gerek yok.
      */
+    /**
+     * Kullanıcı arama yapmaya yetecek somut bir kısıt verdi mi?
+     *
+     * "Fethiye", "4-5 gün", "20 bin TL'ye kadar" gibi şeyler tatil TARZI
+     * (sakinlik/tempo) söylemez ama katalogda arama yapmaya fazlasıyla yeter.
+     * Bu varken soru sormak, cevabı bilerek geri çevirmek olur.
+     *
+     * yurt_disi tek başına sayılmaz: "yurt dışı olsun" hâlâ yüzlerce turu
+     * kapsıyor, daraltıcı değil.
+     */
+    private function somutKisitVarMi(array $baglam): bool
+    {
+        foreach (['destinasyon', 'kalkis_sehri'] as $anahtar) {
+            if (trim((string) ($baglam[$anahtar] ?? '')) !== '') {
+                return true;
+            }
+        }
+
+        foreach (['gun_min', 'gun_max', 'butce_max_try'] as $anahtar) {
+            if (($baglam[$anahtar] ?? 0) > 0) {
+                return true;
+            }
+        }
+
+        return is_array($baglam['aylar'] ?? null) && $baglam['aylar'] !== [];
+    }
+
     private function kullaniciTuru(string $transkript): int
     {
         return count(array_filter(

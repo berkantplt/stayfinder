@@ -168,11 +168,10 @@ class TourMatcher
      */
     public function listele(array $baglam = [], int $limit = 5): array
     {
-        $puanliIdler = TourRubricScore::where('rubric_version', Rubric::VERSION)
-            ->where('review_status', '!=', TourRubricScore::STATUS_NEEDS_REVIEW)
-            ->pluck('tour_id')->all();
-
-        [$adaylar] = $this->hardFilter($baglam, Rubric::resultRules(), [], $puanliIdler);
+        // Rubrik puanı ŞART DEĞİL: bu liste puanı kullanmıyor, kalkış tarihine göre
+        // sıralıyor. Puan şartı koyulduğunda katalog henüz puanlanmamışsa sohbet
+        // hiçbir tur gösteremiyordu — kullanıcı somut kısıt verse bile.
+        [$adaylar] = $this->hardFilter($baglam, Rubric::resultRules(), [], null);
 
         $sirali = $adaylar->sort(function (Tour $a, Tour $b) {
             $aDate = $a->departure_date?->timestamp ?? PHP_INT_MAX;
@@ -295,7 +294,11 @@ class TourMatcher
      * @param  int[]  $puanliTurIds  yalnız yayınlanabilir puanı olan turlar
      * @return array{0: Collection<int, Tour>, 1: string[]}
      */
-    private function hardFilter(array $baglam, array $rules, array $notlar, array $puanliTurIds): array
+    /**
+     * @param  array<int, int>|null  $puanliTurIds  null = rubrik puanı ŞARTI YOK
+     *                                              (profilsiz listeleme), [] = puanlı tur yok
+     */
+    private function hardFilter(array $baglam, array $rules, array $notlar, ?array $puanliTurIds): array
     {
         if ($puanliTurIds === []) {
             return [collect(), $notlar];
@@ -309,7 +312,11 @@ class TourMatcher
                 ->select(['id', 'agency_id', 'title', 'destination', 'price', 'currency', 'price_try',
                     'duration_days', 'duration_nights', 'image', 'departure_date', 'departure_points', 'is_active'])
                 ->with('agency:id,name,is_active')
-                ->whereIn('id', $puanliTurIds)
+                // null: profilsiz listeleme — rubrik puanı aranmaz. Bu liste zaten
+                // puanı KULLANMIYOR (kalkış tarihine göre sıralanıyor); puan şartı
+                // koymak, katalog puanlanmadan sohbetin hiçbir tur gösterememesine
+                // yol açıyordu.
+                ->when($puanliTurIds !== null, fn ($qq) => $qq->whereIn('id', $puanliTurIds))
                 ->active()
                 ->whereHas('agency', fn ($aq) => $aq->active())
                 ->where(function ($dq) use ($today) {

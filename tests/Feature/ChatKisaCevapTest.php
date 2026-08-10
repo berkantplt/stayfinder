@@ -152,4 +152,84 @@ class ChatKisaCevapTest extends TestCase
         $this->assertNotNull($sonuc['iz'][0]['hata'], 'İlk turda sormak hâlâ doğru');
         $this->assertSame([], $sonuc['turlar']);
     }
+
+    /**
+     * Canlı şikayet: "fethiye turu düşünüyorum 2 kişi olarak 4 veya 5 gün olabilir"
+     * mesajına bot tur yerine SORU döndürdü. Kullanıcı somut kısıt verdiyse
+     * (destinasyon/gün/bütçe) tatil tarzı boyutu çıkmasa bile liste gösterilmeli.
+     */
+    public function test_ilk_turda_somut_kisit_varsa_soru_degil_liste_doner(): void
+    {
+        $this->makeTour('Fethiye Kaçamağı', ['destination' => 'Fethiye', 'duration_days' => 4]);
+        $this->makeTour('Trabzon Yaylası', ['destination' => 'Trabzon', 'duration_days' => 4]);
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => [],
+                'filtre' => ['destinasyon' => 'Fethiye', 'gun_min' => 4, 'gun_max' => 5],
+            ]),
+            $this->textResponse('Fethiye için öne çıkanlar bunlar.'),
+        ]);
+
+        $sonuc = app(ChatAgent::class)->handle('fethiye turu düşünüyorum 2 kişi olarak 4 veya 5 gün olabilir');
+
+        $this->assertNull($sonuc['iz'][0]['hata'], 'Somut kısıt varken soru sorulmamalı');
+        $this->assertNotEmpty($sonuc['turlar'], 'Kullanıcıya kart gösterilmeli');
+        $this->assertSame('Fethiye Kaçamağı', $sonuc['turlar'][0]['title']);
+    }
+
+    public function test_butce_tek_basina_da_somut_kisittir(): void
+    {
+        $this->makeTour('Uygun Tur', ['price' => 8000]);
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => [],
+                'filtre' => ['butce_max_try' => 20000],
+            ]),
+            $this->textResponse('Bütçene uyanlar.'),
+        ]);
+
+        $sonuc = app(ChatAgent::class)->handle('20 bin lira bütçem var');
+
+        $this->assertNull($sonuc['iz'][0]['hata']);
+        $this->assertNotEmpty($sonuc['turlar']);
+    }
+
+    /** "yurt dışı olsun" yüzlerce turu kapsar — daraltıcı değil, soru hâlâ makul. */
+    public function test_yurt_disi_bayragi_tek_basina_somut_kisit_sayilmaz(): void
+    {
+        $this->makeTour('Herhangi Tur');
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => [],
+                'filtre' => ['yurt_disi' => true],
+            ]),
+            $this->textResponse('Nasıl bir tatil istersin?'),
+        ]);
+
+        $sonuc = app(ChatAgent::class)->handle('yurt dışı olsun');
+
+        $this->assertNotNull($sonuc['iz'][0]['hata'], 'Zayıf kısıtta sormak hâlâ doğru');
+    }
+
+    /** Rubrik puanı hiç olmayan katalogda bile profilsiz liste dolu dönmeli. */
+    public function test_rubrik_puani_olmayan_katalogta_liste_yine_de_doner(): void
+    {
+        $this->makeTour('Puansız Tur', ['destination' => 'Fethiye']);
+        \App\Models\TourRubricScore::query()->delete();
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', [
+                'boyutlar' => [],
+                'filtre' => ['destinasyon' => 'Fethiye'],
+            ]),
+            $this->textResponse('Bunlar var.'),
+        ]);
+
+        $sonuc = app(ChatAgent::class)->handle('fethiye turu arıyorum');
+
+        $this->assertNotEmpty($sonuc['turlar'], 'Katalog puanlanmamış olsa da liste dönmeli');
+    }
 }

@@ -340,6 +340,11 @@ class ChatAgent
         - SORU SORMA — iki istisna dışında: (a) araç "sor" alanı döndürdüyse,
           (b) kullanıcının ne istediğine dair hiçbir ipucu yoksa (tur_ara "hata"
           döndürür). Her iki durumda da TEK soru sor.
+        - İÇ İŞLEYİŞİ ANLATMA. "katalog araması sonuç vermedi", "boyut istemeden",
+          "elimde net olan sadece X", "profil çıkarılamadı", "araç şunu döndürdü"
+          gibi cümleler kurma — bunlar senin mutfağın, kullanıcıyı ilgilendirmiyor
+          ve onu "yanlış bir şey mi yazdım" diye düşündürüyor. Turu göster ya da
+          soruyu sor; gerekçe anlatma.
         - SORU BÜTÇESİ: bir konuşmada netleştirme sorusunu EN FAZLA BİR KEZ sor.
           Daha önce sorduysan bir daha sorma; elindekiyle tur_ara'yı çalıştır ve
           sonucu göster. "Şu an elimde sadece ... var" gibi eksik raporlamak
