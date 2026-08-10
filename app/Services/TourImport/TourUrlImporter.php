@@ -2515,6 +2515,13 @@ JS;
             $duration = $nights + 1;
         }
 
+        // Gece sayısı artık ATILMIYOR: "7 gece 8 gün" gösterimi buna dayanıyor.
+        // Gün'den türetilemeyeceği için ayrı saklanır — "9 gün / 7 gece" turlarında
+        // gece = gün-1 yanlış olurdu.
+        if ($nights !== null && ($nights < 0 || $nights > 255)) {
+            $nights = null;
+        }
+
         $price = isset($raw['price']) && is_numeric($raw['price']) ? round((float) $raw['price'], 2) : null;
         if ($price !== null && $price < 0) {
             $price = null;
@@ -2557,6 +2564,7 @@ JS;
             'departure_city' => $departureCity,
             'stop_cities' => $stopCities,
             'duration_days' => $duration,
+            'duration_nights' => $nights,
             'currency' => $currency,
             'price' => $price,
             'description' => $this->lines($raw['description'] ?? null, 5000),

@@ -101,7 +101,7 @@
                                 <td style="font-weight:600;">{{ $tour->title }}</td>
                                 <td>{{ optional($tour->agency)->name }}</td>
                                 <td>{{ $tour->destination }}</td>
-                                <td>{{ $tour->duration_days }} Gün</td>
+                                <td>{{ $tour->duration_label }}</td>
                                 <td>{{ $tour->formatted_price }}</td>
                                 <td>{{ $tour->departure_date?->format('d.m.Y') ?? '—' }}</td>
                                 <td><span class="badge {{ $tour->is_active ? 'badge-green' : '' }}" style="{{ !$tour->is_active ? 'background:#fef2f2;color:#991b1b;' : '' }}">{{ $tour->is_active ? 'Aktif' : 'Pasif' }}</span></td>

@@ -13,7 +13,7 @@
         @endif
         <div class="card-body">
             <div class="card-title">{{ $tour->title }}</div>
-            <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_days }} gün</div>
+            <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_label }}</div>
             <div class="card-price-row" style="margin-top:8px;">
                 @php $campaign = $tour->activeCampaign; @endphp
                 @if($campaign)

@@ -39,6 +39,7 @@ function applyImported(data, sourceUrl) {
     setVal('input[name="title"]', data.title);
     setVal('input[name="destination"]', data.destination);
     if (data.duration_days) setVal('#durationDaysInput', data.duration_days);
+    if (data.duration_nights !== null && data.duration_nights !== undefined) setVal('#durationNightsInput', data.duration_nights);
     setVal('textarea[name="description"]', data.description);
     setVal('textarea[name="included"]', data.included);
     setVal('textarea[name="excluded"]', data.excluded);

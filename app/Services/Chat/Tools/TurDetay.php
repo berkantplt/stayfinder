@@ -87,6 +87,7 @@ class TurDetay implements ChatTool
             'acenta' => $tour->agency?->name,
             'destinasyon' => $tour->destination,
             'sure_gun' => $tour->duration_days,
+            'sure_metni' => $tour->duration_label,
             'fiyat' => (float) $tour->price,
             'para_birimi' => $tour->currency,
             'kampanya' => $campaign ? ['etiket' => $campaign->label, 'indirimli_fiyat' => (float) $campaign->discount_price] : null,

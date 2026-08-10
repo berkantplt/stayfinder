@@ -47,7 +47,7 @@
                     <div style="width:100%;height:220px;background:linear-gradient(135deg,#e0f2fe,#f0fdf4);display:flex;align-items:center;justify-content:center;font-size:48px;">🏖️</div>
                 @endif
                 <div style="position:absolute;top:16px;left:16px;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;color:#0f172a;">
-                    {{ $tour->duration_days }} Gün
+                    {{ $tour->duration_label }}
                 </div>
             </div>
 

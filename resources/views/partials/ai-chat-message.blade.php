@@ -30,7 +30,7 @@
                                 @endif
                             </div>
                             <div style="padding:12px;display:flex;flex-direction:column;flex:1;">
-                                <div style="font-size:11px;color:#6366f1;font-weight:700;text-transform:uppercase;">{{ $tour->destination }}@if($tour->duration_days) • {{ $tour->duration_days }} Gün @endif</div>
+                                <div style="font-size:11px;color:#6366f1;font-weight:700;text-transform:uppercase;">{{ $tour->destination }}@if($tour->duration_days) • {{ $tour->duration_label }} @endif</div>
                                 <div style="font-size:14px;font-weight:700;margin-top:4px;color:#0f172a;line-height:1.3;">{{ $tour->title }}</div>
                                 @if($tour->agency?->name)
                                     <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ $tour->agency->name }}</div>

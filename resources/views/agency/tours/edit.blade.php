@@ -267,6 +267,11 @@
                         <div class="form-group"><label>Destinasyon *</label><input type="text" name="destination" value="{{ old('destination', $tour->destination) }}" required></div>
                         <div class="form-group"><label>Süre (gün) *</label><input type="number" id="durationDaysInput" name="duration_days" value="{{ old('duration_days', $tour->duration_days) }}" min="1" required></div>
                         <div class="form-group">
+                            <label>Gece</label>
+                            <input type="number" id="durationNightsInput" name="duration_nights" value="{{ old('duration_nights', $tour->duration_nights) }}" min="0" max="255" placeholder="Boş = gün − 1">
+                            <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Turda "7 gece 8 gün" yazacak. Boş bırakırsan gün−1 varsayılır; konaklamasız günübirlik turda 0 yaz.</div>
+                        </div>
+                        <div class="form-group">
                             <label>Para Birimi *</label>
                             <select name="currency" id="currencySelect" required>
                                 @foreach($currencyOptions as $currencyCode => $currencyMeta)

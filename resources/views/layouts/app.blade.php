@@ -720,7 +720,8 @@
             var destination = tour.destination || 'Dünya';
             var price = tour.price ? new Intl.NumberFormat('tr-TR').format(tour.price) : '0';
             var cur = String(tour.currency || 'TRY').toUpperCase();
-            var duration = tour.duration_days ? tour.duration_days + ' Gün' : '';
+            // Sunucu "7 gece 8 gün" etiketini hazır gönderir; eski yükler için gün'e düşülür.
+            var duration = tour.duration_label || (tour.duration_days ? tour.duration_days + ' Gün' : '');
             var rank = (typeof tour.rank === 'number') ? tour.rank : (index + 1);
             var detailUrl = tour.url
                 || (tour.id ? ('/turlar/' + tour.id) : '')

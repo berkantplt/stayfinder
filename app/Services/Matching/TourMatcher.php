@@ -307,7 +307,7 @@ class TourMatcher
             // eşleştirmede kullanılmaz — her istekte belleğe çekilmesinler.
             $q = Tour::query()
                 ->select(['id', 'agency_id', 'title', 'destination', 'price', 'currency', 'price_try',
-                    'duration_days', 'image', 'departure_date', 'departure_points', 'is_active'])
+                    'duration_days', 'duration_nights', 'image', 'departure_date', 'departure_points', 'is_active'])
                 ->with('agency:id,name,is_active')
                 ->whereIn('id', $puanliTurIds)
                 ->active()
@@ -567,6 +567,7 @@ class TourMatcher
             'price' => $tour->price,
             'currency' => $tour->currency,
             'duration_days' => $tour->duration_days,
+            'duration_label' => $tour->duration_label,
             'image' => $tour->image,
             'url' => route('tours.show', $tour->id),
             'agency_name' => $tour->agency?->name,

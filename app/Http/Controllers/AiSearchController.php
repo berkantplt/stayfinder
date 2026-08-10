@@ -1017,6 +1017,7 @@ class AiSearchController extends Controller
                     'price' => $tour->price,
                     'currency' => $tour->currency,
                     'duration_days' => $tour->duration_days,
+                    'duration_label' => $tour->duration_label,
                     'departure_date' => $tour->departure_date,
                     'image' => $tour->image,
                     'rank' => $index + 1,

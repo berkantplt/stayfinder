@@ -32,7 +32,7 @@
                 @endif
                 <div style="flex:1;min-width:0;">
                     <div style="font-size:15px;font-weight:700;">{{ $tour->title }}</div>
-                    <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">📍 {{ $tour->destination }} · {{ $tour->duration_days }} gün</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">📍 {{ $tour->destination }} · {{ $tour->duration_label }}</div>
                     @if($tour->departure_date)
                         <div style="font-size:12px;color:var(--text-muted);">📅 {{ $tour->departure_date->format('d-m-Y') }}</div>
                     @endif

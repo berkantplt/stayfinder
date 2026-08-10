@@ -29,7 +29,7 @@
                     @endif
                     <div class="card-body">
                         <div class="card-title">{{ $tour->title }}</div>
-                        <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_days }} gün</div>
+                        <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_label }}</div>
                         <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;">
                             <div>
                                 <span class="price-tag" style="font-size:18px;">{{ $tour->formatted_price }}</span>

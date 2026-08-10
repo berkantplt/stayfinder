@@ -41,7 +41,7 @@ class DestinationFilterTest extends TestCase
         ]);
     }
 
-    private function tur(string $destination, string $title = null): Tour
+    private function tur(string $destination, ?string $title = null): Tour
     {
         return Tour::create([
             'agency_id' => $this->agency->id,

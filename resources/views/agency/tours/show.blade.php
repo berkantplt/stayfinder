@@ -60,7 +60,7 @@
                     </div>
                     <div class="stat-card" style="padding:16px;">
                         <div style="font-size:12px;color:#94a3b8;margin-bottom:2px;">Süre</div>
-                        <div style="font-weight:600;color:#0f172a;">⏱ {{ $tour->duration_days }} gün</div>
+                        <div style="font-weight:600;color:#0f172a;">⏱ {{ $tour->duration_label }}</div>
                     </div>
                     <div class="stat-card" style="padding:16px;">
                         <div style="font-size:12px;color:#94a3b8;margin-bottom:2px;">Başlangıç Fiyatı</div>

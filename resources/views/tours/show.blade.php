@@ -136,7 +136,7 @@
                         <a href="{{ route('tours.index', ['category' => $tour->category->slug]) }}" class="badge badge-accent" style="text-decoration:none;">{{ $tour->category->icon }} {{ $tour->category->name }}</a>
                     @endif
                     <span class="badge badge-accent">📍 {{ $tour->destination }}</span>
-                    <span class="badge badge-accent">⏱ {{ $tour->duration_days }} gün</span>
+                    <span class="badge badge-accent">⏱ {{ $tour->duration_label }}</span>
                 </div>
 
                 @php

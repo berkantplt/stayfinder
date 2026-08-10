@@ -54,7 +54,7 @@ class Tour extends Model
 
     protected $fillable = [
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
-        'price', 'currency', 'duration_days', 'departure_date',
+        'price', 'currency', 'duration_days', 'duration_nights', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'images', 'tour_url', 'is_active',
         'views_count', 'clicks_count', 'embedding', 'search_text', 'is_international', 'requires_visa',
         'departure_points', 'itinerary', 'hotel_info', 'extras',
@@ -67,6 +67,7 @@ class Tour extends Model
         'price' => 'decimal:2',
         'price_try' => 'decimal:2',
         'duration_days' => 'integer',
+        'duration_nights' => 'integer',
         'departure_date' => 'date',
         'return_date' => 'date',
         'is_active' => 'boolean',
@@ -80,6 +81,34 @@ class Tour extends Model
         'pace_score' => 'float', // 0-1: program yoğunluğu (düşük=dinlenme, yüksek=tempolu gezi)
         'character_version' => 'integer',
     ];
+
+    /**
+     * Süre etiketi: Türk tur sayfalarının standardı "7 gece 8 gün".
+     *
+     * duration_nights boşsa gün-1'e düşer — mevcut turların çoğunda gece bilgisi
+     * yok ve paket turlarda gece = gün-1 kuralı ezici çoğunlukta doğru. İstisna
+     * "9 gün / 7 gece otel + uçak" gibi turlar: acenta gece alanını doldurunca
+     * gerçek değer bunu ezer.
+     *
+     * Konaklamasız turlarda (gece 0) "Günübirlik" yazılır.
+     */
+    public function getDurationLabelAttribute(): string
+    {
+        $gun = (int) ($this->duration_days ?? 0);
+        if ($gun < 1) {
+            return '';
+        }
+
+        $gece = $this->duration_nights !== null
+            ? (int) $this->duration_nights
+            : $gun - 1;
+
+        if ($gece < 1) {
+            return $gun === 1 ? 'Günübirlik' : $gun.' gün';
+        }
+
+        return $gece.' gece '.$gun.' gün';
+    }
 
     public function needsCharacterEnrichment(): bool
     {
