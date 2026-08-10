@@ -335,7 +335,9 @@
     @endif
 
     {{-- Tur eşleştirme testi girişi — .js-open-quiz layouts/app.blade.php'deki
-         global açıcıya bağlanır, sohbet bayrağından bağımsız çalışır. --}}
+         global açıcıya bağlanır, sohbet bayrağından bağımsız çalışır.
+         ⏸️ config/ai.php: quiz_enabled ile askıya alınabilir. --}}
+    @if(config('ai.quiz_enabled'))
     <div class="section">
         <div style="border:1px solid var(--border);border-radius:16px;padding:24px;background:linear-gradient(135deg,#f0fdfa,#ecfeff);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;">
             <div style="flex:1;min-width:260px;">
@@ -352,6 +354,7 @@
             </button>
         </div>
     </div>
+    @endif
 
     {{-- Popular Tours --}}
     <div class="section" id="tours-section">

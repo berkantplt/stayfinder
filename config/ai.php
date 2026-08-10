@@ -33,6 +33,15 @@ return [
     // v1 kapalıyken v2 canlıda denenemezdi. İkisi bağımsız açılıp kapanır.
     'chat_v2_enabled' => env('AI_CHAT_V2_ENABLED', false),
 
+    // ⏸️ Tur eşleştirme testi ASKIDA (2026-08-11, kullanıcı kararı): ana sayfadaki
+    // "Hangi tur sana uygun?" girişi gizlendi. Kod, rubrik ve testler yerinde;
+    // geri açmak için .env'e AI_QUIZ_ENABLED=true yazmak yeterli.
+    //
+    // /tatil-karakteri UCU BİLEREK AÇIK bırakıldı: LLM'siz, deterministik ve
+    // maliyetsiz. Kapatmak, bayrak açıldığında modalin sessizce boş dönmesi
+    // riskini getirirdi (bkz. sohbet v1'de yaşanan durum).
+    'quiz_enabled' => env('AI_QUIZ_ENABLED', false),
+
     // ---- Chatbot v2 (araç çağırma mimarisi, bkz. CHATBOT_V2.md) ----
     // Konuşan yüzey GÜÇLÜ model ister: v1'de burası gpt-4o-mini'ydi ve
     // "istediğim zekada değil" şikayetinin birinci sebebiydi. Mesaj başına

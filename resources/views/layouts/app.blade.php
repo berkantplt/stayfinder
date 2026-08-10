@@ -870,6 +870,7 @@
         return { build: build };
     })();
 
+    @if(config('ai.quiz_enabled'))
     /**
      * turxturQuiz — Tur eşleştirme testi (brif v1, tamamen LLM'siz).
      * 7 tercih sorusu (+zorunlu "fark etmez") + önem sorusu (≤2) + bağlam
@@ -1177,8 +1178,10 @@
 
         return { open: open };
     })();
+    @endif
     </script>
 
+    @if(config('ai.quiz_enabled'))
     {{-- ⚠️ Eşleştirme testinin BAĞIMSIZ giriş noktası — guard'ın DIŞINDA.
          turxturQuiz modülü sohbetten bağımsız (LLM'siz) çalışıyor ama tek
          açıcısı bir dönem $hideAiChat guard'ının içindeydi: sohbet donduğunda
@@ -1226,6 +1229,7 @@
             if (modal && modal.style.display === 'block') window.closeTurxturQuiz();
         });
     </script>
+    @endif
 
     @php
         // ❄️ Sohbet asistanı dondurulmuş durumda (config/ai.php: chat_enabled)
@@ -1275,7 +1279,9 @@
                 
                 {{-- Suggestion Chips --}}
                 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">
+                    @if(config('ai.quiz_enabled'))
                     <button onclick="openTurxturQuizWidget()" class="suggestion-chip" style="border-color:rgba(45,212,191,0.5);">🧭 Tur Eşleştirme Testi</button>
+                    @endif
                     <button onclick="setSuggestion('Vizesiz en iyi yurt dışı turları hangileri?')" class="suggestion-chip">🌍 Vizesiz Turlar</button>
                     <button onclick="setSuggestion('20.000 TL bütçe ile tatil önerisi.')" class="suggestion-chip">💰 Bütçe Dostu</button>
                     <button onclick="setSuggestion('Huzurlu bir doğa ve deniz tatili istiyorum.')" class="suggestion-chip">🌿 Doğa & Deniz</button>
@@ -1464,6 +1470,9 @@
         function openTurxturQuizWidget() {
             // Akış sürerken kart mesaj listesinin ortasına girmesin
             if (window._aiWidgetSending) return;
+            // Test askıya alınmışsa modül hiç yüklenmiyor (config: ai.quiz_enabled).
+            // Çağıran hap zaten gizli ama bayat bir çağrı konsola hata düşürmesin.
+            if (!window.turxturQuiz) return;
             const messages = document.getElementById('ai-chat-messages');
             window.turxturQuiz.open({ container: messages, theme: 'dark' });
             messages.scrollTop = messages.scrollHeight;
