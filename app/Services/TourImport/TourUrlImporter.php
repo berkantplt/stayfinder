@@ -243,6 +243,15 @@ class TourUrlImporter
             }
         }
 
+        // Deterministik ulaşım güvencesi: LLM alanı boş bıraktıysa (ya da tamamen
+        // çöktüyse) sayfa metninden yakala. Türk tur sayfaları ulaşımı neredeyse
+        // her zaman açıkça yazıyor ("Ulaşım: Lüks Otobüs", "Pegasus ile").
+        // normalizeTransportType yalnız LLM başlığına bakıyordu; LLM hiç
+        // dönmediğinde orası da boş kalıyordu.
+        if (($result['transport_type'] ?? null) === null) {
+            $result['transport_type'] = $this->transportTypeFromPage($text);
+        }
+
         // 2) Fiyat matrisi — ÖNCE DETERMİNİSTİK (kodla) ayrıştırma. "899,00 €" sayfada
         // birebir string olduğundan sayıyı LLM'e okutmadan kodla çıkarınca hata payı ~0.
         // Tanınmayan/atipik (yatay) tablolarda boş döner → odaklı LLM çağrısına düşülür.
@@ -2628,6 +2637,45 @@ JS;
         }
         if (preg_match('/\btren\b|ekspres/u', $baslik)) {
             return 'tren';
+        }
+
+        return null;
+    }
+
+    /**
+     * Sayfa metninden ulaşım tipi — LLM boş bıraktığında son çare.
+     *
+     * Başlıktan farklı olarak burada YANLIŞ POZİTİF riski yüksek: uçak turunun
+     * sayfasında "havalimanından otobüsle transfer" yazabiliyor. Bu yüzden
+     * çıplak kelime aramak yerine sıra şu:
+     *   1. Etiketli ifade ("Ulaşım: Lüks Otobüs") — en güvenilir
+     *   2. Havayolu adı — tek başına kesin uçak sinyali
+     *   3. "Gidiş/dönüş ... otobüs" gibi ulaşım bağlamındaki eşleşme
+     * Hiçbiri yoksa null; tahmin etmiyoruz.
+     */
+    private function transportTypeFromPage(string $text): ?string
+    {
+        $metin = mb_strtolower(mb_substr($text, 0, 4000), 'UTF-8');
+
+        // 1) Etiketli: "Ulaşım: X" / "Ulaşım Şekli - X"
+        if (preg_match('/ula[şs][ıi]m[^\p{L}\n]{0,12}([^\n]{0,60})/u', $metin, $m)) {
+            $tip = $this->normalizeTransportType(null, $m[1]);
+            if ($tip !== null) {
+                return $tip;
+            }
+        }
+
+        // 2) Havayolu adı: uçak dışında bir anlama gelmiyor
+        if (preg_match('/hava\s*yollar[ıi]|havayolu|pegasus|t[üu]rk hava|\bthy\b|\bajet\b|sunexpress|anadolujet/u', $metin)) {
+            return 'ucak';
+        }
+
+        // 3) Ulaşım bağlamında araç adı (transfer/servis cümlelerine bulaşmasın)
+        if (preg_match('/(gidi[şs]|d[öo]n[üu][şs]|seyahat|yolculuk)[^\n]{0,40}(l[üu]ks\s+)?otob[üu]s/u', $metin)) {
+            return 'otobus';
+        }
+        if (preg_match('/(gidi[şs]|d[öo]n[üu][şs])[^\n]{0,40}feribot/u', $metin)) {
+            return 'feribot';
         }
 
         return null;

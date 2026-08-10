@@ -467,4 +467,76 @@ class TourUrlImportTest extends TestCase
         $this->post(route('agency.tours.import'), ['url' => 'https://1.1.1.1/x'])
             ->assertRedirect(route('login'));
     }
+
+    // ---- Ulaşım tipi (kartta "Gidiş Dönüş Otobüs" olarak görünür) ----
+
+    public function test_llm_ulasim_tipini_dondurunce_normalize_edilir(): void
+    {
+        Http::fake(['*' => Http::response('<html><body><p>Kapadokya turu. Kalkış: 01.09.2030</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
+        $this->fakeOpenAi(['title' => 'Kapadokya Turu', 'transport_type' => 'Otobüs']);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/kapadokya'])
+            ->assertOk()->json('data');
+
+        // Büyük harf + Türkçe karakter beyaz listeye indirgenir
+        $this->assertSame('otobus', $data['transport_type']);
+    }
+
+    public function test_llm_bos_birakirsa_baslikta_havayolu_adindan_turetilir(): void
+    {
+        Http::fake(['*' => Http::response('<html><body><p>Gezi. Kalkış: 01.09.2030</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
+        $this->fakeOpenAi(['title' => 'Pegasus Hava Yolları ile Roma Turu']);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/roma'])
+            ->assertOk()->json('data');
+
+        $this->assertSame('ucak', $data['transport_type']);
+    }
+
+    public function test_llm_ve_baslik_bos_ise_sayfadaki_etiketten_okunur(): void
+    {
+        Http::fake(['*' => Http::response(
+            '<html><body><p>Ulaşım: Lüks Otobüs</p><p>Kalkış: 01.09.2030</p></body></html>',
+            200, ['Content-Type' => 'text/html']
+        )]);
+        $this->fakeOpenAi(['title' => 'Karadeniz Turu']);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/karadeniz'])
+            ->assertOk()->json('data');
+
+        $this->assertSame('otobus', $data['transport_type']);
+    }
+
+    public function test_transfer_cumlesi_ucak_turunu_otobus_sanmaz(): void
+    {
+        // Yanlış pozitif bekçisi: uçak turunun sayfasında "otobüsle transfer" geçer.
+        Http::fake(['*' => Http::response(
+            '<html><body><p>Havalimanından otelinize otobüsle transfer sağlanır.</p>'
+            .'<p>Türk Hava Yolları tarifeli sefer. Kalkış: 01.09.2030</p></body></html>',
+            200, ['Content-Type' => 'text/html']
+        )]);
+        $this->fakeOpenAi(['title' => 'Paris Turu']);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/paris'])
+            ->assertOk()->json('data');
+
+        $this->assertSame('ucak', $data['transport_type']);
+    }
+
+    public function test_ulasim_bulunamazsa_null_kalir(): void
+    {
+        Http::fake(['*' => Http::response('<html><body><p>Güzel bir gezi. Kalkış: 01.09.2030</p></body></html>', 200, ['Content-Type' => 'text/html'])]);
+        $this->fakeOpenAi(['title' => 'Belirsiz Tur']);
+
+        $data = $this->actingAs($this->agencyUser)
+            ->postJson(route('agency.tours.import'), ['url' => 'https://1.1.1.1/belirsiz'])
+            ->assertOk()->json('data');
+
+        // Tahmin etmiyoruz: yanlış ulaşım bilgisi hiç bilgi olmamasından kötü.
+        $this->assertNull($data['transport_type']);
+    }
 }
