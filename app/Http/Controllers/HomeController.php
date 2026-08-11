@@ -183,8 +183,9 @@ class HomeController extends Controller
         if (request('category')) {
             $cat = Category::where('slug', request('category'))->first();
             if ($cat) {
-                $catIds = collect([$cat->id])->merge($cat->children()->pluck('id'));
-                $query->whereIn('category_id', $catIds);
+                // Tüm alt seviyeler: facet sayacı da aynı metodu kullanıyor,
+                // ikisi ayrı hesaplanınca panelde "0" yazıp filtre tur döndürüyordu.
+                $query->whereIn('category_id', $cat->descendantIds());
             }
         }
 
@@ -306,6 +307,23 @@ class HomeController extends Controller
      *
      * @return array{categories: array<int, int>, visa: array{vizesiz: int, vizeli: int}, days: array<string, int>, departures: array<string, int>, destinations: array<string, array{city: string, count: int}>}
      */
+    /**
+     * Bir kategorinin panelde görünen sayısı: kendisi + tüm alt seviyeleri.
+     * Filtre ile birebir aynı id kümesi (Category::descendantIds).
+     *
+     * @param  \Illuminate\Support\Collection<int, Category>  $tumKategoriler
+     * @param  array<int, int>  $byCategory
+     */
+    private function kategoriToplami(Category $kategori, $tumKategoriler, array $byCategory): int
+    {
+        $toplam = 0;
+        foreach ($kategori->descendantIds($tumKategoriler) as $id) {
+            $toplam += (int) ($byCategory[$id] ?? 0);
+        }
+
+        return $toplam;
+    }
+
     private function filterBarFacets($categories): array
     {
         $facets = Cache::remember(self::FACETS_CACHE_KEY, 300, function () {
@@ -365,15 +383,17 @@ class HomeController extends Controller
             return compact('byCategory', 'visa', 'days', 'departures');
         });
 
-        // Üst kategori sayısı = kendi + çocuklarının toplamı
+        // Her kategorinin sayacı = kendisi + TÜM alt seviyeleri. Filtre ile aynı
+        // id kümesini (descendantIds) kullanmak ŞART: ayrı hesaplandıkları dönemde
+        // altında torunu olan kategoriler panelde "0" yazarken filtre tur
+        // döndürüyordu. Tüm kategoriler tek çekimde alınır — döngüde DB'ye gidilmez.
+        $tumKategoriler = Category::select(['id', 'parent_id'])->get();
         $categoryCounts = [];
         foreach ($categories as $parent) {
-            $sum = $facets['byCategory'][$parent->id] ?? 0;
             foreach ($parent->children as $child) {
-                $categoryCounts[$child->id] = $facets['byCategory'][$child->id] ?? 0;
-                $sum += $categoryCounts[$child->id];
+                $categoryCounts[$child->id] = $this->kategoriToplami($child, $tumKategoriler, $facets['byCategory']);
             }
-            $categoryCounts[$parent->id] = $sum;
+            $categoryCounts[$parent->id] = $this->kategoriToplami($parent, $tumKategoriler, $facets['byCategory']);
         }
 
         // Destinasyon listesi: envanter servisi zaten count'lu + cache'li

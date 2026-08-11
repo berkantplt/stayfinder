@@ -51,6 +51,34 @@ class Category extends Model
         return $query->whereNull('parent_id');
     }
 
+    /**
+     * Bu kategori "seçildiğinde" kapsanan tüm kategori id'leri: kendisi + TÜM
+     * alt seviyeler.
+     *
+     * Filtre ve facet sayacı BU metodu kullanmak zorunda — ayrı hesaplandıkları
+     * dönemde filtre bir seviye, sayaç sıfır seviye iniyordu ve altında torunu
+     * olan kategoriler panelde hep "0" görünüyordu (canlı vaka: "Mısır Turları 0"
+     * yazarken filtre 4 tur döndürüyordu).
+     *
+     * @param  \Illuminate\Support\Collection<int, static>|null  $tumu  Hazır kategori
+     *         listesi verilirse DB'ye gidilmez (facet döngüsünde N+1 olmasın).
+     * @return array<int, int>
+     */
+    public function descendantIds(?\Illuminate\Support\Collection $tumu = null): array
+    {
+        $idler = [$this->id];
+
+        $cocuklar = $tumu
+            ? $tumu->where('parent_id', $this->id)
+            : static::where('parent_id', $this->id)->get();
+
+        foreach ($cocuklar as $cocuk) {
+            $idler = array_merge($idler, $cocuk->descendantIds($tumu));
+        }
+
+        return $idler;
+    }
+
     public function getRouteKeyName(): string
     {
         return 'slug';
