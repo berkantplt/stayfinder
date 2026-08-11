@@ -11,13 +11,14 @@ return [
     /*
     | Ana sayfada hero'nun altındaki gezinme bloğu.
     |
-    |   'both'   → mega menü + filtre barı birlikte (varsayılan, bugünkü hal)
-    |   'mega'   → yalnız mega menü (malitur kalıbı; filtre /turlar sayfasında kalır)
-    |   'filter' → yalnız filtre barı (mega menü öncesi hal)
+    |   'filter' → yalnız filtre barı (VARSAYILAN, 2026-08-11 kullanıcı kararı)
+    |   'both'   → mega menü + filtre barı birlikte
+    |   'mega'   → yalnız mega menü (malitur kalıbı; filtre /turlar'da kalır)
     |
-    | HİÇBİR MOD KOD SİLMEZ. Üç seçenek de aynı dosyalardan render edilir;
-    | fikir değişirse .env'de HOME_NAV değerini çevirmek yeterli, geri alma
-    | commit'i gerekmez.
+    | HİÇBİR MOD KOD SİLMEZ. Mega menü (App\Support\MegaMenu +
+    | partials/mega-menu.blade.php) yerinde duruyor, yalnız render edilmiyor —
+    | denendi ve kategori ağacı yerine filtre tercih edildi. Geri açmak için
+    | .env'de HOME_NAV=both yazmak yeterli, geri alma commit'i gerekmez.
     */
-    'home_nav' => env('HOME_NAV', 'both'),
+    'home_nav' => env('HOME_NAV', 'filter'),
 ];
