@@ -98,9 +98,17 @@
 </div>
 
 <div class="container" id="homeMain">
-    {{-- Yatay Filtre Barı (Etstur uyarlaması G2): hap butonlar + count'lu paneller + canlı sayaç --}}
+    {{-- Mega menü (gezinme) + filtre barı (daraltma) tek kartta: menü üstte,
+         filtre altında. İkisi farklı iş görüyor, biri diğerinin yerine geçmiyor.
+         Hangisinin görüneceği config/ui.php: home_nav ile seçilir — üç modun
+         hiçbiri kod silmez, .env'de HOME_NAV çevirmek yeterli. --}}
+    @php $homeNav = config('ui.home_nav', 'both'); @endphp
     <div class="filter-bar-wrapper">
-        <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar yfilter-card">
+        @if(in_array($homeNav, ['both', 'mega'], true))
+            @include('partials.mega-menu')
+        @endif
+        <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar yfilter-card"
+              @if($homeNav === 'mega') style="display:none;" @endif>
             <input type="hidden" name="category" id="selected-category" value="{{ request('category') }}">
 
             <div class="ybar" id="yBar">

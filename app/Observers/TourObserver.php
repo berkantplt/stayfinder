@@ -12,6 +12,7 @@ use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Notifications\PriceDropNotification;
 use App\Services\AiSearch\DestinationKnowledgeService;
+use App\Support\MegaMenu;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -170,6 +171,9 @@ class TourObserver
         DestinationKnowledgeService::flushInventory();
         // Ana sayfa filtre barı: yeni kalkış/durak şehri 5 dk beklemeden görünsün
         cache()->forget(HomeController::FACETS_CACHE_KEY);
+        // Mega menü envanterden türüyor: yeni destinasyon/kategori eşiği geçince
+        // 5 dk beklemeden menüye girsin, boşalan da beklemeden düşsün.
+        MegaMenu::forget();
     }
 
     /**
