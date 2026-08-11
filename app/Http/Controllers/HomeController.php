@@ -168,8 +168,10 @@ class HomeController extends Controller
 
         $facets = $this->filterBarFacets($categories);
         $specialPeriods = config('special_periods', []);
+        // "Tümünü gör" aktif filtreleri taşısın — filtresiz /turlar'a gitmesin
+        $tumunuGorUrl = $this->filtreliTurlarUrl();
 
-        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities', 'tourDrops', 'liveDrop', 'travelerCount', 'filteredCount', 'facets', 'specialPeriods'));
+        return view('home', compact('popularTours', 'destinations', 'allDestinations', 'categories', 'agencyCount', 'tourCount', 'recentlyViewed', 'banners', 'featuredCities', 'tourDrops', 'liveDrop', 'travelerCount', 'filteredCount', 'facets', 'specialPeriods', 'tumunuGorUrl'));
     }
 
     /**
@@ -307,6 +309,99 @@ class HomeController extends Controller
      *
      * @return array{categories: array<int, int>, visa: array{vizesiz: int, vizeli: int}, days: array<string, int>, departures: array<string, int>, destinations: array<string, array{city: string, count: int}>}
      */
+    /**
+     * "Tümünü gör" bağlantısı: ana sayfadaki AKTİF filtreleri /turlar sayfasının
+     * parametrelerine çevirir.
+     *
+     * İki sayfa farklı parametre adları kullanıyor (ana sayfa: days[] bantları,
+     * budget_max, special; /turlar: min_days/max_days, max_price, date_start/end).
+     * Eşleme olmadığında buton "Mısır" seçiliyken bile SİTEDEKİ TÜM turlara
+     * gidiyordu.
+     *
+     * TAŞINAMAYANLAR (bilerek): vize seçimi (/turlar'da böyle bir filtre yok) ve
+     * birden fazla ay (tek tarih aralığına sığmıyor). Bunlar sessizce düşer —
+     * sonuç kümesi filtresiz değil, yalnız daha geniş olur.
+     */
+    private function filtreliTurlarUrl(): string
+    {
+        $p = [];
+
+        if ($slug = request('category')) {
+            $p['category'] = $slug;
+        }
+
+        // Destinasyon: /turlar tekil de dizi de kabul ediyor (DestinationFilter::apply).
+        $destinasyonlar = array_values(array_filter((array) request('destinations'), 'is_string'));
+        if (request('destination')) {
+            $destinasyonlar[] = (string) request('destination');
+        }
+        $destinasyonlar = array_values(array_unique(array_filter($destinasyonlar)));
+        if ($destinasyonlar !== []) {
+            $p['destination'] = count($destinasyonlar) === 1 ? $destinasyonlar[0] : $destinasyonlar;
+        }
+
+        // Gün bantları → min/max. Birden çok bant seçiliyse en geniş aralık.
+        $bantlar = array_intersect((array) request('days'), array_keys(self::DAY_BANDS));
+        if ($bantlar !== []) {
+            $minler = $maxlar = [];
+            foreach ($bantlar as $bant) {
+                [$min, $max] = self::DAY_BANDS[$bant];
+                $minler[] = $min;
+                $maxlar[] = $max;
+            }
+            $p['min_days'] = min($minler);
+            if (max($maxlar) < 999) {
+                $p['max_days'] = max($maxlar);
+            }
+        }
+
+        if (($butce = (int) request('budget_max')) > 0) {
+            $p['max_price'] = $butce;
+        }
+
+        // Kalkış: /turlar tek şehir alıyor, ana sayfa çoklu. İlki taşınır.
+        $kalkislar = array_values(array_filter((array) request('departures'), 'is_string'));
+        if ($kalkislar !== []) {
+            $p['departure_city'] = $kalkislar[0];
+        }
+
+        // Özel dönem → tarih aralığı. Config birden çok yıl tutuyor ("Yılbaşı"
+        // hem 2026 hem 2027); min/max alınsaydı pencere araya giren bütün yılı
+        // kapsardı. YAKLAŞAN aralık seçilir.
+        if ($ozel = config('special_periods.'.request('special'))) {
+            $bugun = now()->toDateString();
+            $araliklar = $ozel['ranges'] ?? [];
+            usort($araliklar, fn ($a, $b) => $a[0] <=> $b[0]);
+
+            foreach ($araliklar as [$bas, $bit]) {
+                if ($bit >= $bugun) {
+                    $p['date_start'] = $bas;
+                    $p['date_end'] = $bit;
+                    break;
+                }
+            }
+            // Hepsi geçmişse en sonuncusunu kullan (boş sonuç yerine dürüst sonuç)
+            if (! isset($p['date_start']) && $araliklar !== []) {
+                [$p['date_start'], $p['date_end']] = end($araliklar);
+            }
+        }
+
+        // Tek ay seçiliyse tarih aralığına çevrilebilir; birden fazlada çevrilemez.
+        $aylar = array_values(array_filter(array_map('intval', (array) request('months')), fn ($m) => $m >= 1 && $m <= 12));
+        if (count($aylar) === 1 && ! isset($p['date_start'])) {
+            $ay = $aylar[0];
+            $yil = $ay < now()->month ? now()->year + 1 : now()->year;
+            $p['date_start'] = now()->setDate($yil, $ay, 1)->startOfMonth()->toDateString();
+            $p['date_end'] = now()->setDate($yil, $ay, 1)->endOfMonth()->toDateString();
+        }
+
+        if ($sort = request('sort')) {
+            $p['sort'] = $sort;
+        }
+
+        return route('tours.index', $p);
+    }
+
     /**
      * Bir kategorinin panelde görünen sayısı: kendisi + tüm alt seviyeleri.
      * Filtre ile birebir aynı id kümesi (Category::descendantIds).

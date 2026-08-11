@@ -320,7 +320,7 @@
     <div class="section" id="destinationsSection">
         <div class="section-header">
             <h2>Popüler Destinasyonlar</h2>
-            <a href="{{ route('tours.index') }}">Tümünü gör →</a>
+            <a href="{{ $tumunuGorUrl }}">Tümünü gör →</a>
         </div>
         <div class="grid-3">
             @foreach($destinations as $dest)
@@ -368,7 +368,7 @@
     <div class="section" id="tours-section">
         <div class="section-header">
             <h2>En Uygun Turlar</h2>
-            <a href="{{ route('tours.index') }}">Tümünü gör →</a>
+            <a href="{{ $tumunuGorUrl }}">Tümünü gör →</a>
         </div>
         
         <div id="loading-spinner" style="display:none; text-align:center; padding:40px;">
