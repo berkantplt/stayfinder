@@ -1427,7 +1427,8 @@ class ConversationService
                 'currency' => $get('currency'),
                 'duration_days' => $get('duration_days'),
                 'image' => $get('image'),
-                'url' => route('tours.show', $get('id')),
+                // Slug varsa onunla: ID ile kurulan adres 301 ile slug'a yönleniyor.
+                'url' => route('tours.show', $tour ?? $get('id')),
                 'agency_name' => $tour?->agency?->name,
                 'compatibility_score' => $get('compatibility_score'),
                 'over_budget' => (bool) $get('over_budget'),

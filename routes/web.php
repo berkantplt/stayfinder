@@ -28,6 +28,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TourController;
 use App\Models\Agency;
@@ -42,7 +43,14 @@ use Illuminate\Support\Facades\Route;
 
 // Public
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// SEO: sitemap index + bölüm haritaları. robots.txt de rota üzerinden servis
+// edilir — Sitemap satırının MUTLAK URL olması şart (spec gereği) ve mutlak URL
+// ancak çalışma anında APP_URL'den kurulabilir.
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/sitemap-{section}.xml', [SitemapController::class, 'section'])
+    ->where('section', '[a-z]+')
+    ->name('sitemap.section');
+Route::get('/robots.txt', [RobotsController::class, 'index'])->name('robots');
 Route::get('/turlar', [TourController::class, 'index'])->name('tours.index');
 Route::get('/turlar/karsilastir', [TourController::class, 'compare'])->name('tours.compare');
 Route::get('/turlar/{tour}', [TourController::class, 'show'])->name('tours.show');

@@ -6,27 +6,26 @@
 @endif
 
 @push('head')
-<script type="application/ld+json">
-{
-  "@@context": "https://schema.org/",
-  "@@type": "Product",
-  "name": "{{ $tour->title }}",
-  "image": "{{ $tour->image ? url($tour->image) : asset('images/og-default.png') }}",
-  "description": "{{ \Illuminate\Support\Str::limit(strip_tags($tour->description), 150) }}",
-  "brand": {
-    "@@type": "Brand",
-    "name": "{{ $tour->agency->name ?? 'turXtur' }}"
-  },
-  "offers": {
-    "@@type": "Offer",
-    "url": "{{ request()->url() }}",
-    "priceCurrency": "{{ $tour->currency ?? 'TRY' }}",
-    "price": "{{ $tour->price }}",
-    "availability": "https://schema.org/InStock",
-    "validFrom": "{{ $tour->departure_date ? $tour->departure_date->toIso8601String() : now()->toIso8601String() }}"
-  }
-}
-</script>
+@include('partials.json-ld', ['data' => [
+    '@context' => 'https://schema.org',
+    '@type' => 'Product',
+    'name' => $tour->title,
+    'image' => $tour->image ? url($tour->image) : asset('images/og-default.png'),
+    'description' => \Illuminate\Support\Str::limit(strip_tags($tour->description), 150),
+    'sku' => 'tur-'.$tour->id,
+    'brand' => [
+        '@type' => 'Brand',
+        'name' => $tour->agency->name ?? 'turXtur',
+    ],
+    'offers' => [
+        '@type' => 'Offer',
+        'url' => route('tours.show', $tour),
+        'priceCurrency' => $tour->currency ?? 'TRY',
+        'price' => (string) $tour->price,
+        'availability' => 'https://schema.org/InStock',
+        'validFrom' => ($tour->departure_date ?? now())->toIso8601String(),
+    ],
+]])
 <style>
     /* Sekme barı: çerçeveli kutular (mobilde 2 sütun, tek kalan buton tam genişlik) */
     .tour-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0 20px; }
@@ -84,12 +83,13 @@
 @section('content')
 <div class="container">
     <div class="section">
-        {{-- Breadcrumb --}}
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
-            <a href="{{ route('home') }}" style="color:var(--accent);">Ana Sayfa</a> ›
-            <a href="{{ route('tours.index') }}" style="color:var(--accent);">Turlar</a> ›
-            {{ $tour->title }}
-        </div>
+        @include('partials.breadcrumb', ['items' => array_filter([
+            ['name' => 'Turlar', 'url' => route('tours.index')],
+            $tour->category
+                ? ['name' => $tour->category->name, 'url' => route('tours.index', ['category' => $tour->category->slug])]
+                : null,
+            ['name' => $tour->title],
+        ])])
 
         <div class="detail-grid">
             {{-- Left: Tour Info --}}

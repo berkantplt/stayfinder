@@ -309,7 +309,9 @@ class TourMatcher
             // Kolon kısıtı: embedding/search_text/description gibi ağır alanlar
             // eşleştirmede kullanılmaz — her istekte belleğe çekilmesinler.
             $q = Tour::query()
-                ->select(['id', 'agency_id', 'title', 'destination', 'price', 'currency', 'price_try',
+                // slug ŞART: rota anahtarı artık slug (route('tours.show', $tour)).
+                // Seçilmezse kart URL'i üretilirken UrlGenerationException atar.
+                ->select(['id', 'slug', 'agency_id', 'title', 'destination', 'price', 'currency', 'price_try',
                     'duration_days', 'duration_nights', 'image', 'departure_date', 'departure_points', 'is_active'])
                 ->with('agency:id,name,is_active')
                 // null: profilsiz listeleme — rubrik puanı aranmaz. Bu liste zaten
@@ -576,7 +578,7 @@ class TourMatcher
             'duration_days' => $tour->duration_days,
             'duration_label' => $tour->duration_label,
             'image' => $tour->image,
-            'url' => route('tours.show', $tour->id),
+            'url' => route('tours.show', $tour),
             'agency_name' => $tour->agency?->name,
             // Taban altı modda uyum rozeti BASILMAZ: "%25 Uyumlu" yazısı zayıf
             // eşleşmeyi öneri gibi gösterip güveni bitiriyor. Kart yine görünür

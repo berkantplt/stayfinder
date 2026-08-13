@@ -5,6 +5,10 @@
 @section('content')
 <div class="container">
     <div class="section">
+        @include('partials.breadcrumb', ['items' => [
+            ['name' => 'Blog'],
+        ]])
+        @include('partials.pagination-seo', ['paginator' => $posts])
         <div style="margin-bottom:32px;">
             <h1 style="font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px;">Blog & Seyahat Rehberi</h1>
             <p style="color:var(--text-muted);font-size:15px;">Destinasyon önerileri, seyahat ipuçları ve tur rehberleri</p>

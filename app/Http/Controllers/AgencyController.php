@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agency;
+use Illuminate\Http\Request;
 
 class AgencyController extends Controller
 {
@@ -18,9 +19,15 @@ class AgencyController extends Controller
         return view('agencies.index', compact('agencies'));
     }
 
-    public function show(Agency $agency)
+    public function show(Request $request, Agency $agency)
     {
         abort_unless($agency->is_active, 404);
+
+        // SEO: kanonik adres slug. Eski /acentalar/{id} bağlantıları 301 ile taşınır.
+        $routeValue = (string) $request->route()?->originalParameter('agency', '');
+        if (! empty($agency->slug) && $routeValue !== $agency->slug) {
+            return redirect()->route('agencies.show', $agency, 301);
+        }
 
         $agency->setRelation(
             'activeTours',

@@ -6,13 +6,22 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'turXtur — Tur Karşılaştırma')</title>
     <meta name="description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
-    <link rel="canonical" href="{{ url()->current() }}">
+    {{-- Kanonik adres: izleme parametreleri ve indexlenmeyecek filtreler düşer,
+         sayfalama korunur (bkz. App\Support\Seo). Sayfalar @section('canonical')
+         ile kendi adresini dayatabilir. --}}
+    <link rel="canonical" href="@yield('canonical', \App\Support\Seo::canonical())">
+
+    @hasSection('robots')
+        <meta name="robots" content="@yield('robots')">
+    @elseif (\App\Support\Seo::robots())
+        <meta name="robots" content="{{ \App\Support\Seo::robots() }}">
+    @endif
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
     <meta property="og:title" content="@yield('title', 'turXtur — Tur Karşılaştırma')">
     <meta property="og:description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
-    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:url" content="@yield('canonical', \App\Support\Seo::canonical())">
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
     <meta property="og:locale" content="tr_TR">
     <meta property="og:site_name" content="turXtur">
@@ -723,9 +732,11 @@
             // Sunucu "7 gece 8 gün" etiketini hazır gönderir; eski yükler için gün'e düşülür.
             var duration = tour.duration_label || (tour.duration_days ? tour.duration_days + ' Gün' : '');
             var rank = (typeof tour.rank === 'number') ? tour.rank : (index + 1);
+            // Slug önce: ID ile kurulan adres 301 ile slug'a gidiyor, gereksiz
+            // bir yönlendirme adımı doğuruyordu.
             var detailUrl = tour.url
-                || (tour.id ? ('/turlar/' + tour.id) : '')
-                || (tour.slug ? ('/turlar/' + tour.slug) : '/turlar');
+                || (tour.slug ? ('/turlar/' + tour.slug) : '')
+                || (tour.id ? ('/turlar/' + tour.id) : '/turlar');
 
             var wrapper = document.createElement('div');
             if (T.cardClass) wrapper.className = T.cardClass;

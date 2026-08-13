@@ -2,29 +2,37 @@
 @section('title', 'turXtur — Tur Karşılaştırma Platformu')
 
 @push('head')
-<script type="application/ld+json">
-{
-  "@@context": "https://schema.org",
-  "@@graph": [
-    {
-      "@@type": "WebSite",
-      "url": "{{ url('/') }}",
-      "name": "turXtur",
-      "potentialAction": {
-        "@@type": "SearchAction",
-        "target": "{{ route('tours.index') }}?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    },
-    {
-      "@@type": "Organization",
-      "name": "turXtur",
-      "url": "{{ url('/') }}",
-      "logo": "{{ asset('images/og-default.png') }}"
-    }
-  ]
-}
-</script>
+@include('partials.json-ld', ['data' => [
+    '@context' => 'https://schema.org',
+    '@graph' => [
+        [
+            '@type' => 'WebSite',
+            '@id' => url('/').'#website',
+            'url' => url('/'),
+            'name' => 'turXtur',
+            'inLanguage' => 'tr-TR',
+            'publisher' => ['@id' => url('/').'#organization'],
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => [
+                    '@type' => 'EntryPoint',
+                    'urlTemplate' => route('tours.index').'?q={search_term_string}',
+                ],
+                'query-input' => 'required name=search_term_string',
+            ],
+        ],
+        [
+            '@type' => 'Organization',
+            '@id' => url('/').'#organization',
+            'name' => 'turXtur',
+            'url' => url('/'),
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => asset('images/og-default.png'),
+            ],
+        ],
+    ],
+]])
 @endpush
 
 @section('content')

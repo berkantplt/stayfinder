@@ -127,7 +127,7 @@ class AiSearchController extends Controller
                     $drop = number_format((float) $baseline - (float) $favorite->price, 0, ',', '.');
                     $signals[] = [
                         'label' => '💸 Favorindeki "'.Str::limit($favorite->title, 32).'" '.$drop.' '.$favorite->currency_symbol.' ucuzladı',
-                        'url' => route('tours.show', $favorite->id),
+                        'url' => route('tours.show', $favorite),
                     ];
                     break; // tek fiyat kartı yeter
                 }
@@ -1012,7 +1012,7 @@ class AiSearchController extends Controller
                     'id' => $tour->id,
                     'title' => $tour->title,
                     'slug' => $tour->slug,
-                    'url' => route('tours.show', $tour->id),
+                    'url' => route('tours.show', $tour),
                     'destination' => $tour->destination,
                     'price' => $tour->price,
                     'currency' => $tour->currency,
@@ -2092,7 +2092,7 @@ class AiSearchController extends Controller
             'columns' => $tours->map(fn ($t) => [
                 'id' => $t->id,
                 'title' => $t->title,
-                'url' => route('tours.show', $t->id),
+                'url' => route('tours.show', $t),
                 'image' => $t->image,
             ])->values()->all(),
             'rows' => [

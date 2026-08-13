@@ -2,6 +2,16 @@
 @section('title', $agency->name . ' — turXtur')
 
 @section('content')
+{{-- Görünür kırıntı yolu hero'nun içinde (beyaz zemin üstü); burada yalnız
+     Google'ın okuduğu BreadcrumbList basılıyor. --}}
+@include('partials.json-ld', ['data' => [
+    '@context' => 'https://schema.org',
+    '@type' => 'BreadcrumbList',
+    'itemListElement' => [
+        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Ana Sayfa', 'item' => route('home')],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => $agency->name],
+    ],
+]])
 <div class="container">
     {{-- Hero Banner --}}
     <div style="background:linear-gradient(135deg,#0d9488,#0891b2);border-radius:0 0 24px 24px;padding:40px 40px 32px;color:white;margin-bottom:32px;">

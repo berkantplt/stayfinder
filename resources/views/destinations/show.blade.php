@@ -7,6 +7,12 @@
 
 @section('content')
 <div class="container">
+    <div style="padding-top:20px;">
+        @include('partials.breadcrumb', ['items' => [
+            ['name' => 'Turlar', 'url' => route('tours.index')],
+            ['name' => $destination->name.' Turları'],
+        ]])
+    </div>
     {{-- Hero --}}
     <div style="position:relative;height:280px;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:32px;">
         @if($destination->image)

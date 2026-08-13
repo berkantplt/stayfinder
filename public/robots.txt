@@ -1,7 +1,0 @@
-User-agent: *
-Disallow: /admin
-Disallow: /acenta
-Disallow: /giris
-Allow: /
-
-Sitemap: /sitemap.xml

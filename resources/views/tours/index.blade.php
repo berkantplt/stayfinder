@@ -140,6 +140,10 @@
         </div>
         <style>@keyframes spin { 100% { transform:rotate(360deg); } }</style>
 
+        @include('partials.breadcrumb', ['items' => [
+            ['name' => 'Turlar'],
+        ]])
+        @include('partials.pagination-seo', ['paginator' => $tours])
         <h1 style="font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;margin-bottom:24px;">Turları Keşfedin</h1>
 
         {{-- Mobil chip şeridi: Filtreler (N) + aktif filtre chip'leri + hızlı kategoriler.

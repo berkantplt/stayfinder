@@ -29,6 +29,32 @@ class Agency extends Model
         'legacy_category_access' => 'boolean',
     ];
 
+    /**
+     * Acenta URL'leri slug ile çözülür: /acentalar/oz-tur (eskiden /acentalar/7).
+     * Eski ID bağlantıları kırılmasın diye sayısal değer de kabul edilir
+     * (bkz. resolveRouteBinding); kanonik adrese 301 AgencyController'da.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field !== null) {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        $bySlug = $this->newQuery()->where('slug', $value)->first();
+        if ($bySlug !== null) {
+            return $bySlug;
+        }
+
+        return ctype_digit((string) $value)
+            ? $this->newQuery()->whereKey($value)->first()
+            : null;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Agency $agency) {

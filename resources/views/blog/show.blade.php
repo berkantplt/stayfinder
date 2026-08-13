@@ -6,34 +6,34 @@
 @endif
 
 @push('head')
-<script type="application/ld+json">
-{
-  "@@context": "https://schema.org",
-  "@@type": "Article",
-  "headline": "{{ $post->title }}",
-  "image": [
-    "{{ $post->image ? url($post->image) : asset('images/og-default.png') }}"
-   ],
-  "datePublished": "{{ $post->published_at ? $post->published_at->toIso8601String() : $post->created_at->toIso8601String() }}",
-  "dateModified": "{{ $post->updated_at->toIso8601String() }}",
-  "author": [{
-      "@@type": "Person",
-      "name": "turXtur Editör",
-      "url": "{{ url('/') }}"
-    }]
-}
-</script>
+@include('partials.json-ld', ['data' => [
+    '@context' => 'https://schema.org',
+    '@type' => 'Article',
+    'headline' => $post->title,
+    'image' => [$post->image ? url($post->image) : asset('images/og-default.png')],
+    'datePublished' => ($post->published_at ?? $post->created_at)->toIso8601String(),
+    'dateModified' => $post->updated_at->toIso8601String(),
+    'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => route('blog.show', $post)],
+    'author' => [[
+        '@type' => 'Person',
+        'name' => 'turXtur Editör',
+        'url' => url('/'),
+    ]],
+    'publisher' => [
+        '@type' => 'Organization',
+        'name' => 'turXtur',
+        'logo' => ['@type' => 'ImageObject', 'url' => asset('images/og-default.png')],
+    ],
+]])
 @endpush
 
 @section('content')
 <div class="container">
     <div style="max-width:780px;margin:0 auto;padding:40px 0;">
-        {{-- Breadcrumb --}}
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">
-            <a href="{{ route('home') }}" style="color:var(--accent);">Ana Sayfa</a> ›
-            <a href="{{ route('blog.index') }}" style="color:var(--accent);">Blog</a> ›
-            {{ $post->title }}
-        </div>
+        @include('partials.breadcrumb', ['items' => [
+            ['name' => 'Blog', 'url' => route('blog.index')],
+            ['name' => $post->title],
+        ]])
 
         {{-- Category + Meta --}}
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">

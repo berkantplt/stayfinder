@@ -169,11 +169,63 @@ class Tour extends Model
         return ($this->character_version ?? 0) < self::CURRENT_CHARACTER_VERSION;
     }
 
+    /**
+     * Tur URL'leri slug ile çözülür: /turlar/kapadokya-balon-turu (eskiden /turlar/1247).
+     * Eski ID URL'leri TourController::show içinde 301 ile slug'a yönlenir.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * Slug birincil anahtar; sayısal değer de kabul edilir. Böylece hem eski
+     * /turlar/{id} bağlantıları hem de elinde yalnızca ID olan iç bağlantılar
+     * (favori butonu, bildirimler, /git/{tour}) kırılmadan çalışır.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field !== null) {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        $bySlug = $this->newQuery()->where('slug', $value)->first();
+        if ($bySlug !== null) {
+            return $bySlug;
+        }
+
+        return ctype_digit((string) $value)
+            ? $this->newQuery()->whereKey($value)->first()
+            : null;
+    }
+
+    /**
+     * Başlıktan benzersiz slug üretir. Çakışmada rastgele değil sayısal son ek
+     * kullanılır ("-2", "-3"): rastgele karakter anahtar kelimeyi seyreltiyordu.
+     */
+    public static function makeSlug(string $title, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($title);
+        $base = $base !== '' ? Str::limit($base, 90, '') : 'tur';
+
+        $slug = $base;
+        $suffix = 1;
+
+        while (static::where('slug', $slug)
+            ->when($ignoreId !== null, fn ($q) => $q->whereKeyNot($ignoreId))
+            ->exists()) {
+            $suffix++;
+            $slug = $base.'-'.$suffix;
+        }
+
+        return $slug;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Tour $tour) {
             if (empty($tour->slug)) {
-                $tour->slug = Str::slug($tour->title).'-'.Str::random(5);
+                $tour->slug = static::makeSlug((string) $tour->title);
             }
         });
 

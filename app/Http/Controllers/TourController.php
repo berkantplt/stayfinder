@@ -117,6 +117,21 @@ class TourController extends Controller
     {
         abort_unless($tour->isPubliclyVisible() && $tour->agency?->is_active, 404);
 
+        // SEO: tek kanonik adres slug'dır. Eski /turlar/{id} bağlantıları ve ID
+        // taşıyan iç bağlantılar 301 ile slug adresine taşınır — index edilmiş
+        // eski URL'lerin biriktirdiği değer yeni adrese aktarılır.
+        // route('tour') bağlama sonrası modeli döner; URL'de ne yazdığını
+        // originalParameter verir.
+        $routeValue = (string) $request->route()?->originalParameter('tour', '');
+        if (! empty($tour->slug) && $routeValue !== $tour->slug) {
+            $target = route('tours.show', $tour);
+            if ($query = $request->getQueryString()) {
+                $target .= '?'.$query;
+            }
+
+            return redirect($target, 301);
+        }
+
         $aiContext = $this->captureAiSelection($request, $tour);
         $tour->load('agency', 'dates', 'category');
 
