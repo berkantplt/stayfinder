@@ -38,12 +38,16 @@
 @section('content')
 {{-- Hero Banner Carousel --}}
 @php
+    // Yeni hero AÇIK zeminli: başlık koyu lacivert, okunurluğu soldan gelen
+    // beyaz perde (.hero-overlay::before) sağlıyor. Bu yüzden varsayılan
+    // karartma 40 → 12'ye indi; admin panelinden gelen banner kendi
+    // darkness değerini korur.
     $carouselBanners = $banners->count() ? $banners : collect([
-        (object)['title'=>'Kapadokya', 'image_url'=>asset('images/banners/cappadocia.png'), 'blur'=>0, 'darkness'=>40],
-        (object)['title'=>'Bodrum', 'image_url'=>asset('images/banners/bodrum.png'), 'blur'=>0, 'darkness'=>40],
-        (object)['title'=>'Mısır Piramitleri', 'image_url'=>asset('images/banners/egypt.png'), 'blur'=>0, 'darkness'=>40],
-        (object)['title'=>'Karadeniz Yaylaları', 'image_url'=>asset('images/banners/karadeniz.png'), 'blur'=>0, 'darkness'=>40],
-        (object)['title'=>'Güneydoğu Anadolu', 'image_url'=>asset('images/banners/guneydogu.png'), 'blur'=>0, 'darkness'=>40],
+        (object)['title'=>'Kapadokya', 'image_url'=>asset('images/banners/cappadocia.png'), 'blur'=>0, 'darkness'=>12],
+        (object)['title'=>'Bodrum', 'image_url'=>asset('images/banners/bodrum.png'), 'blur'=>0, 'darkness'=>12],
+        (object)['title'=>'Mısır Piramitleri', 'image_url'=>asset('images/banners/egypt.png'), 'blur'=>0, 'darkness'=>12],
+        (object)['title'=>'Karadeniz Yaylaları', 'image_url'=>asset('images/banners/karadeniz.png'), 'blur'=>0, 'darkness'=>12],
+        (object)['title'=>'Güneydoğu Anadolu', 'image_url'=>asset('images/banners/guneydogu.png'), 'blur'=>0, 'darkness'=>12],
     ]);
 @endphp
 <div class="hero-carousel" id="heroCarousel">
@@ -59,38 +63,74 @@
     {{-- Overlay Content --}}
     <div class="hero-overlay">
         <div class="container">
-            <h1 style="font-size:42px;font-weight:800;letter-spacing:-1px;margin-bottom:12px;line-height:1.15;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.3);">
-                Hayalindeki turu<br><span style="color:#5eead4;">en uygun fiyatla</span> bul
+            <span class="hero-badge">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.7L18.6 9l-4.7 1.9L12 15.6 10.1 10.9 5.4 9l4.7-1.3z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>
+                Birçok acenta, tek arama
+            </span>
+            <h1 class="hero-title">
+                Hayalindeki turu<br><span>en uygun fiyatla</span> bul
             </h1>
-            <p style="font-size:17px;color:rgba(255,255,255,0.9);margin-bottom:32px;text-shadow:0 1px 6px rgba(0,0,0,0.3);">
-                {{ $agencyCount }} acentadan {{ $tourCount }} tur karşılaştırıyoruz
+            <p class="hero-sub">
+                Yüzlerce acentanın turlarını karşılaştır,<br>sana en uygun fiyatı kolayca bul.
             </p>
             {{-- Search bar --}}
-            <form action="{{ route('tours.index') }}" method="GET" class="hero-search-form">
-                <div class="hero-search-field full-width">
-                    <label>Nereye?</label>
-                    <input type="text" name="q" id="heroSearchInput" placeholder="Tur veya destinasyon ara...">
-                </div>
-                <div class="hero-search-row">
-                    <div class="hero-search-field split-field">
-                        <label>Ne Zaman?</label>
-                        <input type="date" name="date_start">
+            <form action="{{ route('tours.index') }}" method="GET" class="hero-search-shell">
+                <div class="hero-search-form">
+                    <div class="hero-search-field full-width">
+                        <span class="hsf-ico">
+                            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </span>
+                        <span class="hsf-body">
+                            <label for="heroSearchInput">Nereye?</label>
+                            <input type="text" name="q" id="heroSearchInput" placeholder="Örn. Karadeniz, Bali, Yunanistan">
+                        </span>
+                        <span class="hsf-caret" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </span>
                     </div>
-                    <div class="hero-search-field split-field">
-                        <label>Bütçe (Kişi başı)</label>
-                        <select name="max_price">
-                            <option value="">Farketmez</option>
-                            <option value="5000">Max 5.000 ₺</option>
-                            <option value="10000">Max 10.000 ₺</option>
-                            <option value="20000">Max 20.000 ₺</option>
-                            <option value="30000">Max 30.000 ₺</option>
-                            <option value="50000">Max 50.000 ₺</option>
-                        </select>
+                    <div class="hero-search-row">
+                        <div class="hero-search-field split-field">
+                            <span class="hsf-ico">
+                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+                            </span>
+                            <span class="hsf-body">
+                                <label for="heroDate">Ne zaman?</label>
+                                {{-- type=text ile "Tarih seçin" yazısı görünür; odaklanınca
+                                     gerçek tarih girdisine döner (JS kapalıysa metin olarak
+                                     gönderilir, sunucu tarafı zaten doğruluyor). --}}
+                                <input type="text" name="date_start" id="heroDate" placeholder="Tarih seçin"
+                                       onfocus="this.type='date'; try { this.showPicker && this.showPicker(); } catch (e) {}"
+                                       onblur="if(!this.value) this.type='text';">
+                            </span>
+                            <span class="hsf-caret" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
+                        <div class="hero-search-field split-field">
+                            <span class="hsf-ico">
+                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><rect x="3" y="8" width="18" height="12" rx="3"/><circle cx="16" cy="14" r="1.4"/></svg>
+                            </span>
+                            <span class="hsf-body">
+                                <label for="heroBudget">Bütçe (kişi başı)</label>
+                                <select name="max_price" id="heroBudget">
+                                    <option value="">Fark etmez</option>
+                                    <option value="5000">Max 5.000 ₺</option>
+                                    <option value="10000">Max 10.000 ₺</option>
+                                    <option value="20000">Max 20.000 ₺</option>
+                                    <option value="30000">Max 30.000 ₺</option>
+                                    <option value="50000">Max 50.000 ₺</option>
+                                </select>
+                            </span>
+                            <span class="hsf-caret" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </div>
                     </div>
+                    <button type="submit" class="hero-search-btn">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+                        Ara
+                    </button>
                 </div>
-                <button type="submit" class="hero-search-btn">
-                    Ara
-                </button>
             </form>
         </div>
     </div>
@@ -102,6 +142,10 @@
         @foreach($carouselBanners as $i => $b)
         <span class="hero-dot {{ $i === 0 ? 'active' : '' }}" onclick="goToSlide({{ $i }})"></span>
         @endforeach
+    </div>
+    {{-- Hero'yu sayfa zeminine bağlayan dalga --}}
+    <div class="hero-wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 130" preserveAspectRatio="none"><path d="M0 62c150 44 330 58 520 34s360-70 540-52 250 58 380 46V130H0Z" fill="var(--bg)"/></svg>
     </div>
 </div>
 
@@ -120,14 +164,18 @@
             <input type="hidden" name="category" id="selected-category" value="{{ request('category') }}">
 
             <div class="ybar" id="yBar">
-                <button type="button" class="ybtn" data-ypop="ypCat">🏷️ Kategoriler <b class="ybadge" data-yb="category"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypDest">📍 Destinasyon <b class="ybadge" data-yb="destinations"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypMonth">🗓️ Dönem <b class="ybadge" data-yb="months"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypSpecial">🎉 Özel Günler <b class="ybadge" data-yb="special"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypVisa">🛂 Vize <b class="ybadge" data-yb="visa"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypDays">⏱️ Süre <b class="ybadge" data-yb="days"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypDep">🛫 Kalkış <b class="ybadge" data-yb="departures"></b> <span>▾</span></button>
-                <button type="button" class="ybtn" data-ypop="ypBudget">💸 Bütçe <b class="ybadge" data-yb="budget_max"></b> <span>▾</span></button>
+                @php
+                    // Hap düğmelerin ortak iskeleti: ikon kutusu + etiket + sayaç + ok.
+                    $yCaret = '<span class="ycaret" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>';
+                @endphp
+                <button type="button" class="ybtn" data-ypop="ypCat"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></i> Kategoriler <b class="ybadge" data-yb="category"></b> {!! $yCaret !!}</button>
+                <button type="button" class="ybtn" data-ypop="ypDest"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></i> Destinasyon <b class="ybadge" data-yb="destinations"></b> {!! $yCaret !!}</button>
+                <button type="button" class="ybtn" data-ypop="ypMonth"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></i> Dönem <b class="ybadge" data-yb="months"></b> {!! $yCaret !!}</button>
+                <button type="button" class="ybtn" data-ypop="ypSpecial"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13"/><path d="M12 8S9.5 3 7.2 4.4 8.6 8 12 8zM12 8s2.5-5 4.8-3.6S15.4 8 12 8z"/></svg></i> Özel Günler <b class="ybadge" data-yb="special"></b> {!! $yCaret !!}</button>
+                <button type="button" class="ybtn" data-ypop="ypVisa"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="10" r="2.6"/><path d="M8.5 16.5h7"/></svg></i> Vize <b class="ybadge" data-yb="visa"></b> {!! $yCaret !!}</button>
+                <button type="button" class="ybtn" data-ypop="ypDays"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></svg></i> Süre <b class="ybadge" data-yb="days"></b> {!! $yCaret !!}</button>
+                <button type="button" class="ybtn" data-ypop="ypDep"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4.5 13.6l2.2.6 3-2.6-5.3-4.1 1.9-.9 6.6 3 3.8-3.3c.9-.8 2.2-.7 2.9.2.6.8.4 2-.5 2.6l-9.3 6.6-2.9-.6z"/></svg></i> Kalkış <b class="ybadge" data-yb="departures"></b> {!! $yCaret !!}</button>
+                <button type="button" class="ybtn" data-ypop="ypBudget"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><rect x="3" y="8" width="18" height="12" rx="3"/><circle cx="16" cy="14" r="1.4"/></svg></i> Bütçe <b class="ybadge" data-yb="budget_max"></b> {!! $yCaret !!}</button>
 
                 <span class="ycount">Canlı: <b id="yLiveCount">{{ number_format($filteredCount, 0, ',', '.') }}</b> tur</span>
                 <select name="sort" class="ysort" aria-label="Sıralama">
@@ -224,6 +272,26 @@
 
             <noscript><button type="submit" class="yreset" style="margin-top:8px;">Filtrele</button></noscript>
         </form>
+    </div>
+
+    {{-- Hero'nun güven şeridi (masaüstü; mobilde üstteki .m-trust şeridi var) --}}
+    <div class="hero-trust">
+        <div class="hero-trust-item">
+            <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg></span>
+            <div><b>Güvenilir acentalar</b><span>Onaylı yüzlerce acenta</span></div>
+        </div>
+        <div class="hero-trust-item">
+            <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.3l-8 8a2 2 0 0 1-2.9 0l-6-6a2 2 0 0 1-.6-1.4V4.5A1.5 1.5 0 0 1 4.5 3h8.4a2 2 0 0 1 1.4.6l6.2 6.2a1.8 1.8 0 0 1 0 2.5z"/><circle cx="8" cy="8" r="1.4"/></svg></span>
+            <div><b>En iyi fiyatlar</b><span>Karşılaştır, avantajı yakala</span></div>
+        </div>
+        <div class="hero-trust-item">
+            <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4.5" height="6" rx="2"/><rect x="17" y="13.5" width="4.5" height="6" rx="2"/><path d="M20 19.5v.5a2.5 2.5 0 0 1-2.5 2.5H13"/></svg></span>
+            <div><b>7/24 destek</b><span>Seyahatinde yanındayız</span></div>
+        </div>
+        <div class="hero-trust-item">
+            <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.3"/></svg></span>
+            <div><b>Güvenli ödeme</b><span>256-bit SSL ile koruma</span></div>
+        </div>
     </div>
 
     {{-- ===== Mobil ana blok: hero + arama + istatistikler (≤768px, turXtur Mobil 2a) ===== --}}
@@ -452,103 +520,111 @@
 @endsection
 
 @section('styles')
-        /* ── Hero Search Form ── */
-        .hero-search-form { display:flex; flex-wrap:nowrap; border-radius:100px; overflow:hidden; background:rgba(255,255,255,0.95); backdrop-filter:blur(12px); box-shadow:0 8px 32px rgba(0,0,0,0.15); width:100%; max-width:800px; align-items:stretch; }
-        .hero-search-field { padding:12px 24px; display:flex; flex-direction:column; justify-content:center; border-right:1px solid #e2e8f0; }
-        .hero-search-field.full-width { flex:2; min-width:200px; }
-        .hero-search-row { display:flex; flex:3; }
-        .hero-search-field.split-field { flex:1; min-width:150px; }
-        .hero-search-field label { font-size:11px; font-weight:800; text-transform:uppercase; color:#0f172a; margin-bottom:2px; letter-spacing:0.5px; }
-        .hero-search-field input, .hero-search-field select { border:none; outline:none; font-family:var(--font); font-size:15px; width:100%; background:transparent; color:#475569; font-weight:500; }
-        .hero-search-field select { cursor:pointer; appearance:none; font-size:14px; }
-        .hero-search-field input[type="date"] { font-size:14px; cursor:pointer; }
-        .hero-search-btn { background:var(--accent); color:white; border:none; padding:0 32px; font-family:var(--font); font-size:16px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
-        .hero-search-btn span { display:inline-block; padding:22px 0; }
+        /* ── Hero başlık bloğu ── */
+        .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.92); color:var(--accent-dark); border:1px solid rgba(255,255,255,.85); border-radius:100px; padding:8px 17px; font-size:13.5px; font-weight:700; margin-bottom:22px; box-shadow:0 8px 22px -12px rgba(15,23,42,.5); backdrop-filter:blur(6px); }
+        .hero-badge svg { color:var(--accent); flex-shrink:0; }
+        .hero-title { font-size:56px; font-weight:800; letter-spacing:-1.8px; line-height:1.08; color:#0f172a; margin-bottom:18px; }
+        .hero-title span { color:var(--accent); }
+        .hero-sub { font-size:18px; line-height:1.55; color:#334155; font-weight:500; margin-bottom:36px; }
+
+        /* ── Hero arama kutusu ── */
+        .hero-search-shell { display:block; width:100%; max-width:950px; background:rgba(255,255,255,.5); border:1px solid rgba(255,255,255,.7); border-radius:26px; padding:9px; box-shadow:0 28px 60px -28px rgba(15,23,42,.55); backdrop-filter:blur(10px); }
+        .hero-search-form { display:flex; flex-wrap:nowrap; align-items:stretch; background:#fff; border-radius:19px; padding:7px; }
+        .hero-search-field { display:flex; align-items:center; gap:11px; padding:10px 16px; border-right:1px solid #eef2f6; min-width:0; }
+        .hero-search-field.full-width { flex:1.5; }
+        .hero-search-row { display:flex; flex:2.1; min-width:0; }
+        .hero-search-field.split-field { flex:.92; min-width:0; }
+        /* Bütçe etiketi ("Bütçe (kişi başı)") daha uzun — bu alan biraz geniş */
+        .hero-search-row .split-field:last-child { flex:1.16; border-right:none; }
+        .hsf-ico { display:flex; flex-shrink:0; color:var(--accent); }
+        .hsf-body { display:flex; flex-direction:column; justify-content:center; flex:1; min-width:0; }
+        .hero-search-field label { font-size:13.5px; font-weight:700; color:#0f172a; letter-spacing:-.1px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .hero-search-field input, .hero-search-field select { border:none; outline:none; font-family:var(--font); font-size:14.5px; width:100%; background:transparent; color:#0f172a; font-weight:500; padding:0; text-overflow:ellipsis; }
+        .hero-search-field input::placeholder { color:#94a3b8; }
+        .hero-search-field select { cursor:pointer; appearance:none; -webkit-appearance:none; }
+        .hero-search-field input[type="date"] { cursor:pointer; }
+        .hsf-caret { display:flex; flex-shrink:0; color:#94a3b8; }
+        .hero-search-btn { background:var(--accent); color:#fff; border:none; border-radius:15px; margin-left:7px; padding:0 34px; font-family:var(--font); font-size:16px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .2s; display:flex; align-items:center; justify-content:center; gap:9px; flex-shrink:0; }
         .hero-search-btn:hover { background:var(--accent-dark); }
-        
-        @media(max-width: 768px) {
-            .hero-carousel { height:640px !important; }
-            .hero-overlay { align-items:flex-end !important; padding-bottom:100px; }
-            .hero-overlay h1 { font-size:26px !important; margin-bottom:8px !important; }
-            .hero-overlay p { font-size:14px !important; margin-bottom:20px !important; }
-            
-            .hero-search-form { 
-                flex-direction:column; 
-                border-radius:16px; 
-                background:#fff; 
-                padding:16px; 
-                box-shadow:0 12px 40px rgba(0,0,0,0.15);
-            }
-            .hero-search-field.full-width { 
-                width:100% !important; 
-                border-right:none !important; 
-                border-bottom:1px solid #e5e7eb; 
-                padding:4px 0 16px 0 !important; 
-            }
-            .hero-search-row { display:flex; width:100%; border-bottom:1px solid #e5e7eb; }
-            .hero-search-field.split-field { 
-                width:50% !important; 
-                border-bottom:none !important; 
-                border-right:none !important;
-                padding:16px 0 !important; 
-            }
-            .hero-search-field.split-field:first-child { 
-                border-right:1px solid #e5e7eb !important; 
-                padding-right:16px !important; 
-            }
-            .hero-search-field.split-field:last-child { 
-                padding-left:16px !important; 
-            }
-            .hero-search-btn { 
-                width:100%; 
-                border-radius:10px; 
-                padding:14px; 
-                margin-top:16px;
-            }
-            .hero-search-btn span { padding:0 !important; }
-        }
 
         /* ── Hero Carousel ── */
-        .hero-carousel { position:relative; width:100vw; margin-left:calc(-50vw + 50%); height:650px; overflow:hidden; }
+        .hero-carousel { position:relative; width:100vw; margin-left:calc(-50vw + 50%); height:760px; overflow:hidden; }
         .hero-slides { display:flex; height:100%; transition:transform 0.8s cubic-bezier(0.4,0,0.2,1); }
         .hero-slide { min-width:100%; height:100%; background-size:cover; background-position:center; position:relative; }
-        .hero-slide::after { content:''; position:absolute; inset:0; background:linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 100%); }
-        .hero-slide-label { position:absolute; bottom:24px; right:32px; background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); color:white; padding:8px 18px; border-radius:100px; font-size:13px; font-weight:600; z-index:2; letter-spacing:0.3px; border:1px solid rgba(255,255,255,0.2); }
-        .hero-overlay { position:absolute; inset:0; z-index:3; display:flex; align-items:center; pointer-events:none; }
-        .hero-overlay .container { pointer-events:auto; }
-        .hero-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:4; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.2); color:white; width:48px; height:48px; border-radius:50%; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.3s; }
-        .hero-arrow:hover { background:rgba(255,255,255,0.3); transform:translateY(-50%) scale(1.05); }
-        .hero-arrow-left { left:20px; }
-        .hero-arrow-right { right:20px; }
-        .hero-dots { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:4; display:flex; gap:10px; }
-        .hero-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.4); cursor:pointer; transition:all 0.3s; border:2px solid transparent; }
-        .hero-dot.active { background:white; transform:scale(1.2); border-color:rgba(255,255,255,0.6); box-shadow:0 0 8px rgba(255,255,255,0.4); }
-        .hero-dot:hover { background:rgba(255,255,255,0.7); }
-        @media(max-width:768px) {
-            .hero-carousel { height:520px; }
-            .hero-overlay h1 { font-size:28px !important; }
-            .hero-arrow { width:36px; height:36px; font-size:14px; }
+        /* Banner adı ve noktalar sağ üstte, menü hapının altındaki boş fotoğraf
+           alanında durur — arama kutusuyla ve filtre barıyla çakışmaz. */
+        .hero-slide-label { position:absolute; top:118px; right:36px; bottom:auto; background:rgba(255,255,255,.75); backdrop-filter:blur(8px); color:#0f172a; padding:7px 16px; border-radius:100px; font-size:12.5px; font-weight:700; z-index:2; border:1px solid rgba(255,255,255,.8); }
+        .hero-overlay { position:absolute; inset:0; z-index:3; display:flex; align-items:center; pointer-events:none; padding-bottom:130px; }
+        /* Koyu başlık her fotoğrafta okunsun diye soldan gelen beyaz perde */
+        .hero-overlay::before { content:''; position:absolute; inset:0; background:linear-gradient(97deg, rgba(255,255,255,.94) 0%, rgba(255,255,255,.86) 24%, rgba(255,255,255,.58) 44%, rgba(255,255,255,.14) 63%, rgba(255,255,255,0) 78%); }
+        .hero-overlay .container { pointer-events:auto; position:relative; }
+        /* Referans tasarımda ok yok — otomatik döner, noktalarla da gezilir.
+           Geri istenirse bu satırı silmek yeterli. */
+        .hero-arrow { display:none; }
+        .hero-dots { position:absolute; top:164px; right:38px; bottom:auto; left:auto; transform:none; z-index:6; display:flex; gap:9px; }
+        .hero-dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.7); border:1px solid rgba(15,23,42,.15); cursor:pointer; transition:all 0.3s; }
+        .hero-dot.active { background:var(--accent); border-color:var(--accent); transform:scale(1.25); }
+        .hero-dot:hover { background:#fff; }
+        .hero-wave { position:absolute; left:0; right:0; bottom:-1px; z-index:5; line-height:0; pointer-events:none; }
+        .hero-wave svg { display:block; width:100%; height:120px; }
+
+        /* ── Hero güven şeridi ── */
+        /* margin-top, filtre barının hero'ya bindirme payını (ve dalganın yüksekliğini)
+           telafi eder: şerit her zaman dalganın ALTINDA, sayfa zemininde kalır.
+           z-index, dalga (z:5) üstünde kalması için. */
+        .hero-trust { display:grid; grid-template-columns:repeat(4,1fr); gap:22px; margin-top:130px; margin-bottom:36px; position:relative; z-index:6; }
+        .hero-trust-item { display:flex; align-items:center; gap:13px; }
+        .hti-ico { display:flex; align-items:center; justify-content:center; width:32px; height:32px; color:var(--accent); flex-shrink:0; }
+        .hti-ico svg { width:28px; height:28px; }
+        .hero-trust-item div { display:flex; flex-direction:column; line-height:1.35; min-width:0; }
+        .hero-trust-item div b { font-size:15px; font-weight:800; color:#0f172a; }
+        .hero-trust-item div span { font-size:13.5px; color:#64748b; font-weight:500; }
+
+        @media(max-width:1150px) {
+            .hero-carousel { height:700px; }
+            .hero-title { font-size:44px; letter-spacing:-1.2px; }
+            .hero-sub { font-size:16.5px; margin-bottom:28px; }
+        }
+        /* Tablet (769–980): arama kutusu alt alta iner, bu yüzden hero uzar ve
+           filtre barı/güven şeridi buna göre kayar. */
+        @media(max-width:980px) {
+            .hero-carousel { height:920px; }
+            .hero-overlay { padding-bottom:150px; }
+            .hero-title { font-size:38px; }
+            .hero-search-form { flex-wrap:wrap; }
+            .hero-search-field { padding:9px 14px; }
+            .hero-search-field.full-width { flex:0 0 100%; border-right:none; border-bottom:1px solid #eef2f6; }
+            .hero-search-row { flex:0 0 100%; }
+            .hero-search-row .split-field:first-child { border-right:1px solid #eef2f6; }
+            .hero-search-btn { flex:0 0 100%; margin:8px 0 0; padding:14px 0; border-radius:14px; }
+            .filter-bar-wrapper { margin-top:-180px; }
+            .hero-trust { grid-template-columns:repeat(2,1fr); gap:18px; margin-top:150px; }
         }
 
         /* ── Home Filter Bar ── */
-        .filter-bar-wrapper { margin-top:-40px; position:relative; z-index:10; margin-bottom:32px; }
-        .filter-bar { background:white; border-radius:20px; box-shadow:0 15px 40px -10px rgba(0,0,0,0.12); padding:12px; border:1px solid #f1f5f9; }
+        /* Hero'nun içine taşan yüzen hap barı: dalganın üstünde, fotoğrafın üzerinde durur */
+        .filter-bar-wrapper { margin-top:-210px; position:relative; z-index:20; margin-bottom:0; }
+        .filter-bar { background:rgba(255,255,255,.55); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.7); border-radius:24px; box-shadow:0 24px 52px -26px rgba(15,23,42,.5); padding:10px 12px; }
 
         /* ── Yatay filtre barı (Etstur uyarlaması G2) ── */
         .yfilter-card { position:relative; display:block; }
-        .ybar { display:flex; gap:8px; align-items:center; overflow-x:auto; padding:2px; scrollbar-width:none; -ms-overflow-style:none; }
+        /* Masaüstünde haplar ortalanır ve sığmazsa alt satıra iner (yatay kaydırma
+           kalırsa soldaki haplara ulaşılamıyordu); mobilde tek satır + kaydırma. */
+        .ybar { display:flex; flex-wrap:wrap; gap:9px; align-items:center; justify-content:center; padding:2px; scrollbar-width:none; -ms-overflow-style:none; }
         .ybar::-webkit-scrollbar { display:none; }
-        .ybtn { display:inline-flex; align-items:center; gap:6px; border:1.5px solid #e2e8f0; background:#f8fafc; border-radius:100px; padding:9px 14px; font-size:13px; font-weight:700; color:#334155; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; transition:all .15s; }
-        .ybtn:hover { border-color:#cbd5e1; background:#f1f5f9; }
+        .ybtn { display:inline-flex; align-items:center; gap:9px; border:1px solid #eef2f6; background:#fff; border-radius:100px; padding:7px 16px 7px 7px; font-size:13.5px; font-weight:700; color:#0f172a; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; transition:all .18s; box-shadow:0 6px 14px -8px rgba(15,23,42,.35); }
+        .ybtn:hover { border-color:#cbd5e1; transform:translateY(-1px); box-shadow:0 10px 20px -10px rgba(15,23,42,.4); }
         .ybtn.set { border-color:var(--accent); background:#f0fdfa; color:var(--accent-dark); }
-        .ybtn > span { color:#94a3b8; font-size:10px; }
+        .yico { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:10px; background:#f0fdfa; color:var(--accent); flex-shrink:0; }
+        .ybtn.set .yico { background:var(--accent); color:#fff; }
+        .ycaret { display:inline-flex; color:#94a3b8; }
         .ybadge { display:none; font-style:normal; background:var(--accent); color:#fff; border-radius:100px; padding:1px 7px; font-size:10.5px; font-weight:800; }
         .ybadge.show { display:inline-block; }
-        .ycount { margin-left:auto; font-size:12.5px; color:#475569; font-weight:700; white-space:nowrap; flex-shrink:0; padding-left:8px; }
+        .ycount { margin-left:6px; font-size:12.5px; color:#475569; font-weight:700; white-space:nowrap; flex-shrink:0; }
         .ycount b { color:var(--accent); }
-        .ysort { border:1.5px solid #e2e8f0; background:#f8fafc; border-radius:100px; padding:8px 12px; font-size:12.5px; font-weight:700; color:#475569; cursor:pointer; font-family:inherit; outline:none; flex-shrink:0; }
-        .yreset { border:none; background:none; color:#94a3b8; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline; font-family:inherit; flex-shrink:0; }
-        .ychips { display:none; gap:5px; flex-wrap:wrap; margin-top:8px; }
+        .ysort { border:1px solid #eef2f6; background:#fff; border-radius:100px; padding:9px 12px; font-size:12.5px; font-weight:700; color:#475569; cursor:pointer; font-family:inherit; outline:none; flex-shrink:0; box-shadow:0 6px 14px -8px rgba(15,23,42,.35); }
+        .yreset { border:none; background:none; color:#64748b; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline; font-family:inherit; flex-shrink:0; }
+        .ychips { display:none; gap:5px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
         .ychips.show { display:flex; }
         .ychips span { background:var(--accent-light); color:var(--accent-dark); border-radius:100px; padding:3px 10px; font-size:11.5px; font-weight:800; cursor:pointer; }
 
@@ -576,6 +652,8 @@
         @media(max-width:992px) {
             .ycount { display:none; }
             .ypop { left:8px; right:8px; width:auto; }
+            .ybar { flex-wrap:nowrap; justify-content:flex-start; overflow-x:auto; }
+            .ychips { justify-content:flex-start; }
         }
 
         /* ── iPhone Style Story Cards ── */
@@ -665,6 +743,7 @@
             #homeMain > .filter-bar-wrapper { order:3; }
             #homeMain > #tours-section { order:4; }
             .hero-carousel { display:none; }
+            .hero-trust { display:none; }
             #destinationsSection { display:none !important; }
 
             /* Storyler: daire avatar şeridi (beyaz tam genişlik bant) */
@@ -772,9 +851,13 @@
 })();
 
 // --- Animated Search Placeholder ---
+// Referans tasarımda "Nereye?" alanı sabit örnek metin gösteriyor
+// ("Örn. Karadeniz, Bali, Yunanistan"), daktilo animasyonu yok. Animasyonu
+// geri istersen DAKTILO_ACIK'i true yap, kod olduğu gibi duruyor.
 (function() {
+    const DAKTILO_ACIK = false;
     const input = document.getElementById('heroSearchInput');
-    if (!input) return;
+    if (!input || !DAKTILO_ACIK) return;
     const phrases = [
         'Kapadokya turlarını keşfet...',
         'Bodrum tatil fırsatları...',

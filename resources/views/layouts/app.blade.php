@@ -91,6 +91,31 @@
         .nav-logout-btn { background:none; border:none; color:#ef4444; font-family:var(--font); font-size:14px; font-weight:700; cursor:pointer; padding:6px 12px; border-radius:8px; transition:all 0.2s; }
         .nav-logout-btn:hover { background:#fef2f2; color:#dc2626; }
         
+        /* ── Ana sayfa: yüzen hap menü (yalnız masaüstü) ──
+           Hero'nun üstünde durur; sayfa kaydırılınca (.scrolled) klasik beyaz
+           şeride dönüşür, böylece sticky davranış kaybolmaz. */
+        @media(min-width:769px) {
+            .nav.nav-float {
+                position:fixed; top:0; left:0; right:0; z-index:120;
+                background:transparent; border-bottom:1px solid transparent;
+                height:auto; padding:18px 24px;
+                transition:padding .25s ease, background .25s ease, border-color .25s ease;
+            }
+            .nav.nav-float .nav-inner {
+                background:var(--white); border-radius:26px; padding:11px 20px;
+                box-shadow:0 14px 38px -14px rgba(15,23,42,.35);
+                max-width:1240px !important; margin:0 auto !important;
+                transition:border-radius .25s ease, box-shadow .25s ease, padding .25s ease;
+            }
+            .nav.nav-float.scrolled { padding:0; background:var(--white); border-bottom-color:var(--border-light); }
+            .nav.nav-float.scrolled .nav-inner { border-radius:0; box-shadow:none; padding:12px 20px; max-width:none !important; }
+            /* Hap içinde: gezinme sola, logo ortada, hesap düğmeleri sağa yaslı */
+            .nav.nav-float .nav-links-left { justify-self:start; margin-right:0; }
+            .nav.nav-float .nav-links-right { justify-self:end; margin-left:0; }
+            .nav.nav-float.scrolled .nav-links-left { justify-self:end; margin-right:36px; }
+            .nav.nav-float.scrolled .nav-links-right { justify-self:start; margin-left:36px; }
+        }
+
         /* Mobile menu */
         .mobile-menu-btn {
             display:none; width:40px; height:40px; align-items:center; justify-content:center;
@@ -379,7 +404,9 @@
     @stack('head')
 </head>
 <body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }}">
-    <nav class="nav">
+    {{-- Ana sayfada menü hero'nun üstünde yüzen beyaz hap olur (nav-float);
+         diğer sayfalarda klasik beyaz sticky şerit kalır. --}}
+    <nav class="nav {{ request()->routeIs('home') ? 'nav-float' : '' }}">
         @auth
             @php
                 // SQL COUNT (satırları belleğe yüklemeden) + görülmemiş duyuru sayısı
@@ -2409,6 +2436,17 @@
             "eagerness": "moderate"
         }]
     }
+    </script>
+
+    {{-- Yüzen hap menü: kaydırınca beyaz şeride dönüşsün (yalnız ana sayfa) --}}
+    <script>
+    (function () {
+        var navEl = document.querySelector('.nav.nav-float');
+        if (!navEl) return;
+        var tick = function () { navEl.classList.toggle('scrolled', window.scrollY > 40); };
+        tick();
+        window.addEventListener('scroll', tick, { passive: true });
+    })();
     </script>
 
     {{-- Çerez rıza banner'ı — KVKK Çerez Rehberi: reddetmek kabul etmek kadar
