@@ -150,17 +150,14 @@
 </div>
 
 <div class="container" id="homeMain">
-    {{-- Mega menü (gezinme) + filtre barı (daraltma) tek kartta: menü üstte,
-         filtre altında. İkisi farklı iş görüyor, biri diğerinin yerine geçmiyor.
+    {{-- Filtre barı (daraltma) hero'ya binen yüzen kartta; kategori ağacı
+         (gezinme + SEO) dalganın ALTINDA, sayfa zemininde ayrı bir şerit.
+         İkisi farklı iş görüyor, biri diğerinin yerine geçmiyor.
          Hangisinin görüneceği config/ui.php: home_nav ile seçilir — üç modun
          hiçbiri kod silmez, .env'de HOME_NAV çevirmek yeterli. --}}
     @php $homeNav = config('ui.home_nav', 'both'); @endphp
-    <div class="filter-bar-wrapper">
-        @if(in_array($homeNav, ['both', 'mega'], true))
-            @include('partials.mega-menu')
-        @endif
-        <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar yfilter-card"
-              @if($homeNav === 'mega') style="display:none;" @endif>
+    <div class="filter-bar-wrapper" @if($homeNav === 'mega') style="display:none;" @endif>
+        <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar yfilter-card">
             <input type="hidden" name="category" id="selected-category" value="{{ request('category') }}">
 
             <div class="ybar" id="yBar">
@@ -273,6 +270,14 @@
             <noscript><button type="submit" class="yreset" style="margin-top:8px;">Filtrele</button></noscript>
         </form>
     </div>
+
+    {{-- Kategori ağacı (malitur kalıbı mega menü): hero'nun hemen altında,
+         güven şeridinin üstünde. Mobilde gizli — orada m-home bloğu devrede. --}}
+    @if(in_array($homeNav, ['both', 'mega'], true))
+        <div class="mega-wrap {{ $homeNav === 'mega' ? 'mega-wrap-solo' : '' }}">
+            @include('partials.mega-menu')
+        </div>
+    @endif
 
     {{-- Hero'nun güven şeridi (masaüstü; mobilde üstteki .m-trust şeridi var) --}}
     <div class="hero-trust">
@@ -569,10 +574,26 @@
         .hero-wave svg { display:block; width:100%; height:120px; }
 
         /* ── Hero güven şeridi ── */
-        /* margin-top, filtre barının hero'ya bindirme payını (ve dalganın yüksekliğini)
-           telafi eder: şerit her zaman dalganın ALTINDA, sayfa zemininde kalır.
-           z-index, dalga (z:5) üstünde kalması için. */
-        .hero-trust { display:grid; grid-template-columns:repeat(4,1fr); gap:22px; margin-top:130px; margin-bottom:36px; position:relative; z-index:6; }
+        /* ── Kategori ağacı şeridi (mega menü) ──
+           Filtre barından sonraki ilk blok. Üstündeki boşluğu .filter-bar-wrapper'ın
+           margin-bottom'u veriyor (bkz. aşağısı), bu yüzden burada margin-top yok. */
+        /* Katman sırası (hepsi dalganın z:5 üstünde):
+           filtre barı 30 > kategori ağacı 20 > güven şeridi 6.
+           Böylece filtre panelleri kategori şeridinin, kategori panelleri de
+           güven şeridinin üstüne düşüyor. (position+z-index yığın bağlamı
+           kurduğu için içerideki panellerin z:60'ı bu sırayı aşamaz.) */
+        {{-- Yalnız yerleşim burada; şeridin kendi görünümü partials/mega-menu
+             içinde durur. Bu @section('styles') bloğu HER modda sayfaya
+             basıldığı için menüye özgü seçiciler (ve onları anan yorumlar)
+             buraya yazılmamalı: 'filter' modunda menü hiç render edilmediği
+             hâlde adı sayfaya sızar, HomeNavTest'in bekçisi haklı olarak kırılır.
+             Blade yorumu kullanıldı — CSS yorumu çıktıya gider. --}}
+        .mega-wrap { position:relative; z-index:20; margin:0 0 24px; }
+        /* Filtre barı kapalıyken (HOME_NAV=mega) hero'ya bindirme olmadığı için
+           boşluğu bu blok kendi verir. */
+        .mega-wrap-solo { margin-top:40px; }
+
+        .hero-trust { display:grid; grid-template-columns:repeat(4,1fr); gap:22px; margin-bottom:36px; padding-top:24px; border-top:1px solid var(--border); position:relative; z-index:6; }
         .hero-trust-item { display:flex; align-items:center; gap:13px; }
         .hti-ico { display:flex; align-items:center; justify-content:center; width:32px; height:32px; color:var(--accent); flex-shrink:0; }
         .hti-ico svg { width:28px; height:28px; }
@@ -580,30 +601,13 @@
         .hero-trust-item div b { font-size:15px; font-weight:800; color:#0f172a; }
         .hero-trust-item div span { font-size:13.5px; color:#64748b; font-weight:500; }
 
-        @media(max-width:1150px) {
-            .hero-carousel { height:700px; }
-            .hero-title { font-size:44px; letter-spacing:-1.2px; }
-            .hero-sub { font-size:16.5px; margin-bottom:28px; }
-        }
-        /* Tablet (769–980): arama kutusu alt alta iner, bu yüzden hero uzar ve
-           filtre barı/güven şeridi buna göre kayar. */
-        @media(max-width:980px) {
-            .hero-carousel { height:920px; }
-            .hero-overlay { padding-bottom:150px; }
-            .hero-title { font-size:38px; }
-            .hero-search-form { flex-wrap:wrap; }
-            .hero-search-field { padding:9px 14px; }
-            .hero-search-field.full-width { flex:0 0 100%; border-right:none; border-bottom:1px solid #eef2f6; }
-            .hero-search-row { flex:0 0 100%; }
-            .hero-search-row .split-field:first-child { border-right:1px solid #eef2f6; }
-            .hero-search-btn { flex:0 0 100%; margin:8px 0 0; padding:14px 0; border-radius:14px; }
-            .filter-bar-wrapper { margin-top:-180px; }
-            .hero-trust { grid-template-columns:repeat(2,1fr); gap:18px; margin-top:150px; }
-        }
-
         /* ── Home Filter Bar ── */
         /* Hero'nun içine taşan yüzen hap barı: dalganın üstünde, fotoğrafın üzerinde durur */
-        .filter-bar-wrapper { margin-top:-210px; position:relative; z-index:20; margin-bottom:0; }
+        /* margin-bottom, hero'ya bindirme payını + dalganın yüksekliğini telafi eder:
+           kendisinden sonraki blok (kategori ağacı ya da güven şeridi) her zaman
+           dalganın ALTINDA, sayfa zemininde başlar. Komşu margin'ler birleştiği
+           için sonraki bloğun kendi margin-top'u vermesine gerek yok. */
+        .filter-bar-wrapper { margin-top:-210px; position:relative; z-index:30; margin-bottom:130px; }
         .filter-bar { background:rgba(255,255,255,.55); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.7); border-radius:24px; box-shadow:0 24px 52px -26px rgba(15,23,42,.5); padding:10px 12px; }
 
         /* ── Yatay filtre barı (Etstur uyarlaması G2) ── */
@@ -649,11 +653,37 @@
         .ymonth input { position:absolute; opacity:0; pointer-events:none; }
         .ymonth.on { background:var(--accent); color:#fff; border-color:var(--accent); }
 
+        /* ── Kırılım noktaları ──
+           DİKKAT: bu blok, üstündeki koşulsuz .hero-* / .filter-bar-* kurallarından
+           SONRA gelmeli. Aynı seçici + aynı özgüllükte son yazan kazanır; media
+           query yukarı taşınırsa (önceden öyleydi) tablet düzeni hiç uygulanmaz. */
+        @media(max-width:1150px) {
+            .hero-carousel { height:700px; }
+            .hero-title { font-size:44px; letter-spacing:-1.2px; }
+            .hero-sub { font-size:16.5px; margin-bottom:28px; }
+        }
+
         @media(max-width:992px) {
             .ycount { display:none; }
             .ypop { left:8px; right:8px; width:auto; }
             .ybar { flex-wrap:nowrap; justify-content:flex-start; overflow-x:auto; }
             .ychips { justify-content:flex-start; }
+        }
+
+        /* Tablet (769–980): arama kutusu alt alta iner, bu yüzden hero uzar ve
+           filtre barı / kategori ağacı / güven şeridi buna göre kayar. */
+        @media(max-width:980px) {
+            .hero-carousel { height:920px; }
+            .hero-overlay { padding-bottom:150px; }
+            .hero-title { font-size:38px; }
+            .hero-search-form { flex-wrap:wrap; }
+            .hero-search-field { padding:9px 14px; }
+            .hero-search-field.full-width { flex:0 0 100%; border-right:none; border-bottom:1px solid #eef2f6; }
+            .hero-search-row { flex:0 0 100%; }
+            .hero-search-row .split-field:first-child { border-right:1px solid #eef2f6; }
+            .hero-search-btn { flex:0 0 100%; margin:8px 0 0; padding:14px 0; border-radius:14px; }
+            .filter-bar-wrapper { margin-top:-180px; margin-bottom:160px; }
+            .hero-trust { grid-template-columns:repeat(2,1fr); gap:18px; }
         }
 
         /* ── iPhone Style Story Cards ── */
@@ -743,7 +773,7 @@
             #homeMain > .filter-bar-wrapper { order:3; }
             #homeMain > #tours-section { order:4; }
             .hero-carousel { display:none; }
-            .hero-trust { display:none; }
+            .hero-trust, .mega-wrap { display:none; }
             #destinationsSection { display:none !important; }
 
             /* Storyler: daire avatar şeridi (beyaz tam genişlik bant) */

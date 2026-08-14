@@ -1,7 +1,8 @@
 {{--
-    Ana sayfa mega menüsü (malitur kalıbı). Filtre barının YERİNE değil ÜSTÜNE
-    gelir: menü gezinme (ne aradığını bilmeyen kullanıcı + SEO), filtre daraltma
-    (ne aradığını bilen kullanıcı) işi görür. İkisi farklı iş, ikisi de kalıyor.
+    Ana sayfa mega menüsü (malitur kalıbı). Filtre barının YERİNE değil ALTINA
+    gelir — hero'nun dalgasından sonra, güven şeridinin üstünde (bkz. home.blade
+    içindeki .mega-wrap). Menü gezinme (ne aradığını bilmeyen kullanıcı + SEO),
+    filtre daraltma (ne aradığını bilen kullanıcı) işi görür; ikisi de kalıyor.
 
     İçerik App\Support\MegaMenu'den, envanterden türer — turu olmayan başlık
     menüye hiç girmez. Boş kova varsa kova da basılmaz.
@@ -49,6 +50,11 @@
 <style>
 .mega { display:block; margin-bottom:10px; }
 .mega-row { list-style:none; margin:0; padding:0 4px; display:flex; flex-wrap:wrap; gap:4px; }
+/* Ana sayfada (.mega-wrap içinde) şerit ortalanır ve filtre haplarıyla aynı
+   dili konuşsun diye düğmeler yuvarlak + biraz iri olur. */
+.mega-wrap .mega { margin-bottom:0; }
+.mega-wrap .mega-row { justify-content:center; gap:6px; }
+.mega-wrap .mega-trigger { font-size:15px; padding:11px 18px; border-radius:100px; }
 .mega-item { position:relative; }
 .mega-trigger {
     display:inline-flex; align-items:center; gap:7px; border:none; background:transparent;
