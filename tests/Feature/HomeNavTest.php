@@ -77,7 +77,7 @@ class HomeNavTest extends TestCase
 
         $r = $this->get(route('home'))->assertOk();
 
-        $r->assertSee('Yurt İçi Turlar');
+        $r->assertSee('Kültür');
         $r->assertSee('home-filter-form', false);
     }
 
@@ -88,7 +88,7 @@ class HomeNavTest extends TestCase
 
         $r = $this->get(route('home'))->assertOk();
 
-        $r->assertSee('Yurt İçi Turlar');
+        $r->assertSee('Kültür');
         // Form hâlâ sayfada — yalnız gizli. Silinmedi.
         $r->assertSee('home-filter-form', false);
         $r->assertSee('display:none;', false);
@@ -102,43 +102,85 @@ class HomeNavTest extends TestCase
         $r = $this->get(route('home'))->assertOk();
 
         $r->assertDontSee('mega-trigger', false);
+        $r->assertDontSee('mega-link', false);
         $r->assertSee('home-filter-form', false);
     }
 
-    public function test_menu_yalnizca_esigi_gecen_basliklari_gosterir(): void
+    /**
+     * Kullanıcı kararı (2026-08-13): menü envanterden değil kategori ağacından
+     * türer. Turu olmayan kategori de görünür — menü ile filtre barındaki
+     * "Kategoriler" paneli aynı listeyi göstermek zorunda.
+     */
+    public function test_turu_olmayan_kategori_de_menude_gorunur(): void
     {
+        Category::create(['name' => 'Kayak ve Kış', 'slug' => 'kayak-menu', 'is_active' => true]);
+
+        config(['ui.home_nav' => 'both']);
+        MegaMenu::forget();
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Kayak ve Kış')
+            ->assertSee(route('tours.index', ['category' => 'kayak-menu']), false);
+    }
+
+    public function test_alt_kategoriler_panelde_listelenir(): void
+    {
+        $ust = Category::create(['name' => 'Doğa Turları', 'slug' => 'doga-menu', 'is_active' => true]);
+        Category::create(['name' => 'Kamp ve Yayla', 'slug' => 'kamp-menu', 'parent_id' => $ust->id, 'is_active' => true]);
+
         config(['ui.home_nav' => 'both']);
         MegaMenu::forget();
 
         $r = $this->get(route('home'))->assertOk();
 
-        // "Mardin" kelimesi tur kartı başlığında da geçiyor; menüye girip
-        // girmediğini link URL'sinden kontrol ediyoruz.
-        $r->assertSee(route('tours.index', ['destination' => 'Kapadokya']), false);   // 2 tur
-        $r->assertDontSee(route('tours.index', ['destination' => 'Mardin']), false);  // 1 tur
+        $r->assertSee('Doğa Turları');
+        $r->assertSee('Kamp ve Yayla');
+        $r->assertSee(route('tours.index', ['category' => 'kamp-menu']), false);
+        // Alt kategorisi olan başlık açılır panel olur
+        $r->assertSee('aria-controls="mega-doga-menu"', false);
     }
 
-    public function test_menu_yurt_ici_ve_disini_ayirir(): void
+    public function test_alt_kategorisi_olmayan_baslik_duz_link_olur(): void
     {
+        // setUp'taki "Kültür" kategorisinin alt kategorisi yok
         config(['ui.home_nav' => 'both']);
         MegaMenu::forget();
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Yurt İçi Turlar')
-            ->assertSee('Yurt Dışı Turlar');
+            ->assertSee('class="mega-link" href="'.route('tours.index', ['category' => 'kultur-menu']).'"', false)
+            ->assertDontSee('aria-controls="mega-kultur-menu"', false);
     }
 
-    public function test_turu_olmayan_kova_hic_basilmaz(): void
+    public function test_pasif_kategori_menuye_girmez(): void
     {
-        Tour::query()->update(['is_international' => false]);
-        MegaMenu::forget();
+        Category::create(['name' => 'Gizli Kategori', 'slug' => 'gizli-menu', 'is_active' => false]);
+
         config(['ui.home_nav' => 'both']);
+        MegaMenu::forget();
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Yurt İçi Turlar')
-            ->assertDontSee('Yurt Dışı Turlar');
+            ->assertDontSee('Gizli Kategori');
+    }
+
+    /**
+     * Sayaç kuralı filtre barıyla aynı olmalı: üst kategori kendi turlarını DEĞİL
+     * kendisi + tüm alt seviyelerini sayar. Ayrı hesaplanırsa menü "0" derken
+     * filtre tur döndürür (canlı vaka için bkz. Category::descendantIds).
+     */
+    public function test_kategori_sayaci_alt_seviyeleri_de_toplar(): void
+    {
+        $ust = Category::create(['name' => 'Deniz Turları', 'slug' => 'deniz-menu', 'is_active' => true]);
+        $alt = Category::create(['name' => 'Tekne Turu', 'slug' => 'tekne-menu', 'parent_id' => $ust->id, 'is_active' => true]);
+        $this->tur('Bodrum Tekne Turu', 'Bodrum', false, $alt->id);
+
+        MegaMenu::forget();
+        $kovalar = collect(MegaMenu::build())->keyBy('key');
+
+        $this->assertSame(1, $kovalar['deniz-menu']['count']);
+        $this->assertSame(1, $kovalar['deniz-menu']['columns'][0]['links'][0]['count']);
     }
 
     public function test_menu_linkleri_mevcut_filtre_urllerine_gider(): void
@@ -149,6 +191,6 @@ class HomeNavTest extends TestCase
         // Yeni sayfa açılmıyor: menü var olan /turlar filtresine bağlanıyor.
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee(route('tours.index', ['destination' => 'Kapadokya']), false);
+            ->assertSee(route('tours.index', ['category' => 'kultur-menu']), false);
     }
 }

@@ -7,25 +7,28 @@ use App\Models\Tour;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Ana sayfa mega menüsünün içeriği (malitur kalıbı: kova → sütunlar → linkler).
+ * Ana sayfa kategori ağacı (malitur kalıbı: üst kategori → alt kategoriler).
  *
- * TEK KURAL: envanterden türer, elle küratörlü liste yoktur. Turu olmayan
- * hiçbir başlık menüye girmez — kullanıcı asla boş sayfaya tıklamaz, ve
- * envanter büyüdükçe menü kendiliğinden zenginleşir.
+ * TEK KURAL: kategori ağacının tamamı basılır — filtre barındaki "Kategoriler"
+ * paneliyle BİREBİR aynı liste. Turu olmayan kategori de görünür; menü ile
+ * filtre farklı şeyler gösterirse kullanıcı hangisinin doğru olduğunu bilemez.
  *
- * Eşik neden var: 30 alt kategorinin çoğu tek turluk. Hepsini listelemek
- * hem menüyü çöplüğe çevirir hem de Google'ın "zayıf içerik" saydığı
- * sayfalara link vermek olur.
+ * (2026-08-13 öncesi burası envanterden türeyen kovalar üretiyordu — "Yurt İçi
+ * Turlar / Yurt Dışı Turlar / Özel Dönemler" — ve en az 2 turu olmayan başlığı
+ * gizliyordu. Kullanıcı kararıyla kategori ağacına çevrildi.)
+ *
+ * Sayaçlar filtre barıyla aynı kuralla hesaplanır: bir kategorinin sayısı
+ * kendisi + TÜM alt seviyeleridir (Category::descendantIds). Ayrı hesaplanırsa
+ * menü ile filtre farklı rakam gösterir.
  */
 class MegaMenu
 {
-    public const CACHE_KEY = 'home_mega_menu_v1';
-
-    /** Menüde görünmek için gereken en az tur sayısı. */
-    private const MIN_TOURS = 2;
-
-    /** Bir sütunda gösterilecek en fazla link. */
-    private const MAX_PER_COLUMN = 10;
+    /**
+     * DİKKAT: Dizinin ŞEKLİ her değiştiğinde sürek numarası da artmalı.
+     * Aksi halde deploy sonrası eski biçimdeki önbellek okunur ve şablon
+     * "Undefined array key" ile 500 verir (bir kez yaşandı).
+     */
+    public const CACHE_KEY = 'home_mega_menu_v3';
 
     public static function forget(): void
     {
@@ -33,41 +36,55 @@ class MegaMenu
     }
 
     /**
-     * @return array<int, array{key:string, label:string, count:int, columns:array<int, array{title:string, links:array<int, array{label:string, url:string, count:int}>}>}>
+     * @return array<int, array{key:string, icon:?string, name:string, count:int, url:string, columns:array<int, array{title:string, links:array<int, array{icon:?string, label:string, url:string, count:int}>}>}>
      */
     public static function build(): array
     {
         return Cache::remember(self::CACHE_KEY, 300, function () {
+            // Tur::active() pasif acentayı ve lisanssız kategoriyi zaten eler;
+            // HomeController'ın facet sorgusuyla aynı taban kullanılıyor ki
+            // menü ile filtre aynı rakamı göstersin.
+            $sayimlar = Tour::query()->active()
+                ->whereNotNull('category_id')
+                ->selectRaw('category_id, COUNT(*) as toplam')
+                ->groupBy('category_id')
+                ->pluck('toplam', 'category_id')
+                ->all();
+
+            // Torun toplamı için tek çekim — döngüde DB'ye gidilmez.
+            $tumKategoriler = Category::select(['id', 'parent_id'])->get();
+
+            $ustler = Category::active()
+                ->parents()
+                ->with(['children' => fn ($q) => $q->active()->orderBy('sort_order')])
+                ->orderBy('sort_order')
+                ->get();
+
             $kovalar = [];
 
-            foreach ([[false, 'yurt-ici', 'Yurt İçi Turlar'], [true, 'yurt-disi', 'Yurt Dışı Turlar']] as [$disi, $key, $label]) {
-                $temel = fn () => Tour::active()
-                    ->whereHas('agency', fn ($q) => $q->active())
-                    ->where('is_international', $disi);
-
-                $adet = $temel()->count();
-                if ($adet === 0) {
-                    continue;
+            foreach ($ustler as $ust) {
+                $linkler = [];
+                foreach ($ust->children as $alt) {
+                    $linkler[] = [
+                        'icon' => $alt->icon,
+                        'label' => $alt->name,
+                        'url' => route('tours.index', ['category' => $alt->slug]),
+                        'count' => self::toplam($alt, $tumKategoriler, $sayimlar),
+                    ];
                 }
 
-                $sutunlar = array_values(array_filter([
-                    self::destinasyonSutunu($temel()),
-                    self::kategoriSutunu($temel(), $disi),
-                ]));
-
-                if ($sutunlar === []) {
-                    continue;
-                }
-
-                $kovalar[] = ['key' => $key, 'label' => $label, 'count' => $adet, 'columns' => $sutunlar];
-            }
-
-            if ($ozel = self::ozelDonemSutunu()) {
                 $kovalar[] = [
-                    'key' => 'ozel-gunler',
-                    'label' => 'Özel Dönemler',
-                    'count' => array_sum(array_column($ozel['links'], 'count')),
-                    'columns' => [$ozel],
+                    'key' => $ust->slug,
+                    // İkon ayrı taşınır: şablonda kendi <span>'ında basılınca
+                    // flex gap'i devreye giriyor, "🏛️Kültür" gibi bitişik durmuyor.
+                    'icon' => $ust->icon,
+                    'name' => $ust->name,
+                    'count' => self::toplam($ust, $tumKategoriler, $sayimlar),
+                    'url' => route('tours.index', ['category' => $ust->slug]),
+                    // Alt kategorisi yoksa panel de yok: tetikleyici düz link olur.
+                    'columns' => $linkler === [] ? [] : [
+                        ['title' => 'Alt kategoriler', 'links' => $linkler],
+                    ],
                 ];
             }
 
@@ -75,97 +92,14 @@ class MegaMenu
         });
     }
 
-    /** @return array{title:string, links:array}|null */
-    private static function destinasyonSutunu($query): ?array
+    /** Kategorinin sayacı: kendisi + tüm alt seviyeleri (filtre barıyla aynı kural). */
+    private static function toplam(Category $kategori, $tumKategoriler, array $sayimlar): int
     {
-        $links = [];
-        foreach (DestinationFilter::vocabulary($query) as $d) {
-            if ($d['count'] < self::MIN_TOURS) {
-                continue;
-            }
-            $links[] = [
-                'label' => $d['city'],
-                'url' => route('tours.index', ['destination' => $d['city']]),
-                'count' => $d['count'],
-            ];
-            if (count($links) >= self::MAX_PER_COLUMN) {
-                break;
-            }
+        $toplam = 0;
+        foreach ($kategori->descendantIds($tumKategoriler) as $id) {
+            $toplam += (int) ($sayimlar[$id] ?? 0);
         }
 
-        return $links === [] ? null : ['title' => 'Destinasyonlar', 'links' => $links];
-    }
-
-    /** @return array{title:string, links:array}|null */
-    private static function kategoriSutunu($query, bool $disi): ?array
-    {
-        // whereNotNull şart: kategorisiz turlar null anahtar üretip
-        // pluck()'ta deprecation uyarısına yol açıyordu.
-        $sayimlar = (clone $query)
-            ->whereNotNull('category_id')
-            ->selectRaw('category_id, COUNT(*) as toplam')
-            ->groupBy('category_id')
-            ->pluck('toplam', 'category_id');
-
-        if ($sayimlar->isEmpty()) {
-            return null;
-        }
-
-        $kategoriler = Category::active()->whereIn('id', $sayimlar->keys())->get();
-
-        $links = [];
-        foreach ($kategoriler as $kategori) {
-            $adet = (int) $sayimlar[$kategori->id];
-            if ($adet < self::MIN_TOURS) {
-                continue;
-            }
-            $links[] = [
-                'label' => trim(($kategori->icon ? $kategori->icon.' ' : '').$kategori->name),
-                'url' => route('tours.index', ['category' => $kategori->slug]),
-                'count' => $adet,
-            ];
-        }
-
-        usort($links, fn ($a, $b) => $b['count'] <=> $a['count']);
-
-        return $links === [] ? null : [
-            'title' => 'Kategoriler',
-            'links' => array_slice($links, 0, self::MAX_PER_COLUMN),
-        ];
-    }
-
-    /**
-     * Özel dönemler config'ten gelir ama YALNIZ gerçekten turu olanlar listelenir —
-     * "Kurban Bayramı" başlığına tıklayıp boş sayfa görmek en kötüsü.
-     *
-     * @return array{title:string, links:array}|null
-     */
-    private static function ozelDonemSutunu(): ?array
-    {
-        $links = [];
-
-        foreach (config('special_periods', []) as $key => $donem) {
-            $adet = Tour::active()
-                ->whereHas('agency', fn ($q) => $q->active())
-                ->where(function ($q) use ($donem) {
-                    foreach ($donem['ranges'] ?? [] as [$bas, $bit]) {
-                        $q->orWhereBetween('departure_date', [$bas, $bit])
-                            ->orWhereHas('dates', fn ($d) => $d->whereBetween('departure_date', [$bas, $bit]));
-                    }
-                })
-                ->count();
-
-            if ($adet < 1) {
-                continue;
-            }
-
-            $links[] = [
-                'label' => $donem['label'] ?? $key,
-                'url' => route('home', ['special' => $key]),
-                'count' => $adet,
-            ];
-        }
-
-        return $links === [] ? null : ['title' => 'Yaklaşan dönemler', 'links' => $links];
+        return $toplam;
     }
 }
