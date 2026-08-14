@@ -2,11 +2,11 @@
 @section('title', 'Banner Yönetimi — Admin')
 
 @section('content')
-{{-- Perde degradesi PHP tarafıyla AYNI duraklardan üretilir (Banner::VEIL_STOPS).
+{{-- Perde degradesi PHP tarafıyla AYNI duraklardan üretilir (HeroVeil::STOPS).
      Formülü buraya elle kopyalarsak admin'de görülenle sitede çıkan görüntü
      sessizce ayrışır. --}}
 <script>
-    const PERDE_DURAKLARI = @json(\App\Models\Banner::VEIL_STOPS);
+    const PERDE_DURAKLARI = @json(\App\Support\HeroVeil::STOPS);
     function perdeCss(deger) {
         const k = Math.max(0, Math.min(100, Number(deger))) / 100;
         const parcalar = PERDE_DURAKLARI.map(
@@ -33,6 +33,30 @@
                 <div class="alert alert-error">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
             @endif
 
+            {{-- Hero beyaz perdesi: TEK ayar, tüm banner'lara uygulanır --}}
+            @php $perde = \App\Support\HeroVeil::strength(); @endphp
+            <div class="stat-card" style="padding:26px 30px;margin-bottom:32px;">
+                <form method="POST" action="{{ route('admin.banners.veil') }}">
+                    @csrf @method('PUT')
+                    <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;">
+                        <div class="form-group" style="margin-bottom:0;flex:1;min-width:280px;">
+                            <label style="font-size:13px;color:#475569;font-weight:700;">
+                                Beyaz Perde (tüm görseller): <span id="veilVal" style="font-weight:800;color:var(--accent);">%{{ $perde }}</span>
+                            </label>
+                            <input type="range" name="white_veil" min="0" max="100" value="{{ $perde }}"
+                                oninput="document.getElementById('veilVal').textContent='%'+this.value;
+                                         document.querySelectorAll('.js-veil').forEach(e => e.style.background = perdeCss(this.value))"
+                                style="width:100%;accent-color:var(--accent);">
+                            <div style="font-size:11px;color:#64748b;margin-top:6px;">
+                                Ana sayfada başlığın arkasındaki beyaz geçiş. Tek ayar, tüm banner'lara birden uygulanır —
+                                aşağıdaki önizlemelerde anında görürsün. Başlık okunmuyorsa artır, fotoğraf fazla soluyorsa azalt.
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="padding:12px 28px;">Perdeyi Kaydet</button>
+                    </div>
+                </form>
+            </div>
+
             {{-- Add New Banner --}}
             <div class="stat-card" style="padding:30px;margin-bottom:32px;border-left:4px solid var(--accent) !important;">
                 <h3 style="font-size:18px;font-weight:800;letter-spacing:-0.3px;color:#0f172a;margin-bottom:24px;">Yeni Banner Ekle</h3>
@@ -57,11 +81,6 @@
                             <input type="range" name="darkness" min="0" max="100" value="40" oninput="document.getElementById('newDarkVal').textContent=this.value+'%'" style="width:100%;accent-color:var(--accent);">
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:13px;color:#475569;">Beyaz Perde: <span id="newVeilVal" style="font-weight:700;color:var(--accent);">100%</span></label>
-                            <input type="range" name="white_veil" min="0" max="100" value="100" oninput="document.getElementById('newVeilVal').textContent=this.value+'%'" style="width:100%;accent-color:var(--accent);">
-                            <div style="font-size:11px;color:#64748b;margin-top:6px;">Ana sayfadaki başlığın arkasındaki beyaz geçiş. Açık fotoğrafta azalt, koyu fotoğrafta artır.</div>
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Sıralama</label>
                             <input type="number" name="sort_order" value="0" style="padding:14px;background:#f8fafc;">
                         </div>
@@ -82,7 +101,7 @@
                     <div id="preview-{{ $banner->id }}" style="position:relative;height:200px;overflow:hidden;">
                         <img src="{{ $banner->image_url }}" alt="{{ $banner->title }}" style="width:100%;height:100%;object-fit:cover;filter:blur({{ $banner->blur }}px);">
                         <div id="overlay-{{ $banner->id }}" style="position:absolute;inset:0;background:rgba(0,0,0,{{ $banner->darkness / 100 }});"></div>
-                        <div id="veil-{{ $banner->id }}" style="position:absolute;inset:0;background:{{ $banner->veil_css }};"></div>
+                        <div class="js-veil" style="position:absolute;inset:0;background:{{ \App\Support\HeroVeil::css() }};"></div>
                         {{-- Önizleme ana sayfanın kendisiyle aynı: koyu başlık + beyaz perde.
                              Beyaz metinle önizlersek admin, perde ayarının okunurluğa
                              ne yaptığını göremez. --}}
@@ -90,7 +109,7 @@
                             <div>
                                 <div style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-0.4px;">Hayalindeki turu <span style="color:#0d9488;">en uygun fiyatla</span> bul</div>
                                 <div style="font-size:12px;color:#475569;margin-top:4px;font-weight:600;">
-                                    {{ $banner->title }} · {{ $banner->is_active ? '✅ Aktif' : '❌ Pasif' }} · Sıra: {{ $banner->sort_order }} · Blur: {{ $banner->blur }}px · Karanlık: {{ $banner->darkness }}% · Perde: {{ $banner->white_veil }}%
+                                    {{ $banner->title }} · {{ $banner->is_active ? '✅ Aktif' : '❌ Pasif' }} · Sıra: {{ $banner->sort_order }} · Blur: {{ $banner->blur }}px · Karanlık: {{ $banner->darkness }}%
                                 </div>
                             </div>
                         </div>
@@ -112,7 +131,7 @@
                                 <input type="number" name="sort_order" value="{{ $banner->sort_order }}" style="padding:12px;background:#f8fafc;">
                             </div>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:16px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;">
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;color:#475569;">Bulanıklık: <span id="blurVal{{ $banner->id }}" style="font-weight:700;color:var(--accent);">{{ $banner->blur }}px</span></label>
                                 <input type="range" name="blur" min="0" max="20" value="{{ $banner->blur }}"
@@ -123,12 +142,6 @@
                                 <label style="font-size:12px;color:#475569;">Karanlık: <span id="darkVal{{ $banner->id }}" style="font-weight:700;color:var(--accent);">{{ $banner->darkness }}%</span></label>
                                 <input type="range" name="darkness" min="0" max="100" value="{{ $banner->darkness }}"
                                     oninput="document.getElementById('darkVal{{ $banner->id }}').textContent=this.value+'%';document.getElementById('overlay-{{ $banner->id }}').style.background='rgba(0,0,0,'+(this.value/100)+')'"
-                                    style="width:100%;accent-color:var(--accent);">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label style="font-size:12px;color:#475569;">Beyaz Perde: <span id="veilVal{{ $banner->id }}" style="font-weight:700;color:var(--accent);">{{ $banner->white_veil }}%</span></label>
-                                <input type="range" name="white_veil" min="0" max="100" value="{{ $banner->white_veil }}"
-                                    oninput="document.getElementById('veilVal{{ $banner->id }}').textContent=this.value+'%';document.getElementById('veil-{{ $banner->id }}').style.background=perdeCss(this.value)"
                                     style="width:100%;accent-color:var(--accent);">
                             </div>
                         </div>

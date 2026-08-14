@@ -392,6 +392,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::put('/bannerlar/{banner}', [BannerController::class, 'update'])->name('banners.update');
     Route::patch('/bannerlar/{banner}/toggle', [BannerController::class, 'toggle'])->name('banners.toggle');
     Route::delete('/bannerlar/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
+    // Beyaz perde tek ayar: banner'a değil siteye ait, bu yüzden {banner}'sız
+    Route::put('/bannerlar/beyaz-perde', [BannerController::class, 'updateVeil'])->name('banners.veil');
 
     // Featured Cities (Story) management
     Route::get('/one-cikan-sehirler', [FeaturedCityController::class, 'index'])->name('featured_cities.index');
