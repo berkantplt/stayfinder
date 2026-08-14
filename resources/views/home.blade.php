@@ -43,11 +43,11 @@
     // karartma 40 → 12'ye indi; admin panelinden gelen banner kendi
     // darkness değerini korur.
     $carouselBanners = $banners->count() ? $banners : collect([
-        (object)['title'=>'Kapadokya', 'image_url'=>asset('images/banners/cappadocia.png'), 'blur'=>0, 'darkness'=>12],
-        (object)['title'=>'Bodrum', 'image_url'=>asset('images/banners/bodrum.png'), 'blur'=>0, 'darkness'=>12],
-        (object)['title'=>'Mısır Piramitleri', 'image_url'=>asset('images/banners/egypt.png'), 'blur'=>0, 'darkness'=>12],
-        (object)['title'=>'Karadeniz Yaylaları', 'image_url'=>asset('images/banners/karadeniz.png'), 'blur'=>0, 'darkness'=>12],
-        (object)['title'=>'Güneydoğu Anadolu', 'image_url'=>asset('images/banners/guneydogu.png'), 'blur'=>0, 'darkness'=>12],
+        (object)['title'=>'Kapadokya', 'image_url'=>asset('images/banners/cappadocia.png'), 'blur'=>0, 'darkness'=>12, 'white_veil'=>100],
+        (object)['title'=>'Bodrum', 'image_url'=>asset('images/banners/bodrum.png'), 'blur'=>0, 'darkness'=>12, 'white_veil'=>100],
+        (object)['title'=>'Mısır Piramitleri', 'image_url'=>asset('images/banners/egypt.png'), 'blur'=>0, 'darkness'=>12, 'white_veil'=>100],
+        (object)['title'=>'Karadeniz Yaylaları', 'image_url'=>asset('images/banners/karadeniz.png'), 'blur'=>0, 'darkness'=>12, 'white_veil'=>100],
+        (object)['title'=>'Güneydoğu Anadolu', 'image_url'=>asset('images/banners/guneydogu.png'), 'blur'=>0, 'darkness'=>12, 'white_veil'=>100],
     ]);
 @endphp
 <div class="hero-carousel" id="heroCarousel">
@@ -56,6 +56,10 @@
         <div class="hero-slide">
             <img src="{{ $b->image_url }}" alt="{{ $b->title }}" style="width:100%;height:100%;object-fit:cover;filter:blur({{ $b->blur }}px);position:absolute;inset:0;">
             <div style="position:absolute;inset:0;background:rgba(0,0,0,{{ $b->darkness / 100 }});"></div>
+            {{-- Beyaz perde: koyu başlığın okunurluğunu sağlar, gücü banner başına
+                 admin panelinden ayarlanır (banners.white_veil). Degrade tek
+                 kaynaktan gelir ki admin önizlemesiyle ayrışmasın. --}}
+            <div style="position:absolute;inset:0;background:{{ \App\Models\Banner::veilGradient((int) ($b->white_veil ?? 100)) }};"></div>
             <div class="hero-slide-label">{{ $b->title }}</div>
         </div>
         @endforeach
@@ -559,9 +563,9 @@
         /* Banner adı ve noktalar sağ üstte, menü hapının altındaki boş fotoğraf
            alanında durur — arama kutusuyla ve filtre barıyla çakışmaz. */
         .hero-slide-label { position:absolute; top:118px; right:36px; bottom:auto; background:rgba(255,255,255,.75); backdrop-filter:blur(8px); color:#0f172a; padding:7px 16px; border-radius:100px; font-size:12.5px; font-weight:700; z-index:2; border:1px solid rgba(255,255,255,.8); }
+        {{-- Beyaz perde artık burada değil, her slaytın içinde: gücü banner
+             başına admin panelinden ayarlanıyor (bkz. Banner::veilGradient). --}}
         .hero-overlay { position:absolute; inset:0; z-index:3; display:flex; align-items:center; pointer-events:none; padding-bottom:130px; }
-        /* Koyu başlık her fotoğrafta okunsun diye soldan gelen beyaz perde */
-        .hero-overlay::before { content:''; position:absolute; inset:0; background:linear-gradient(97deg, rgba(255,255,255,.94) 0%, rgba(255,255,255,.86) 24%, rgba(255,255,255,.58) 44%, rgba(255,255,255,.14) 63%, rgba(255,255,255,0) 78%); }
         .hero-overlay .container { pointer-events:auto; position:relative; }
         /* Referans tasarımda ok yok — otomatik döner, noktalarla da gezilir.
            Geri istenirse bu satırı silmek yeterli. */

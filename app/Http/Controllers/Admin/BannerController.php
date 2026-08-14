@@ -22,6 +22,7 @@ class BannerController extends Controller
             'image'      => 'required|image|mimes:jpg,jpeg,png,webp|max:20480',
             'blur'       => 'nullable|integer|min:0|max:20',
             'darkness'   => 'nullable|integer|min:0|max:100',
+            'white_veil' => 'nullable|integer|min:0|max:100',
             'sort_order' => 'nullable|integer',
         ]);
 
@@ -32,6 +33,7 @@ class BannerController extends Controller
             'image'      => $path,
             'blur'       => $validated['blur'] ?? 0,
             'darkness'   => $validated['darkness'] ?? 40,
+            'white_veil' => $validated['white_veil'] ?? 100,
             'sort_order' => $validated['sort_order'] ?? 0,
         ]);
 
@@ -46,6 +48,7 @@ class BannerController extends Controller
             'image'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
             'blur'       => 'nullable|integer|min:0|max:20',
             'darkness'   => 'nullable|integer|min:0|max:100',
+            'white_veil' => 'nullable|integer|min:0|max:100',
             'sort_order' => 'nullable|integer',
         ]);
 
