@@ -389,11 +389,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Banner management
     Route::get('/bannerlar', [BannerController::class, 'index'])->name('banners.index');
     Route::post('/bannerlar', [BannerController::class, 'store'])->name('banners.store');
+    // Beyaz perde tek ayar: banner'a değil siteye ait, bu yüzden {banner}'sız.
+    // DİKKAT: aşağıdaki {banner} rotalarından ÖNCE durmak zorunda. Sonra kalırsa
+    // "beyaz-perde" bir banner anahtarı sanılır ve kaydetme 404 döner.
+    Route::put('/bannerlar/beyaz-perde', [BannerController::class, 'updateVeil'])->name('banners.veil');
     Route::put('/bannerlar/{banner}', [BannerController::class, 'update'])->name('banners.update');
     Route::patch('/bannerlar/{banner}/toggle', [BannerController::class, 'toggle'])->name('banners.toggle');
     Route::delete('/bannerlar/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
-    // Beyaz perde tek ayar: banner'a değil siteye ait, bu yüzden {banner}'sız
-    Route::put('/bannerlar/beyaz-perde', [BannerController::class, 'updateVeil'])->name('banners.veil');
 
     // Featured Cities (Story) management
     Route::get('/one-cikan-sehirler', [FeaturedCityController::class, 'index'])->name('featured_cities.index');
