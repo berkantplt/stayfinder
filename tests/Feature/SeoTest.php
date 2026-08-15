@@ -84,6 +84,28 @@ class SeoTest extends TestCase
             ->assertRedirect(route('tours.show', $tour).'?utm_source=instagram');
     }
 
+    public function test_eski_rastgele_son_ekli_slug_301_ile_kurtarilir(): void
+    {
+        // Slug üretimi bir dönem "kapadokya-balon-turu-wDBRf" biçimindeydi ve
+        // bu adresler canlıda sitemap'te yayınlandı. backfill onları
+        // yeniden adlandırınca 404'e düştüler — indekslenmiş adres kaybı.
+        $tour = $this->tur(['title' => 'Kapadokya Balon Turu']);
+
+        $this->get('/turlar/kapadokya-balon-turu-wDBRf')
+            ->assertStatus(301)
+            ->assertRedirect(route('tours.show', $tour));
+    }
+
+    public function test_turkce_kelimeyle_biten_slug_kirpilmaz(): void
+    {
+        // "...-dahil", "...-gidis", "...-donus" gerçek slug parçaları; 5 harfli
+        // diye kırpılıp başka bir tura yönlendirilmemeli.
+        $this->tur(['title' => 'Mısır Turu Ekstra Turlar Dahil']);
+
+        $this->get('/turlar/misir-turu-ekstra-turlar-dahil')->assertOk();
+        $this->get('/turlar/misir-turu-ekstra-turlar-dahil-bilet')->assertNotFound();
+    }
+
     public function test_acenta_adresi_slug_kullanir_ve_id_301_doner(): void
     {
         $tour = $this->tur();

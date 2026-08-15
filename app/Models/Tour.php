@@ -194,9 +194,39 @@ class Tour extends Model
             return $bySlug;
         }
 
-        return ctype_digit((string) $value)
-            ? $this->newQuery()->whereKey($value)->first()
-            : null;
+        if (ctype_digit((string) $value)) {
+            return $this->newQuery()->whereKey($value)->first();
+        }
+
+        return $this->resolveLegacyRandomSlug((string) $value);
+    }
+
+    /**
+     * Eski rastgele son ekli slug'ları kurtarır.
+     *
+     * Slug üretimi bir dönem "kapadokya-turu-wDBRf" biçimindeydi (başlık +
+     * Str::random(5)). seo:backfill-tour-slugs bunları "kapadokya-turu"ya
+     * çevirdi — ama arada site bu adresleri sitemap'te ve iç linklerde
+     * yayınlamıştı, yani Google indekslemiş olabilir. Kayıt tutulmadığı için
+     * eski slug geri getirilemez; ancak biçim bilindiğinden son ek atılıp
+     * gövde aranabilir. Bulunursa controller 301 ile kanonik adrese taşır.
+     *
+     * Sadece rastgele görünen son ekler denenir: Str::random() [A-Za-z0-9]
+     * üretir, bu yüzden en az bir büyük harf veya rakam şartı aranır. Türkçe
+     * slug parçaları ("...-dahil", "...-gidis") tamamen küçük harf olduğu için
+     * yanlışlıkla kırpılmaz.
+     */
+    private function resolveLegacyRandomSlug(string $value): ?self
+    {
+        if (! preg_match('/^(?<base>.+)-(?<suffix>[A-Za-z0-9]{5})$/', $value, $m)) {
+            return null;
+        }
+
+        if (! preg_match('/[A-Z0-9]/', $m['suffix'])) {
+            return null;
+        }
+
+        return $this->newQuery()->where('slug', $m['base'])->first();
     }
 
     /**
