@@ -358,6 +358,57 @@ class AgencyCategoryLicensingTest extends TestCase
         $this->assertSame([], session('agency_category_license_cart', []));
     }
 
+    public function test_cart_add_and_remove_return_json_state_for_xhr(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $this->actingAs($user)
+            ->postJson(route('agency.category-licenses.cart.add'), ['category_id' => $category->id])
+            ->assertOk()
+            ->assertJson([
+                'ok' => true,
+                'count' => 1,
+                'total_label' => '2.000',
+                'items' => [['id' => $category->id, 'name' => 'Kültür Turları', 'price_label' => '2.000']],
+            ]);
+
+        $this->assertSame([$category->id], session('agency_category_license_cart', []));
+
+        $this->actingAs($user)
+            ->deleteJson(route('agency.category-licenses.cart.remove', $category))
+            ->assertOk()
+            ->assertJson(['ok' => true, 'count' => 0, 'total_label' => '0', 'items' => []]);
+
+        $this->assertSame([], session('agency_category_license_cart', []));
+    }
+
+    public function test_license_page_ships_dynamic_cart_hooks(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+        $agency->update(['approval_status' => Agency::STATUS_APPROVED]);
+
+        $this->actingAs($user)
+            ->get(route('agency.category-licenses.index'))
+            ->assertOk()
+            ->assertSee('data-cart-form', false)
+            ->assertSee('data-cart-items', false)
+            ->assertSee('data-category-card="'.$category->id.'"', false);
+    }
+
+    public function test_cart_add_returns_json_error_for_xhr(): void
+    {
+        [$user] = $this->makeAgencyAndCategory();
+
+        $parent = Category::whereNull('parent_id')->firstOrFail();
+
+        $this->actingAs($user)
+            ->postJson(route('agency.category-licenses.cart.add'), ['category_id' => $parent->id])
+            ->assertStatus(422)
+            ->assertJson(['ok' => false]);
+
+        $this->assertSame([], session('agency_category_license_cart', []));
+    }
+
     private function makePendingIyzicoOrder(Agency $agency, Category $category, string $token): AgencyCategoryOrder
     {
         $order = AgencyCategoryOrder::create([

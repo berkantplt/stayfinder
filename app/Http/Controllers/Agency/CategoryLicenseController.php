@@ -41,19 +41,17 @@ class CategoryLicenseController extends Controller
             ->get();
 
         $licensedCategoryIds = $agency->accessibleCategoryIds();
-        $cartCategoryIds = $this->cartCategoryIds();
 
+        // Sepettekiler de listede kalır; JS sepete eklendikçe kartı gizler/geri gösterir.
         $availableCategories = $agency->legacy_category_access
             ? collect()
             : $categories
                 ->whereNotIn('id', $licensedCategoryIds)
-                ->whereNotIn('id', $cartCategoryIds->all())
                 ->filter(fn (Category $category) => $category->parent_id !== null) // üst kategoriler satılmaz
                 ->values();
 
-        $cartItems = $categories
-            ->whereIn('id', $cartCategoryIds->all())
-            ->values();
+        $cartItems = $this->resolveCartCategoriesFor($agency);
+        $cartCategoryIds = $cartItems->pluck('id');
 
         $licensedCategories = $agency->legacy_category_access
             ? $categories->map(function (Category $category) use ($agency) {
@@ -91,6 +89,7 @@ class CategoryLicenseController extends Controller
             'agency',
             'availableCategories',
             'cartItems',
+            'cartCategoryIds',
             'cartTotal',
             'licensedCategories',
             'recentOrders'
@@ -99,14 +98,14 @@ class CategoryLicenseController extends Controller
 
     public function addToCart(Request $request)
     {
-        if ($redirect = $this->redirectIfSchemaMissing(true)) {
-            return $redirect;
+        if ($response = $this->guardSchema($request)) {
+            return $response;
         }
 
         $agency = $this->currentAgency();
 
         if ($agency->legacy_category_access) {
-            return back()->withErrors('Bu acenta için geçiş erişimi tanımlı. Tüm kategoriler zaten açık.');
+            return $this->cartError($request, 'Bu acenta için geçiş erişimi tanımlı. Tüm kategoriler zaten açık.');
         }
 
         $validated = $request->validate([
@@ -116,11 +115,11 @@ class CategoryLicenseController extends Controller
         $category = Category::active()->findOrFail((int) $validated['category_id']);
 
         if ($category->parent_id === null) {
-            return back()->withErrors('Üst kategoriler satın alınamaz. Lütfen bir alt kategori seçin.');
+            return $this->cartError($request, 'Üst kategoriler satın alınamaz. Lütfen bir alt kategori seçin.');
         }
 
         if ($agency->hasCategoryAccess($category)) {
-            return back()->withErrors($category->name.' kategorisi zaten aktif yetkileriniz arasında.');
+            return $this->cartError($request, $category->name.' kategorisi zaten aktif yetkileriniz arasında.');
         }
 
         $cartCategoryIds = $this->cartCategoryIds()
@@ -131,13 +130,13 @@ class CategoryLicenseController extends Controller
 
         session([self::CART_SESSION_KEY => $cartCategoryIds]);
 
-        return back()->with('success', $category->name.' sepetinize eklendi.');
+        return $this->cartSuccess($request, $agency, $category->name.' sepetinize eklendi.');
     }
 
-    public function removeFromCart(Category $category)
+    public function removeFromCart(Request $request, Category $category)
     {
-        if ($redirect = $this->redirectIfSchemaMissing(true)) {
-            return $redirect;
+        if ($response = $this->guardSchema($request)) {
+            return $response;
         }
 
         $cartCategoryIds = $this->cartCategoryIds()
@@ -147,7 +146,7 @@ class CategoryLicenseController extends Controller
 
         session([self::CART_SESSION_KEY => $cartCategoryIds]);
 
-        return back()->with('success', $category->name.' sepetten çıkarıldı.');
+        return $this->cartSuccess($request, $this->currentAgency(), $category->name.' sepetten çıkarıldı.');
     }
 
     public function checkoutForm(Request $request)
@@ -380,6 +379,51 @@ class CategoryLicenseController extends Controller
         ], fn ($value) => $value !== null && $value !== '');
     }
 
+    /**
+     * Sepet işlemleri XHR ile gelirse sayfa yenilemeden güncellenecek durumu döndür.
+     */
+    private function cartSuccess(Request $request, Agency $agency, string $message)
+    {
+        if (! $request->expectsJson()) {
+            return back()->with('success', $message);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'message' => $message,
+        ] + $this->cartPayload($agency));
+    }
+
+    private function cartError(Request $request, string $message)
+    {
+        if (! $request->expectsJson()) {
+            return back()->withErrors($message);
+        }
+
+        return response()->json(['ok' => false, 'message' => $message], 422);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function cartPayload(Agency $agency): array
+    {
+        $cartCategories = $this->resolveCartCategoriesFor($agency);
+        $total = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price);
+
+        return [
+            'items' => $cartCategories->map(fn (Category $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'icon' => (string) $category->icon,
+                'price_label' => number_format((float) $category->monthly_price, 0, ',', '.'),
+                'remove_url' => route('agency.category-licenses.cart.remove', $category),
+            ])->all(),
+            'count' => $cartCategories->count(),
+            'total_label' => number_format((float) $total, 0, ',', '.'),
+        ];
+    }
+
     private function currentAgency(): Agency
     {
         $agency = auth()->user()?->agency;
@@ -411,10 +455,24 @@ class CategoryLicenseController extends Controller
         return Category::active()
             ->whereIn('id', $cartIds->all())
             ->whereNotNull('parent_id') // üst kategoriler satılmaz
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
             ->reject(fn (Category $category) => $agency->hasCategoryAccess($category))
             ->values();
+    }
+
+    private function guardSchema(Request $request)
+    {
+        if (CategoryLicensing::schemaReady()) {
+            return null;
+        }
+
+        $message = 'Kategori yetkilendirme altyapısı henüz veritabanına uygulanmamış.';
+
+        return $request->expectsJson()
+            ? response()->json(['ok' => false, 'message' => $message], 503)
+            : back()->withErrors($message);
     }
 
     private function redirectIfSchemaMissing(bool $back = false)
