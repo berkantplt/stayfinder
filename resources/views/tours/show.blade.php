@@ -6,26 +6,8 @@
 @endif
 
 @push('head')
-@include('partials.json-ld', ['data' => [
-    '@context' => 'https://schema.org',
-    '@type' => 'Product',
-    'name' => $tour->title,
-    'image' => $tour->image ? url($tour->image) : asset('images/og-default.png'),
-    'description' => \Illuminate\Support\Str::limit(strip_tags($tour->description), 150),
-    'sku' => 'tur-'.$tour->id,
-    'brand' => [
-        '@type' => 'Brand',
-        'name' => $tour->agency->name ?? 'turXtur',
-    ],
-    'offers' => [
-        '@type' => 'Offer',
-        'url' => route('tours.show', $tour),
-        'priceCurrency' => $tour->currency ?? 'TRY',
-        'price' => (string) $tour->price,
-        'availability' => 'https://schema.org/InStock',
-        'validFrom' => ($tour->departure_date ?? now())->toIso8601String(),
-    ],
-]])
+{{-- TouristTrip + Product + FAQPage tek @graph içinde (bkz. App\Support\TourSchema) --}}
+@include('partials.json-ld', ['data' => \App\Support\TourSchema::graph($tour)])
 <style>
     /* Sekme barı: çerçeveli kutular (mobilde 2 sütun, tek kalan buton tam genişlik) */
     .tour-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0 20px; }
@@ -86,7 +68,7 @@
         @include('partials.breadcrumb', ['items' => array_filter([
             ['name' => 'Turlar', 'url' => route('tours.index')],
             $tour->category
-                ? ['name' => $tour->category->name, 'url' => route('tours.index', ['category' => $tour->category->slug])]
+                ? ['name' => $tour->category->name, 'url' => \App\Support\LandingSlug::urlForCategory($tour->category)]
                 : null,
             ['name' => $tour->title],
         ])])
@@ -133,7 +115,7 @@
 
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
                     @if($tour->category)
-                        <a href="{{ route('tours.index', ['category' => $tour->category->slug]) }}" class="badge badge-accent" style="text-decoration:none;">{{ $tour->category->icon }} {{ $tour->category->name }}</a>
+                        <a href="{{ \App\Support\LandingSlug::urlForCategory($tour->category) }}" class="badge badge-accent" style="text-decoration:none;">{{ $tour->category->icon }} {{ $tour->category->name }}</a>
                     @endif
                     <span class="badge badge-accent">📍 {{ $tour->destination }}</span>
                     <span class="badge badge-accent">⏱ {{ $tour->duration_label }}</span>
@@ -542,6 +524,29 @@
                         </div>
                     @endforelse
                 </div>
+
+                {{-- Sıkça Sorulan Sorular.
+                     ŞART: FAQPage şeması sayfada GÖRÜNÜR karşılığı olmadan
+                     basılamaz — Google bunu ihlal sayar. Bu blok ile şema aynı
+                     kaynaktan (TourSchema::faq) üretilir, ikisi hep eşittir. --}}
+                @php
+                    $tourFaq = \App\Support\TourSchema::faq($tour);
+                @endphp
+                @if($tourFaq)
+                    <section style="margin-top:32px;" aria-labelledby="sss-baslik">
+                        <h2 id="sss-baslik" style="font-size:20px;font-weight:700;margin-bottom:16px;">Sıkça Sorulan Sorular</h2>
+                        @foreach($tourFaq['mainEntity'] as $soru)
+                            <details style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;">
+                                <summary style="cursor:pointer;padding:14px 16px;font-weight:600;font-size:15px;list-style:none;">
+                                    {{ $soru['name'] }}
+                                </summary>
+                                <div style="padding:0 16px 14px;color:var(--text-sec);font-size:14px;line-height:1.7;">
+                                    {{ $soru['acceptedAnswer']['text'] }}
+                                </div>
+                            </details>
+                        @endforeach
+                    </section>
+                @endif
             </div>
 
             {{-- Right: Pricing & Agency --}}
