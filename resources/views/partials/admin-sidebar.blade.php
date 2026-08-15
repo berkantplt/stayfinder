@@ -40,6 +40,9 @@
         <a href="{{ route('admin.tours') }}" class="sidebar-link {{ request()->routeIs('admin.tours') ? 'active' : '' }}">
             <span class="sidebar-icon">📋</span> Tüm Turlar
         </a>
+        <a href="{{ route('admin.departure-cities') }}" class="sidebar-link {{ request()->routeIs('admin.departure-cities*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🚌</span> Kalkış Şehirleri
+        </a>
         <a href="{{ route('admin.categories.parents') }}" class="sidebar-link {{ request()->routeIs('admin.categories*') ? 'active' : '' }}">
             <span class="sidebar-icon">📁</span> Kategori Yönetimi
         </a>
