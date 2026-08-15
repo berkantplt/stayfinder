@@ -167,11 +167,39 @@ class SeoTest extends TestCase
             ->assertSee('<link rel="canonical" href="'.url('/turlar').'">', false);
     }
 
-    public function test_tekil_facet_indexlenir(): void
+    public function test_tekil_facet_duz_landing_adresine_301_doner(): void
     {
+        // Rakip taramasında incelenen 9 sitenin hiçbiri kategori sayfasını
+        // query string ile sunmuyor. Tek facet artık düz adreste yaşıyor.
+        $category = Category::create(['name' => 'Kültür Turları', 'slug' => 'kultur-turlari']);
+
         $this->get('/turlar?category=kultur-turlari')
+            ->assertStatus(301)
+            ->assertRedirect(\App\Support\LandingSlug::urlForCategory($category));
+    }
+
+    public function test_coklu_filtre_yonlendirilmez(): void
+    {
+        // "?category=x&min_price=y" bir landing sayfası değil, kullanıcının
+        // kurduğu filtre. Yönlendirmek seçimini silerdi.
+        Category::create(['name' => 'Kültür Turları', 'slug' => 'kultur-turlari']);
+
+        $this->get('/turlar?category=kultur-turlari&min_price=1000')
             ->assertOk()
-            ->assertDontSee('name="robots"', false);
+            ->assertSee('<meta name="robots" content="noindex,follow">', false);
+    }
+
+    public function test_noindex_sayfa_kendine_kanonik_verir(): void
+    {
+        // noindex + başka adrese canonical çelişkili sinyaldir; Google ikisini
+        // birden yok sayabilir.
+        $html = $this->get('/turlar?sort=price_desc')->assertOk()->getContent();
+
+        $this->assertStringContainsString('name="robots" content="noindex,follow"', $html);
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="'.url('/turlar').'?sort=price_desc">',
+            $html
+        );
     }
 
     public function test_filtre_kombinasyonu_noindex_alir(): void
@@ -204,6 +232,84 @@ class SeoTest extends TestCase
         $this->assertSame('https://ornek.com/turlar', Seo::withoutFirstPage('https://ornek.com/turlar?page=1'));
         $this->assertSame('https://ornek.com/turlar?category=x', Seo::withoutFirstPage('https://ornek.com/turlar?category=x&page=1'));
         $this->assertSame('https://ornek.com/turlar?page=2', Seo::withoutFirstPage('https://ornek.com/turlar?page=2'));
+    }
+
+    // ── Başlık formülleri ───────────────────────────────────────────────────
+
+    public function test_yil_damgasi_degiskenden_gelir(): void
+    {
+        // SSC Tur'un sayfası hâlâ elle yazılmış "2025" taşıyor. Bizde yıl elle
+        // yazılmaz; Kasım'dan itibaren bir sonraki yıla geçer (tur satışı öne çalışır).
+        $this->travelTo(now()->setDate(2027, 6, 15));
+        $this->assertSame(2027, Seo::year());
+
+        $this->travelTo(now()->setDate(2027, 11, 3));
+        $this->assertSame(2028, Seo::year());
+
+        $this->travelBack();
+    }
+
+    public function test_liste_basligi_kalibi(): void
+    {
+        $this->travelTo(now()->setDate(2027, 3, 1));
+
+        $this->assertSame(
+            'Kapadokya Turları | Kapadokya Turu Fiyatları 2027 — turXtur',
+            Seo::listingTitle('Kapadokya')
+        );
+
+        $this->travelBack();
+    }
+
+    public function test_adda_zaten_tur_eki_varsa_tekrarlanmaz(): void
+    {
+        // Kategori adları "Kültür Turları" biçiminde geliyor; naif ekleme
+        // "Kültür Turları Turları" üretiyordu.
+        $this->travelTo(now()->setDate(2027, 3, 1));
+
+        $this->assertSame('Kültür Turları', Seo::listingHeading('Kültür Turları'));
+        $this->assertSame('Kapadokya Turları', Seo::listingHeading('Kapadokya'));
+        $this->assertSame('Günübirlik Turları', Seo::listingHeading('Günübirlik Turlar'));
+
+        $this->assertSame(
+            'Kültür Turları | Kültür Turu Fiyatları 2027 — turXtur',
+            Seo::listingTitle('Kültür Turları')
+        );
+
+        $this->travelBack();
+    }
+
+    public function test_uzun_adda_baslik_62_karakteri_asmaz(): void
+    {
+        // Prontotour'un 85 karakterlik başlığı SERP'te kesiliyor ve markayı iki
+        // kez tekrar ediyor — o hataya düşmemeli.
+        foreach (['Kapadokya', 'Kuzey Avrupa ve Fiyortlar', 'Güneydoğu Anadolu Gezisi'] as $ad) {
+            $this->assertLessThanOrEqual(
+                62,
+                mb_strlen(Seo::listingTitle($ad)),
+                "Başlık çok uzun: {$ad}"
+            );
+        }
+    }
+
+    public function test_eski_destinasyon_adresi_landing_sayfasina_301_doner(): void
+    {
+        $destination = \App\Models\Destination::create(['name' => 'Kapadokya', 'slug' => 'kapadokya']);
+
+        $this->get(route('destinations.show', $destination))
+            ->assertStatus(301)
+            ->assertRedirect(url('/kapadokya-turlari'));
+    }
+
+    public function test_landing_sayfasi_h1_envanter_sayisi_gosterir(): void
+    {
+        $this->tur(['destination' => 'Kapadokya']);
+        \App\Models\Destination::create(['name' => 'Kapadokya', 'slug' => 'kapadokya']);
+
+        $this->get('/kapadokya-turlari')
+            ->assertOk()
+            ->assertSee('Kapadokya Turları', false)
+            ->assertSee('(1)', false);
     }
 
     // ── Sitemap ─────────────────────────────────────────────────────────────

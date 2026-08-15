@@ -1,5 +1,17 @@
 @extends('layouts.app')
-@section('title', 'Turlar — turXtur')
+@php
+    // Daraltılmış listede o facet'in adı başlığa geçer (bkz. TourController::index).
+    $listeAdi = $activeCategory->name ?? $activeDestination ?? null;
+@endphp
+@section('title', $listeAdi
+    ? \App\Support\Seo::listingTitle($listeAdi)
+    : 'Turlar | Tur Fiyatları '.\App\Support\Seo::year().' — '.config('app.name'))
+
+@push('head')
+    @include('partials.json-ld', [
+        'data' => \App\Support\TourSchema::itemList($tours, \App\Support\Seo::canonical()) ?? [],
+    ])
+@endpush
 
 @section('content')
 <style>
@@ -144,7 +156,11 @@
             ['name' => 'Turlar'],
         ]])
         @include('partials.pagination-seo', ['paginator' => $tours])
-        <h1 style="font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;margin-bottom:24px;">Turları Keşfedin</h1>
+        {{-- H1 = tam anahtar kelime + canlı envanter sayısı (tatilbudur kalıbı) --}}
+        <h1 style="font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;margin-bottom:24px;">
+            {{ $listeAdi ? \App\Support\Seo::listingHeading($listeAdi) : 'Turları Keşfedin' }}
+            @if($tours->total())<span style="font-weight:600;color:var(--text-muted);">({{ $tours->total() }})</span>@endif
+        </h1>
 
         {{-- Mobil chip şeridi: Filtreler (N) + aktif filtre chip'leri + hızlı kategoriler.
              #tours-results içinde olduğu için her AJAX yenilemesinde güncel istekle yeniden çizilir. --}}

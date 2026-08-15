@@ -11,6 +11,7 @@ use App\Observers\PostObserver;
 use App\Observers\TourDateObserver;
 use App\Services\Payment\IyzicoService;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,6 +27,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->forceHttpsUrls();
+
+        // Tarihler Türkçe bassın: APP_LOCALE=en olduğu için Carbon "20 May 2026"
+        // ve "2 days ago" üretiyordu — Türkçe bir sitede hem kullanıcıya hem
+        // (SSS/yapısal veri üzerinden) Google'a İngilizce metin gidiyordu.
+        // Uygulama locale'i değiştirilmiyor: lang/ klasörü yok, APP_LOCALE=tr
+        // yapmak doğrulama mesajlarını Türkçeleştirmezken davranış değiştirirdi.
+        Carbon::setLocale('tr');
 
         // RAG bilgi tabanını canlı tut: Post/Destination değişikliklerinde
         // KnowledgeChunk update + embedding job dispatch.

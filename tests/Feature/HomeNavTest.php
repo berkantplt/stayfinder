@@ -121,7 +121,7 @@ class HomeNavTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Kayak ve Kış')
-            ->assertSee(route('tours.index', ['category' => 'kayak-menu']), false);
+            ->assertSee(\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kayak-menu')->first()), false);
     }
 
     public function test_alt_kategoriler_panelde_listelenir(): void
@@ -136,7 +136,7 @@ class HomeNavTest extends TestCase
 
         $r->assertSee('Doğa Turları');
         $r->assertSee('Kamp ve Yayla');
-        $r->assertSee(route('tours.index', ['category' => 'kamp-menu']), false);
+        $r->assertSee(\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kamp-menu')->first()), false);
         // Alt kategorisi olan başlık açılır panel olur
         $r->assertSee('aria-controls="mega-doga-menu"', false);
     }
@@ -149,7 +149,7 @@ class HomeNavTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('class="mega-link" href="'.route('tours.index', ['category' => 'kultur-menu']).'"', false)
+            ->assertSee('class="mega-link" href="'.\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kultur-menu')->first()).'"', false)
             ->assertDontSee('aria-controls="mega-kultur-menu"', false);
     }
 
@@ -191,6 +191,6 @@ class HomeNavTest extends TestCase
         // Yeni sayfa açılmıyor: menü var olan /turlar filtresine bağlanıyor.
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee(route('tours.index', ['category' => 'kultur-menu']), false);
+            ->assertSee(\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kultur-menu')->first()), false);
     }
 }
