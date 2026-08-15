@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agency;
+use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Post;
 use App\Models\Tour;
+use App\Support\LandingSlug;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 
@@ -33,7 +35,11 @@ class SitemapController extends Controller
     private const SECTIONS = [
         'sayfalar' => 'sayfalar',
         'turlar' => 'turlar',
+        // Düz landing adresleri (/kapadokya-turlari, /kultur-turlari).
+        // "destinasyonlar" adı korunuyor: eski sitemap'i indekslemiş Google
+        // aynı dosya adını bulmaya devam etsin.
         'destinasyonlar' => 'destinasyonlar',
+        'kategoriler' => 'kategoriler',
         'acentalar' => 'acentalar',
         'blog' => 'blog',
     ];
@@ -92,6 +98,7 @@ class SitemapController extends Controller
             'sayfalar' => $this->staticPages(),
             'turlar' => $this->tours($page),
             'destinasyonlar' => $this->destinations($page),
+            'kategoriler' => $this->categories($page),
             'acentalar' => $this->agencies($page),
             'blog' => $this->posts($page),
             default => [],
@@ -187,12 +194,37 @@ class SitemapController extends Controller
             ->forPage($page, self::CHUNK)
             ->get()
             ->map(fn (Destination $destination) => [
-                'loc' => route('destinations.show', $destination),
+                // Kanonik adres düz landing URL'i; /destinasyonlar/... artık 301.
+                'loc' => LandingSlug::urlForDestination($destination),
                 'lastmod' => $destination->updated_at?->toAtomString(),
                 'changefreq' => 'weekly',
                 'priority' => '0.7',
                 'images' => $destination->image ? [$this->absolute($destination->image)] : [],
                 'image_title' => $destination->name,
+            ])
+            ->all();
+    }
+
+    /**
+     * Kategori landing sayfaları (/kultur-turlari).
+     *
+     * Envanteri boş olan kategori de listelenir: sayfa 404 vermiyor, canlı
+     * duruyor (gruppal kalıbı) ve envanter geldiğinde hazır bekliyor.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function categories(int $page): array
+    {
+        return Category::query()
+            ->active()
+            ->orderBy('id')
+            ->forPage($page, self::CHUNK)
+            ->get()
+            ->map(fn (Category $category) => [
+                'loc' => LandingSlug::urlForCategory($category),
+                'lastmod' => $category->updated_at?->toAtomString(),
+                'changefreq' => 'weekly',
+                'priority' => $category->parent_id === null ? '0.8' : '0.7',
             ])
             ->all();
     }
@@ -248,6 +280,7 @@ class SitemapController extends Controller
             'sayfalar' => count($this->staticPages()),
             'turlar' => $this->activeTours()->count(),
             'destinasyonlar' => Destination::count(),
+            'kategoriler' => Category::active()->count(),
             'acentalar' => Agency::active()->whereHas('tours', fn ($q) => $q->active())->count(),
             'blog' => Post::where('is_published', true)->count(),
             default => 0,
@@ -259,6 +292,7 @@ class SitemapController extends Controller
         $latest = match ($section) {
             'turlar' => $this->activeTours()->max('updated_at'),
             'destinasyonlar' => Destination::max('updated_at'),
+            'kategoriler' => Category::active()->max('updated_at'),
             'acentalar' => Agency::active()->max('updated_at'),
             'blog' => Post::where('is_published', true)->max('updated_at'),
             default => null,

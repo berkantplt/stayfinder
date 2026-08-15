@@ -68,7 +68,7 @@ class MegaMenu
                     $linkler[] = [
                         'icon' => $alt->icon,
                         'label' => $alt->name,
-                        'url' => route('tours.index', ['category' => $alt->slug]),
+                        'url' => \App\Support\LandingSlug::urlForCategory($alt),
                         'count' => self::toplam($alt, $tumKategoriler, $sayimlar),
                     ];
                 }
@@ -80,7 +80,7 @@ class MegaMenu
                     'icon' => $ust->icon,
                     'name' => $ust->name,
                     'count' => self::toplam($ust, $tumKategoriler, $sayimlar),
-                    'url' => route('tours.index', ['category' => $ust->slug]),
+                    'url' => \App\Support\LandingSlug::urlForCategory($ust),
                     // Alt kategorisi yoksa panel de yok: tetikleyici düz link olur.
                     'columns' => $linkler === [] ? [] : [
                         ['title' => 'Alt kategoriler', 'links' => $linkler],

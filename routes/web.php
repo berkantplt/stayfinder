@@ -346,6 +346,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Trafik — hangi tur tıklanıyor/görüntüleniyor (dashboard kutularının hedefi)
     Route::get('/trafik', [App\Http\Controllers\Admin\TrafficController::class, 'index'])->name('traffic');
     Route::get('/trafik/{tour}', [App\Http\Controllers\Admin\TrafficController::class, 'show'])->name('traffic.show');
+    // Kalkış şehri toplu düzenleme — "{şehir} kalkışlı" sayfa ailesinin girdisi
+    Route::get('/kalkis-sehirleri', [App\Http\Controllers\Admin\DepartureCityController::class, 'index'])->name('departure-cities');
+    Route::put('/kalkis-sehirleri', [App\Http\Controllers\Admin\DepartureCityController::class, 'update'])->name('departure-cities.update');
     Route::get('/destinasyonlar', [AdminController::class, 'destinations'])->name('destinations');
     Route::put('/destinasyonlar/{destination}', [AdminController::class, 'updateDestination'])->name('destinations.update');
     Route::post('/destinasyonlar/{destination}/toggle', [AdminController::class, 'toggleDestination'])->name('destinations.toggle');
@@ -408,3 +411,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/one-cikan-sehirler/{city}/gorsel', [FeaturedCityController::class, 'addImage'])->name('featured_cities.add_image');
     Route::delete('/one-cikan-sehirler/gorsel/{image}', [FeaturedCityController::class, 'destroyImage'])->name('featured_cities.destroy_image');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Düz landing adresleri — DOSYANIN EN SONUNDA OLMALI
+|--------------------------------------------------------------------------
+|
+| /kapadokya-turlari, /kultur-turlari gibi tek segmentli adresler.
+|
+| Rakip taramasında incelenen 9 sitenin hiçbiri kategori/destinasyon sayfasını
+| query string ile sunmuyor; hepsi düz yol kullanıyor. Bu rota o kalıbı kurar.
+|
+| Kök dizini yutan bir catch-all DEĞİL: kısıt yalnız "-turlari" ile biten tek
+| segmentli adresleri eşler, bu yüzden /turlar, /blog, /admin/... etkilenmez.
+| Yine de en sona konur ki üstteki tüm açık rotalar öncelikli kalsın.
+*/
+Route::get('/{slug}', [\App\Http\Controllers\LandingController::class, 'show'])
+    ->where('slug', \App\Support\LandingSlug::ROUTE_PATTERN)
+    ->name('landing.show');

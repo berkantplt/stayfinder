@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Agency;
 use App\Models\AiSearchLog;
 use App\Models\Category;
+use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourView;
 use App\Support\DestinationFilter;
+use App\Support\LandingSlug;
 use App\Support\TurkishCities;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +19,18 @@ class TourController extends Controller
 {
     public function index(Request $request)
     {
+        // Tek facet ile daraltılmış liste artık kendi düz adresinde yaşıyor
+        // (/kultur-turlari, /kapadokya-turlari). Eski query-string adresi 301
+        // ile oraya taşınır — hem index edilmiş bağlantılar korunur hem aynı
+        // içerik iki adreste yaşamaz.
+        //
+        // ÇOKLU filtrede yönlendirme YAPILMAZ: "?category=x&min_price=y" bir
+        // landing sayfası değil, kullanıcının kurduğu bir filtre; yönlendirmek
+        // seçimini silerdi. O kombinasyonlar zaten noindex alıyor (App\Support\Seo).
+        if ($redirect = $this->canonicalLandingRedirect($request)) {
+            return $redirect;
+        }
+
         $query = Tour::with('agency', 'category', 'dates')
             ->active()
             ->whereHas('agency', fn ($q) => $q->active());
@@ -110,7 +125,47 @@ class TourController extends Controller
         $categories = Category::active()->parents()->with('children')->orderBy('sort_order')->get();
         $departureCities = TurkishCities::all();
 
-        return view('tours.index', compact('tours', 'destinations', 'agencies', 'categories', 'departureCities'));
+        $activeCategory = $request->filled('category')
+            ? Category::where('slug', $request->category)->first()
+            : null;
+
+        $activeDestination = $request->filled('destination') ? (string) $request->destination : null;
+
+        return view('tours.index', compact(
+            'tours', 'destinations', 'agencies', 'categories', 'departureCities',
+            'activeCategory', 'activeDestination'
+        ));
+    }
+
+    /**
+     * "?category=x" veya "?destination=y" TEK BAŞINA geldiyse, o facet'in düz
+     * landing adresine 301. Başka parametre varsa null döner (filtre korunur).
+     */
+    private function canonicalLandingRedirect(Request $request): ?RedirectResponse
+    {
+        $params = collect($request->query())
+            ->reject(fn ($v, $k) => $k === 'page' || $v === '' || $v === null);
+
+        if ($params->count() !== 1) {
+            return null;
+        }
+
+        $key = (string) $params->keys()->first();
+        $value = (string) $params->first();
+
+        if ($key === 'category') {
+            $category = Category::where('slug', $value)->first();
+
+            return $category ? redirect(LandingSlug::urlForCategory($category), 301) : null;
+        }
+
+        if ($key === 'destination') {
+            $destination = Destination::where('name', $value)->first();
+
+            return $destination ? redirect(LandingSlug::urlForDestination($destination), 301) : null;
+        }
+
+        return null;
     }
 
     public function show(Request $request, Tour $tour)

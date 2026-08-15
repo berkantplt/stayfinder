@@ -33,7 +33,11 @@ class Seo
      * @var array<string, array<int, string>>
      */
     private const INDEXABLE_FACETS = [
-        'tours.index' => ['category', 'destination', 'departure_city'],
+        // category ve destination BİLEREK YOK: artık düz landing adreslerinde
+        // yaşıyorlar (/kultur-turlari, /kapadokya-turlari) ve tek başlarına
+        // geldiklerinde 301 ile oraya taşınıyorlar (TourController::index).
+        // departure_city henüz düz adrese taşınmadı — Faz 3'ün ikinci yarısı.
+        'tours.index' => ['departure_city'],
     ];
 
     /**
@@ -56,6 +60,22 @@ class Seo
     {
         $request ??= request();
         $base = $request->url();
+
+        // noindex olan sayfa BAŞKA bir adrese kanonik vermemeli: Google
+        // "indexleme" ile "bu değil şu" sinyallerini çelişkili bulur ve ikisini
+        // birden yok sayabilir. Böyle sayfalar kendilerine kanonik verir;
+        // yalnız izleme parametreleri temizlenir.
+        if (self::robots($request) !== null) {
+            $params = [];
+            foreach ($request->query() as $key => $value) {
+                if (! in_array($key, self::TRACKING_PARAMS, true) && is_string($value) && $value !== '') {
+                    $params[$key] = $value;
+                }
+            }
+            ksort($params);
+
+            return $params === [] ? $base : $base.'?'.http_build_query($params);
+        }
 
         $allowed = self::indexableFacets($request);
         $params = [];
@@ -115,6 +135,86 @@ class Seo
         // Geri kalan her şey: sıralama, fiyat/tarih aralığı, serbest arama ve
         // çoklu facet kombinasyonları. Taransın, linkleri izlensin, indexlenmesin.
         return 'noindex,follow';
+    }
+
+    /**
+     * Başlıkta kullanılacak yıl damgası.
+     *
+     * Rakip taramasında 8 sayfadan 6'sında title'da yıl var ("Kapadokya Turu
+     * Fiyatları 2026") — ama SSC Tur'unki hâlâ elle yazılmış "2025" taşıyor ve
+     * bayat görünüyor. Bu yüzden yıl ASLA elle yazılmaz, buradan gelir.
+     *
+     * Kasım–Aralık'ta bir sonraki yıla geçilir: tur satışı öne çalışır, aralıkta
+     * "2026 fiyatları" yazan bir sayfa satılan üründen geri kalır.
+     */
+    public static function year(): int
+    {
+        $now = now();
+
+        return (int) $now->year + ($now->month >= 11 ? 1 : 0);
+    }
+
+    /**
+     * Adın "tur" ekinden arındırılmış gövdesi.
+     *
+     * Kategori adları zaten "Kültür Turları" biçiminde geliyor; sonuna bir
+     * "Turları" daha eklenince "Kültür Turları Turları" çıkıyordu. Destinasyon
+     * adları ise ("Kapadokya") eki taşımıyor. Gövde ikisini ortak paydaya çeker.
+     */
+    public static function stem(string $name): string
+    {
+        $name = trim($name);
+
+        // Uzundan kısaya: "Turları" önce denenmeli, yoksa "Tur" onu kırpar.
+        foreach (['Turları', 'Turlari', 'Turlar', 'Turu', 'Tur'] as $suffix) {
+            if (mb_strtolower(mb_substr($name, -mb_strlen($suffix))) === mb_strtolower($suffix)) {
+                $stripped = trim(mb_substr($name, 0, -mb_strlen($suffix)));
+
+                // "Turlar" gibi tek başına ek olan adı boşaltma.
+                if ($stripped !== '') {
+                    return $stripped;
+                }
+            }
+        }
+
+        return $name;
+    }
+
+    /**
+     * Liste sayfasının görünür başlığı: "Kapadokya Turları", "Kültür Turları".
+     */
+    public static function listingHeading(string $name): string
+    {
+        return self::stem($name).' Turları';
+    }
+
+    /**
+     * Liste sayfası başlığı — rakip ölçümüyle aynı kalıp:
+     * "{Gövde} Turları | {Gövde} Turu Fiyatları {YIL} — turXtur"
+     *
+     * Ölçülen rakip title'ları 40–63 karakter bandında. Uzun adlarda sınır
+     * aşılmasın diye önce marka soneki, sonra ikinci tamlama düşürülür —
+     * SERP'te kesilen başlık ("...ve Fiyatları 2026| Prontotour") hem çirkin
+     * hem anahtar kelimeyi boşa harcıyor.
+     */
+    public static function listingTitle(string $name): string
+    {
+        $stem = self::stem($name);
+        $heading = $stem.' Turları';
+        $year = self::year();
+        $brand = (string) config('app.name', 'turXtur');
+
+        $full = "{$heading} | {$stem} Turu Fiyatları {$year} — {$brand}";
+        if (mb_strlen($full) <= 62) {
+            return $full;
+        }
+
+        $short = "{$heading} | {$stem} Turu Fiyatları {$year}";
+        if (mb_strlen($short) <= 62) {
+            return $short;
+        }
+
+        return "{$heading} Fiyatları {$year} — {$brand}";
     }
 
     /**
