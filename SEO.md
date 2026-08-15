@@ -5,6 +5,57 @@
 
 ---
 
+## 🔴 CANLI ÖLÇÜM (turxtur.com, 2026-08-15)
+
+Domain doğrulandı: **turxtur.com** (195.155.140.91), `APP_ENV=production` doğru,
+robots.txt ve sitemap yayında.
+
+### Canlı envanter — planın dayandığı varsayımı değiştiriyor
+
+| Ölçüm | Yerel (demo) | **CANLI** |
+|---|---|---|
+| Tur | 92 | **38** |
+| Acenta | 12 | **1** (tatilone) |
+| Destinasyon | 10 | **0** |
+| Aktif kategori | 35 | **0** |
+| Blog | 0 | **0** |
+
+> ⚠️ **En kritik bulgu: canlıda 1 acenta var.**
+>
+> Planın tamamı "12 acentanın fiyatını yan yana gösterebilen tek siteyiz"
+> üzerine kuruluydu. Rakip araştırması bu boşluğun yapısal olduğunu doğruladı
+> (MNG kendi sayfasında rakip adını 0 kez yazıyor). Ama **tek acentayla o
+> tablo kurulamaz** — `LandingStats` zaten `acenta > 1` şartıyla basıyor,
+> yani canlıda karşılaştırma bölümü hiç görünmez.
+>
+> Sonuç: **SEO'nun önündeki asıl darboğaz acenta kazanımı.** Teknik taraf
+> hazır ve bekliyor; ikinci acenta geldiği gün karşılaştırma sayfaları
+> kendiliğinden anlam kazanır.
+
+Destinasyon ve kategori sayısının 0 olması landing sayfalarını da boşa
+düşürüyor: `/kapadokya-turlari` üretilemez çünkü canlıda "Kapadokya"
+destinasyonu tanımlı değil.
+
+### Canlıda ne var, ne yok
+
+| | Durum |
+|---|---|
+| robots.txt (rota tabanlı, `/acenta$` düzeltmesiyle) | ✅ canlı |
+| sitemap index + 5 bölüm | ✅ canlı |
+| Slug URL'leri + 301 | ✅ canlı (rota) |
+| BreadcrumbList | ✅ canlı |
+| Product schema | ✅ canlı (eski tekil biçim) |
+| `sitemap-kategoriler.xml` | ❌ 404 |
+| Landing sayfaları (`/kapadokya-turlari`) | ❌ 404 |
+| Admin kalkış şehirleri ekranı | ❌ 404 |
+| TouristTrip + FAQPage + subTrip | ❌ yok |
+| Başlık/H1 formülleri | ❌ yok (`Turlar — turXtur`, H1 sayaçsız) |
+| `seo:backfill-tour-slugs` çalıştırıldı mı | ❌ hayır (`kapadokya-turu-wDBRf`) |
+
+**Yani canlıda Faz 1 var, Faz 2 / 0.2 / 3 yok.**
+
+---
+
 ## 0. Durum tespiti — ölçülen rakamlar
 
 > ⚠️ **ÖNEMLİ DÜZELTME (uygulama sırasında ortaya çıktı).**
@@ -78,6 +129,55 @@ Her biri gerçek içerikli olduğu için her biri sıralanabilir.
 Karşılaştırma sorguları asıl fırsat: **12 acentanın fiyatını tek sayfada yan yana
 gösterebilen tek site sensin.** Etstur kendi fiyatını gösterir, seninkini gösteremez.
 Bu yapısal üstünlük ve savunulabilir tek konum burası.
+
+---
+
+## FAZ 0.2 — ✅ ARAÇLAR HAZIR, VERİ GİRİŞİ BEKLİYOR
+
+652 test geçiyor (+`tests/Feature/DepartureCityExtractorTest.php`, 26 test).
+
+| Araç | Dosya |
+|---|---|
+| Otomatik çıkarım (4 kaynak) | `app/Support/DepartureCityExtractor.php` |
+| Toplu doldurma komutu | `php artisan seo:backfill-departure-city --dry-run` |
+| Admin toplu düzenleme ekranı | `/admin/kalkis-sehirleri` |
+
+### Çıkarım kaynakları (güvenilirlikten zayıfa)
+
+1. `departure_points` — acentanın girdiği yapısal alan (`"21:00 Ankara AŞTİ"`)
+2. Başlık — `"İstanbul Kalkışlı…"`, `"İzmir Çıkışlı…"`, `"Antalya'dan Günübirlik"`
+3. Programın ilk günü — `"1. Gün: Konya kalkışlı hareket"`
+4. Açıklama — yalnız açık kalkış kalıbı varsa
+
+### ⚠️ Ölçüm sonucu: otomasyon bu veriyi kurtaramıyor
+
+Yerel veritabanında **93 turun yalnız 2'sinde** kalkış sinyali var:
+
+```
+Bulundu: 2  |  Kaynak bulunamadı: 91
+Kaynak dağılımı: title=2
+```
+
+Sebep, daha önce not edilen demo veri sorunu: `departure_points` **0 turda**
+dolu, `stop_cities` **0 turda** dolu, açıklamalar şablon
+(*"Bu muhteşem tur ile X keşfedin"*), `tour_url`'lerin tamamı jollytur.com'a
+işaret ediyor. Yani çıkarılacak bir şey yok — komutun hatası değil.
+
+**Komut bilerek tahmin etmiyor.** Destinasyondan kalkış şehri TÜRETİLMEZ:
+"Kapadokya turu" İstanbul'dan da Ankara'dan da kalkabilir. Uydurulan değer
+"İstanbul kalkışlı Kapadokya turları" sayfasına İzmir'den kalkan turu koyar —
+kullanıcı sayfaya güvenip tıklar, yanlış ürünle karşılaşır. Boş alan bundan iyidir.
+
+### Sıradaki adım (insan işi)
+
+1. **Canlıda ölç:** `php artisan seo:backfill-departure-city --dry-run`
+2. Otomatik bulunanları uygula: `php artisan seo:backfill-departure-city`
+3. Kalanı `/admin/kalkis-sehirleri` ekranından elle gir — sayfa başına 50 tur,
+   otomatik öneri hazır seçili gelir, tek kaydetmede yazılır.
+4. Eksik sayısı düşünce **Faz 3'ün şehir kalkışlı matrisi** açılabilir.
+
+> Not: Doldurulmayan tur yalnız kalkış sayfalarında görünmez; başka hiçbir
+> yerde davranış değişmez (`scopeDepartsFrom` şehir bilgisi olmayanı gizler).
 
 ---
 
@@ -222,7 +322,68 @@ yok sayıyor. Ayrıca yeni engellenmesi gerekenler: `/yapay-zeka-arama`, `/favor
 
 ---
 
-## FAZ 2 — Rich result (SERP'te öne çıkma)
+## FAZ 2 — ✅ TAMAMLANDI (puan/yıldız hariç)
+
+618 test geçiyor (+`tests/Feature/TourSchemaTest.php`, 24 test).
+
+| İş | Dosya | Rakipte durum |
+|---|---|---|
+| `TouristTrip` + `Product` + `FAQPage` tek `@graph` | `app/Support/TourSchema.php` | tatilsepeti/jolly **yanlış tip** (LodgingBusiness) |
+| Günlük program → `subTrip[]` | `TourSchema::subTrips()` | 6 siteden 4'ünde **hiç yok** |
+| `FAQPage` + **görünür** SSS bloğu | `TourSchema::faq()` + `tours/show.blade.php` | 6 sitenin **hiçbirinde yok** |
+| `AggregateOffer` (tarih bazlı fiyat aralığı) | `TourSchema::offer()` | kimsede yok |
+| `priceValidUntil`, `seller`, `availability` | aynı | eksik |
+| ISO 4217 para birimi doğrulaması | `TourSchema::ISO_CURRENCIES` | **setur `"TL"` yazıp geçersiz kılmış** |
+| Başlık formülü + otomatik yıl | `Seo::listingTitle()`, `Seo::year()` | **SSC hâlâ elle yazılmış "2025" taşıyor** |
+| H1 + envanter sayacı | destinasyon & tur listesi | tatilbudur kalıbı |
+| `ItemList` → `TouristTrip` + `provider` | `TourSchema::itemList()` | **jollytur ve Prontotour'da hiç yok** |
+
+### Uygulama sırasında çıkan iki hata
+
+1. **Tüm site İngilizce tarih basıyormuş.** `APP_LOCALE=en` olduğu için Carbon
+   "20 May 2026" ve "2 days ago" üretiyordu — 15 yerde, ve SSS üzerinden
+   yapısal veriye de sızıyordu. `Carbon::setLocale('tr')` ile düzeltildi;
+   uygulama locale'i değiştirilmedi (lang/ klasörü yok, `APP_LOCALE=tr` yapmak
+   doğrulama mesajlarını Türkçeleştirmezken davranış değiştirirdi).
+2. **"Kültür Turları Turları".** Kategori adları zaten "Turları" ekini taşıyor,
+   naif ekleme başlığı bozuyordu. `Seo::stem()` ile ad gövdesine indirgeniyor.
+
+### Bilerek yapılmayanlar
+
+- **`aggregateRating` / `review` basılmıyor.** Sektörde kimse basmıyor ve ilk
+  basan olma imkanı duruyor — ama gerçek yorum şart. Elimizde 1 yorum var;
+  Faz 4.3 (yorum toplama) yürümeden açılmaz. Sahte puan = manuel işlem.
+- **`FAQPage` görünür blok olmadan basılmaz.** Google şemanın sayfada görünür
+  karşılığı olmasını şart koşar; ikisi de aynı kaynaktan (`TourSchema::faq`)
+  üretiliyor, testle eşitlikleri kilitli.
+- **Veri yoksa alan hiç basılmaz.** tatilbudur `description:""` ve `image:[""]`
+  basıyor; boş alan, yanlış alandan iyidir değil — hiç alan olmamalı.
+
+---
+
+## FAZ 2 — özgün plan (referans için)
+
+### 2.0 ⭐ Tur detay sayfası — sektörün tamamen boş bıraktığı alan
+
+6 rakip tur sayfası incelendi: **hiçbirinde `aggregateRating`, `review` veya
+`FAQPage` yok.** Bu, Faz 2'yi ilk plandakinden çok daha değerli yapıyor.
+
+**Hemen yapılabilecekler (yorum gerektirmez):**
+
+| İş | Neden |
+|---|---|
+| `TouristTrip` + `subTrip[]` — her gün ayrı `Trip` nesnesi | Sadece tatilbudur yapıyor; bizim `itinerary` alanımız bunun için hazır |
+| `offers`: `priceValidUntil`, `availability`, `seller` (acenta), `itemCondition` | Kimsede tam değil |
+| `priceCurrency` **ISO 4217** (`TRY`) | setur `"TL"` yazıp geçersiz kılmış |
+| `FAQPage` — "Balon turu dahil mi?", "Vize gerekli mi?", "Çocuk indirimi var mı?" | **6 sitenin hiçbirinde yok** |
+| `touristType` (`Aile`, `Çift`, `Arkadaş Grubu`) | Sadece tatilbudur'da |
+| Self-canonical | **tatilsepeti tur sayfalarını kategoriye canonical veriyor** — kendi sayfalarını yarıştan çekiyor |
+| Süresi dolan tura **301** (404 değil) | MNG 404'e düşürüp link değerini çöpe atıyor |
+
+**`aggregateRating` — kilitli, ama ödül büyük.** Sektörde kimse yıldız basmıyor;
+"kapadokya turu" SERP'inde yıldız gösteren ilk site olma imkanı açık. Ama bu
+**gerçek yorum** ister ve elimizde 1 tane var. Faz 4.3 (yorum toplama) yürümeden
+açılmaz — sahte puan basmak manuel işlem sebebidir.
 
 ### 2.1 Product schema'yı tamamla
 Şu an eksik: `aggregateRating`, `review`, `priceValidUntil`, `sku`, `itemCondition`,
@@ -246,46 +407,374 @@ yerine `AggregateOffer` (`lowPrice`/`highPrice`) doğru olan.
 | Kurumsal | `Organization` (tam: adres, telefon, sosyal) | Bilgi paneli (knowledge panel) |
 | Blog | `Article` + `author` | Haber/makale görünümü |
 
-### 2.3 Başlık ve açıklama şablonları
-Şu an tur başlığı `$tour->title . ' — turXtur'`. Formüle bağlanacak:
-`{Tur adı} Fiyatları {Yıl} — {N} Acenta Karşılaştırmalı | turXtur`
-Meta description'a fiyat + acenta sayısı + kalkış bilgisi (tıklama oranını artıran veriler).
-55–60 / 150–155 karakter sınırları otomatik denetlenecek.
+### 2.3 Başlık ve açıklama şablonları (rakip ölçümüyle kalibre edildi)
+
+Ölçülen rakip title'ları: 40–63 karakter bandında, 8'den 6'sında **yıl damgası** var,
+"Fiyatları" kelimesi neredeyse zorunlu, **rakam yok**.
+
+| Sayfa | Formül |
+|---|---|
+| Tur | `{Tur adı} Fiyatları {YIL} — {N} Acenta Karşılaştırmalı \| turXtur` |
+| Destinasyon | `{Ad} Turları \| {Ad} Turu Fiyatları {YIL} — turXtur` |
+| Kategori | `{Ad} \| {Ad} Fiyatları {YIL} — turXtur` |
+
+> ⚠️ **Yıl değişkenden gelmeli, elle yazılmamalı.** SSC Tur'un
+> `/ankara-cikisli-karadeniz-turlari` sayfası hâlâ "2025" taşıyor — elle yazılan
+> yıl damgası her ocak ayında sessizce bayatlıyor.
+
+**H1'e envanter sayısı:** `Kapadokya Turları ( 12 )`. Tatilbudur bu kalıpla üç
+kategori sorgusunda birden 1. sırada; hem tazelik hem envanter derinliği sinyali.
+Bizde tur sayacı zaten var, tek satırlık iş.
+
+### 2.4 Kategori/destinasyon sayfalarına `ItemList`
+
+Rakip taramasının en net boşluğu: **jollytur ve Prontotour'da ürün yapısal verisi
+hiç yok.** tatilsepeti 30, tatilbudur 20 `TouristTrip` basıyor. Bizim eklememiz
+gereken, onlarda olmayan alan: her ürüne **`Organization` (turu satan acenta)** —
+pazaryeri olduğumuz için doğal olarak bizde var.
+
+> Tatilbudur'un hatasını yapmayın: her `TouristTrip.description` alanına kategori
+> meta description'ını kopyalamış (20 üründe aynı metin). tatilsepeti ise turun
+> gerçek rotasını yazıyor: `"Akyaka - Azmakçayı - Gökova - Sedir Adası - ..."`.
 
 ---
 
-## FAZ 3 — Kapılı programatik sayfalar ⭐ trafiğin ana kaynağı
+## 🔍 RAKİP SERP ARAŞTIRMASI (2026-08-13)
 
-Kural: **bir sayfa ancak `≥3` gerçek turu varsa yayına girer.** Eşiğin altındakiler
-üretilmez, sitemap'e girmez, `noindex` alır. Envanter büyüdükçe sayfa kendiliğinden açılır.
+İki agent, hedef sorgularda üst sıradaki sayfaların ham HTML'ini çekip yapılarını
+çözdü. İncelenen siteler: **tatilsepeti, tatilbudur, jollytur, gruppal, MNG Turizm,
+Prontotour, Touristica, SSC Tur, Setur**.
 
-### 3.1 Sayfa aileleri
-| Kalıp | Örnek URL | Bugün açılacak sayfa |
+> ⚠️ **Ölçüm sınırı:** kullanılan arama aracı ABD indeksinden çalışıyor; sıra
+> numaraları `google.com.tr` ile birebir aynı olmayabilir. **Sayfa yapıları
+> gerçek** (ham HTML parse edildi), sıralamalar yaklaşıktır.
+
+### Ölçülen rakamlar
+
+| Site | Kategori/destinasyon sayfası özgün metin | SSS | ItemList schema | URL kalıbı |
+|---|---|---|---|---|
+| tatilsepeti (Kapadokya) | **~2.560 kelime** | 5 görünür / 2 schema ❌ | ✅ 30 TouristTrip | `/kapadokya-turlari` |
+| tatilbudur (Dubai) | ~1.980 kelime | yok | ✅ 20 TouristTrip | `/yurtdisi-turlar/dubai-turlari` |
+| tatilsepeti (Yunan Adaları) | ~2.048 kelime | 11 görünür / **schema yok** ❌ | ✅ 30 | `/yunan-adalari-turlari` |
+| gruppal (gemi) | ~1.515 kelime | ✅ 7 + FAQPage | ❌ | `/gemi-turlari` |
+| jollytur (İtalya) | ~1.090 kelime | ✅ 5 FAQPage | **❌ yok** | `/italya-turlari` |
+| jollytur (Antalya) | ~395 kelime | yok | **❌ yok** | `/antalya-turlari` |
+| tatilbudur (Bodrum) | **0 kelime** | yok | ✅ 20 | `/kultur-turlari/bodrum-turlari` |
+
+### Planı değiştiren 5 bulgu
+
+**1. Hiçbiri query string kullanmıyor.** Kategori ve destinasyon sayfalarının
+tamamı düz yol segmenti: `/kapadokya-turlari`, `/gemi-turlari`, `/doga-turlari`.
+Gruppal ve MNG sayfalarında **sıfır** query-string iç linki var. Filtreler
+URL'e hiç yansımıyor (client-side `<select>`); onun yerine **elle kurulmuş düz
+kategori sayfaları** var. → Bizim `/turlar?category=x` kalıbımız yanlış katman.
+
+**2. Şehir × destinasyon matrisini büyükler BOŞ BIRAKMIŞ.** Bağımsız doğrulandı:
+
+| URL | Kod |
+|---|---|
+| `tatilsepeti.com/istanbul-cikisli-kapadokya-turlari` | **404** |
+| `jollytur.com/istanbul-cikisli-kapadokya-turlari` | **404** |
+| `ssc.com.tr/ankara-cikisli-kapadokya-turlari` | **200** |
+
+Bu sorguları orta ölçekli acenteler (SSC, Touristica) `{şehir}-cikisli-{dest}-turlari`
+matrisiyle kapıyor ve 1. sırada çıkıyorlar. **Pazaryerinin girmediği, envanteri
+bizde olan bir boşluk.**
+
+**3. Rekabetin bar'ı uzun kuyrukta çok düşük.** Touristica
+`/istanbul-cikisli-kapadokya-turlari` sayfasında **0 tur, H1 yok, metin yok,
+ürün schema'sı yok** — buna rağmen sorguda 1. sırada. Tam eşleşen URL + tam
+eşleşen title tek başına baskın sinyal. Gerçek envanter + 300-500 kelime metinle
+bu sayfalar kolayca geçilir.
+
+**4. jollytur ve Prontotour'da `ItemList`/`TouristTrip` schema HİÇ YOK.** Antalya,
+Trabzon, İtalya sayfalarında ürün yapısal verisi yok. Doğrudan fark yaratılabilir alan.
+
+**5. Herkes SSS'yi yarım yapmış.** tatilsepeti Kapadokya'da 5 görünür soru var,
+schema'da 2; Yunan Adaları'nda 11 görünür soru var, `FAQPage` schema **hiç yok**;
+SSC'nin `ItemList` bloğu **bozuk JSON**. Eksiksiz uygulamak ucuz bir üstünlük.
+
+### TUR DETAY SAYFALARI — 6 site incelendi
+
+tatilsepeti, tatilbudur, jollytur, setur, gruppal, MNG Turizm tur detay sayfaları
+ham HTML olarak çekildi.
+
+| Site | URL kalıbı | title (krkt) | Schema | aggregateRating | Yorum |
+|---|---|---|---|---|---|
+| tatilsepeti | slug + `-tr-{ID}` | 14 ❌ | BreadcrumbList, **LodgingBusiness** ❌ | ❌ | 0 |
+| tatilbudur | saf slug (yıl gömülü) | 42 | BreadcrumbList, **TouristTrip+subTrip**, Product | ❌ | 0 |
+| jollytur | saf slug | 58 | **bozuk JSON** ❌ | ❌ | 0 |
+| setur | saf slug | 56 | TouristTrip + itinerary | ❌ | 0 |
+| gruppal | saf slug | 40 | Organization, BreadcrumbList | ❌ | 0 |
+| MNG | slug + `-{ID}` | 77 ❌ | sadece BreadcrumbList | ❌ | 0 |
+
+**🎯 En büyük bulgu: 6 sitenin HİÇBİRİNDE `aggregateRating`, `review` veya
+`FAQPage` yok. Hiçbirinde tek bir kullanıcı yorumu yok.** Kendi doğrulamam:
+
+```
+tatilsepeti /kapadokya-turu-tr-169688     aggregateRating geçiş: 0
+setur       /kapadokya-turu-2-gece-3-gun  aggregateRating geçiş: 0
+tatilbudur  /sofya-plovdiv-turu-2026      aggregateRating geçiş: 0
+```
+
+Yani "kapadokya turu" SERP'inde **yıldız gösteren tek site olma imkanı açık duruyor.**
+
+**Rakiplerin teknik hataları (bizim yapmamamız gerekenler):**
+
+- **tatilsepeti tur sayfalarını kendi eliyle indeksten düşürüyor.** Canonical turun
+  kendisine değil **kategori sayfasına** işaret ediyor — kendi curl'ümle doğruladım:
+  `/kapadokya-turu-tr-169688` → `canonical: /kapadokya-turlari`. Binlerce tur
+  sayfasının değeri birkaç kategori sayfasına toplanıyor, tur sayfaları sorgu
+  yarışına hiç girmiyor.
+- **jollytur'da H1 yok**, tur adı `<h3>` içinde. JSON-LD'si fazladan `;` yüzünden
+  parse edilmiyor, breadcrumb URL'inde slash eksik (`jollytur.comkapadokya-turlari`).
+- **Yanlış schema tipi:** tatilsepeti ve jolly bir **tura** `LodgingBusiness`
+  (konaklama işletmesi) basıyor. Jolly'nin `priceRange` değeri sayı bile değil:
+  `"Çok Uygun Fiyatlar ve Taksit Seçenekleri"`.
+- **setur'un `priceCurrency` değeri `"TL"`** — ISO 4217 geçersiz, `"TRY"` olmalı.
+- **MNG süresi dolan turları 404'e düşürüyor, 301 vermiyor** (3 URL doğrulandı).
+
+**Günlük program hiçbirinde semantik değil.** Altı sitenin dördü programı sadece
+düz div/accordion olarak basıyor; yalnız tatilbudur (`subTrip[]` → her gün bir
+`Trip`) ve setur (`itinerary[]`) schema'ya taşıyor. → **Bizim `itinerary` alanımız
+%100 boş; doldurulduğunda bu bir eksik kapatma değil, doğrudan üstünlük olur.**
+
+---
+
+### KARŞILAŞTIRMA ALANI — boş mu? Evet, ve boşluk yapısal
+
+16 sorgu tarandı ("kapadokya turu fiyatları", "en ucuz X turu", "tur karşılaştırma",
+"hangi acenta daha ucuz", "jolly tur mu ets tur mu"…).
+
+**Fiyat/ucuzluk sorgularının 18 sonucundan 18'i tek-acenta satış sayfası.** Ölçüm:
+MNG'nin "Ekonomik Turlar" sayfasında MNG adı 40+ kez, **rakip adı 0 kez**.
+Jolly'nin sayfasında jolly 280+ kez, **rakip 0 kez**.
+
+**Denemiş ve çıkmış oyuncular:**
+
+| Site | Durum |
+|---|---|
+| **turzz.com** (2021'de "tur karşılaştırma" olarak lanse) | 308 ile **turzzai.com**'a yönleniyor — artık acentalara WhatsApp chatbot satan B2B SaaS |
+| **seyahatim.com** | DNS SERVFAIL — ölü |
+| **enuygun.com** (TR'nin en büyük seyahat metasearch'ü) | Uçak/otobüs/otel/araç var, **paket tur dikeyi YOK** — sayfasında "paket tur" 0 kez geçiyor |
+
+> ⚠️ **Dikkat edilmesi gereken tek oyuncu: turafix.com**
+> Bizimkiyle **birebir aynı** konumlandırma: *"Türkiye'nin ilk ve en kapsamlı paket
+> tur kıyaslama platformu. Biz satmıyoruz, sadece kıyaslıyoruz."* Partner iddiası:
+> ETS, Pronto, Jolly, AFM, Lüks Seyahat, Tatil Budur.
+>
+> Ama envanteri yok. Kendi doğrulamam: ana sayfa 200, **sitemap'te 37 URL**
+> (10 Avrupa şehri × 2 statik sayfa). Alan adı ~9 aylık (Kasım 2025). Inline
+> script'lerinde `Jolly`=0, `ETS`=0, `fiyat`=0 geçiyor; tur API'si yok. Paris
+> sayfasında gerçek fiyat yok, sadece `"Ortalama Fiyat: 25.000–45.000 ₺"` bandı.
+> Sponsor kartları boş: *"Acente Yeriniz — Bu alan sponsorlu kart için açık"*.
+> 16 sorgunun **hiçbirinde** ilk 3'e girmedi.
+>
+> **Sonuç: söylemi kurmuş, envanteri kurmamış bir kabuk.** Bizim 12 acentalık
+> canlı fiyat verimiz varken içerik derinliği farkı çok büyük — ama kategori adını
+> kapmadan önce hareket etmek gerekiyor.
+
+**Boşluğun yapısal sebebi:** acentalar rakip fiyatı göstermek *istemez* (0 rakip
+mention ölçümü bunu kanıtlıyor), Enuygun tur dikeyine girmemiş, deneyen tek oyuncu
+B2B'ye kaçmış. Yani bu "kimse akıl etmedi" boşluğu değil, **"envanter toplamak zor"
+boşluğu** — ve envanter tam olarak bizim savunma hendeğimiz.
+
+**Sahipsiz alan: karar sorguları.** `"jolly tur mu ets tur mu"` sorgusunun ilk 3'ü
+kizlarsoruyor, Yandex yacevap ve tek bir şikayet metni. Milyonluk markalar arası
+kararı forum yorumları veriyor. Elimizdeki gerçek fiyat verisiyle *"Jolly vs ETS:
+aynı 15 destinasyonda fiyat farkı"* tipi veri-tabanlı sayfalar üretilebilir.
+
+---
+
+### Kopyalanacak somut kalıplar
+
+- **Title:** `{Ad} Turları | {Ad} Turu Fiyatları {YIL} — turXtur`, 42–61 karakter.
+  8 sayfadan 6'sında yıl damgası var. **Yıl değişkenden gelmeli** — SSC hâlâ elle
+  yazdığı "2025"i taşıyor.
+- **H1:** tam anahtar kelime + parantez içinde canlı envanter sayısı —
+  `Bodrum Turları ( 28 )` (tatilbudur, üç sorguda birden 1.).
+- **Şablon H2 iskeleti** (tatilbudur Dubai ve Kapadokya'da **birebir aynı 11 başlık**):
+  `{D} Turu` · `{D} Turu Rotaları` · `{D} Turu Fiyatları` · `{D} Turları Kaç Gün Sürer?` ·
+  `Ne Zaman Tercih Edilmeli?` · `Neleri Kapsar?` · `{D}'de Gezilecek Yerler` ·
+  `Konaklama` · `Yeme İçme` · `Nasıl Gidilir?` · `Kimler İçin Uygun?` (+ yurtdışıysa `Vize Bilgisi`)
+- **Her landmark'a ayrı H3 + 30-45 kelime** (Burj Khalifa, Peri Bacaları…) —
+  "kapadokya gezilecek yerler" bilgi sorgularını da yakalıyor.
+- **Sayfalama (tatilsepeti kalıbı):** 30 ürün/sayfa, `?sayfa=N`, iç sayfada
+  **self-canonical**, `rel=prev/next`, title'a `- sayfa 2`, ve **uzun SEO metni
+  sadece 1. sayfada** (2. sayfada tamamen kaldırılıyor).
+- **Envanteri sıfırlanan sayfa öldürülmüyor.** Gruppal `/kayak-turlari` Ağustos'ta
+  0 ürün listeliyor ama H1, 523 kelime metin, 7 soruluk FAQPage, breadcrumb duruyor.
+  404/noindex yapılmıyor.
+- **İç link hacmi:** kategori sayfası başına 100–470 benzersiz iç link. Kırılım
+  eksenleri: destinasyon, bölge, **marka/tedarikçi** (bizde = acenta), takvim
+  (`/yilbasi-turlari`, `/29-ekim-turlari`), kitle (`/aile-tatilleri`), kısıt (`/vizesiz-turlar`).
+
+---
+
+## FAZ 3 (1/2) — ✅ DÜZ LANDING ADRESLERİ YAYINDA
+
+669 test geçiyor (+`tests/Feature/LandingPageTest.php`, 13 test).
+
+| İş | Dosya |
+|---|---|
+| Slug normalizasyonu (hepsi `-turlari` ile biter) | `app/Support/LandingSlug.php` |
+| Landing sayfası (kategori + destinasyon) | `app/Http/Controllers/LandingController.php`, `resources/views/landing/show.blade.php` |
+| Rota (kök seviyede, ek kısıtlı, dosyanın en sonunda) | `routes/web.php` |
+| Eski adreslerden 301 | `DestinationController`, `TourController::canonicalLandingRedirect` |
+| Sitemap'e `kategoriler` bölümü | `SitemapController` |
+| İç linkler düz adrese çevrildi | `MegaMenu`, `home.blade.php`, `tours/show.blade.php` |
+
+**45 yeni landing adresi** (35 kategori + 10 destinasyon), sitemap 124 → **159 URL**.
+
+### 301 haritası
+
+| Eski | Yeni |
+|---|---|
+| `/destinasyonlar/kapadokya` | `/kapadokya-turlari` |
+| `/turlar?category=kultur-turlari` | `/kultur-turlari` |
+| `/turlar?destination=Kapadokya` | `/kapadokya-turlari` |
+| `/turlar?category=x&min_price=y` | **yönlendirilmez** — filtre, landing değil (noindex) |
+
+### Uygulama sırasında düzeltilen çelişki
+
+`noindex` alan sayfa BAŞKA bir adrese kanonik veriyordu. Google bu ikisini
+çelişkili bulup ikisini birden yok sayabilir. Artık noindex sayfalar kendine
+kanonik veriyor; yalnız izleme parametreleri temizleniyor.
+
+### ✅ Veri-tabanlı içerik blokları (LLM'siz)
+
+`app/Support/LandingStats.php` — her cümlenin arkasında canlı envanter var:
+fiyat değişince metin de değişir, bayatlamaz, uydurmaz, **maliyeti yoktur.**
+
+Üretilen H2 iskeleti (rakip kalıbının veriden gelebilen kısmı):
+
+| Bölüm | İçerik |
+|---|---|
+| `{Ad} Tur Fiyatları` | min / ortanca / max — ortalama değil **medyan** (tek lüks tur ortalamayı şişiriyor) |
+| `{Ad} Acenta Fiyat Karşılaştırması` ⭐ | acenta × tur sayısı × en düşük × en yüksek, en ucuza "EN UYGUN" rozeti |
+| `{Ad} Kaç Gün Sürüyor?` | süre dağılımı, adetli |
+| `{Ad} İçin Kalkış Ayları` | ay dağılımı, adetli |
+| `Sıkça Sorulan Sorular` | aynı verilerden 4 soru + `FAQPage` şeması |
+
+**Karşılaştırma tablosu sayfanın rakipte olmayan kısmı.** Ölçüm: MNG kendi
+sayfasında MNG adını 40+ kez, rakip adını **0 kez**; Jolly 280+ kez kendi
+adını, **0 kez** rakip adını yazıyor. Tek acentalı bir site bu tabloyu
+yapısal olarak üretemez.
+
+Sonuç: sayfa başına **~50 kelime → ~433 kelime**, sıfır LLM maliyeti,
+her zaman güncel.
+
+### ✅ Şehir profili blokları (mevcut veriden, yeni LLM çağrısı YOK)
+
+`app/Support/LandingProfile.php` — kaynak: **zaten var olan** `DestinationProfile`
+tablosu. 55 şehir için üretilmiş (summary, best_months, crowded_months,
+climate_by_month, vibe_tags, crowd_score); landing sayfalarında hiç
+kullanılmıyordu. Üretim maliyeti çoktan ödenmiş içerik boşta duruyordu.
+
+| Bölüm | Kaynak alan |
+|---|---|
+| `{Ad} Nasıl Bir Yer?` | `summary` |
+| `{Ad} Turlarına Ne Zaman Gidilir?` | `best_months` + `climate_by_month` + `crowded_months` |
+| `{Ad} Turları Kimler İçin Uygun?` | `vibe_tags` + `crowd_score` |
+
+Örnek çıktı (Kapadokya):
+> *"Kapadokya için en uygun aylar Nisan, Mayıs, Haziran, Eylül ve Ekim. Bu
+> dönemde ortalama sıcaklık 10–20°C. Temmuz ve Ağustos ayları en yoğun dönem;
+> bu aylarda fiyatlar yükselir ve yerler erken dolar."*
+
+Kategori sayfalarında aranmaz — "Kültür Turları" bir şehir değil.
+
+### Landing sayfası H2 iskeleti — mevcut durum
+
+| # | Başlık | Kaynak |
 |---|---|---|
-| Destinasyon turları | `/dubai-turlari` | ~8 (Dubai 9, İstanbul 7, Antalya 7, Fethiye 5, Bodrum 4, Kapadokya 4, Trabzon 3…) |
-| Kategori turları | `/avrupa-sehirleri-turlari` | ~2 |
-| Kategori × destinasyon | `/kapadokya-kultur-turlari` | 0 → envanterle açılır |
-| Kalkışlı | `/istanbul-kalkisli-kapadokya-turlari` | 0 → **Faz 0.2 sonrası** açılır |
-| Süre | `/2-gece-3-gun-turlar` | envantere göre |
-| Fiyat | `/ucuz-turlar`, `/10000-tl-alti-turlar` | envantere göre |
-| Tema | `/balayi-turlari`, `/hafta-sonu-turlari` | envantere göre |
-| Karşılaştırma ⭐ | `/dubai-turu-fiyat-karsilastirma` | **asıl fırsat — rakip yapamıyor** |
+| 1 | `{Ad} Tur Fiyatları` | envanter (min/medyan/max) |
+| 2 | `{Ad} Acenta Fiyat Karşılaştırması` ⭐ | envanter (acenta × fiyat) |
+| 3 | `{Ad} Nasıl Bir Yer?` | DestinationProfile |
+| 4 | `{Ad} Turlarına Ne Zaman Gidilir?` | DestinationProfile |
+| 5 | `{Ad} Turları Kimler İçin Uygun?` | DestinationProfile |
+| 6 | `{Ad} Kaç Gün Sürüyor?` | envanter |
+| 7 | `{Ad} İçin Kalkış Ayları` | envanter |
+| 8 | `Sıkça Sorulan Sorular` | envanter + `FAQPage` |
 
-### 3.2 Her landing page'de zorunlu olanlar
-Boş kabuk sayfa üretmemek için her sayfada:
-- **Özgün açıklama metni** (≥300 kelime) — şablon değil. Mevcut `DestinationProfile` ve
-  `KnowledgeService` altyapısı ([project_destination_knowledge](.)) bunu üretebilir.
-- Gerçek veriden gelen tablo: en düşük/ortalama fiyat, acenta sayısı, süre dağılımı, en iyi sezon
-- Fiyat karşılaştırma tablosu (acenta × fiyat) — **bu sayfanın rakipte olmayan kısmı**
-- O sayfaya özgü SSS + `FAQPage` schema
-- İlgili sayfalara iç linkler (silo yapısı)
-- `ItemList` + `BreadcrumbList` schema
+**~50 → 521 kelime, sıfır yeni LLM maliyeti.**
 
-### 3.3 İç link mimarisi
-Şu an turlar arası bağlantı zayıf. Kurulacak:
-`Ana sayfa → Kategori → Alt kategori → Destinasyon → Tur` piramidi, her tur sayfasında
-"Benzer turlar" / "Aynı destinasyonda" / "Aynı bütçede" blokları. Her sayfa ana sayfadan
-en fazla 3 tıklama uzakta olmalı.
+### ⚠️ Eksik kalan: editoryal içerik
+
+Sayfa iskeleti hazır ve metin bloğu listenin ALTINDA render ediliyor
+(tatilsepeti/MNG yerleşimi), ama içerik yok:
+
+| | Durum |
+|---|---|
+| Açıklaması olan kategori | **13 / 35** |
+| Açıklaması olan destinasyon | **0 / 10** |
+| Hedef uzunluk (rakip ölçümü) | **1.800–2.500 kelime** |
+
+Şu an bu sayfalar rakiplerin ~%10'u kadar içerik taşıyor. Sıralama için
+şablon H2 iskeleti (11 başlık) doldurulmalı — Faz 3'ün asıl işi bu.
+
+---
+
+## FAZ 3 (2/2) — Programatik sayfalar ⭐ (rakip araştırmasına göre revize edildi)
+
+### Revizyon 1 — URL mimarisi: query string değil, düz yol
+
+Faz 1'de `/turlar?category=x` "indexlenebilir facet" olarak bırakılmıştı. Araştırma
+bunun yanlış katman olduğunu gösterdi — rakiplerin hiçbiri kullanmıyor. Yeni hedef:
+
+| Eski | Yeni |
+|---|---|
+| `/turlar?category=kultur-turlari` | `/kultur-turlari` |
+| `/destinasyonlar/kapadokya` | `/kapadokya-turlari` |
+| — | `/istanbul-cikisli-kapadokya-turlari` |
+
+Eski adresler **301** ile yenilerine taşınır. `App\Support\Seo::INDEXABLE_FACETS`
+listesi boşalır: artık hiçbir query-string kombinasyonu indexlenmez.
+
+### Revizyon 2 — Eşik gevşiyor: `≥3 tur` → `≥1 tur + zorunlu içerik`
+
+İlk plandaki `≥3` eşiği doorway-page riskine karşıydı. SERP kanıtı bar'ın çok daha
+düşük olduğunu gösterdi (Touristica 0 turla 1. sırada). Doorway riski **turun
+azlığından değil, içeriğin yokluğundan** doğar. Yeni kural:
+
+> Sayfa açılır ⟺ (en az 1 aktif tur) **VE** (özgün metin + SSS + schema tam).
+
+İçerik üretilemiyorsa sayfa açılmaz. Envanteri sıfırlanan sayfa **kapatılmaz** —
+gruppal kalıbı: metin ve SSS kalır, liste "şu an tur yok + benzer sayfalar" olur.
+
+### Revizyon 3 — Şehir kalkışlı matris öne alınıyor
+
+Büyüklerin boş bıraktığı, bizim envanterimizin olduğu alan. **Ama tek girdisi
+`departure_city` ve bu alan şu an tüm turlarda boş** → **Faz 0.2 kritik yola girdi.**
+Faz 3'ün en yüksek getirili parçası ona bağlı.
+
+### Sayfa aileleri (öncelik sırasıyla)
+
+| # | Kalıp | Örnek | Neden bu sırada |
+|---|---|---|---|
+| 1 | `/{destinasyon}-turlari` | `/kapadokya-turlari` | Envanter hazır, kalıp kanıtlı |
+| 2 | `/{kategori}` | `/kultur-turlari` | Envanter hazır (Faz 0.1 sonrası) |
+| 3 | `/{sehir}-cikisli-{dest}-turlari` | `/istanbul-cikisli-kapadokya-turlari` | **Rakip boşluğu** — Faz 0.2'ye bağlı |
+| 4 | `/{dest}-turu-fiyat-karsilastirma` | `/dubai-turu-fiyat-karsilastirma` | Yapısal üstünlük, rakip yapamaz |
+| 5 | `/ucakli-{dest}-turlari` | `/ucakli-kapadokya-turlari` | Ulaşım kırılımı (tatilsepeti'de var) |
+| 6 | Takvim | `/yilbasi-turlari`, `/29-ekim-turlari` | Mevsimsel hacim |
+| 7 | Kısıt/kitle | `/vizesiz-turlar`, `/balayi-turlari` | Gruppal kalıbı |
+
+### Her sayfada zorunlu içerik (araştırmadan kalibre edildi)
+
+- **1.800–2.500 kelime** özgün metin, 10–13 bölüme dağıtılmış (bölüm başına 80–200 kelime)
+- Şablon H2 iskeleti (yukarıdaki 11 başlık) — veritabanı alanlarına bağlanır
+- Her landmark'a H3 + 30-45 kelime
+- **Metin listenin ALTINDA** (tatilsepeti/MNG kalıbı) veya sol kolonda katlanabilir (gruppal)
+- **5–11 SSS + `FAQPage` schema — görünür soru sayısı schema ile birebir eşit**
+- `ItemList` → `TouristTrip` + `Offer` + `subjectOf: Event` + **`Organization` (acenta)**
+- Fiyat karşılaştırma tablosu (acenta × fiyat) — **rakipte olmayan kısım**
+- `BreadcrumbList` + 100+ iç link
+
+### İç link mimarisi
+`Ana sayfa → Kategori → Destinasyon → Şehir kalkışlı → Tur` piramidi. Her tur
+sayfasında "Benzer turlar" / "Aynı destinasyonda" / "Aynı bütçede". Her sayfa ana
+sayfadan en fazla 3 tıklama uzakta.
 
 ---
 
