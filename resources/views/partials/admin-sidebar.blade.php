@@ -90,6 +90,9 @@
         <a href="{{ route('admin.coupons.index') }}" class="sidebar-link {{ request()->routeIs('admin.coupons*') ? 'active' : '' }}">
             <span class="sidebar-icon">🎟️</span> Kupon Yönetimi
         </a>
+        <a href="{{ route('admin.traffic') }}" class="sidebar-link {{ request()->routeIs('admin.traffic*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🖱️</span> Trafik
+        </a>
         <a href="{{ route('admin.reports.index') }}" class="sidebar-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
             <span class="sidebar-icon">📈</span> Raporlar
         </a>

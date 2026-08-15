@@ -24,7 +24,7 @@ class ReportController extends Controller
         // En çok görüntülenen turlar (Top 10)
         $topViewedTours = Tour::orderByDesc('views_count')
             ->limit(10)
-            ->get(['title', 'views_count', 'clicks_count', 'destination']);
+            ->get(['id', 'slug', 'title', 'views_count', 'clicks_count', 'destination']);
 
         // Destinasyonlara göre tur dağılımı (Top 5 destinasyon)
         $destinations = Tour::select('destination', \DB::raw('count(*) as count'))

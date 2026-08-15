@@ -343,6 +343,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/acenta-basvurulari/{agency}/onayla', [AdminController::class, 'approveAgencyApplication'])->name('agency-applications.approve');
     Route::post('/acenta-basvurulari/{agency}/reddet', [AdminController::class, 'rejectAgencyApplication'])->name('agency-applications.reject');
     Route::get('/turlar', [AdminController::class, 'tours'])->name('tours');
+    // Trafik — hangi tur tıklanıyor/görüntüleniyor (dashboard kutularının hedefi)
+    Route::get('/trafik', [App\Http\Controllers\Admin\TrafficController::class, 'index'])->name('traffic');
+    Route::get('/trafik/{tour}', [App\Http\Controllers\Admin\TrafficController::class, 'show'])->name('traffic.show');
     Route::get('/destinasyonlar', [AdminController::class, 'destinations'])->name('destinations');
     Route::put('/destinasyonlar/{destination}', [AdminController::class, 'updateDestination'])->name('destinations.update');
     Route::post('/destinasyonlar/{destination}/toggle', [AdminController::class, 'toggleDestination'])->name('destinations.toggle');

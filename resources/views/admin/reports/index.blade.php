@@ -36,8 +36,10 @@
 <div class="grid-2">
     {{-- Top Viewed Tours --}}
     <div class="card">
-        <div style="padding:20px; border-bottom:1px solid #f1f5f9;">
+        <div style="padding:20px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
             <h2 style="font-size:16px; font-weight:700;">En Çok Görüntülenen Turlar</h2>
+            {{-- Detaylı kırılım (tarih aralığı, dönüşüm, tur bazlı grafik) Trafik sayfasında --}}
+            <a href="{{ route('admin.traffic', ['metric' => 'views']) }}" style="font-size:13px; color:var(--accent); font-weight:600; text-decoration:none;">Trafik sayfasında incele →</a>
         </div>
         <div style="padding:20px;">
             <table class="table">
@@ -51,7 +53,10 @@
                 <tbody>
                     @forelse($topViewedTours as $tour)
                     <tr>
-                        <td style="font-weight:600;">{{ $tour->title }} <br><span style="font-size:12px; color:var(--text-muted); font-weight:400;">{{ $tour->destination }}</span></td>
+                        <td style="font-weight:600;">
+                            <a href="{{ route('admin.traffic.show', $tour) }}" style="color:inherit; text-decoration:none;">{{ $tour->title }}</a>
+                            <br><span style="font-size:12px; color:var(--text-muted); font-weight:400;">{{ $tour->destination }}</span>
+                        </td>
                         <td style="text-align:right; color:var(--accent); font-weight:700;">{{ number_format($tour->views_count) }}</td>
                         <td style="text-align:right;">{{ number_format($tour->clicks_count) }}</td>
                     </tr>
