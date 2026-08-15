@@ -542,12 +542,21 @@ class AdminController extends Controller
             $query->where('duration_days', '<=', $request->max_days);
         }
 
-        // 7. Sıralama (sort)
+        // 7. Trafik (traffic) — dashboard kutularından gelen "sadece tıklananlar" filtresi
+        match ($request->input('traffic')) {
+            'clicked' => $query->where('clicks_count', '>', 0),
+            'viewed' => $query->where('views_count', '>', 0),
+            default => null,
+        };
+
+        // 8. Sıralama (sort)
         $sort = $request->input('sort', 'newest');
         match ($sort) {
             'price_asc' => $query->orderBy('price'),
             'price_desc' => $query->orderByDesc('price'),
             'date' => $query->orderBy('departure_date'),
+            'clicks_desc' => $query->orderByDesc('clicks_count'),
+            'views_desc' => $query->orderByDesc('views_count'),
             default => $query->orderByDesc('created_at'),
         };
 

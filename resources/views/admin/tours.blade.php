@@ -63,12 +63,23 @@
                 </div>
 
                 <div class="form-group" style="width:150px;margin-bottom:0;">
+                    <label style="font-size:13px;color:#475569;">Trafik</label>
+                    <select name="traffic" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                        <option value="">Tümü</option>
+                        <option value="clicked" {{ request('traffic') === 'clicked' ? 'selected' : '' }}>Tıklanmışlar</option>
+                        <option value="viewed" {{ request('traffic') === 'viewed' ? 'selected' : '' }}>Görüntülenmişler</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="width:170px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Sıralama</label>
                     <select name="sort" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
                         <option value="newest" {{ request('sort') === 'newest' ? 'selected' : '' }}>En Yeni</option>
                         <option value="date" {{ request('sort') === 'date' ? 'selected' : '' }}>Tarih (Yakın)</option>
                         <option value="price_asc" {{ request('sort') === 'price_asc' ? 'selected' : '' }}>Fiyat (Artan)</option>
                         <option value="price_desc" {{ request('sort') === 'price_desc' ? 'selected' : '' }}>Fiyat (Azalan)</option>
+                        <option value="clicks_desc" {{ request('sort') === 'clicks_desc' ? 'selected' : '' }}>Tıklama (Çok → Az)</option>
+                        <option value="views_desc" {{ request('sort') === 'views_desc' ? 'selected' : '' }}>Görüntülenme (Çok → Az)</option>
                     </select>
                 </div>
 
@@ -94,7 +105,7 @@
             @else
                 <div class="card" style="padding:0;overflow:hidden;margin:0;">
                     <table class="table" style="margin:0;border:none;">
-                        <thead><tr><th>Tur</th><th>Acenta</th><th>Destinasyon</th><th>Süre</th><th>Fiyat</th><th>Tarih</th><th>Durum</th></tr></thead>
+                        <thead><tr><th>Tur</th><th>Acenta</th><th>Destinasyon</th><th>Süre</th><th>Fiyat</th><th>Tarih</th><th style="text-align:right;">Tıklama</th><th style="text-align:right;">Görüntülenme</th><th>Durum</th></tr></thead>
                         <tbody>
                             @foreach($tours as $tour)
                             <tr style="border-bottom:1px solid var(--border-light);">
@@ -104,6 +115,14 @@
                                 <td>{{ $tour->duration_label }}</td>
                                 <td>{{ $tour->formatted_price }}</td>
                                 <td>{{ $tour->departure_date?->format('d.m.Y') ?? '—' }}</td>
+                                <td style="text-align:right;font-weight:700;color:{{ $tour->clicks_count > 0 ? '#ec4899' : '#cbd5e1' }};">
+                                    @if($tour->clicks_count > 0)
+                                        <a href="{{ route('admin.traffic.show', $tour) }}" style="color:inherit;text-decoration:none;border-bottom:1px dotted currentColor;">{{ number_format($tour->clicks_count) }}</a>
+                                    @else
+                                        0
+                                    @endif
+                                </td>
+                                <td style="text-align:right;font-weight:600;color:{{ $tour->views_count > 0 ? '#8b5cf6' : '#cbd5e1' }};">{{ number_format($tour->views_count) }}</td>
                                 <td><span class="badge {{ $tour->is_active ? 'badge-green' : '' }}" style="{{ !$tour->is_active ? 'background:#fef2f2;color:#991b1b;' : '' }}">{{ $tour->is_active ? 'Aktif' : 'Pasif' }}</span></td>
                             </tr>
                             @endforeach

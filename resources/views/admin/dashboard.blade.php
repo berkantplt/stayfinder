@@ -31,7 +31,7 @@
                     <div style="width:48px;height:48px;"><canvas id="ring1"></canvas></div>
                 </div>
             </a>
-            <a href="{{ route('admin.tours') }}" class="stat-card-link">
+            <a href="{{ route('admin.tours', ['status' => 'active']) }}" class="stat-card-link">
                 <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <div style="font-size:24px;font-weight:800;color:#10b981;">{{ $stats['activeTours'] }}</div>
@@ -49,19 +49,19 @@
                     <div style="width:48px;height:48px;"><canvas id="ring3"></canvas></div>
                 </div>
             </a>
-            <a href="{{ route('admin.tours') }}" class="stat-card-link">
+            <a href="{{ route('admin.traffic', ['metric' => 'clicks']) }}" class="stat-card-link">
                 <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                        <div style="font-size:24px;font-weight:800;color:#ec4899;">{{ $stats['clicks'] }}</div>
+                        <div style="font-size:24px;font-weight:800;color:#ec4899;">{{ number_format($stats['clicks']) }}</div>
                         <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Toplam Tıklama</div>
                     </div>
                     <div style="width:48px;height:48px;"><canvas id="ring4"></canvas></div>
                 </div>
             </a>
-            <a href="{{ route('admin.tours') }}" class="stat-card-link">
+            <a href="{{ route('admin.traffic', ['metric' => 'views']) }}" class="stat-card-link">
                 <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                        <div style="font-size:24px;font-weight:800;color:#8b5cf6;">{{ $stats['views'] }}</div>
+                        <div style="font-size:24px;font-weight:800;color:#8b5cf6;">{{ number_format($stats['views']) }}</div>
                         <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Görüntülenme</div>
                     </div>
                     <div style="width:48px;height:48px;"><canvas id="ring5"></canvas></div>
