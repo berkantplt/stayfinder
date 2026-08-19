@@ -12,7 +12,6 @@ use App\Support\DestinationFilter;
 use App\Support\LandingSlug;
 use App\Support\TourComparison;
 use App\Support\TurkishCities;
-use App\Support\VisaCities;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,15 +85,12 @@ class TourController extends Controller
             $query->where('is_international', $request->yurt === 'dis');
         }
 
-        // Vize: kaynak destinasyon profilleri (ana sayfa filtre barıyla AYNI liste).
-        // Profil verisi yoksa uydurma sonuç dönmek yerine boş küme döner.
+        // Vize: kaynak tours.requires_visa (ana sayfa filtre barıyla AYNI kolon).
+        // DestinationProfile şehir listesi KULLANILMAZ — ölçümde Paris ve
+        // Yunanistan "vizesiz" çıkıyordu, gerekçe HomeController'da yazılı.
+        // İşaretlenmemiş tur hiçbir yöne girmez.
         if (in_array($request->visa, ['vizesiz', 'vizeli'], true)) {
-            $cities = VisaCities::lists()[$request->visa];
-            if ($cities === []) {
-                $query->whereRaw('1 = 0');
-            } else {
-                DestinationFilter::apply($query, $cities);
-            }
+            $query->where('requires_visa', $request->visa === 'vizeli');
         }
 
         if ($request->filled('min_days')) {

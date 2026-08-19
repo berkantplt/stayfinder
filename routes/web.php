@@ -349,6 +349,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Kalkış şehri toplu düzenleme — "{şehir} kalkışlı" sayfa ailesinin girdisi
     Route::get('/kalkis-sehirleri', [App\Http\Controllers\Admin\DepartureCityController::class, 'index'])->name('departure-cities');
     Route::put('/kalkis-sehirleri', [App\Http\Controllers\Admin\DepartureCityController::class, 'update'])->name('departure-cities.update');
+    Route::get('/vize-durumu', [App\Http\Controllers\Admin\TourVisaController::class, 'index'])->name('tour-visa');
+    Route::put('/vize-durumu', [App\Http\Controllers\Admin\TourVisaController::class, 'update'])->name('tour-visa.update');
     Route::get('/destinasyonlar', [AdminController::class, 'destinations'])->name('destinations');
     Route::put('/destinasyonlar/{destination}', [AdminController::class, 'updateDestination'])->name('destinations.update');
     Route::post('/destinasyonlar/{destination}/toggle', [AdminController::class, 'toggleDestination'])->name('destinations.toggle');

@@ -79,35 +79,42 @@ class HomeFilterTest extends TestCase
         $this->assertStringContainsString('Json Turu', $r->json('html'));
     }
 
-    public function test_vize_filtresi_destinasyon_profillerinden_calisir(): void
+    public function test_vize_filtresi_tur_beyanindan_calisir(): void
     {
-        // Kaynak: destination_profiles.requires_visa_for_tr (chatbot'la aynı).
-        // Profili olmayan destinasyon = bilinmiyor → filtre dışı (uydurma yok).
-        \App\Models\DestinationProfile::create([
-            'city' => 'Belgrad', 'normalized_city' => 'belgrad',
-            'crowd_score' => 0.5, 'liveliness_score' => 0.5,
-            'source' => \App\Models\DestinationProfile::SOURCE_LLM,
-            'enrichment_version' => 2, 'requires_visa_for_tr' => false,
-        ]);
-        \App\Models\DestinationProfile::create([
-            'city' => 'Paris', 'normalized_city' => 'paris',
-            'crowd_score' => 0.8, 'liveliness_score' => 0.8,
-            'source' => \App\Models\DestinationProfile::SOURCE_LLM,
-            'enrichment_version' => 2, 'requires_visa_for_tr' => true,
-        ]);
-        Cache::forget('home_visa_cities_v1');
-
-        $this->makeTour(['title' => 'Belgrad Kacamagi', 'destination' => 'Belgrad']);
-        $this->makeTour(['title' => 'Paris Turu', 'destination' => 'Paris']);
-        $this->makeTour(['title' => 'Profilsiz Tur', 'destination' => 'Bilinmezistan']);
+        // Kaynak tours.requires_visa — turun KENDİ beyanı.
+        //
+        // Eskiden destination_profiles.requires_visa_for_tr kullanılıyordu ve
+        // ölçüldü ki hatalı: canlı veride Paris ve Yunanistan "vizesiz" listesinde
+        // görünüyordu. Hata yapısal — aynı şehre giden iki tur farklı vize
+        // rejiminde olabilir (Yunan adalarında kapı vizesi vs Schengen), şehir
+        // tablosu bunu ayıramaz.
+        $this->makeTour(['title' => 'Belgrad Kacamagi', 'destination' => 'Belgrad', 'requires_visa' => false]);
+        $this->makeTour(['title' => 'Paris Turu', 'destination' => 'Paris', 'requires_visa' => true]);
+        $this->makeTour(['title' => 'Isaretsiz Tur', 'destination' => 'Bilinmezistan']);
 
         $r = $this->ajax(['visa' => ['vizesiz']]);
         $this->assertSame(1, $r->json('count'));
         $this->assertStringContainsString('Belgrad Kacamagi', $r->json('html'));
+        // İşaretsiz tur "vizesiz" sayılmaz — asıl korunan davranış bu.
+        $this->assertStringNotContainsString('Isaretsiz Tur', $r->json('html'));
 
-        // İkisi de işaretliyse: vize bilgisi NET olanlar (profilsiz hariç)
+        // İkisi de işaretliyse: vize durumu NET olanlar (işaretsiz hariç)
         $r2 = $this->ajax(['visa' => ['vizesiz', 'vizeli']]);
         $this->assertSame(2, $r2->json('count'));
+    }
+
+    public function test_kapida_vize_vizeli_tarafina_dusuyor(): void
+    {
+        // Kapıda vize de vizedir: "vizesiz turlar" listesine girmemeli, yoksa
+        // kullanıcı pasaportla yola çıkıp sınırda ücret öder.
+        $this->makeTour(['title' => 'Misir Kapida', 'requires_visa' => true, 'visa_on_arrival' => true]);
+        $this->makeTour(['title' => 'Vizesiz Balkan', 'requires_visa' => false]);
+
+        $vizesiz = $this->ajax(['visa' => ['vizesiz']]);
+        $this->assertStringNotContainsString('Misir Kapida', $vizesiz->json('html'));
+
+        $vizeli = $this->ajax(['visa' => ['vizeli']]);
+        $this->assertStringContainsString('Misir Kapida', $vizeli->json('html'));
     }
 
     public function test_gun_bandi_filtresi(): void

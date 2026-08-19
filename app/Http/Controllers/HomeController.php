@@ -32,6 +32,9 @@ class HomeController extends Controller
     public function index()
     {
         $query = Tour::with(['agency', 'category'])
+            // Kart üstündeki puan rozeti (tour_grid): tur başına ayrı sorgu yerine tek çekim
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
             ->active()
             ->whereHas('agency', fn ($q) => $q->active());
 
@@ -238,22 +241,27 @@ class HomeController extends Controller
             });
         }
 
-        // Vize: kaynak destinasyon profilleri (chatbot'la aynı, LLM-zenginleştirilmiş).
-        // tours.requires_visa KULLANILMAZ: default false olduğu için "girilmemiş"
-        // ile "vizesiz" ayrılamaz — yanlış veri satılmış olurdu. Profili olmayan
-        // destinasyon = bilinmiyor, filtre dışı kalır (dürüst davranış).
+        // Vize: kaynak tours.requires_visa — acentanın/adminin BEYANI.
+        //
+        // Eskiden DestinationProfile şehir listesi kullanılıyordu; ölçüldü ve
+        // yanlış çıktı: Paris, Yunanistan ve Yunan Adaları "vizesiz" listesinde
+        // görünüyor, filtre 78 tur döndürüp içine Schengen turlarını karıştırıyordu.
+        // Hata yapısal — vize şehrin değil TURUN özelliği; aynı şehre giden iki tur
+        // farklı vize rejiminde olabilir (Yunan adalarında kapı vizesi vs Schengen).
+        //
+        // İşaretlenmemiş tur hiçbir yöne girmez: NULL, SQL'de zaten hiçbir değere
+        // eşit değil. "Vizesiz" arayana durumu bilinmeyen tur gösterilmez.
         $visa = array_values(array_intersect((array) request('visa'), ['vizesiz', 'vizeli']));
         if ($visa !== []) {
-            $cities = $this->visaCityLists();
-            $wanted = [];
-            foreach ($visa as $key) {
-                $wanted = array_merge($wanted, $cities[$key]);
-            }
-            if ($wanted === []) {
-                $query->whereRaw('1 = 0'); // profil verisi henüz yoksa uydurma sonuç dönme
-            } else {
-                DestinationFilter::apply($query, $wanted);
-            }
+            $query->where(function ($q) use ($visa) {
+                // Kapıda vize de vizedir: requires_visa=true olduğu için "vizeli" tarafına düşer.
+                if (in_array('vizeli', $visa, true)) {
+                    $q->orWhere('requires_visa', true);
+                }
+                if (in_array('vizesiz', $visa, true)) {
+                    $q->orWhere('requires_visa', false);
+                }
+            });
         }
 
         // Gün sayısı bantları
@@ -283,24 +291,6 @@ class HomeController extends Controller
         if ($budget > 0) {
             $query->where('price_try', '<=', $budget * 1000);
         }
-    }
-
-    /**
-     * Vize bilgisi NET olan şehirler (destinasyon profillerinden, 5 dk cache).
-     *
-     * @return array{vizesiz: array<int, string>, vizeli: array<int, string>}
-     */
-    private function visaCityLists(): array
-    {
-        return Cache::remember('home_visa_cities_v1', 300, function () {
-            $profiles = \App\Models\DestinationProfile::whereNotNull('requires_visa_for_tr')
-                ->get(['city', 'requires_visa_for_tr']);
-
-            return [
-                'vizesiz' => $profiles->where('requires_visa_for_tr', false)->pluck('city')->values()->all(),
-                'vizeli' => $profiles->where('requires_visa_for_tr', true)->pluck('city')->values()->all(),
-            ];
-        });
     }
 
     /**
@@ -431,19 +421,11 @@ class HomeController extends Controller
                 ->pluck('c', 'category_id')
                 ->all();
 
-            $visaCities = $this->visaCityLists();
-            $visaCount = function (array $cities) use ($base) {
-                if ($cities === []) {
-                    return 0;
-                }
-
-                // Sayaç ile filtre AYNI yardımcıyı kullanmalı, yoksa rozette yazan
-                // sayı ile gelen sonuç sessizce ayrışır.
-                return DestinationFilter::apply($base(), $cities)->count();
-            };
+            // Sayaç filtreyle AYNI kolonu kullanmalı, yoksa rozetteki sayı ile
+            // gelen sonuç sessizce ayrışır.
             $visa = [
-                'vizesiz' => $visaCount($visaCities['vizesiz']),
-                'vizeli' => $visaCount($visaCities['vizeli']),
+                'vizesiz' => $base()->where('requires_visa', false)->count(),
+                'vizeli' => $base()->where('requires_visa', true)->count(),
             ];
 
             $days = [];
