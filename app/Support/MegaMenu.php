@@ -7,19 +7,22 @@ use App\Models\Tour;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Ana sayfa kategori ağacı (malitur kalıbı: üst kategori → alt kategoriler).
+ * Ana sayfa mega menüsü — malitur kalıbı, ÜÇ KATMAN:
  *
- * TEK KURAL: kategori ağacının tamamı basılır — filtre barındaki "Kategoriler"
- * paneliyle BİREBİR aynı liste. Turu olmayan kategori de görünür; menü ile
- * filtre farklı şeyler gösterirse kullanıcı hangisinin doğru olduğunu bilemez.
+ *     üst şerit (kova) → sol ray (ana kategori) → orta sütun (alt kategoriler)
  *
- * (2026-08-13 öncesi burası envanterden türeyen kovalar üretiyordu — "Yurt İçi
- * Turlar / Yurt Dışı Turlar / Özel Dönemler" — ve en az 2 turu olmayan başlığı
- * gizliyordu. Kullanıcı kararıyla kategori ağacına çevrildi.)
+ * Kategori ağacı iki seviye olduğu için en üstteki gruplama config/mega_menu.php
+ * dosyasından gelir; kovaya yazılmamış ana kategori "Diğer Turlar" kovasına
+ * düşer, yani HİÇBİR kategori menüden kaybolmaz. Turu olmayan kategori de
+ * görünür — menü ile filtre barındaki "Kategoriler" paneli aynı listeyi
+ * göstermek zorunda, yoksa kullanıcı hangisinin doğru olduğunu bilemez.
+ *
+ * Linkler düz landing adresleridir (/kultur-turlari), query string DEĞİL:
+ * tek facet'li query adresi zaten TourController tarafından 301 ile oraya
+ * taşınıyor (bkz. App\Support\LandingSlug).
  *
  * Sayaçlar filtre barıyla aynı kuralla hesaplanır: bir kategorinin sayısı
- * kendisi + TÜM alt seviyeleridir (Category::descendantIds). Ayrı hesaplanırsa
- * menü ile filtre farklı rakam gösterir.
+ * kendisi + TÜM alt seviyeleridir (Category::descendantIds).
  */
 class MegaMenu
 {
@@ -28,7 +31,7 @@ class MegaMenu
      * Aksi halde deploy sonrası eski biçimdeki önbellek okunur ve şablon
      * "Undefined array key" ile 500 verir (bir kez yaşandı).
      */
-    public const CACHE_KEY = 'home_mega_menu_v3';
+    public const CACHE_KEY = 'home_mega_menu_v4';
 
     public static function forget(): void
     {
@@ -36,60 +39,141 @@ class MegaMenu
     }
 
     /**
-     * @return array<int, array{key:string, icon:?string, name:string, count:int, url:string, columns:array<int, array{title:string, links:array<int, array{icon:?string, label:string, url:string, count:int}>}>}>
+     * @return array<int, array{
+     *     key:string, label:string, icon:string,
+     *     rail:array<int, array{
+     *         key:string, icon:?string, name:string, count:int, url:string,
+     *         links:array<int, array{icon:?string, label:string, url:string, count:int}>
+     *     }>
+     * }>
      */
     public static function build(): array
     {
         return Cache::remember(self::CACHE_KEY, 300, function () {
-            // Tur::active() pasif acentayı ve lisanssız kategoriyi zaten eler;
-            // HomeController'ın facet sorgusuyla aynı taban kullanılıyor ki
-            // menü ile filtre aynı rakamı göstersin.
-            $sayimlar = Tour::query()->active()
-                ->whereNotNull('category_id')
-                ->selectRaw('category_id, COUNT(*) as toplam')
-                ->groupBy('category_id')
-                ->pluck('toplam', 'category_id')
-                ->all();
+            $agac = self::kategoriAgaci();
+            if ($agac === []) {
+                return [];
+            }
 
-            // Torun toplamı için tek çekim — döngüde DB'ye gidilmez.
-            $tumKategoriler = Category::select(['id', 'parent_id'])->get();
-
-            $ustler = Category::active()
-                ->parents()
-                ->with(['children' => fn ($q) => $q->active()->orderBy('sort_order')])
-                ->orderBy('sort_order')
-                ->get();
-
+            $kalanlar = $agac;
             $kovalar = [];
 
-            foreach ($ustler as $ust) {
-                $linkler = [];
-                foreach ($ust->children as $alt) {
-                    $linkler[] = [
-                        'icon' => $alt->icon,
-                        'label' => $alt->name,
-                        'url' => \App\Support\LandingSlug::urlForCategory($alt),
-                        'count' => self::toplam($alt, $tumKategoriler, $sayimlar),
-                    ];
+            foreach (config('mega_menu.buckets', []) as $tanim) {
+                $dallar = [];
+                foreach ($tanim['categories'] ?? [] as $slug) {
+                    if (isset($kalanlar[$slug])) {
+                        $dallar[] = $kalanlar[$slug];
+                        unset($kalanlar[$slug]);
+                    }
+                }
+
+                // Kovadaki kategorilerin hiçbiri yoksa (silinmiş/pasifleşmiş)
+                // boş başlık basmayalım: kullanıcı boş panele tıklamasın.
+                if ($dallar === []) {
+                    continue;
                 }
 
                 $kovalar[] = [
-                    'key' => $ust->slug,
-                    // İkon ayrı taşınır: şablonda kendi <span>'ında basılınca
-                    // flex gap'i devreye giriyor, "🏛️Kültür" gibi bitişik durmuyor.
-                    'icon' => $ust->icon,
-                    'name' => $ust->name,
-                    'count' => self::toplam($ust, $tumKategoriler, $sayimlar),
-                    'url' => \App\Support\LandingSlug::urlForCategory($ust),
-                    // Alt kategorisi yoksa panel de yok: tetikleyici düz link olur.
-                    'columns' => $linkler === [] ? [] : [
-                        ['title' => 'Alt kategoriler', 'links' => $linkler],
-                    ],
+                    'key' => $tanim['key'],
+                    'label' => $tanim['label'],
+                    'icon' => $tanim['icon'] ?? '',
+                    'rail' => array_map(self::rayOgesi(...), $dallar),
+                ];
+            }
+
+            // Kovaya yazılmamış ana kategoriler kaybolmasın
+            if ($kalanlar !== []) {
+                $yedek = config('mega_menu.fallback', []);
+                $kovalar[] = [
+                    'key' => $yedek['key'] ?? 'diger',
+                    'label' => $yedek['label'] ?? 'Diğer Turlar',
+                    'icon' => $yedek['icon'] ?? '',
+                    'rail' => array_map(self::rayOgesi(...), array_values($kalanlar)),
                 ];
             }
 
             return $kovalar;
         });
+    }
+
+    /**
+     * Sol raydaki bir dal: ana kategori + orta sütunda listelenecek linkleri.
+     *
+     * @param  array{slug:string, name:string, icon:?string, count:int, children:array}  $ust
+     */
+    private static function rayOgesi(array $ust): array
+    {
+        // İlk satır üst kategorinin kendisi: alt kırılımlardan birini seçmek
+        // istemeyen kullanıcı tüm dalı görebilsin.
+        $linkler = [[
+            'icon' => $ust['icon'],
+            'label' => 'Tüm '.$ust['name'],
+            'url' => $ust['url'],
+            'count' => $ust['count'],
+        ]];
+
+        foreach ($ust['children'] as $alt) {
+            $linkler[] = [
+                'icon' => $alt['icon'],
+                'label' => $alt['name'],
+                'url' => $alt['url'],
+                'count' => $alt['count'],
+            ];
+        }
+
+        return [
+            'key' => $ust['slug'],
+            'icon' => $ust['icon'],
+            'name' => $ust['name'],
+            'count' => $ust['count'],
+            'url' => $ust['url'],
+            'links' => $linkler,
+        ];
+    }
+
+    /**
+     * Kategori ağacı + sayaçlar + landing adresleri, tek çekimde.
+     * Anahtar = ana kategorinin slug'ı (kova eşleştirmesi bunun üzerinden).
+     *
+     * @return array<string, array{slug:string, name:string, icon:?string, count:int, url:string, children:array}>
+     */
+    private static function kategoriAgaci(): array
+    {
+        $sayimlar = Tour::query()->active()
+            ->whereNotNull('category_id')
+            ->selectRaw('category_id, COUNT(*) as toplam')
+            ->groupBy('category_id')
+            ->pluck('toplam', 'category_id')
+            ->all();
+
+        $tumKategoriler = Category::select(['id', 'parent_id'])->get();
+
+        $ustler = Category::active()
+            ->parents()
+            ->with(['children' => fn ($q) => $q->active()->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
+
+        $agac = [];
+
+        foreach ($ustler as $ust) {
+            $agac[$ust->slug] = [
+                'slug' => $ust->slug,
+                'name' => $ust->name,
+                'icon' => $ust->icon,
+                'count' => self::toplam($ust, $tumKategoriler, $sayimlar),
+                'url' => LandingSlug::urlForCategory($ust),
+                'children' => $ust->children->map(fn (Category $alt) => [
+                    'slug' => $alt->slug,
+                    'name' => $alt->name,
+                    'icon' => $alt->icon,
+                    'count' => self::toplam($alt, $tumKategoriler, $sayimlar),
+                    'url' => LandingSlug::urlForCategory($alt),
+                ])->all(),
+            ];
+        }
+
+        return $agac;
     }
 
     /** Kategorinin sayacı: kendisi + tüm alt seviyeleri (filtre barıyla aynı kural). */

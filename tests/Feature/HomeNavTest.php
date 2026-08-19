@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Agency;
 use App\Models\Category;
 use App\Models\Tour;
+use App\Support\LandingSlug;
 use App\Support\MegaMenu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -102,7 +103,7 @@ class HomeNavTest extends TestCase
         $r = $this->get(route('home'))->assertOk();
 
         $r->assertDontSee('mega-trigger', false);
-        $r->assertDontSee('mega-link', false);
+        $r->assertDontSee('mega-card', false);
         $r->assertSee('home-filter-form', false);
     }
 
@@ -121,10 +122,10 @@ class HomeNavTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Kayak ve Kış')
-            ->assertSee(\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kayak-menu')->first()), false);
+            ->assertSee(LandingSlug::urlForCategory(Category::where('slug','kayak-menu')->first()), false);
     }
 
-    public function test_alt_kategoriler_panelde_listelenir(): void
+    public function test_alt_kategoriler_panelin_orta_sutununda_listelenir(): void
     {
         $ust = Category::create(['name' => 'Doğa Turları', 'slug' => 'doga-menu', 'is_active' => true]);
         Category::create(['name' => 'Kamp ve Yayla', 'slug' => 'kamp-menu', 'parent_id' => $ust->id, 'is_active' => true]);
@@ -134,23 +135,69 @@ class HomeNavTest extends TestCase
 
         $r = $this->get(route('home'))->assertOk();
 
+        // Ana kategori sol rayda, alt kategorisi orta sütunda
         $r->assertSee('Doğa Turları');
         $r->assertSee('Kamp ve Yayla');
-        $r->assertSee(\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kamp-menu')->first()), false);
-        // Alt kategorisi olan başlık açılır panel olur
-        $r->assertSee('aria-controls="mega-doga-menu"', false);
+        $r->assertSee(LandingSlug::urlForCategory(Category::where('slug', 'kamp-menu')->first()), false);
+        // Sol raydaki kart hangi paneli açacağını data-show ile söyler
+        $r->assertSee('data-show="mega-diger-doga-menu"', false);
     }
 
-    public function test_alt_kategorisi_olmayan_baslik_duz_link_olur(): void
+    /**
+     * Ray → orta sütun bağı: her dalın kendi paneli var ve panelin ilk satırı
+     * "Tüm {ana kategori}" — alt kırılım seçmek istemeyen kullanıcı tüm dalı
+     * tek tıkla görebilmeli.
+     */
+    public function test_her_dalin_kendi_paneli_ve_tumu_linki_olur(): void
     {
-        // setUp'taki "Kültür" kategorisinin alt kategorisi yok
-        config(['ui.home_nav' => 'both']);
+        $ust = Category::create(['name' => 'Doğa Turları', 'slug' => 'doga-menu', 'is_active' => true]);
+        Category::create(['name' => 'Kamp ve Yayla', 'slug' => 'kamp-menu', 'parent_id' => $ust->id, 'is_active' => true]);
+
+        MegaMenu::forget();
+        $dallar = collect(MegaMenu::build())->pluck('rail')->flatten(1)->keyBy('key');
+
+        $this->assertSame('Tüm Doğa Turları', $dallar['doga-menu']['links'][0]['label']);
+        $this->assertSame('Kamp ve Yayla', $dallar['doga-menu']['links'][1]['label']);
+        $this->assertSame(
+            LandingSlug::urlForCategory($ust),
+            $dallar['doga-menu']['links'][0]['url']
+        );
+    }
+
+    /**
+     * config/mega_menu.php'de bir kovaya yazılmamış ana kategori KAYBOLMAZ,
+     * "Diğer Turlar" kovasına düşer. Admin yeni kategori açtığında menüden
+     * sessizce silinmesin diye.
+     */
+    public function test_kovaya_yazilmamis_kategori_diger_kovasina_duser(): void
+    {
+        config(['ui.home_nav' => 'both', 'mega_menu.buckets' => []]);
         MegaMenu::forget();
 
-        $this->get(route('home'))
-            ->assertOk()
-            ->assertSee('class="mega-link" href="'.\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kultur-menu')->first()).'"', false)
-            ->assertDontSee('aria-controls="mega-kultur-menu"', false);
+        $kovalar = MegaMenu::build();
+
+        $this->assertCount(1, $kovalar);
+        $this->assertSame('diger', $kovalar[0]['key']);
+        $this->assertContains('kultur-menu', collect($kovalar[0]['rail'])->pluck('key')->all());
+    }
+
+    public function test_kova_tanimliysa_kategorileri_o_kovaya_girer(): void
+    {
+        config([
+            'ui.home_nav' => 'both',
+            'mega_menu.buckets' => [[
+                'key' => 'kultur-sehir',
+                'label' => 'Kültür & Şehir',
+                'icon' => '🏛️',
+                'categories' => ['kultur-menu'],
+            ]],
+        ]);
+        MegaMenu::forget();
+
+        $kovalar = collect(MegaMenu::build())->keyBy('key');
+
+        $this->assertSame('Kültür & Şehir', $kovalar['kultur-sehir']['label']);
+        $this->assertSame(['kultur-menu'], collect($kovalar['kultur-sehir']['rail'])->pluck('key')->all());
     }
 
     public function test_pasif_kategori_menuye_girmez(): void
@@ -177,10 +224,11 @@ class HomeNavTest extends TestCase
         $this->tur('Bodrum Tekne Turu', 'Bodrum', false, $alt->id);
 
         MegaMenu::forget();
-        $kovalar = collect(MegaMenu::build())->keyBy('key');
+        $dallar = collect(MegaMenu::build())->pluck('rail')->flatten(1)->keyBy('key');
 
-        $this->assertSame(1, $kovalar['deniz-menu']['count']);
-        $this->assertSame(1, $kovalar['deniz-menu']['columns'][0]['links'][0]['count']);
+        $this->assertSame(1, $dallar['deniz-menu']['count']);
+        // links[0] = "Tüm Deniz Turları", links[1] = alt kategori
+        $this->assertSame(1, $dallar['deniz-menu']['links'][1]['count']);
     }
 
     public function test_menu_linkleri_mevcut_filtre_urllerine_gider(): void
@@ -191,6 +239,6 @@ class HomeNavTest extends TestCase
         // Yeni sayfa açılmıyor: menü var olan /turlar filtresine bağlanıyor.
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee(\App\Support\LandingSlug::urlForCategory(\App\Models\Category::where('slug','kultur-menu')->first()), false);
+            ->assertSee(LandingSlug::urlForCategory(Category::where('slug','kultur-menu')->first()), false);
     }
 }
