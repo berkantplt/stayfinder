@@ -687,6 +687,10 @@ class AiSearchController extends Controller
             if ($isInternational !== null) {
                 $toursQuery->where('is_international', $isInternational);
             }
+            // Vize üç durumlu: belirtilmemiş (null) turlar vize YÖNÜ istenen
+            // aramada elenir. SQL'de NULL zaten hiçbir değere eşit olmadığı için
+            // bu kendiliğinden oluyor — bilinçli karar olduğu buraya yazıldı:
+            // "vizesiz tur" arayana vize durumu bilinmeyen tur gösterilmez.
             if ($requiresVisa !== null) {
                 $toursQuery->where('requires_visa', $requiresVisa);
             }
@@ -1403,7 +1407,14 @@ class AiSearchController extends Controller
         return max(0.0, 1.0 - min(1.0, $overRatio));
     }
 
-    private function scoreExactBool(bool $actual, ?bool $expected): float
+    /**
+     * $actual artık null olabilir: requires_visa üç durumlu (vizeli/vizesiz/
+     * belirtilmemiş). Belirtilmemiş bir tur, vize yönü İSTENEN aramada eşleşmez
+     * — sert filtre (yukarıdaki where) onu zaten eliyor, buradaki 0.0 ikinci
+     * güvenlik ağı. Tip bool kalsaydı null sessizce false'a çökerdi ve
+     * "vizesiz ara" belirtilmemiş turları vizesiz sayardı.
+     */
+    private function scoreExactBool(?bool $actual, ?bool $expected): float
     {
         if ($expected === null) {
             return 1.0;

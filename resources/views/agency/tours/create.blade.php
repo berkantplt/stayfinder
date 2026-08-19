@@ -302,6 +302,10 @@
                         'selectedStopCities' => old('stop_cities', []),
                     ])
 
+                    @include('agency.tours._visa_fields', [
+                        'visaValue' => old('requires_visa', 'unknown'),
+                    ])
+
                     <div class="form-group">
                         <label>Tur Tarihleri ve Fiyatları *</label>
                         @php

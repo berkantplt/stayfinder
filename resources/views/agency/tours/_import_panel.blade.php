@@ -53,6 +53,7 @@ function applyImported(data, sourceUrl) {
     setVal('input[name="frequency"]', data.frequency);
     setVal('input[name="tour_url"]', sourceUrl);
 
+
     // Görseller: URL'den çekilenleri galeriye ekle
     if (typeof window.setGalleryImages === 'function' && Array.isArray(data.image_urls)) {
         window.setGalleryImages(data.image_urls);

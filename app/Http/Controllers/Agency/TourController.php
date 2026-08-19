@@ -109,6 +109,7 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
+            'requires_visa' => 'nullable|in:0,1,kapida,unknown',
         ], [
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
@@ -135,6 +136,16 @@ class TourController extends Controller
         if ($classified !== null) {
             $validated['is_international'] = $classified;
         }
+
+        // Vize DÖRT SEÇENEK, iki kolon: işaretsiz bırakmak "vizesiz" değil
+        // "belirtilmemiş"tir. "Kapıda" da bir vizedir (requires_visa=true), ama
+        // yolcu için işi bambaşka olduğundan ayrı bayrakla taşınır.
+        [$validated['requires_visa'], $validated['visa_on_arrival']] = match ($request->input('requires_visa')) {
+            '1' => [true, false],
+            'kapida' => [true, true],
+            '0' => [false, false],
+            default => [null, null],
+        };
         $validated['agency_id'] = $agency->id;
         $validated['price'] = $this->resolveBasePrice($dates);
         $primaryDate = $this->resolvePrimaryDate($dates);
@@ -194,6 +205,7 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
+            'requires_visa' => 'nullable|in:0,1,kapida,unknown',
         ], [
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
@@ -205,6 +217,16 @@ class TourController extends Controller
         if ($classified !== null) {
             $validated['is_international'] = $classified;
         }
+
+        // Vize DÖRT SEÇENEK, iki kolon: işaretsiz bırakmak "vizesiz" değil
+        // "belirtilmemiş"tir. "Kapıda" da bir vizedir (requires_visa=true), ama
+        // yolcu için işi bambaşka olduğundan ayrı bayrakla taşınır.
+        [$validated['requires_visa'], $validated['visa_on_arrival']] = match ($request->input('requires_visa')) {
+            '1' => [true, false],
+            'kapida' => [true, true],
+            '0' => [false, false],
+            default => [null, null],
+        };
 
         $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
         $dates = $this->prepareValidatedDatePrices(

@@ -252,6 +252,7 @@ class TourUrlImporter
             $result['transport_type'] = $this->transportTypeFromPage($text);
         }
 
+
         // 2) Fiyat matrisi — ÖNCE DETERMİNİSTİK (kodla) ayrıştırma. "899,00 €" sayfada
         // birebir string olduğundan sayıyı LLM'e okutmadan kodla çıkarınca hata payı ~0.
         // Tanınmayan/atipik (yatay) tablolarda boş döner → odaklı LLM çağrısına düşülür.
@@ -467,6 +468,30 @@ class TourUrlImporter
                 $tr = array_map(fn (string $d): string => Carbon::parse($d)->locale('tr')->translatedFormat('j F Y'), $soldOut);
                 $warnings[] = 'Kaynak sitede satışı kapanmış (Tükendi) kalkışlar içe aktarılmadı: '.implode(', ', $tr).'.';
             }
+        }
+
+        // BUGÜN = KALKIŞ ŞÜPHESİ: sayfa dipnotlarındaki meta tarihler İÇE AKTARMA
+        // GÜNÜNÜN tarihini taşır (Jolly: "Tur sirküsü yayımlandığı 15.08.2026
+        // tarihinde geçerlidir" — site bunu her gün bugünle basar), ve bu tarih
+        // kalkış sanılıp listenin BAŞINA oturuyordu: bloksuz olduğu için ilk bloğun
+        // fiyatı kopyalanıp yanlış tarihe yanlış fiyat yazılıyordu. Aynı gün kalkışlı
+        // tur pratikte satılmaz; sayfada başka kalkış varken "bugün" meta tarihtir.
+        $today = Carbon::today()->toDateString();
+        if (count($result['departure_dates']) > 1 && in_array($today, $result['departure_dates'], true)) {
+            $result['departure_dates'] = array_values(array_diff($result['departure_dates'], [$today]));
+            // Tarihe bağlı fiyat bloğu da düşsün; tarihi kalan blokta bırakmak
+            // elenen tarihi fiyat tablosu üzerinden geri getirirdi.
+            if (isset($result['pricing_blocks'])) {
+                $kept = [];
+                foreach ($result['pricing_blocks'] as $block) {
+                    $block['dates'] = array_values(array_diff($block['dates'] ?? [], [$today]));
+                    if ($block['dates'] !== []) {
+                        $kept[] = $block;
+                    }
+                }
+                $result['pricing_blocks'] = $kept;
+            }
+            $warnings[] = 'Bugünün tarihi ('.Carbon::parse($today)->locale('tr')->translatedFormat('j F Y').') kalkış listesinden çıkarıldı — sayfadaki bu tarih kalkış değil, sirküler/güncellenme dipnotu görünüyor. Gerçekten bugün kalkışlı bir tur varsa elle ekleyin.';
         }
 
         // Görselleri ham HTML'den sırayla yakala (og:image + JSON-LD + <img>).
@@ -2120,7 +2145,6 @@ JS;
         - cancellation_policy (string|null): iptal ve iade koşulları
         - guide_info (string|null): rehber bilgisi veya rehber notları
         - frequency (string|null): hareket sıklığı (ör. "Her Cuma kesin hareketli")
-
         ÖNEMLİ — fiyat: Sayfada birden fazla fiyat olabilir. GÜNCEL/indirimli kişi başı fiyatı al.
         Kapak fiyatı İKİ KİŞİLİK ODA KİŞİ BAŞI fiyattır — "İlave Yatak", "3. Kişi",
         "Tek Kişilik Oda" veya çocuk/bebek fiyatını kapak fiyatı olarak ASLA alma
@@ -2606,6 +2630,113 @@ JS;
      *
      * @return array<int, array{dates: array<int, string>, packages: array<int, array{hotel: string, prices: array<string, array{old: ?float, new: ?float}>}>}>
      */
+    /**
+     * Menü/footer gürültüsü — vize taramasından ÖNCE silinir.
+     *
+     * Ölçüm (12 gerçek malitur/jolly sayfası): "vizesiz" kelimesi turun kendisiyle
+     * ilgisiz biçimde HER sayfada geçiyor, çünkü sitenin kategori menüsünde
+     * "Vizesiz Gemi Turları" bağlantıları var. Bunlar silinmezse Schengen turu
+     * "vizesiz" çıkar — yani en tehlikeli yanlış.
+     */
+    private const VIZE_GURULTU = [
+        // Menü öğeleri BOŞLUKSUZ yapışabiliyor ("...TurlarıVizesiz Yurt Dışı
+        // Turları" — Jolly), o yüzden baş sınırı (\b) aranmıyor.
+        '/t[üu]m\s+vizesiz\s+turlar/iu',
+        '/vizesiz\s+(?:[\p{L}]+\s+){1,3}turlar[ıi]/iu',        // "Vizesiz Gemi/Yurt Dışı Turları"
+        '/vizesiz\s+turlar/iu',
+        '/kap[ıi]\s+vizeli\s+(?:[\p{L}]+\s+){0,4}turlar[ıi]/iu', // "Kapı Vizeli Yunan Adaları Turları"
+        '/vizeli\s+(?:[\p{L}]+\s+){1,3}turlar[ıi]/iu',
+        '/vizesiz-[\p{L}\-]*turlar[\p{L}\-]*/iu',              // item_list_id="vizesiz-gemi-turlari"
+        '/vize\s+bilgileri/iu',                              // footer bağlantısı, her sayfada
+    ];
+
+    /**
+     * Sayfa metninden vize durumunu DETERMİNİSTİK çıkarır.
+     *
+     * NEDEN LLM DEĞİL (ya da: LLM'den ÖNCE): burada istenen şey kesinlik.
+     * "Vizeli" dediğimizde yanılmamamız gerekiyor; kural yalnızca sayfada NET
+     * yazan ifadelerde konuşur, kalan her durumda susar (null). Kurallar 12
+     * gerçek sayfa üzerinde ölçülerek yazıldı, tahminle değil.
+     *
+     * Sinyal sırası önemli: çelişkide VİZELİ kazanır. Sebebi asimetrik zarar —
+     * vize gerekmezken "gerekiyor" demek kullanıcıya fazladan iş çıkarır,
+     * gerekirken "gerekmiyor" demek onu havaalanında bırakır. (Gerçek örnek:
+     * başlığı "/ Vizesiz /" olan Aroya Cruises turunun dahil listesinde
+     * "Mısır Online Vize Ücreti" var — e-vize gerçekten gerekiyor.)
+     *
+     * ŞU AN KULLANILMIYOR — bilinçli. Vize alanını acenta formdaki üç
+     * kutucuktan kendisi işaretliyor (kullanıcı kararı, 2026-08-19). Sebep:
+     * 60 sayfalık bağımsız ölçümde "vizesiz" etiketinin kesinliği %76,9 ve
+     * kategoriye giren turların %15,4'ü gerçekte vize istiyordu — o hata
+     * kullanıcıyı sınırda bırakır. "Vizeli" tarafı %95,5 ile güvenilirdi.
+     *
+     * Geri açmak için: doImport'ta normalize()'dan sonra sonucu \$result'a
+     * yaz ve _import_panel.blade.php'de kutucukları işaretle. Doğruluğu
+     * TourImportParserTest'teki 12 sayfalık veri sağlayıcı koruyor.
+     *
+     * @return array{requires_visa: ?bool, visa_on_arrival: ?bool}
+     */
+    private function visaFromPage(string $text): array
+    {
+        $metin = preg_replace(self::VIZE_GURULTU, ' ', $text) ?? $text;
+        $metin = mb_strtolower($metin, 'UTF-8');
+
+        // 1) AÇIK BEYAN her şeyi ezer. Acenta sayfaları bunu standart bir cümleyle
+        //    yazıyor: "T.C vatandaşları için vize uygulaması yoktur/vardır".
+        //    Yeşil pasaport istisnası ("Yeşil pasaport sahipleri için vize
+        //    uygulaması olmayıp...") AYRI cümledir ve sıradan yolcuyu bağlamaz —
+        //    o cümleler elenmezse vizeli tur vizesiz görünür.
+        foreach (preg_split('/[\n.;]+/u', $metin) ?: [] as $cumle) {
+            if (str_contains($cumle, 'yeşil pasaport') || ! str_contains($cumle, 'vize uygulama')) {
+                continue;
+            }
+            if (preg_match('/vize\s+uygulamas[ıi]\s+(?:yok|bulunmama|olmay)/u', $cumle)) {
+                return ['requires_visa' => false, 'visa_on_arrival' => false];
+            }
+            if (preg_match('/vize\s+uygulamas[ıi]\s+var/u', $cumle)) {
+                return ['requires_visa' => true, 'visa_on_arrival' => false];
+            }
+        }
+
+        // 2) Kapıda / varışta vize. "Kapı Vize Ücreti" biçimi de sayılır —
+        //    ölçümde Mısır turu tam bu yüzden kaçmıştı ("Mısır Kapı Vize Ücreti").
+        if (preg_match('/kap[ıi](?:da)?\s+(?:[\p{L}]+\s+){0,3}vize|vize[a-z]*\s+kap[ıi]da|var[ıi][şs]ta\s+(?:[\p{L}]+\s+){0,2}vize|visa\s+on\s+arrival/u', $metin)) {
+            return ['requires_visa' => true, 'visa_on_arrival' => true];
+        }
+
+        // 3) Vize GEREKİYOR sinyalleri — hepsi PARA ya da RESMİ AD içerir.
+        //
+        //    "vize başvurusu" BİLEREK YOK: ölçümde 3 yanlış pozitifin tamamını o
+        //    üretti. İptal/sigorta şartlarında ("vize başvurusu yapılmamışsa
+        //    sigorta da iptal edilir") vizesiz turlarda da geçiyor. Kapsamaya
+        //    katkısı da sıfır — onu taşıyan her vizeli sayfada zaten vize ücreti
+        //    veya vize harcı yazıyor.
+        $vizeliKaliplari = [
+            '/(?:^|\n)\s*vizeli\b/u',                  // tur özellik çipi: "Vizeli (Schegen Vizesi)"
+            '/\bvize\s+ad[ıi]\b/u',                    // vize detay tablosunun başlığı
+            '/\bvize\s+[üu]creti\b/u',                 // "Mısır Online Vize Ücreti"
+            '/\bvize\s+har[cç]/u',                      // "Vize harcı", "vize harç bedeli"
+            '/\bschengen\s+vize/u',
+            '/\bk-?\s?et-?\s?a\b/u',                  // Kore K-ETA: "Ket-a Vizesi", "Keta Vize ücreti"
+        ];
+
+        foreach ($vizeliKaliplari as $kalip) {
+            if (preg_match($kalip, $metin)) {
+                return ['requires_visa' => true, 'visa_on_arrival' => false];
+            }
+        }
+
+        // 4) Vizesiz: gürültü yukarıda silindiği için burada kalan "vizesiz"
+        //    tura aittir (başlık, slug ya da pazarlama satırı — "6 Ulke Vizesiz").
+        //    En sonda duruyor: "Yeşil pasaporta vizesiz" gibi istisna cümleleri
+        //    vizeli turlarda da geçiyor, o yüzden vizeli kalıpları öne alındı.
+        if (preg_match('/\bvizesiz\b/u', $metin)) {
+            return ['requires_visa' => false, 'visa_on_arrival' => false];
+        }
+
+        return ['requires_visa' => null, 'visa_on_arrival' => null];
+    }
+
     /**
      * Ulaşım tipini beyaz listeye indirger. LLM boş bıraktıysa başlıktan
      * deterministik olarak türetmeyi dener — Türk tur başlıklarının çoğunda
@@ -3640,7 +3771,18 @@ JS;
     private function harvestDates(string $content): array
     {
         $months = 'Ocak|Şubat|Subat|Mart|Nisan|Mayıs|Mayis|Haziran|Temmuz|Ağustos|Agustos|Eylül|Eylul|Ekim|Kasım|Kasim|Aralık|Aralik';
-        $found = [];
+
+        // POZİTİF KAPSAM: sayfanın kalkış takvimini açan başlıkların ("Tur Hareket
+        // Tarihi", "Fiyatlar & Tarihler" …) kapsadığı bölgeler. Bölge içinde tarih
+        // bulunursa metnin GERİ KALANI hiç sayılmaz — dipnot/meta tarihleri (Jolly:
+        // "Tur sirküsü yayımlandığı 15.08.2026 tarihinde geçerlidir") böylece
+        // kalkış listesine giremez. Negatif kelime listesi bunu yakalayamıyordu:
+        // ifade çekimli ("yayımlandığı … geçerlidir") olduğu için hiçbir anahtar
+        // tutmuyordu ve site bu tarihi HER GÜN bugünle bastığı için her import'a
+        // sahte bir "bugün kalkışlı" tur giriyordu.
+        $regions = $this->departureDateRegions($content);
+        $inRegion = [];
+        $anywhere = [];
 
         $patterns = [
             '/\b\d{1,2}\s+(?:'.$months.')\s+20\d{2}\b/u',
@@ -3667,23 +3809,79 @@ JS;
         foreach ($patterns as $pattern) {
             if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
                 foreach ($matches[0] as [$raw, $offset]) {
+                    $offset = (int) $offset;
                     // Dönüş tarihi (aralığın ikinci tarihi) → kalkış değil, atla.
-                    if (isset($returnOffsets[(int) $offset])) {
+                    if (isset($returnOffsets[$offset])) {
                         continue;
                     }
+                    $inside = $this->offsetInRegions($offset, $regions);
                     // Kupon/kampanya geçerlilik aralıkları ve otel etkinlik (konser)
                     // takvimindeki tarihler KALKIŞ tarihi değildir — bağlama bak, ele.
-                    if ($this->dateContextIsExcluded($content, (int) $offset, strlen($raw))) {
+                    if ($this->dateContextIsExcluded($content, $offset, strlen($raw), $inside)) {
                         continue;
                     }
                     if ($date = $this->parseFutureDate($raw)) {
-                        $found[] = $date;
+                        $anywhere[] = $date;
+                        if ($inside) {
+                            $inRegion[] = $date;
+                        }
                     }
                 }
             }
         }
 
-        return array_values(array_unique($found));
+        // Bölge içinde tek bir tarih bile çıktıysa listeyi ONLAR belirler. Bölgeler
+        // hiç yoksa veya boş çıktıysa (başlık kalıbı tutmayan siteler) eski davranışa
+        // düşülür — pozitif kapsam tarih KAYBETTİRMEZ, yalnızca gürültüyü keser.
+        return array_values(array_unique($inRegion !== [] ? $inRegion : $anywhere));
+    }
+
+    /**
+     * Kalkış takvimini açan başlıkların ("Tur Hareket Tarihi", "Fiyatlar & Tarihler",
+     * "Kalkış Tarihleri" …) offset'inden itibaren ~6000 baytlık pencereler döner.
+     * Başlık tarihlerin ÜSTÜNDE durur, bu yüzden pencere yalnızca ileri bakar.
+     *
+     * @return array<int, array{0: int, 1: int}>
+     */
+    private function departureDateRegions(string $content): array
+    {
+        // Türkçe büyük/küçük harf eşlemesi PCRE'de güvenilir değil (I/ı) — ı ve i
+        // karakter sınıfıyla açıkça yazılır, gerisi ASCII olduğu için /i yeter.
+        $heads = [
+            '/tur\s+hareket\s+tarih/iu',
+            '/hareket\s+tarih(?:i|ler)/iu',
+            '/kalk[ıi][şs]\s+tarih(?:i|ler)/iu',
+            '/fiyat(?:lar)?\s*(?:&|ve)\s*tarih/iu',
+            '/tarih(?:ler)?\s*(?:&|ve)\s*fiyat/iu',
+            '/tur\s+tarih(?:i|ler)/iu',
+            '/sefer\s+tarih(?:i|ler)/iu',
+        ];
+
+        $len = strlen($content);
+        $regions = [];
+        foreach ($heads as $head) {
+            if (preg_match_all($head, $content, $hm, PREG_OFFSET_CAPTURE)) {
+                foreach ($hm[0] as [, $off]) {
+                    $regions[] = [(int) $off, min($len, (int) $off + 6000)];
+                }
+            }
+        }
+
+        return $regions;
+    }
+
+    /**
+     * @param  array<int, array{0: int, 1: int}>  $regions
+     */
+    private function offsetInRegions(int $offset, array $regions): bool
+    {
+        foreach ($regions as [$start, $end]) {
+            if ($offset >= $start && $offset < $end) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -3888,20 +4086,28 @@ JS;
     /**
      * Tarih eşleşmesinin çevresindeki metin (±~120 karakter) kampanya/kupon/etkinlik
      * bağlamı içeriyorsa true döner — bu tarihler tur kalkış tarihi olarak alınmaz.
+     *
+     * @param  bool  $inRegion  Tarih, kalkış takvimi başlığının kapsadığı bölgede mi?
      */
-    private function dateContextIsExcluded(string $content, int $offset, int $len): bool
+    private function dateContextIsExcluded(string $content, int $offset, int $len, bool $inRegion = false): bool
     {
         $window = substr($content, max(0, $offset - 120), 120 + $len + 120);
         $fold = $this->foldTr($window);
 
-        foreach ([
-            'kupon', 'kampanya', 'indirim kodu',                  // kupon/kampanya blokları
+        // ZAYIF sinyaller: yalnızca serbest metindeki gürültüye karşı. Kalkış takvimi
+        // bölgesinde bunlara bakılmaz — aksi hâlde gerçek kalkışlar eleniyordu:
+        // Jolly'de "04 Eylül 2026" tarihinin 20 karakter yanında "Kampanyalar" sekmesi
+        // duruyor, turun ADI da "Şarap Tadım Etkinliği" (canlı vaka).
+        $weak = ['kupon', 'kampanya', 'indirim kodu', 'etkinlik', 'konser', 'sahne alacak'];
+        // GÜÇLÜ sinyaller: tarihin kalkış OLMADIĞINI doğrudan söyler, bölge içinde de geçerli.
+        $strong = [
             'tarihleri arasindaki', 'tarihleri arasinda',         // "X ile Y tarihleri arasında..." aralıkları
             'rezervasyon tarihleri', 'seyahat tarihleri',         // kupon geçerlilik satırları
-            'etkinlik', 'konser', 'sahne alacak',                 // otel etkinlik takvimi
             'yayinlanma tarihi', 'yayimlanma tarihi', 'guncellenme tarihi', // içerik meta
             'gecerlilik tarihi', 'son gecerlilik',
-        ] as $kw) {
+        ];
+
+        foreach ($inRegion ? $strong : array_merge($weak, $strong) as $kw) {
             if (str_contains($fold, $kw)) {
                 return true;
             }

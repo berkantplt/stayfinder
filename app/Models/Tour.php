@@ -56,7 +56,7 @@ class Tour extends Model
         'agency_id', 'category_id', 'title', 'slug', 'destination', 'description',
         'price', 'currency', 'duration_days', 'duration_nights', 'transport_type', 'departure_date',
         'return_date', 'included', 'excluded', 'image', 'images', 'tour_url', 'is_active',
-        'views_count', 'clicks_count', 'embedding', 'search_text', 'is_international', 'requires_visa',
+        'views_count', 'clicks_count', 'embedding', 'search_text', 'is_international', 'requires_visa', 'visa_on_arrival',
         'departure_points', 'itinerary', 'hotel_info', 'extras',
         'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
         'departure_city', 'stop_cities',
@@ -74,6 +74,8 @@ class Tour extends Model
         'embedding' => 'array',
         'is_international' => 'boolean',
         'requires_visa' => 'boolean',
+        // Kapıda/varışta alınan vize: requires_visa=true ile BİRLİKTE anlamlı.
+        'visa_on_arrival' => 'boolean',
         'itinerary' => 'array', // [{title, content}, ...] — gün gün program
         'pricing_blocks' => 'array', // [{dates:[], packages:[{hotel, prices:{type:{old,new}}}]}]
         'stop_cities' => 'array', // yol üstünde yolcu alınan iller

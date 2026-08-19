@@ -687,4 +687,82 @@ class TourImportParserTest extends TestCase
         $this->assertEquals(10000.0, $merged[0]['packages'][0]['prices']['double_pp']['new']);
         $this->assertEquals(14000.0, $merged[0]['packages'][0]['prices']['single']['new']);
     }
+
+    // ── Vize beyanı normalizasyonu ──────────────────────────────────────────
+
+    // ── Vize çıkarımı (deterministik, gerçek sayfalara karşı) ───────────────
+
+    /**
+     * 12 gerçek sayfanın tamamı, elle doğrulanmış ground-truth ile.
+     *
+     * Kural LLM'i EZİYOR, o yüzden burada kırmızı olan şey canlıda yanlış vize
+     * bilgisi demek. İki ölçülmüş tuzak özellikle kilitleniyor:
+     *  - Sitenin menüsündeki "Vizesiz Gemi Turları" / "Kapı Vizeli ... Turları"
+     *    bağlantıları HER sayfada var; elenmezse Schengen turu "vizesiz" çıkar.
+     *  - Jolly'de menü öğeleri boşluksuz yapışıyor ("...TurlarıVizesiz Yurt Dışı").
+     *
+     * @return array<string, array{0: string, 1: ?bool, 2: ?bool}>
+     */
+    public static function vizeSayfalari(): array
+    {
+        return [
+            'Klasik İtalya — Schengen, ağır vize metni' => ['page_1', true, false],
+            'Sivas/Elazığ — yurt içi' => ['page_2', null, null],
+            'Aroya Cruises — başlık "Vizesiz" ama listede Mısır e-vize ücreti' => ['page_3', true, false],
+            'Otel sayfası — tur değil' => ['page_5', null, null],
+            'Japonya — başlıkta "Dahil Vizesiz /"' => ['page_6', false, false],
+            'İskandinavya — Schengen' => ['page_7', true, false],
+            'Sharm El Sheikh — "Kapıda ödemeli kahire vizesi"' => ['page_8', true, true],
+            'Salda/Pamukkale — yurt içi' => ['page_9', null, null],
+            'Ege köyleri — yurt içi' => ['page_10', null, null],
+            'Büyük İtalya — çip "Vizeli (Schegen Vizesi)"' => ['page_11', true, false],
+            'Jolly Likya — yurt içi, yapışık menü' => ['page_jolly_likya_horizontal', null, null],
+            'Kuzey Ege — yurt içi' => ['page_kuzey_ege_dual_render', null, null],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('vizeSayfalari')]
+    public function test_vize_durumu_gercek_sayfalardan_dogru_cikarilir(string $dosya, ?bool $vize, ?bool $kapida): void
+    {
+        $visaFromPage = $this->ref->getMethod('visaFromPage');
+        $metin = (string) file_get_contents(__DIR__."/../Fixtures/import/{$dosya}.txt");
+
+        $sonuc = $visaFromPage->invoke($this->importer, $metin);
+
+        $this->assertSame($vize, $sonuc['requires_visa'], "requires_visa yanlış: {$dosya}");
+        $this->assertSame($kapida, $sonuc['visa_on_arrival'], "visa_on_arrival yanlış: {$dosya}");
+    }
+
+    /**
+     * Menü gürültüsü tek başına ASLA karar üretmemeli — bu, ölçülen en tehlikeli
+     * yanlışın (Schengen turuna "vizesiz" demek) doğrudan kilidi.
+     */
+    public function test_menu_baglantilari_tek_basina_vize_karari_uretmez(): void
+    {
+        $visaFromPage = $this->ref->getMethod('visaFromPage');
+
+        $sadeceMenu = "Ana Sayfa\nTüm Vizesiz Turlar\nVizesiz Gemi Turları\n"
+            ."Vizesiz Yurt Dışı Turları\nKapı Vizeli Yunan Adaları Turları\n"
+            ."Vize Bilgileri\nKapadokya Turu / 2 Gece Otel Konaklamalı";
+
+        $sonuc = $visaFromPage->invoke($this->importer, $sadeceMenu);
+
+        $this->assertNull($sonuc['requires_visa']);
+        $this->assertNull($sonuc['visa_on_arrival']);
+    }
+
+    public function test_kapida_vize_vizeliden_ayirt_edilir(): void
+    {
+        $visaFromPage = $this->ref->getMethod('visaFromPage');
+
+        $kapida = $visaFromPage->invoke($this->importer, "Tur Programı\n• Kapıda ödemeli Kahire vizesi");
+        $this->assertTrue($kapida['requires_visa']);
+        $this->assertTrue($kapida['visa_on_arrival']);
+
+        // Konsolosluktan alınan vize kapıda DEĞİL — ikisi karışırsa yolcu
+        // randevu almadan yola çıkar.
+        $konsolosluk = $visaFromPage->invoke($this->importer, "Fiyata dahil değildir\nSchengen vizesi ücreti");
+        $this->assertTrue($konsolosluk['requires_visa']);
+        $this->assertFalse($konsolosluk['visa_on_arrival']);
+    }
 }

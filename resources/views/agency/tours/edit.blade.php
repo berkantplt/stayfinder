@@ -299,6 +299,15 @@
                         'selectedStopCities' => old('stop_cities', $tour->stop_cities ?? []),
                     ])
 
+                    @include('agency.tours._visa_fields', [
+                        'visaValue' => old('requires_visa', match (true) {
+                            $tour->requires_visa === null => 'unknown',
+                            $tour->requires_visa && $tour->visa_on_arrival => 'kapida',
+                            (bool) $tour->requires_visa => '1',
+                            default => '0',
+                        }),
+                    ])
+
                     <div class="form-group">
                         <label>Tur Tarihleri ve Fiyatları *</label>
                         @php
