@@ -134,6 +134,8 @@
         .mobile-nav a:last-child { border-bottom:none; }
         .mobile-nav a:hover { color:var(--accent); }
         .mobile-nav .mobile-auth { display:flex; gap:10px; margin-top:8px; padding-top:8px; }
+        /* Çekmece perdesi: yalnız mobilde, çekmece açıkken görünür (bkz. #mobileNav.open ~) */
+        #mobileNavBack { display:none; position:fixed; inset:0; z-index:1990; background:rgba(4,24,21,.45); }
 
         /* ── Grid ── */
         .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
@@ -152,6 +154,11 @@
         .card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:all .25s ease; }
         .card:hover { box-shadow:var(--shadow-lg); transform:translateY(-3px); }
         .card-img { width:100%; height:180px; object-fit:cover; display:block; }
+        /* Kalp butonu kartın <a>'sının DIŞINDA durur (a içinde button geçersiz HTML).
+           Sarmalayıcı masaüstü görünümünü değiştirmez: kart yine hücreyi doldurur. */
+        .m-cardwrap { position:relative; display:flex; }
+        .m-cardwrap > .card { flex:1; min-width:0; }
+        .m-fav, .m-rating, .m-drop-badge { display:none; }
         .card-body { padding:16px; }
         .card-title { font-size:15px; font-weight:700; margin-bottom:4px; line-height:1.3; }
         .card-meta { font-size:13px; color:var(--text-muted); }
@@ -322,30 +329,53 @@
             .grid-3,.grid-4 { grid-template-columns:repeat(2,1fr); gap:12px; }
             .form-row { grid-template-columns:1fr; }
             .footer-grid { grid-template-columns:1fr 1fr; }
-            .mobile-nav.open { display:flex!important; }
+            /* Çekmece nav'ın İÇİNDE yaşıyor: nav kendi yığın bağlamını kurduğu için
+               (z-index) çekmecenin 2000'i bu bağlamda sıkışıyordu — alt sekme barı
+               (1500) üstüne biniyordu. Mobilde nav'ı yukarı alıyoruz. */
+            .nav { z-index:2000; }
+            /* Hamburger çekmecesi: soldan açılan tam boy panel (uygulama kalıbı) */
+            .mobile-nav { position:fixed; top:0; left:0; bottom:0; z-index:2000; width:82%; max-width:320px; gap:2px; padding:calc(14px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); border:none; box-shadow:0 20px 60px rgba(4,24,21,.28); overflow-y:auto; font-family:'Manrope',var(--font); }
+            .mobile-nav.open { display:flex!important; animation:mdrawer .22s ease; }
+            #mobileNav.open ~ #mobileNavBack { display:block; }
+            @keyframes mdrawer { from { transform:translateX(-16px); opacity:.4; } to { transform:none; opacity:1; } }
+            .mnav-head { display:flex; align-items:center; justify-content:space-between; padding:2px 4px 14px; }
+            .mnav-head button { width:32px; height:32px; padding:0; border:none; border-radius:50%; background:#f0f6f4; color:#475569; font-size:14px; cursor:pointer; }
+            .mobile-nav a:not(.btn), .mobile-nav button:not(.btn) { font-family:'Manrope',var(--font); font-size:15px; font-weight:700; color:#0f2421; padding:13px 12px; border-radius:12px; border-bottom:none; }
+            .mobile-nav a:not(.btn):active { background:#f0f6f4; }
+            .mobile-nav .mobile-auth .btn { flex:1; justify-content:center; font-family:'Manrope',var(--font); font-weight:800; border-radius:12px; padding:13px; }
+            .mobile-nav .mobile-auth { margin-top:auto; padding-top:16px; gap:8px; }
+            .mobile-nav .mobile-auth a { text-align:center; }
             .detail-grid { grid-template-columns:1fr; }
             .detail-sidebar { position:static; }
             .section { padding:24px 0; }
             .card-img { height:140px; }
 
-            /* ===== Mobil iskelet (turXtur Mobil 2a tasarımı) ===== */
+            /* ===== Mobil iskelet (turXtur Mobil 3 tasarımı) ===== */
             .nav { height:auto; padding:0; flex-direction:column; align-items:stretch; }
             .nav-inner { display:none !important; }
-            .m-trust { display:flex; justify-content:center; gap:16px; background:#0c332e; color:rgba(255,255,255,.85); font-size:10.5px; font-weight:600; padding:7px 12px; font-family:'Manrope',var(--font); }
-            .m-trust span { display:flex; align-items:center; gap:5px; }
-            .m-trust i { width:5px; height:5px; border-radius:50%; background:#5eead4; }
-            .m-head { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:var(--white); }
-            .m-head-right { display:flex; align-items:center; gap:12px; }
-            .m-bell { position:relative; width:34px; height:34px; border-radius:50%; background:#f0f6f4; display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; }
-            .m-bell-dot { position:absolute; top:5px; right:6px; width:7px; height:7px; border-radius:50%; background:#e0563a; border:1.5px solid #fff; }
-            .m-avatar { width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-family:'Manrope',var(--font); font-size:12px; font-weight:800; cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-            .m-avatar img { width:100%; height:100%; object-fit:cover; }
-            .m-login { background:var(--accent); color:#fff; font-size:12.5px; font-weight:700; padding:8px 16px; border-radius:100px; text-decoration:none; font-family:'Manrope',var(--font); }
-            .m-tabbar { display:grid; position:fixed; bottom:0; left:0; right:0; z-index:1500; background:rgba(255,255,255,.93); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid rgba(15,36,33,.08); grid-template-columns:repeat(4,1fr); padding:10px 8px calc(12px + env(safe-area-inset-bottom)); }
-            .m-tabbar a { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#8a9a95; text-decoration:none; font-family:'Manrope',var(--font); }
-            .m-tabbar a i { width:5px; height:5px; border-radius:50%; background:transparent; }
+            /* Üst koyu güven şeridi tasarımdan kalktı — yerine hero hapı + güven barı */
+            .m-trust { display:none; }
+
+            .m-head { position:relative; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:calc(9px + env(safe-area-inset-top)) 14px 9px; background:var(--white); }
+            .m-head-btn { width:42px; height:42px; flex:none; padding:0; border-radius:14px; border:1px solid rgba(15,36,33,.10); background:#fff; color:#0f2421; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+            .m-head-logo { position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; }
+            .m-head-right { display:flex; align-items:center; gap:2px; }
+            .m-head-ico { position:relative; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#0f2421; text-decoration:none; }
+            .m-head-dot { position:absolute; top:7px; right:8px; width:8px; height:8px; border-radius:50%; background:#e0563a; border:1.5px solid #fff; }
+
+            /* Hero'lu sayfalarda (ana sayfa) header fotoğrafın üstüne saydam biner */
+            body.m-hero-head .nav { position:absolute; top:0; left:0; right:0; background:transparent; border-bottom:none; box-shadow:none; }
+            body.m-hero-head .m-head { background:transparent; }
+            body.m-hero-head .m-head-btn { background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.32); color:#fff; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+            body.m-hero-head .m-head-ico { color:#fff; }
+            body.m-hero-head .m-head-dot { border-color:#0a2b28; }
+
+            /* Alt sekme barı: 5 sekme, çizgi ikonlar */
+            .m-tabbar { display:grid; position:fixed; bottom:0; left:0; right:0; z-index:1500; background:rgba(255,255,255,.94); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-top:1px solid rgba(15,36,33,.08); grid-template-columns:repeat(5,1fr); padding:8px 2px calc(10px + env(safe-area-inset-bottom)); }
+            .m-tabbar a { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; font-weight:600; color:#8a9a95; text-decoration:none; font-family:'Manrope',var(--font); letter-spacing:-.2px; }
+            .m-tabbar a svg { width:22px; height:22px; }
             .m-tabbar a.active { color:var(--accent); font-weight:800; }
-            .m-tabbar a.active i { background:var(--accent); }
+            .m-tabbar a.active svg { fill:rgba(13,148,136,.13); }
             body { padding-bottom:80px; }
             body.panel-layout-active { padding-bottom:0; }
             body.panel-layout-active .m-trust { display:none; }
@@ -358,6 +388,15 @@
             #ai-chat-window { position:fixed !important; inset:0 !important; width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }
             #ai-chat-window > div:first-child { padding-top:calc(16px + env(safe-area-inset-top)) !important; }
             #ai-chat-window > div:last-child { padding-bottom:calc(12px + env(safe-area-inset-bottom)) !important; }
+
+            /* ===== Tur kartı mobil parçaları (tour_grid partial'ı — her sayfada) ===== */
+            .m-drop-badge { display:inline-flex; position:absolute; top:8px; left:8px; z-index:2; background:#0d9488; color:#fff; font-family:'Manrope',var(--font); font-size:8.8px; font-weight:800; letter-spacing:-.1px; padding:4px 8px; border-radius:100px; }
+            .m-fav { display:flex; position:absolute; top:7px; right:7px; z-index:3; width:28px; height:28px; padding:0; align-items:center; justify-content:center; border:none; border-radius:50%; background:rgba(255,255,255,.92); color:#0f2421; cursor:pointer; box-shadow:0 2px 8px rgba(4,24,21,.14); }
+            .m-fav.on { color:#e0563a; }
+            .m-fav.on svg { fill:currentColor; }
+            .m-rating { display:inline-flex; align-items:center; gap:3px; font-family:'Manrope',var(--font); font-size:10.5px; font-weight:800; color:#0f2421; }
+            .m-rating svg { color:#f5b301; }
+            .m-rating i { font-style:normal; font-weight:600; color:#8a9a95; }
 
             /* ===== Yatay tur kartı listesi (anasayfa kart düzeni — m-hcard-list
                sınıfı verilen her tur ızgarası mobilde bu düzene döner) ===== */
@@ -403,7 +442,7 @@
     </style>
     @stack('head')
 </head>
-<body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }}">
+<body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }} {{ request()->routeIs('home') ? 'm-hero-head' : '' }}">
     {{-- Ana sayfada menü hero'nun üstünde yüzen beyaz hap olur (nav-float);
          diğer sayfalarda klasik beyaz sticky şerit kalır. --}}
     <nav class="nav {{ request()->routeIs('home') ? 'nav-float' : '' }}">
@@ -415,30 +454,30 @@
             @endphp
         @endauth
 
-        {{-- ===== Mobil üst şerit + başlık (≤768px) ===== --}}
-        <div class="m-trust">
-            <span><i></i>Onaylı acentalar</span>
-            <span><i></i>Komisyonsuz karşılaştırma</span>
-            <span><i></i>7/24 destek</span>
-        </div>
+        {{-- ===== Mobil başlık (≤768px): hamburger + ortada logo + favori/bildirim =====
+             Ana sayfada hero fotoğrafının üstüne saydam biner (body.m-hero-head). --}}
         <div class="m-head">
-            <a href="{{ route('home') }}" style="display:flex;align-items:center;">@include('partials.logo', ['height' => 24])</a>
+            {{-- Tur detayında hamburger yerine geri oku (uygulama kalıbı) --}}
+            @if(request()->routeIs('tours.show'))
+                <button type="button" class="m-head-btn" aria-label="Geri"
+                    onclick="history.length > 1 ? history.back() : location.assign(@js(route('tours.index')))">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+                </button>
+            @else
+                <button type="button" class="m-head-btn" aria-label="Menü"
+                    onclick="document.getElementById('mobileNav').classList.toggle('open')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                </button>
+            @endif
+            <a href="{{ route('home') }}" class="m-head-logo" aria-label="turXtur">@include('partials.logo', ['height' => 26, 'light' => request()->routeIs('home')])</a>
             <div class="m-head-right">
-                @auth
-                    <a href="{{ route('notifications.index') }}" class="m-bell" aria-label="Bildirimler">🔔
-                        @if($unreadCount > 0)<span class="m-bell-dot"></span>@endif
-                    </a>
-                    <button type="button" class="m-avatar" aria-label="Menü"
-                        onclick="document.getElementById('mobileNav').classList.toggle('open')">
-                        @if(auth()->user()->avatar)
-                            <img src="{{ Str::startsWith(auth()->user()->avatar, ['http://','https://']) ? auth()->user()->avatar : asset('storage/'.auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
-                        @else
-                            {{ mb_strtoupper(collect(explode(' ', trim(auth()->user()->name)))->filter()->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->join('')) }}
-                        @endif
-                    </button>
-                @else
-                    <a href="{{ route('login') }}" class="m-login">Giriş Yap</a>
-                @endauth
+                <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="m-head-ico" aria-label="Favorilerim">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>
+                </a>
+                <a href="{{ auth()->check() ? route('notifications.index') : route('login') }}" class="m-head-ico" aria-label="Bildirimler">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>
+                    @auth @if($unreadCount > 0)<span class="m-head-dot"></span>@endif @endauth
+                </a>
             </div>
         </div>
 
@@ -509,6 +548,11 @@
             @endauth
         </div>
         <div id="mobileNav" class="mobile-nav">
+            <div class="mnav-head">
+                <a href="{{ route('home') }}" style="padding:0;" aria-label="turXtur">@include('partials.logo', ['height' => 24])</a>
+                <button type="button" aria-label="Menüyü kapat"
+                    onclick="document.getElementById('mobileNav').classList.remove('open')">✕</button>
+            </div>
             <a href="{{ route('tours.index') }}">🧭 Turlar</a>
             <a href="{{ route('blog.index') }}">✍️ Blog</a>
             @auth
@@ -541,6 +585,7 @@
                 </div>
             @endauth
         </div>
+        <div id="mobileNavBack" onclick="document.getElementById('mobileNav').classList.remove('open')"></div>
     </nav>
 
     <main>@yield('content')</main>
@@ -557,10 +602,26 @@
                         : route('profile.show')));
         @endphp
         <div class="m-tabbar">
-            <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}"><i></i>Keşfet</a>
-            <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar*') ? 'active' : '' }}"><i></i>Turlar</a>
-            <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="{{ request()->is('favorilerim*') ? 'active' : '' }}"><i></i>Favoriler</a>
-            <a href="{{ $mProfileUrl }}" class="{{ request()->is('profil*') ? 'active' : '' }}"><i></i>Profil</a>
+            <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.8 20v-5.5h4.4V20"/></svg>
+                Ana Sayfa
+            </a>
+            <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+                Keşfet
+            </a>
+            <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="{{ request()->is('favorilerim*') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>
+                Favorilerim
+            </a>
+            <a href="{{ route('tours.compare') }}" class="{{ request()->is('turlar/karsilastir*') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7M13 6h7"/><path d="M7.5 6v13M16.5 6v13"/><path d="M4.5 13 7.5 7l3 6a3 3 0 0 1-6 0zM13.5 13l3-6 3 6a3 3 0 0 1-6 0z"/></svg>
+                Karşılaştır
+            </a>
+            <a href="{{ $mProfileUrl }}" class="{{ request()->is('profil*') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>
+                Profilim
+            </a>
         </div>
     @endif
 
@@ -2409,6 +2470,54 @@
     })();
     </script>
     @endif
+
+    {{-- Mobil çekmece: dışarı tıklayınca veya Esc ile kapanır --}}
+    <script>
+    (function () {
+        var nav = document.getElementById('mobileNav');
+        if (!nav) return;
+        document.addEventListener('click', function (e) {
+            if (!nav.classList.contains('open')) return;
+            if (nav.contains(e.target) || e.target.closest('.m-head-btn, .mobile-menu-btn')) return;
+            nav.classList.remove('open');
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') nav.classList.remove('open');
+        });
+    })();
+    </script>
+
+    {{-- Tur kartlarındaki kalp: sayfa yenilemeden favori ekle/çıkar (mobil kart tasarımı) --}}
+    <script>
+    (function () {
+        var LOGGED_IN = @json(auth()->check());
+        var LOGIN_URL = @json(route('login'));
+        var FAV_BASE = @json(url('/favoriler'));
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.m-fav');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (!LOGGED_IN) { window.location.href = LOGIN_URL; return; }
+            var acik = btn.classList.toggle('on');
+            btn.setAttribute('aria-pressed', acik ? 'true' : 'false');
+            fetch(FAV_BASE + '/' + btn.dataset.tour, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).then(function (r) {
+                if (!r.ok) throw new Error('favori');
+            }).catch(function () {
+                // İstek düşerse kalp eski hâline döner — yanlış geri bildirim kalmaz
+                btn.classList.toggle('on');
+                btn.setAttribute('aria-pressed', acik ? 'false' : 'true');
+            });
+        });
+    })();
+    </script>
 
     @stack('scripts')
 

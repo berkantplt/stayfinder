@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
+use App\Support\HeroDeco;
 use App\Support\HeroVeil;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -80,6 +81,23 @@ class BannerController extends Controller
 
         return redirect()->route('admin.banners.index')
             ->with('success', 'Beyaz perde %'.$validated['white_veil'].' olarak kaydedildi.');
+    }
+
+    /**
+     * Mobil hero'daki turkuaz desen katmanı: şeffaflık + koyuluk.
+     * Beyaz perde gibi TEK ayar — banner'a değil site ayarına yazılır.
+     */
+    public function updateDeco(Request $request)
+    {
+        $validated = $request->validate([
+            'deco_opacity' => 'required|integer|min:0|max:100',
+            'deco_darkness' => 'required|integer|min:0|max:100',
+        ]);
+
+        HeroDeco::set($validated['deco_opacity'], $validated['deco_darkness']);
+
+        return redirect()->route('admin.banners.index')
+            ->with('success', 'Mobil desen: şeffaflık %'.$validated['deco_opacity'].', koyuluk %'.$validated['deco_darkness'].' kaydedildi.');
     }
 
     public function toggle(Banner $banner)

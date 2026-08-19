@@ -85,7 +85,9 @@ class QuizVisibilityTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Vitrin Turu')
-            ->assertSee('En Uygun Turlar');
+            // Başlık mobil/masaüstünde farklı sözcükle yazılıyor ("Öne Çıkan" /
+            // "En Uygun"), bölümün kendisi tek: kimliği üzerinden doğrula.
+            ->assertSee('id="tours-section"', false);
     }
 
     /**

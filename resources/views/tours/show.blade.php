@@ -42,6 +42,20 @@
         #priceCard #campaign-countdown { flex-basis:100%; margin:6px 0 0 !important; padding:6px 10px !important; }
         #priceCard #campaign-countdown div:last-child { font-size:14px !important; }
         #mPriceSlot:not(:empty) { margin-bottom:4px; }
+
+        /* ===== Mobil tasarım dili (turXtur Mobil 3) ===== */
+        /* Galeri kenardan kenara, altı yuvarlatılmış — uygulama kalıbı */
+        .m-gallery { margin:0 -16px 18px !important; }
+        #galleryMain { height:250px !important; border-radius:0 0 20px 20px !important; }
+        .m-gallery-thumbs { padding:0 16px 4px !important; }
+        .container > .section:first-child { padding-top:12px !important; }
+        /* Başlıklar tasarım tipografisi */
+        .detail-grid h1, .detail-grid h2, .detail-grid h3, .detail-sidebar h3 { font-family:'Manrope',var(--font); letter-spacing:-.5px; }
+        .detail-grid h1 { font-size:21px !important; line-height:1.28 !important; }
+        /* Fiyat vurgusu: kart dilindeki teal */
+        #priceCard .p-price .price-tag { color:var(--accent) !important; font-family:'Space Grotesk',var(--font); }
+        /* Bölüm kartları: yumuşak köşe + ince kenar */
+        .detail-grid .card, .detail-grid > div > div[style*="border-radius"] { border-radius:16px !important; }
     }
 
     /* Mobil: tarih/paket fiyat tablosu dikey karta dönüşür — yatay kaydırma kalkar.
@@ -80,10 +94,10 @@
                     $gallery = is_array($tour->images) && count($tour->images) ? $tour->images : ($tour->image ? [$tour->image] : []);
                 @endphp
                 @if(count($gallery))
-                    <div style="margin-bottom:20px;">
+                    <div class="m-gallery" style="margin-bottom:20px;">
                         <img id="galleryMain" src="{{ $gallery[0] }}" alt="{{ $tour->title }}" style="width:100%;height:340px;object-fit:cover;border-radius:var(--radius-lg);view-transition-name: tour-{{ $tour->id }};">
                         @if(count($gallery) > 1)
-                            <div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:4px;">
+                            <div class="m-gallery-thumbs" style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:4px;">
                                 @foreach($gallery as $img)
                                     <img src="{{ $img }}" alt="{{ $tour->title }}" loading="lazy"
                                         onclick="document.getElementById('galleryMain').src=this.src;"

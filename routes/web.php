@@ -401,6 +401,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // DİKKAT: aşağıdaki {banner} rotalarından ÖNCE durmak zorunda. Sonra kalırsa
     // "beyaz-perde" bir banner anahtarı sanılır ve kaydetme 404 döner.
     Route::put('/bannerlar/beyaz-perde', [BannerController::class, 'updateVeil'])->name('banners.veil');
+    // Mobil hero desen katmanı (şeffaflık + koyuluk) — {banner} rotalarından ÖNCE durmalı
+    Route::put('/bannerlar/mobil-desen', [BannerController::class, 'updateDeco'])->name('banners.deco');
     Route::put('/bannerlar/{banner}', [BannerController::class, 'update'])->name('banners.update');
     Route::patch('/bannerlar/{banner}/toggle', [BannerController::class, 'toggle'])->name('banners.toggle');
     Route::delete('/bannerlar/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');

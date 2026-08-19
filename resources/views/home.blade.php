@@ -304,47 +304,87 @@
         </div>
     </div>
 
-    {{-- ===== Mobil ana blok: hero + arama + istatistikler (≤768px, turXtur Mobil 2a) ===== --}}
+    {{-- ===== Mobil ana blok (≤768px, turXtur Mobil 3): hero + arama kartı + güven barı ===== --}}
     <div class="m-home">
         <div class="m-hero">
-            <img src="{{ $carouselBanners->first()->image_url }}" alt="turXtur">
-            <div class="m-hero-shade"></div>
+            {{-- Katman 0: arka plan fotoğrafı (admin'in ilk banner'ı, dinamik) --}}
+            <img src="{{ $carouselBanners->first()->image_url }}" alt="turXtur" class="m-hero-photo">
+
+            {{-- Katman 1: sol tarafta okunabilirlik sağlayan koyu lacivert-teal degrade --}}
+            <div class="m-hero-veil"></div>
+
+            {{-- Katman 2: dekoratif kavisler — tümü Bézier path'li inline SVG.
+                 preserveAspectRatio="none": eğriler banner'la birlikte esner,
+                 mobil oranlarda kompozisyon bozulmaz. --}}
+            <svg class="m-hero-deco" style="{{ \App\Support\HeroDeco::css() }}" viewBox="0 0 375 430" preserveAspectRatio="none" aria-hidden="true">
+                @include('partials.hero-deco-shapes')
+            </svg>
             <div class="m-hero-body">
-                <div class="m-hero-pill">TUR KARŞILAŞTIRMA MOTORU</div>
-                <h2 class="m-hero-title">Hayalindeki turu<br><span>en uygun fiyatla</span> bul.</h2>
-                <p class="m-hero-sub">Tüm turlar tek ekranda — sürprizsiz, komisyonsuz.</p>
-                <span class="m-live"><i></i>CANLI — {{ $liveDrop ? $liveDrop['name'].' az önce %'.$liveDrop['pct'].' ucuzladı' : $tourCount.' tur canlı takipte' }}</span>
+                <h2 class="m-hero-title">Keşfetmenin<br><span>en kolay yolu</span></h2>
+                <p class="m-hero-sub">Hayalindeki turu karşılaştır,<br>en uygun fiyatı bul!</p>
+                <div class="m-hero-badge">
+                    <i class="m-hero-badge-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg></i>
+                    <div><b>Güvenilir acentalar</b><span>Onaylı, güvenli rezervasyon</span></div>
+                </div>
             </div>
         </div>
+
+        {{-- Arama kartı: 4 kutu (Nereye / Ne zaman / Bütçe / Nereden) → /turlar filtreleri.
+             Tarih kutusu yerleşik takvimi açar, diğerleri alttan panel (m-pick). --}}
         <form action="{{ route('tours.index') }}" method="GET" class="m-search">
-            <label class="m-field">
-                <span>NEREYE?</span>
-                <input type="text" name="q" placeholder="Bodrum, Kapadokya, Roma...">
-            </label>
-            <div class="m-search-row">
-                <label class="m-field">
-                    <span>NE ZAMAN?</span>
-                    <input type="date" name="date_start">
+            <div class="m-sgrid">
+                <button type="button" class="m-sbox" onclick="mPickOpen('dest')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.8"/></svg>
+                    <b>Nereye?</b>
+                    <span class="m-sbox-val" id="mValDest">Tüm Destinasyonlar</span>
+                </button>
+                <span class="m-schev">›</span>
+                <label class="m-sbox">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+                    <b>Ne zaman?</b>
+                    <span class="m-sbox-val" id="mValDate">Tarih seçin</span>
+                    <input type="date" name="date_start" id="mInDate" class="m-sbox-date" aria-label="Kalkış tarihi">
                 </label>
-                <label class="m-field">
-                    <span>BÜTÇE</span>
-                    <select name="max_price">
-                        <option value="">Farketmez</option>
-                        <option value="5000">Max 5.000 ₺</option>
-                        <option value="10000">Max 10.000 ₺</option>
-                        <option value="20000">Max 20.000 ₺</option>
-                        <option value="30000">Max 30.000 ₺</option>
-                        <option value="50000">Max 50.000 ₺</option>
-                    </select>
-                </label>
+                <span class="m-schev">›</span>
+                <button type="button" class="m-sbox" onclick="mPickOpen('budget')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="12" rx="3"/><path d="M3 10.5h18"/><circle cx="17" cy="14.5" r="1.2"/></svg>
+                    <b>Bütçe</b>
+                    <span class="m-sbox-val" id="mValBudget">Fark etmez</span>
+                </button>
+                <span class="m-schev">›</span>
+                <button type="button" class="m-sbox" onclick="mPickOpen('dep')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16.5 11.5a3 3 0 1 0-1.6-5.5"/><path d="M17 20a5 5 0 0 0-2.2-4.1"/></svg>
+                    <b>Nereden?</b>
+                    <span class="m-sbox-val" id="mValDep">Fark etmez</span>
+                </button>
             </div>
-            <button type="submit" class="m-search-btn">Turları Karşılaştır</button>
+            <input type="hidden" name="destination" id="mInDest">
+            <input type="hidden" name="max_price" id="mInBudget">
+            <input type="hidden" name="departure_city" id="mInDep">
+            <button type="submit" class="m-search-btn">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+                Turları Karşılaştır
+            </button>
         </form>
-        <div class="m-stats">
-            <div><b>{{ number_format($travelerCount, 0, ',', '.') }}+</b><span>kayıtlı gezgin</span></div>
-            <div><b>{{ $tourCount }}</b><span>aktif tur</span></div>
-            <div><b>{{ $agencyCount }}</b><span>doğrulanmış acenta</span></div>
-            <div><b class="m-teal">{{ $allDestinations->count() }}</b><span>destinasyon</span></div>
+
+        {{-- Güven barı: masaüstündeki .hero-trust'ın mobil karşılığı --}}
+        <div class="m-trustbar">
+            <div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg>
+                <b>Güvenli Ödeme</b><span>256-bit SSL ile koruma</span>
+            </div>
+            <div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4.5" height="6" rx="2"/><rect x="17" y="13.5" width="4.5" height="6" rx="2"/><path d="M20 19.5v.5a2.5 2.5 0 0 1-2.5 2.5H13"/></svg>
+                <b>7/24 Destek</b><span>Seyahatte yanınızdayız</span>
+            </div>
+            <div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.3l-8 8a2 2 0 0 1-2.9 0l-6-6a2 2 0 0 1-.6-1.4V4.5A1.5 1.5 0 0 1 4.5 3h8.4a2 2 0 0 1 1.4.6l6.2 6.2a1.8 1.8 0 0 1 0 2.5z"/><circle cx="8" cy="8" r="1.3"/></svg>
+                <b>En İyi Fiyatlar</b><span>Avantajlı fırsatlar</span>
+            </div>
+            <div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.4 2.4 4.6-4.9"/></svg>
+                <b>Onaylı Acentalar</b><span>Güvenilir hizmet</span>
+            </div>
         </div>
     </div>
 
@@ -453,7 +493,7 @@
     {{-- Popular Tours --}}
     <div class="section" id="tours-section">
         <div class="section-header">
-            <h2>En Uygun Turlar</h2>
+            <h2><span class="m-hide">En Uygun</span><span class="m-only">Öne Çıkan</span> Turlar</h2>
             <a href="{{ $tumunuGorUrl }}">Tümünü gör →</a>
         </div>
         
@@ -481,6 +521,91 @@
             <div><span>✓</span><div><b>Fiyat şeffaflığı</b><p>Gizli komisyon yok; acentanın fiyatı neyse o.</p></div></div>
             <div><span>✓</span><div><b>Tarafsız karşılaştırma</b><p>Tüm acentaların turları tek ekranda, aracısız.</p></div></div>
         </div>
+    </div>
+
+    {{-- ===== Mobil: kategori ızgarası (≤768px) — 6 kısayol, hepsi /turlar filtresine gider ===== --}}
+    @php
+        // Yaklaşan ilk özel dönem (config/special_periods.php); yoksa kutu gizlenir.
+        $mOzel = collect(config('special_periods', []))
+            ->flatMap(fn ($p, $k) => collect($p['ranges'])->map(fn ($r) => ['label' => $p['label'], 'start' => $r[0], 'end' => $r[1]]))
+            ->filter(fn ($r) => $r['end'] >= now()->toDateString())
+            ->sortBy('start')
+            ->first();
+    @endphp
+    <div class="m-cats">
+        <a href="{{ route('tours.index', ['yurt' => 'ic']) }}" class="m-cat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V10l6-4 6 4v10"/><path d="M10 20v-5h4v5"/></svg>
+            <span>Yurt İçi</span>
+        </a>
+        <a href="{{ route('tours.index', ['yurt' => 'dis']) }}" class="m-cat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5 3 11.2l1.6-1.6 5 .8 3.2-3.2-6.6-3.4L7.9 2l8.4 2.2 2.6-2.6a2 2 0 0 1 2.8 2.8l-2.6 2.6L21.3 15l-1.8 1.8-3.4-6.6-3.2 3.2.8 5-1.6 1.6z"/></svg>
+            <span>Yurt Dışı</span>
+        </a>
+        <a href="{{ route('tours.index', ['category' => 'gemi-cruise']) }}" class="m-cat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18.5c1.6 0 1.6 1.4 3.2 1.4s1.6-1.4 3.2-1.4 1.6 1.4 3.2 1.4 1.6-1.4 3.2-1.4 1.6 1.4 3.2 1.4"/><path d="M4.5 15.5 6 10h12l1.5 5.5"/><path d="M9 10V6.5h6V10"/><path d="M12 3v3.5"/></svg>
+            <span>Gemi Turları</span>
+        </a>
+        <a href="{{ route('tours.index', ['category' => 'kultur-turlari']) }}" class="m-cat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 9h16L12 4z"/><path d="M6.5 9v9M11 9v9M15.5 9v9M20 9v9"/></svg>
+            <span>Kültür Turları</span>
+        </a>
+        <a href="{{ route('tours.index', ['visa' => 'vizesiz']) }}" class="m-cat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.4 9.5h17.2M3.4 14.5h17.2"/><path d="M12 3c-2.4 2.5-3.6 5.5-3.6 9s1.2 6.5 3.6 9c2.4-2.5 3.6-5.5 3.6-9S14.4 5.5 12 3z"/></svg>
+            <span>Vizesiz</span>
+        </a>
+        @if($mOzel)
+        <a href="{{ route('tours.index', ['date_start' => $mOzel['start'], 'date_end' => $mOzel['end']]) }}" class="m-cat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2L9.1 15l2-.3z"/></svg>
+            <span>Özel Dönem</span>
+        </a>
+        @endif
+    </div>
+
+    {{-- ===== Mobil: fırsat afişi (≤768px) ===== --}}
+    <a href="{{ route('tours.index', ['sort' => 'price_asc']) }}" class="m-promo">
+        <div class="m-promo-txt">
+            <b>turXtur'a özel fırsatlar</b>
+            <span>Erken rezervasyon avantajlarını kaçırmayın!</span>
+            <i>Fırsatları Keşfet <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></i>
+        </div>
+        {{-- Tasarımdaki afiş illüstrasyonu: palmiye + hasır şapkalı valiz + % rozeti --}}
+        <svg class="m-promo-art" viewBox="0 0 150 130" fill="none" aria-hidden="true">
+            <circle cx="86" cy="60" r="58" fill="rgba(94,234,212,.10)"/>
+            {{-- palmiye yaprakları --}}
+            <g opacity=".9">
+                <path d="M46 44C58 22 82 14 104 20 84 20 66 30 54 48z" fill="#2ec4a6"/>
+                <path d="M44 50C46 26 62 10 84 6 66 14 54 30 50 52z" fill="#37d9b6"/>
+                <path d="M40 52C30 36 32 20 44 8 38 22 38 36 44 50z" fill="#22a58c"/>
+            </g>
+            {{-- valiz --}}
+            <rect x="64" y="42" width="20" height="14" rx="7" stroke="#bff3e6" stroke-width="4"/>
+            <rect x="50" y="54" width="60" height="66" rx="11" fill="#7fe3d0"/>
+            <rect x="50" y="54" width="60" height="66" rx="11" stroke="#bff3e6" stroke-width="2.5"/>
+            {{-- sert kabuk olukları: tasarımdaki dikey şeritler --}}
+            <g stroke="#4fc7ae" stroke-width="5" stroke-linecap="round">
+                <path d="M61 62v50"/>
+                <path d="M73 60v56"/>
+                <path d="M87 60v56"/>
+                <path d="M99 62v50"/>
+            </g>
+            <rect x="46" y="76" width="8" height="12" rx="3" fill="#0b4f49" opacity=".45"/>
+            <rect x="46" y="94" width="8" height="12" rx="3" fill="#0b4f49" opacity=".45"/>
+            {{-- hasır şapka --}}
+            <ellipse cx="36" cy="106" rx="30" ry="10" fill="#e9c893"/>
+            <path d="M20 104c0-11 7-19 16-19s16 8 16 19c0 0-7 4-16 4s-16-4-16-4z" fill="#f2d9a8"/>
+            <path d="M20 101c5 3 11 4 16 4s11-1 16-4l1 4c-5 3-11 4-17 4s-12-1-17-4z" fill="#c98f4e"/>
+            {{-- % rozeti --}}
+            <circle cx="120" cy="30" r="17" fill="#5eead4"/>
+            <text x="120" y="38" text-anchor="middle" font-size="20" font-weight="800" fill="#0b4f49" font-family="Manrope, sans-serif">%</text>
+        </svg>
+    </a>
+
+    {{-- ===== Mobil: sayaçlar (≤768px) ===== --}}
+    <div class="m-stats">
+        <div><b>{{ number_format($travelerCount, 0, ',', '.') }}+</b><span>kayıtlı gezgin</span></div>
+        <div><b>{{ $tourCount }}</b><span>aktif tur</span></div>
+        <div><b>{{ $agencyCount }}</b><span>doğrulanmış acenta</span></div>
+        <div><b class="m-teal">{{ $allDestinations->count() }}</b><span>destinasyon</span></div>
     </div>
 
     {{-- Recently Viewed --}}
@@ -526,6 +651,55 @@
             </div>
         </div>
     </div>
+</div>
+
+{{-- ===== Mobil arama seçicileri: alttan açılan panel (Nereye / Bütçe / Nereden).
+     Tarih kutusu yerleşik takvimi kullandığı için burada yok. ===== --}}
+@php
+    // Mobil arama kutularının seçenek listeleri (Nereye / Bütçe / Nereden)
+    $mPickData = [
+        'dest' => [
+            'title' => 'Nereye gitmek istiyorsun?',
+            'reset' => 'Tüm Destinasyonlar',
+            'input' => 'mInDest',
+            'label' => 'mValDest',
+            'items' => collect($facets['destinations'])
+                ->map(fn ($r) => ['v' => $r['city'], 't' => $r['city'], 'c' => $r['count']])
+                ->values(),
+        ],
+        'budget' => [
+            'title' => 'Bütçen ne kadar?',
+            'reset' => 'Fark etmez',
+            'input' => 'mInBudget',
+            'label' => 'mValBudget',
+            'items' => [
+                ['v' => '5000', 't' => '5.000 ₺ altı'],
+                ['v' => '10000', 't' => '10.000 ₺ altı'],
+                ['v' => '20000', 't' => '20.000 ₺ altı'],
+                ['v' => '30000', 't' => '30.000 ₺ altı'],
+                ['v' => '50000', 't' => '50.000 ₺ altı'],
+            ],
+        ],
+        'dep' => [
+            'title' => 'Nereden kalkıyorsun?',
+            'reset' => 'Fark etmez',
+            'input' => 'mInDep',
+            'label' => 'mValDep',
+            'items' => collect($facets['departures'])
+                ->map(fn ($c, $city) => ['v' => $city, 't' => $city, 'c' => $c])
+                ->values(),
+        ],
+    ];
+@endphp
+<script id="mPickData" type="application/json">{!! json_encode($mPickData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) !!}</script>
+<div id="mPickBack" class="m-pick-back" onclick="mPickClose()"></div>
+<div id="mPick" class="m-pick" role="dialog" aria-label="Arama seçimi">
+    <div class="m-pick-grab"></div>
+    <div class="m-pick-head">
+        <span id="mPickTitle">Seçim</span>
+        <button type="button" onclick="mPickClose()" aria-label="Kapat">✕</button>
+    </div>
+    <div class="m-pick-body" id="mPickBody"></div>
 </div>
 @endsection
 
@@ -765,25 +939,69 @@
             .story-window { width: 420px; height: 85vh; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
         }
 
-        /* ================= MOBİL ANA SAYFA (turXtur Mobil 2a tasarımı) ================= */
+        /* ================= MOBİL ANA SAYFA (turXtur Mobil 3 tasarımı) ================= */
         .story-item { flex:none; scroll-snap-align:start; }
         .story-mlabel { display:none; }
-        .m-home, .m-alltours, .m-guarantee, .m-drop-badge { display:none; }
+        .m-home, .m-alltours, .m-guarantee, .m-cats, .m-promo, .m-stats, .m-only { display:none; }
 
         @media(max-width:768px) {
-            /* Tasarım sırası: storyler → hero/arama/istatistik → kategoriler → turlar */
+            body { background:#f5f8f7; }
+            .m-only { display:inline; }
+            .m-hide { display:none; }
+
+            /* Tasarım sırası: hero+arama+güven → storyler → kategori pill'leri →
+               turlar → kategori ızgarası → fırsat afişi → sayaçlar */
             #homeMain { display:flex; flex-direction:column; }
-            #homeMain > * { order:5; }
-            #homeMain > #storiesSection { order:1; }
-            #homeMain > .m-home { order:2; }
+            #homeMain > * { order:9; }
+            #homeMain > .m-home { order:1; }
+            #homeMain > #storiesSection { order:2; }
             #homeMain > .filter-bar-wrapper { order:3; }
             #homeMain > #tours-section { order:4; }
+            #homeMain > .m-cats { order:5; }
+            #homeMain > .m-promo { order:6; }
+            #homeMain > .m-stats { order:7; }
             .hero-carousel { display:none; }
             .hero-trust, .mega-wrap { display:none; }
             #destinationsSection { display:none !important; }
 
-            /* Storyler: daire avatar şeridi (beyaz tam genişlik bant) */
-            #storiesSection { padding:0 !important; margin:0 -16px !important; background:#fff; border-bottom:1px solid rgba(15,36,33,.07); }
+            /* ---- Hero: koyu teal degrade + fotoğraf, header üstüne biner ---- */
+            .m-home { display:block; margin:0 -16px; font-family:'Manrope',var(--font); }
+            .m-hero { position:relative; padding-top:calc(74px + env(safe-area-inset-top)); background:linear-gradient(135deg,#12756a,#0b4f49 58%,#083b36); overflow:hidden; }
+            .m-hero-photo { position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; object-position:65% center; }
+            .m-hero-veil { position:absolute; inset:0; z-index:1; background:linear-gradient(100deg, rgba(4,32,44,.93) 0%, rgba(5,44,52,.84) 34%, rgba(7,58,60,.48) 64%, rgba(7,58,60,.10) 100%); }
+            .m-hero-deco { position:absolute; inset:0; z-index:2; width:100%; height:100%; pointer-events:none; }
+            .m-hero-body { position:relative; z-index:3; padding:8px 20px 112px; }
+            .m-hero-title { margin:0; font-size:27px; line-height:1.12; font-weight:800; letter-spacing:-.8px; color:#fff; }
+            .m-hero-title span { color:#5eead4; }
+            .m-hero-sub { margin:8px 0 0; font-size:12.5px; font-weight:600; line-height:1.5; color:rgba(255,255,255,.85); }
+            .m-hero-badge { display:inline-flex; align-items:center; gap:8px; margin-top:14px; padding:7px 14px 7px 10px; border-radius:100px; background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#5eead4; }
+            .m-hero-badge-ico { display:flex; align-items:center; justify-content:center; width:28px; height:28px; flex:none; border-radius:50%; background:rgba(255,255,255,.18); color:#fff; }
+            .m-hero-badge div { display:flex; flex-direction:column; line-height:1.25; }
+            .m-hero-badge b { font-size:10.5px; font-weight:800; color:#fff; }
+            .m-hero-badge span { font-size:8.8px; font-weight:600; color:rgba(255,255,255,.62); }
+
+            /* ---- Arama kartı: 4 kutu + karşılaştır butonu ---- */
+            .m-search { position:relative; z-index:5; margin:-100px 16px 0; background:#fff; border-radius:20px; box-shadow:0 18px 44px rgba(4,24,21,.15); padding:12px; }
+            .m-sgrid { display:flex; align-items:stretch; gap:1px; }
+            .m-sbox { position:relative; flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; background:#fff; border:1px solid rgba(15,36,33,.10); border-radius:14px; padding:11px 3px 10px; cursor:pointer; font-family:'Manrope',var(--font); -webkit-appearance:none; appearance:none; }
+            .m-sbox > svg { width:21px; height:21px; color:var(--accent); }
+            .m-sbox b { font-size:10.8px; font-weight:800; color:#0f2421; letter-spacing:-.3px; }
+            .m-sbox-val { display:block; max-width:100%; font-size:8.2px; font-weight:600; color:#8a9a95; letter-spacing:-.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .m-sbox-val.on { color:var(--accent); }
+            .m-sbox-date { position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; padding:0; }
+            .m-schev { display:flex; align-items:center; justify-content:center; width:9px; color:#c2d1cc; font-size:14px; font-weight:700; }
+            .m-search-btn { width:100%; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:9px; background:linear-gradient(135deg,#0d9488,#0c6e63); color:#fff; border:none; font-family:'Manrope',var(--font); font-size:15.5px; font-weight:800; padding:15px; border-radius:14px; cursor:pointer; }
+
+            /* ---- Güven barı ---- */
+            .m-trustbar { display:grid; grid-template-columns:repeat(4,1fr); margin:14px 16px 0; background:#fff; border:1px solid rgba(15,36,33,.07); border-radius:16px; padding:14px 4px; }
+            .m-trustbar > div { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; gap:4px; padding:0 3px; }
+            .m-trustbar > div + div { border-left:1px solid rgba(15,36,33,.07); }
+            .m-trustbar svg { width:22px; height:22px; color:var(--accent); }
+            .m-trustbar b { font-size:9px; font-weight:800; color:#0f2421; letter-spacing:-.35px; line-height:1.25; }
+            .m-trustbar span { font-size:7.8px; font-weight:600; color:#8a9a95; line-height:1.3; letter-spacing:-.2px; }
+
+            /* ---- Storyler: daire avatar şeridi ---- */
+            #storiesSection { padding:0 !important; margin:18px -16px 0 !important; background:#fff; border-top:1px solid rgba(15,36,33,.06); border-bottom:1px solid rgba(15,36,33,.06); }
             .stories-container { margin:0; padding:10px 16px 6px; }
             .stories-scroll { gap:14px; padding:4px 0 8px; }
             .story-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
@@ -792,60 +1010,73 @@
             .iphone-card-overlay { display:none; }
             .story-mlabel { display:block; font-size:10.5px; font-weight:700; color:#42544f; font-family:'Manrope',var(--font); }
 
-            /* Mobil hero */
-            .m-home { display:block; margin:0 -16px; font-family:'Manrope',var(--font); }
-            .m-hero { position:relative; height:400px; overflow:hidden; }
-            .m-hero > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; animation:mkb 26s ease-in-out infinite alternate; }
-            .m-hero-shade { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(5,28,25,.35) 0%, rgba(5,28,25,.55) 55%, rgba(5,28,25,.85) 100%); }
-            .m-hero-body { position:absolute; left:0; right:0; bottom:34px; padding:0 18px; }
-            .m-hero-pill { display:inline-flex; background:rgba(94,234,212,.14); border:1px solid rgba(94,234,212,.35); color:#8ff5e2; font-size:10px; font-weight:700; letter-spacing:1.2px; padding:6px 12px; border-radius:100px; backdrop-filter:blur(6px); }
-            .m-hero-title { margin:14px 0 8px; font-size:30px; line-height:1.1; font-weight:800; letter-spacing:-.8px; color:#fff; }
-            .m-hero-title span { color:#5eead4; }
-            .m-hero-sub { margin:0; font-size:13.5px; font-weight:500; color:rgba(255,255,255,.75); }
-            .m-live { display:inline-flex; align-items:center; gap:7px; background:rgba(4,24,21,.55); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.14); color:#fff; font-size:11px; font-weight:600; padding:7px 12px; border-radius:100px; margin-top:14px; }
-            .m-live i { width:6px; height:6px; border-radius:50%; background:#5eead4; animation:mpulse 1.6s infinite; }
-
-            /* Mobil arama kartı */
-            .m-search { margin:-14px 16px 0; position:relative; z-index:5; background:#fff; border-radius:18px; box-shadow:0 16px 40px rgba(4,24,21,.18); padding:10px; display:flex; flex-direction:column; gap:8px; }
-            .m-field { display:block; padding:9px 14px; border:1px solid rgba(15,36,33,.1); border-radius:12px; }
-            .m-field span { display:block; font-size:9.5px; font-weight:800; letter-spacing:1px; color:#8a9a95; }
-            .m-field input, .m-field select { border:none; outline:none; width:100%; font-family:'Manrope',var(--font); font-size:14px; font-weight:700; margin-top:2px; background:transparent; color:#0f2421; -webkit-appearance:none; appearance:none; }
-            .m-search-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-            .m-search-btn { background:linear-gradient(135deg,#0d9488,#0c6e63); color:#fff; border:none; font-family:'Manrope',var(--font); font-size:15px; font-weight:800; padding:14px; border-radius:12px; cursor:pointer; }
-
-            /* İstatistikler 2x2 */
-            .m-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:22px 16px 0; }
-            .m-stats > div { background:#fff; border:1px solid rgba(15,36,33,.07); border-radius:14px; padding:14px 16px; }
-            .m-stats b { display:block; font-size:20px; font-weight:800; color:#0c332e; }
-            .m-stats b.m-teal { color:var(--accent); }
-            .m-stats span { font-size:11.5px; font-weight:600; color:#8a9a95; }
-
-            /* Filtre kartı → sade pill şeridi */
-            /* Masaüstünün hero'ya bindirme margin'i (-40px) mobilde sıfırlanır */
-            .filter-bar-wrapper { background:transparent; box-shadow:none; border:none; padding:14px 0 0; margin:0 0 4px; }
+            /* ---- Kategori pill şeridi (canlı filtre) ---- */
+            .filter-bar-wrapper { background:transparent; box-shadow:none; border:none; padding:16px 0 0; margin:0 0 4px; }
             .filter-bar { background:transparent; box-shadow:none; border:none; padding:0; }
             .category-tab { border-radius:100px; font-size:12.5px; font-weight:600; padding:8px 15px; background:#fff; border:1px solid rgba(15,36,33,.1); color:#42544f; }
             .category-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:none; }
             .filter-select-group { display:none; }
 
-            /* Tur kartları: yatay düzen */
-            #tour-grid-container .grid-4 { display:flex; flex-direction:column; gap:12px; }
-            #tour-grid-container .card { position:relative; display:flex; flex-direction:row; border-radius:16px; border:1px solid rgba(15,36,33,.09); overflow:hidden; }
-            #tour-grid-container .card-img { width:118px; min-width:118px; height:auto; min-height:110px; object-fit:cover; }
-            #tour-grid-container .card-body { padding:12px 14px; flex:1; display:flex; flex-direction:column; gap:5px; }
-            #tour-grid-container .card-title { font-size:13px; font-weight:700; line-height:1.35; font-family:'Manrope',var(--font); }
-            #tour-grid-container .card-meta { font-family:ui-monospace,monospace; font-size:10.5px; color:#7d938d; }
-            #tour-grid-container .card-price-row { margin-top:auto !important; border-top:1px dashed rgba(15,36,33,.12); padding-top:8px; display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; }
-            #tour-grid-container .price-tag { font-family:'Space Grotesk',var(--font); font-size:16px !important; color:#08211d; }
-            .m-drop-badge { display:inline-block; position:absolute; top:0; left:0; background:#08211d; color:#5eead4; font-family:ui-monospace,monospace; font-size:9px; font-weight:700; padding:4px 8px; border-radius:0 0 10px 0; z-index:2; }
+            /* ---- Tur kartları: 2 sütun dikey ---- */
+            #tours-section .section-header h2 { font-size:17px; letter-spacing:-.5px; font-family:'Manrope',var(--font); }
+            #tour-grid-container .grid-4 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+            .m-cardwrap { position:relative; display:flex; }
+            #tour-grid-container .card { flex:1; min-width:0; display:flex; flex-direction:column; border-radius:16px; border:1px solid rgba(15,36,33,.08); background:#fff; overflow:hidden; box-shadow:0 8px 20px rgba(4,24,21,.05); }
+            #tour-grid-container .card-img { width:100%; height:112px; object-fit:cover; }
+            #tour-grid-container .card-body { flex:1; display:flex; flex-direction:column; gap:4px; padding:10px 11px 12px; }
+            #tour-grid-container .card-title { font-size:12.5px; font-weight:800; line-height:1.3; color:#0f2421; margin-bottom:0; font-family:'Manrope',var(--font); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+            #tour-grid-container .card-meta { font-size:9.8px; font-weight:600; color:#7d938d; margin-bottom:0; }
+            #tour-grid-container .card-price-row { margin-top:auto !important; padding-top:8px; display:flex; align-items:flex-end; justify-content:space-between; gap:6px; flex-wrap:wrap; }
+            #tour-grid-container .price-tag { font-family:'Space Grotesk',var(--font); font-size:15px !important; font-weight:800; color:var(--accent); }
+            #tour-grid-container .price-sm { font-size:8.5px; color:#8a9a95; }
 
-            /* CTA + güven kartı */
+            /* ---- CTA + güven kartı ---- */
             .m-alltours { display:block; text-align:center; margin-top:14px; border:1.5px solid rgba(15,36,33,.12); color:#0c6e63; font-size:13.5px; font-weight:700; padding:12px; border-radius:12px; text-decoration:none; font-family:'Manrope',var(--font); }
-            .m-guarantee { display:flex; flex-direction:column; gap:18px; margin-top:26px; background:#0c332e; border-radius:18px; padding:22px 20px; font-family:'Manrope',var(--font); }
+            .m-guarantee { display:flex; flex-direction:column; gap:18px; margin-top:22px; background:#0c332e; border-radius:18px; padding:22px 20px; font-family:'Manrope',var(--font); }
             .m-guarantee > div { display:flex; gap:13px; align-items:flex-start; }
             .m-guarantee span { width:38px; height:38px; flex:none; border-radius:11px; background:rgba(94,234,212,.14); color:#5eead4; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; }
             .m-guarantee b { display:block; font-size:14px; font-weight:800; color:#fff; }
             .m-guarantee p { font-size:12px; color:rgba(255,255,255,.6); margin:3px 0 0; line-height:1.5; }
+
+            /* ---- Kategori ızgarası (6 kısayol) ---- */
+            .m-cats { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:22px; }
+            .m-cat { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; background:#fff; border:1px solid rgba(15,36,33,.08); border-radius:16px; padding:15px 5px; text-decoration:none; font-family:'Manrope',var(--font); }
+            .m-cat svg { width:25px; height:25px; color:var(--accent); }
+            .m-cat span { font-size:10.5px; font-weight:700; color:#42544f; text-align:center; letter-spacing:-.2px; }
+
+            /* ---- Fırsat afişi ---- */
+            .m-promo { position:relative; display:block; overflow:hidden; min-height:132px; margin-top:18px; padding:20px 18px 22px; border-radius:18px; background:linear-gradient(120deg,#0f6d63,#0a3b36); text-decoration:none; font-family:'Manrope',var(--font); }
+            .m-promo-txt { position:relative; z-index:2; max-width:63%; }
+            .m-promo-txt b { display:block; font-size:16px; font-weight:800; color:#fff; letter-spacing:-.4px; }
+            .m-promo-txt span { display:block; margin-top:4px; font-size:11.5px; font-weight:600; line-height:1.45; color:rgba(255,255,255,.72); }
+            .m-promo-txt i { display:inline-flex; align-items:center; gap:6px; margin-top:14px; padding:9px 16px; border-radius:100px; background:#fff; color:#0b4f49; font-size:12px; font-weight:800; font-style:normal; }
+            .m-promo-art { position:absolute; right:2px; bottom:2px; z-index:1; width:128px; height:112px; }
+
+            /* ---- Sayaçlar ---- */
+            .m-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; font-family:'Manrope',var(--font); }
+            .m-stats > div { background:#fff; border:1px solid rgba(15,36,33,.07); border-radius:14px; padding:14px 16px; }
+            .m-stats b { display:block; font-size:20px; font-weight:800; color:#0c332e; }
+            .m-stats b.m-teal { color:var(--accent); }
+            .m-stats span { font-size:11.5px; font-weight:600; color:#8a9a95; }
+
+            /* ---- Arama seçici panelleri ---- */
+            .m-pick-back { display:block; position:fixed; inset:0; z-index:2500; background:rgba(4,24,21,.45); opacity:0; pointer-events:none; transition:opacity .25s ease; }
+            .m-pick-back.open { opacity:1; pointer-events:auto; }
+            .m-pick { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:2600; flex-direction:column; max-height:78vh; background:#fff; border-radius:20px 20px 0 0; box-shadow:0 -12px 40px rgba(4,24,21,.3); transform:translateY(105%); transition:transform .3s ease; font-family:'Manrope',var(--font); }
+            .m-pick.open { transform:translateY(0); }
+            .m-pick-grab { width:36px; height:4px; border-radius:3px; background:#cbd5e1; margin:8px auto 0; }
+            .m-pick-head { display:flex; align-items:center; justify-content:space-between; padding:10px 18px 12px; border-bottom:1px solid #eef2f1; }
+            .m-pick-head span { font-size:15px; font-weight:800; color:#0f2421; }
+            .m-pick-head button { width:30px; height:30px; border:none; border-radius:50%; background:#f0f6f4; color:#475569; font-size:13px; cursor:pointer; }
+            .m-pick-body { flex:1; overflow-y:auto; padding:8px 12px calc(16px + env(safe-area-inset-bottom)); }
+            .m-pick-opt { display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px; background:none; border:none; border-radius:12px; padding:13px 12px; font-family:'Manrope',var(--font); font-size:14px; font-weight:600; color:#0f2421; text-align:left; cursor:pointer; }
+            .m-pick-opt:active { background:#f0f6f4; }
+            .m-pick-opt em { font-style:normal; font-size:11.5px; font-weight:600; color:#8a9a95; }
+            .m-pick-opt.on { background:rgba(13,148,136,.09); color:var(--accent); font-weight:800; }
+            .m-pick-empty { padding:26px 12px; text-align:center; font-size:13px; color:#8a9a95; }
+        }
+        @media(min-width:769px) {
+            .m-pick, .m-pick-back { display:none !important; }
         }
         @keyframes mkb { from { transform:scale(1); } to { transform:scale(1.08); } }
         @keyframes mpulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
@@ -1289,5 +1520,79 @@ window.nextStory = nextStory;
 window.prevStory = prevStory;
 
 });
+</script>
+
+<script>
+/* ===== Mobil arama seçicileri (≤768px): Nereye / Bütçe / Nereden =====
+   Tarih kutusu yerleşik takvimi kullanır, panel açmaz. */
+(function () {
+    var dataEl = document.getElementById('mPickData');
+    if (!dataEl) return;
+    var DATA = JSON.parse(dataEl.textContent);
+    var back = document.getElementById('mPickBack');
+    var sheet = document.getElementById('mPick');
+    var body = document.getElementById('mPickBody');
+    var current = null;
+
+    function esc(v) {
+        return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+
+    window.mPickOpen = function (key) {
+        var cfg = DATA[key];
+        if (!cfg) return;
+        current = key;
+        document.getElementById('mPickTitle').textContent = cfg.title;
+        var input = document.getElementById(cfg.input);
+        var val = input ? input.value : '';
+        var html = '<button type="button" class="m-pick-opt' + (val ? '' : ' on') + '" data-v="">' + esc(cfg.reset) + '</button>';
+        if (!cfg.items.length) {
+            html += '<div class="m-pick-empty">Bu alan için henüz seçenek yok.</div>';
+        }
+        cfg.items.forEach(function (it) {
+            html += '<button type="button" class="m-pick-opt' + (String(it.v) === val ? ' on' : '') + '"'
+                + ' data-v="' + esc(it.v) + '" data-t="' + esc(it.t) + '">'
+                + esc(it.t) + (it.c ? '<em>' + esc(it.c) + ' tur</em>' : '') + '</button>';
+        });
+        body.innerHTML = html;
+        body.scrollTop = 0;
+        back.classList.add('open');
+        sheet.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.mPickClose = function () {
+        back.classList.remove('open');
+        sheet.classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    body.addEventListener('click', function (e) {
+        var opt = e.target.closest('.m-pick-opt');
+        if (!opt || !current) return;
+        var cfg = DATA[current];
+        var input = document.getElementById(cfg.input);
+        var label = document.getElementById(cfg.label);
+        input.value = opt.dataset.v || '';
+        label.textContent = opt.dataset.v ? opt.dataset.t : cfg.reset;
+        label.classList.toggle('on', !!opt.dataset.v);
+        window.mPickClose();
+    });
+
+    var dateInput = document.getElementById('mInDate');
+    if (dateInput) {
+        dateInput.addEventListener('change', function () {
+            var label = document.getElementById('mValDate');
+            if (!dateInput.value) {
+                label.textContent = 'Tarih seçin';
+                label.classList.remove('on');
+                return;
+            }
+            var p = dateInput.value.split('-');
+            label.textContent = p[2] + '.' + p[1] + '.' + p[0];
+            label.classList.add('on');
+        });
+    }
+})();
 </script>
 @endpush

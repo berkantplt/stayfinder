@@ -56,6 +56,29 @@
     .m-sheet-foot { display:flex; gap:10px; padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid #eef2f1; background:#fff; border-radius:0 0 0 0; }
     .m-sheet-foot .m-clear { flex:1; background:#fff; border:1px solid #cbd5e1; border-radius:12px; padding:13px; font-family:'Manrope',var(--font); font-size:14px; font-weight:700; color:#475569; cursor:pointer; }
     .m-sheet-foot .m-apply { flex:2; background:linear-gradient(135deg,#0d9488,#0c6e63); border:none; border-radius:12px; padding:13px; font-family:'Manrope',var(--font); font-size:14px; font-weight:800; color:#fff; cursor:pointer; }
+
+    /* ===== Tur kartları: ana sayfayla aynı 2 sütun dikey kart dili ===== */
+    .m-vgrid { display:grid !important; grid-template-columns:1fr 1fr; gap:12px !important; }
+    .m-vgrid .card { border-radius:16px; border:1px solid rgba(15,36,33,.08); box-shadow:0 8px 20px rgba(4,24,21,.05); overflow:hidden; }
+    .m-vgrid .card-img { height:112px !important; }
+    .m-vgrid .card-body { padding:10px 11px 12px !important; }
+    .m-vgrid .card-title { font-size:12.5px !important; font-weight:800; line-height:1.3 !important; color:#0f2421; margin-bottom:5px !important; font-family:'Manrope',var(--font); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .m-vgrid .card-meta { font-size:9.8px !important; font-weight:600; color:#7d938d; margin-bottom:5px !important; }
+    .m-vgrid .card-meta svg { width:11px; height:11px; }
+    /* Tasarımda kart üstünde kategori rozeti yok — kart boyu kısalır */
+    .m-vgrid .badge { display:none !important; }
+    .m-vgrid .card-body > div:first-child:has(.badge) { display:none; }
+    /* Meta satırları tek satıra sığar (uzunları … ile kesilir), kart boyu şişmez */
+    .m-vgrid .card-meta { display:block !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .m-vgrid .card-meta svg { vertical-align:-2px; margin-right:2px; }
+    .m-vgrid .card-meta > span { display:inline !important; }
+    /* Fiyat ve "/kişi başı" yan yana */
+    .m-vgrid .m-priceline > div { display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; }
+    .m-vgrid .m-priceline > div > div:last-child { font-size:8.5px !important; }
+    .m-vgrid .price-tag { font-family:'Space Grotesk',var(--font); font-size:15px !important; font-weight:800; color:var(--accent); }
+    /* Fiyat satırı: solda puan, sağda fiyat; liste içinde buton yok */
+    .m-vgrid .m-priceline { margin-top:10px !important; padding-top:8px !important; gap:6px !important; }
+    .m-vgrid .m-priceline .m-actions { display:none !important; }
 }
 </style>
 
@@ -64,6 +87,11 @@
     <aside class="tour-sidebar">
         <div style="background:var(--white);border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.05);">
             <form id="filter-form" method="GET" action="{{ route('tours.index') }}">
+                {{-- Mobil kategori kısayollarından gelen filtreler (yurt içi/dışı, vize):
+                     panelde alanları yok, ama formda görünmez taşınırlar — yoksa
+                     başka bir filtre uygulanınca sessizce düşerlerdi. --}}
+                <input type="hidden" name="yurt" value="{{ in_array(request('yurt'), ['ic', 'dis'], true) ? request('yurt') : '' }}">
+                <input type="hidden" name="visa" value="{{ in_array(request('visa'), ['vizesiz', 'vizeli'], true) ? request('visa') : '' }}">
                 <h3 style="font-size:18px;font-weight:800;margin-bottom:24px;color:#0f172a;display:flex;align-items:center;gap:8px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                     Detaylı Filtreleme
@@ -173,6 +201,8 @@
                 'dates' => request('date_start') || request('date_end') ? true : null,
                 'days' => request('min_days') || request('max_days') ? true : null,
                 'category' => request('category'),
+                'yurt' => in_array(request('yurt'), ['ic', 'dis'], true) ? request('yurt') : null,
+                'visa' => in_array(request('visa'), ['vizesiz', 'vizeli'], true) ? request('visa') : null,
             ]);
             $mAgencyName = request('agency_id') ? optional($agencies->firstWhere('id', (int) request('agency_id')))->name : null;
         @endphp
@@ -192,6 +222,12 @@
             @endif
             @if(request('date_start') || request('date_end'))
                 <button type="button" class="m-chip m-chip-on" onclick="mChipClear('date_start,date_end')">📅 Tarih ✕</button>
+            @endif
+            @if(isset($mActive['yurt']))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('yurt')">{{ $mActive['yurt'] === 'dis' ? 'Yurt Dışı' : 'Yurt İçi' }} ✕</button>
+            @endif
+            @if(isset($mActive['visa']))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('visa')">{{ $mActive['visa'] === 'vizesiz' ? 'Vizesiz' : 'Vizeli' }} ✕</button>
             @endif
             @if(request('min_days') || request('max_days'))
                 <button type="button" class="m-chip m-chip-on" onclick="mChipClear('min_days,max_days')">{{ request('min_days', '1') }}-{{ request('max_days', '∞') }} gün ✕</button>
@@ -216,13 +252,30 @@
             </div>
         </div>
 
-        <div class="tour-grid m-hcard-list">
+        @php
+            // Kalp dolgusu: giriş yapmış kullanıcının favori tur id'leri (istek başına tek sorgu)
+            $favIds = auth()->check()
+                ? once(fn () => auth()->user()->favoriteTours()->pluck('tours.id')->all())
+                : [];
+        @endphp
+        <div class="tour-grid m-vgrid">
             @forelse($tours as $tour)
+            @php
+                $campaign = $tour->activeCampaign;
+                // Kampanya indirimi yüzdesi (mobil rozet)
+                $mIndirim = ($campaign && $tour->price > 0 && $campaign->discount_price < $tour->price)
+                    ? (int) round((1 - $campaign->discount_price / $tour->price) * 100)
+                    : null;
+            @endphp
+            <div class="m-cardwrap">
             <a href="{{ route('tours.show', $tour) }}" class="card" style="transition:all 0.3s;display:flex;flex-direction:column;">
                 @if($tour->image)
                     <img src="{{ $tour->image }}" alt="{{ $tour->title }}" class="card-img" style="height:200px;object-fit:cover;view-transition-name: tour-{{ $tour->id }};">
                 @else
                     <div class="card-img" style="height:200px;background:linear-gradient(135deg,#e0f2fe,#f0fdf4);display:flex;align-items:center;justify-content:center;font-size:48px;">🏖️</div>
+                @endif
+                @if($mIndirim)
+                    <span class="m-drop-badge">%{{ $mIndirim }} İNDİRİM</span>
                 @endif
                 <div class="card-body" style="flex:1;display:flex;flex-direction:column;">
                     @if($tour->category)
@@ -249,9 +302,14 @@
                             </div>
                         @endif
                         
-                        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                        <div class="m-priceline" style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                            @if(($tour->reviews_count ?? 0) > 0)
+                                <span class="m-rating">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8z"/></svg>
+                                    {{ number_format((float) $tour->reviews_avg_rating, 1, ',', '') }} <i>({{ $tour->reviews_count }})</i>
+                                </span>
+                            @endif
                             <div>
-                                @php $campaign = $tour->activeCampaign; @endphp
                                 @if($campaign)
                                     <div style="text-decoration:line-through;color:#94a3b8;font-size:12px;">{{ $tour->formatted_price }}</div>
                                     <div class="price-tag" style="color:#059669;font-size:20px;">{{ $campaign->formatted_discount_price }}</div>
@@ -260,7 +318,7 @@
                                 @endif
                                 <div style="font-size:12px;color:var(--text-muted);">/ kişi başı</div>
                             </div>
-                            <div style="display:flex;gap:8px;">
+                            <div class="m-actions" style="display:flex;gap:8px;">
                                 <button type="button" class="btn btn-outline btn-sm compare-toggle" data-tour-id="{{ $tour->id }}" onclick="event.preventDefault(); window.toggleCompare({{ $tour->id }})" style="border-radius:8px;font-size:12px;padding:6px 10px;">+ Karşılaştır</button>
                                 <span class="btn btn-primary btn-sm" style="border-radius:8px;">İncele</span>
                             </div>
@@ -268,6 +326,11 @@
                     </div>
                 </div>
             </a>
+            <button type="button" class="m-fav {{ in_array($tour->id, $favIds) ? 'on' : '' }}"
+                data-tour="{{ $tour->id }}" aria-label="Favorilere ekle" aria-pressed="{{ in_array($tour->id, $favIds) ? 'true' : 'false' }}">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>
+            </button>
+            </div>
             @empty
             <div style="grid-column:1/-1;text-align:center;padding:80px 20px;background:var(--white);border-radius:16px;border:1px dashed #cbd5e1;">
                 <div style="font-size:64px;margin-bottom:16px;opacity:0.5;">🧳</div>
@@ -485,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.mSheetClear = function() {
-        form.querySelectorAll('input[type="text"], input[type="date"], input[type="number"]').forEach(el => { el.value = ''; });
+        form.querySelectorAll('input[type="text"], input[type="date"], input[type="number"], input[type="hidden"]').forEach(el => { el.value = ''; });
         form.querySelectorAll('select').forEach(el => {
             el.value = '';
             // Aranabilir combobox'ın görünen etiketi senkron kalsın

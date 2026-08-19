@@ -21,6 +21,14 @@ class FavoriteController extends Controller
             $message = 'Favorilere eklendi!';
         }
 
+        // Kart üstündeki kalp AJAX ile çağırır: yönlendirme yerine durum döner
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'favorited' => $user->favoriteTours()->where('tour_id', $tour->id)->exists(),
+                'message' => $message,
+            ]);
+        }
+
         return back()->with('success', $message);
     }
 

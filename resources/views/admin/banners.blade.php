@@ -57,6 +57,55 @@
                 </form>
             </div>
 
+            {{-- Mobil hero desen katmanı: şeffaflık + koyuluk (TEK ayar, HeroDeco) --}}
+            @php
+                $mdSeffaflik = \App\Support\HeroDeco::opacity();
+                $mdKoyuluk = \App\Support\HeroDeco::darkness();
+            @endphp
+            <div class="stat-card" style="padding:26px 30px;margin-bottom:32px;">
+                <form method="POST" action="{{ route('admin.banners.deco') }}">
+                    @csrf @method('PUT')
+                    <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;">
+                        <div class="form-group" style="margin-bottom:0;flex:1;min-width:220px;">
+                            <label style="font-size:13px;color:#475569;font-weight:700;">
+                                Mobil Desen Şeffaflığı: <span id="decoOpVal" style="font-weight:800;color:var(--accent);">%{{ $mdSeffaflik }}</span>
+                            </label>
+                            <input type="range" name="deco_opacity" min="0" max="100" value="{{ $mdSeffaflik }}"
+                                oninput="document.getElementById('decoOpVal').textContent='%'+this.value; decoOnizle()"
+                                style="width:100%;accent-color:var(--accent);">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;flex:1;min-width:220px;">
+                            <label style="font-size:13px;color:#475569;font-weight:700;">
+                                Mobil Desen Koyuluğu: <span id="decoDkVal" style="font-weight:800;color:var(--accent);">%{{ $mdKoyuluk }}</span>
+                            </label>
+                            <input type="range" name="deco_darkness" min="0" max="100" value="{{ $mdKoyuluk }}"
+                                oninput="document.getElementById('decoDkVal').textContent='%'+this.value; decoOnizle()"
+                                style="width:100%;accent-color:var(--accent);">
+                        </div>
+                        {{-- Canlı mini önizleme: sitedekiyle AYNI şekiller (küçük kopya) --}}
+                        <div style="flex:none;">
+                            <svg id="decoOnizleme" viewBox="0 0 375 430" width="86" height="99" style="border-radius:10px;background:#eef7f8;{{ \App\Support\HeroDeco::css() }}" aria-hidden="true">
+                                @include('partials.hero-deco-shapes')
+                            </svg>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="padding:12px 28px;">Deseni Kaydet</button>
+                    </div>
+                    <div style="font-size:11px;color:#64748b;margin-top:10px;">
+                        Mobil ana sayfa hero'sundaki turkuaz desen katmanı. Şeffaflık %0 = desen tamamen gizli;
+                        koyuluk arttıkça desen kararır (fotoğraf/yazı kontrastına göre ayarla).
+                    </div>
+                </form>
+            </div>
+            <script>
+                function decoOnizle() {
+                    var o = document.querySelector('[name="deco_opacity"]').value / 100;
+                    var k = document.querySelector('[name="deco_darkness"]').value / 100;
+                    var el = document.getElementById('decoOnizleme');
+                    el.style.opacity = o;
+                    el.style.filter = 'brightness(' + (1 - (1 - @json(\App\Support\HeroDeco::MIN_BRIGHTNESS)) * k).toFixed(3) + ')';
+                }
+            </script>
+
             {{-- Add New Banner --}}
             <div class="stat-card" style="padding:30px;margin-bottom:32px;border-left:4px solid var(--accent) !important;">
                 <h3 style="font-size:18px;font-weight:800;letter-spacing:-0.3px;color:#0f172a;margin-bottom:24px;">Yeni Banner Ekle</h3>
