@@ -339,12 +339,11 @@
                     <span class="m-sbox-val" id="mValDest">Tüm Destinasyonlar</span>
                 </button>
                 <span class="m-schev">›</span>
-                <label class="m-sbox">
+                <button type="button" class="m-sbox" onclick="mPickOpen('date')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
                     <b>Ne zaman?</b>
                     <span class="m-sbox-val" id="mValDate">Tarih seçin</span>
-                    <input type="date" name="date_start" id="mInDate" class="m-sbox-date" aria-label="Kalkış tarihi">
-                </label>
+                </button>
                 <span class="m-schev">›</span>
                 <button type="button" class="m-sbox" onclick="mPickOpen('budget')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="12" rx="3"/><path d="M3 10.5h18"/><circle cx="17" cy="14.5" r="1.2"/></svg>
@@ -359,6 +358,8 @@
                 </button>
             </div>
             <input type="hidden" name="destination" id="mInDest">
+            <input type="hidden" name="date_start" id="mInDateStart">
+            <input type="hidden" name="date_end" id="mInDateEnd">
             <input type="hidden" name="max_price" id="mInBudget">
             <input type="hidden" name="departure_city" id="mInDep">
             <button type="submit" class="m-search-btn">
@@ -988,7 +989,6 @@
             .m-sbox b { font-size:10.8px; font-weight:800; color:#0f2421; letter-spacing:-.3px; }
             .m-sbox-val { display:block; max-width:100%; font-size:8.2px; font-weight:600; color:#8a9a95; letter-spacing:-.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
             .m-sbox-val.on { color:var(--accent); }
-            .m-sbox-date { position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; padding:0; }
             .m-schev { display:flex; align-items:center; justify-content:center; width:9px; color:#c2d1cc; font-size:14px; font-weight:700; }
             .m-search-btn { width:100%; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:9px; background:linear-gradient(135deg,#0d9488,#0c6e63); color:#fff; border:none; font-family:'Manrope',var(--font); font-size:15.5px; font-weight:800; padding:15px; border-radius:14px; cursor:pointer; }
 
@@ -1074,6 +1074,13 @@
             .m-pick-opt em { font-style:normal; font-size:11.5px; font-weight:600; color:#8a9a95; }
             .m-pick-opt.on { background:rgba(13,148,136,.09); color:var(--accent); font-weight:800; }
             .m-pick-empty { padding:26px 12px; text-align:center; font-size:13px; color:#8a9a95; }
+            .m-pick-dates { display:flex; gap:10px; padding:6px 12px 10px; }
+            .m-pick-dates label { flex:1; display:block; padding:9px 12px; border:1px solid rgba(15,36,33,.12); border-radius:12px; }
+            .m-pick-dates span { display:block; font-size:9px; font-weight:800; letter-spacing:.8px; color:#8a9a95; }
+            .m-pick-dates input { border:none; outline:none; width:100%; font-family:'Manrope',var(--font); font-size:14px; font-weight:700; background:transparent; color:#0f2421; margin-top:2px; -webkit-appearance:none; appearance:none; }
+            .m-pick-presets { display:flex; flex-wrap:wrap; gap:8px; padding:2px 12px 10px; }
+            .m-pick-preset { border:1px solid rgba(15,36,33,.12); background:#fff; border-radius:100px; padding:8px 14px; font-family:'Manrope',var(--font); font-size:12.5px; font-weight:700; color:#42544f; cursor:pointer; }
+            .m-pick-apply { margin:4px 12px 8px; width:calc(100% - 24px); background:linear-gradient(135deg,#0d9488,#0c6e63); color:#fff; border:none; border-radius:12px; padding:13px; font-family:'Manrope',var(--font); font-size:14.5px; font-weight:800; cursor:pointer; }
         }
         @media(min-width:769px) {
             .m-pick, .m-pick-back { display:none !important; }
@@ -1538,7 +1545,68 @@ window.prevStory = prevStory;
         return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
     }
 
+    // Tarih ARALIĞI paneli: turlar çok günlük — tek tarih yerine başlangıç+bitiş
+    function mDateFmt(d) {
+        var p = d.split('-');
+        return p[2] + '.' + p[1] + '.' + p[0].slice(2);
+    }
+    function mDateLabel() {
+        var ds = document.getElementById('mInDateStart').value;
+        var de = document.getElementById('mInDateEnd').value;
+        var label = document.getElementById('mValDate');
+        if (ds && de) label.textContent = mDateFmt(ds) + ' – ' + mDateFmt(de);
+        else if (ds) label.textContent = mDateFmt(ds) + ' sonrası';
+        else if (de) label.textContent = mDateFmt(de) + ' öncesi';
+        else label.textContent = 'Tarih seçin';
+        label.classList.toggle('on', !!(ds || de));
+    }
+    function mOpenDatePanel() {
+        current = 'date';
+        document.getElementById('mPickTitle').textContent = 'Ne zaman gitmek istiyorsun?';
+        var ds = document.getElementById('mInDateStart').value;
+        var de = document.getElementById('mInDateEnd').value;
+        body.innerHTML =
+            '<div class="m-pick-dates">'
+            + '<label><span>BAŞLANGIÇ</span><input type="date" id="mPickDs" value="' + ds + '"></label>'
+            + '<label><span>BİTİŞ</span><input type="date" id="mPickDe" value="' + de + '" min="' + ds + '"></label>'
+            + '</div>'
+            + '<div class="m-pick-presets">'
+            + '<button type="button" class="m-pick-preset" data-days="30">Önümüzdeki 1 ay</button>'
+            + '<button type="button" class="m-pick-preset" data-days="90">3 ay içinde</button>'
+            + '<button type="button" class="m-pick-preset" data-clear="1">Temizle</button>'
+            + '</div>'
+            + '<button type="button" class="m-pick-apply">Tarihleri Uygula</button>';
+        body.querySelector('#mPickDs').addEventListener('change', function () {
+            body.querySelector('#mPickDe').min = this.value;
+        });
+        body.querySelectorAll('.m-pick-preset').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var dsEl = body.querySelector('#mPickDs'), deEl = body.querySelector('#mPickDe');
+                if (btn.dataset.clear) { dsEl.value = ''; deEl.value = ''; return; }
+                var gun = parseInt(btn.dataset.days, 10);
+                var simdi = new Date(), son = new Date(Date.now() + gun * 86400000);
+                dsEl.value = simdi.toISOString().slice(0, 10);
+                deEl.value = son.toISOString().slice(0, 10);
+                deEl.min = dsEl.value;
+            });
+        });
+        body.querySelector('.m-pick-apply').addEventListener('click', function () {
+            var ds = body.querySelector('#mPickDs').value;
+            var de = body.querySelector('#mPickDe').value;
+            if (ds && de && de < ds) { var t = ds; ds = de; de = t; } // ters girildiyse çevir
+            document.getElementById('mInDateStart').value = ds;
+            document.getElementById('mInDateEnd').value = de;
+            mDateLabel();
+            window.mPickClose();
+        });
+        body.scrollTop = 0;
+        back.classList.add('open');
+        sheet.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
     window.mPickOpen = function (key) {
+        if (key === 'date') { mOpenDatePanel(); return; }
         var cfg = DATA[key];
         if (!cfg) return;
         current = key;
@@ -1569,7 +1637,7 @@ window.prevStory = prevStory;
 
     body.addEventListener('click', function (e) {
         var opt = e.target.closest('.m-pick-opt');
-        if (!opt || !current) return;
+        if (!opt || !current || current === 'date') return;
         var cfg = DATA[current];
         var input = document.getElementById(cfg.input);
         var label = document.getElementById(cfg.label);
@@ -1579,20 +1647,6 @@ window.prevStory = prevStory;
         window.mPickClose();
     });
 
-    var dateInput = document.getElementById('mInDate');
-    if (dateInput) {
-        dateInput.addEventListener('change', function () {
-            var label = document.getElementById('mValDate');
-            if (!dateInput.value) {
-                label.textContent = 'Tarih seçin';
-                label.classList.remove('on');
-                return;
-            }
-            var p = dateInput.value.split('-');
-            label.textContent = p[2] + '.' + p[1] + '.' + p[0];
-            label.classList.add('on');
-        });
-    }
 })();
 </script>
 @endpush
