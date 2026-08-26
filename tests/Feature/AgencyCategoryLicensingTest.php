@@ -391,8 +391,44 @@ class AgencyCategoryLicensingTest extends TestCase
             ->get(route('agency.category-licenses.index'))
             ->assertOk()
             ->assertSee('data-cart-form', false)
-            ->assertSee('data-cart-items', false)
-            ->assertSee('data-category-card="'.$category->id.'"', false);
+            ->assertSee('data-category-card="'.$category->id.'"', false)
+            // Kalem listesi ayrı ekranlara taşındı: ana sayfa özet + yönlendirme
+            ->assertSee(route('agency.category-licenses.cart.show'), false);
+    }
+
+    public function test_cart_and_orders_pages_render_their_contents(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+        $agency->update(['approval_status' => Agency::STATUS_APPROVED]);
+
+        // Sepet ekranı: eklenen kategori kalem olarak görünür
+        $this->actingAs($user)
+            ->post(route('agency.category-licenses.cart.add'), ['category_id' => $category->id])
+            ->assertRedirect();
+
+        $this->actingAs($user)
+            ->get(route('agency.category-licenses.cart.show'))
+            ->assertOk()
+            ->assertSee('Sepetim')
+            ->assertSee('Kültür Turları')
+            ->assertSee('Ödemeye Geç');
+
+        // Satın alımlar ekranı: sipariş numarası ve durum rozetiyle listelenir
+        $order = $this->makePendingIyzicoOrder($agency, $category, 'orders-page-token');
+        $order->update(['status' => AgencyCategoryOrder::STATUS_PAID, 'paid_at' => now()]);
+
+        $this->actingAs($user)
+            ->get(route('agency.category-licenses.orders'))
+            ->assertOk()
+            ->assertSee('Satın Alım Geçmişi')
+            ->assertSee($order->order_number)
+            ->assertSee('Ödendi');
+
+        // Sipariş varken ana sayfada "Satın Alımları Görüntüle" yönlendirmesi çıkar
+        $this->actingAs($user)
+            ->get(route('agency.category-licenses.index'))
+            ->assertOk()
+            ->assertSee(route('agency.category-licenses.orders'), false);
     }
 
     public function test_cart_add_returns_json_error_for_xhr(): void

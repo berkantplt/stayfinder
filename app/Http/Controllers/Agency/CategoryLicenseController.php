@@ -107,11 +107,9 @@ class CategoryLicenseController extends Controller
                     ];
                 });
 
-        $recentOrders = $agency->categoryOrders()
-            ->with('items.category')
-            ->orderByDesc('purchased_at')
-            ->limit(8)
-            ->get();
+        // Listeler ayrı ekranlara taşındı: ana sayfada yalnız özet + yönlendirme
+        $lastOrder = $agency->categoryOrders()->orderByDesc('purchased_at')->first();
+        $ordersCount = $agency->categoryOrders()->count();
 
         $cartTotal = $cartItems->sum(fn (Category $category) => (float) $category->monthly_price)
             + $slotCartItems->sum('line_total');
@@ -127,8 +125,49 @@ class CategoryLicenseController extends Controller
             'storedCard',
             'cartTotal',
             'licensedCategories',
-            'recentOrders'
+            'lastOrder',
+            'ordersCount'
         ));
+    }
+
+    /** Sepet ekranı: kalemler, kaldırma ve hak ekleme burada — ana sayfada özet kaldı. */
+    public function showCart()
+    {
+        if ($redirect = $this->redirectIfSchemaMissing()) {
+            return $redirect;
+        }
+
+        $agency = $this->currentAgency();
+        $cartItems = $this->resolveCartCategoriesFor($agency);
+        $slotCartItems = $this->resolveSlotCartFor($agency);
+        $cartTotal = $cartItems->sum(fn (Category $category) => (float) $category->monthly_price)
+            + $slotCartItems->sum('line_total');
+
+        return view('agency.category-licenses.cart', [
+            'agency' => $agency,
+            'cartItems' => $cartItems,
+            'slotCartItems' => $slotCartItems,
+            'cartTotal' => $cartTotal,
+            'slotSchemaReady' => CategoryLicensing::slotSchemaReady(),
+            'autoRenewEnabled' => CategoryLicensing::autoRenewEnabled(),
+        ]);
+    }
+
+    /** Satın alım geçmişi ekranı: tüm siparişler sayfalı listede. */
+    public function orders()
+    {
+        if ($redirect = $this->redirectIfSchemaMissing()) {
+            return $redirect;
+        }
+
+        $agency = $this->currentAgency();
+
+        $orders = $agency->categoryOrders()
+            ->with('items')
+            ->orderByDesc('purchased_at')
+            ->paginate(15);
+
+        return view('agency.category-licenses.orders', compact('agency', 'orders'));
     }
 
     public function addToCart(Request $request)

@@ -271,6 +271,8 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
     Route::middleware('agency.approved')->group(function () {
         Route::get('/', [AgencyDashboardController::class, 'index'])->name('dashboard');
         Route::get('/kategori-yetkilendirme', [AgencyCategoryLicenseController::class, 'index'])->name('category-licenses.index');
+        Route::get('/kategori-yetkilendirme/sepet', [AgencyCategoryLicenseController::class, 'showCart'])->name('category-licenses.cart.show');
+        Route::get('/kategori-yetkilendirme/satin-alimlar', [AgencyCategoryLicenseController::class, 'orders'])->name('category-licenses.orders');
         Route::post('/kategori-yetkilendirme/sepet', [AgencyCategoryLicenseController::class, 'addToCart'])->name('category-licenses.cart.add');
         Route::delete('/kategori-yetkilendirme/sepet/{category}', [AgencyCategoryLicenseController::class, 'removeFromCart'])->name('category-licenses.cart.remove');
         Route::post('/kategori-yetkilendirme/sepet-ekstra-tur-hakki', [AgencyCategoryLicenseController::class, 'addSlotToCart'])->name('category-licenses.cart.add-slot');
