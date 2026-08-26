@@ -4,11 +4,13 @@ namespace App\Services\Payment;
 
 use App\Models\AgencyCategoryOrder;
 use App\Models\AgencyCategorySubscription;
+use App\Models\AgencyStoredCard;
 use App\Support\CategoryLicensing;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Iyzipay\Model\CheckoutForm;
 use Iyzipay\Model\Status;
+use Throwable;
 
 /**
  * Kategori siparişini ödeme sonrası kesinleştiren paylaşılan mantık.
@@ -41,6 +43,8 @@ class CategoryOrderFinalizer
 
             $items = $order->items()->with('category')->get();
             $slotSchemaReady = CategoryLicensing::slotSchemaReady();
+            $autoRenewSchemaReady = CategoryLicensing::autoRenewSchemaReady();
+            $isAutoRenewalOrder = $autoRenewSchemaReady && (bool) ($order->auto_renewal ?? false);
 
             // Lisans kalemleri ÖNCE işlenir: aynı siparişte lapse yenilemesi +
             // ekstra hak varsa önce dönem sıfırdan başlar, sonra haklar eklenir.
@@ -89,10 +93,28 @@ class CategoryOrderFinalizer
                     'renewal_reminder_sent_at' => null,
                 ];
 
-                // Ekstra tur hakları abonelik KESİNTİSİZ sürdükçe geçerli:
-                // dönem lapse sonrası sıfırdan başlıyorsa eski haklar yanar.
+                // Ekstra tur hakları aylıktır: dönem lapse sonrası sıfırdan
+                // başlıyorsa eski haklar taşınmaz (yenileme siparişinin slot
+                // kalemleri aşağıda yeniden yazar).
                 if ($slotSchemaReady && ! $extends) {
                     $values['extra_tour_slots'] = 0;
+                }
+
+                // Kesintili yeniden başlatma = yeni abonelik iradesi: eski
+                // iptal/azaltma planı temizlenir (ilk satın almadaki varsayılan).
+                if ($autoRenewSchemaReady && ! $extends) {
+                    $values['auto_renew'] = true;
+                    $values['cancelled_at'] = null;
+                    $values['next_extra_tour_slots'] = null;
+                }
+
+                // Otomatik yenileme: siparişteki slot kalemi sayısı yeni dönemin
+                // hak sayısını KESİN belirler — 0 dahil (azaltma planı keep=0 ise
+                // hiç slot kalemi yoktur ama haklar yine de sıfırlanmalı; aşağıdaki
+                // slot döngüsü boş koleksiyonda hiç koşmaz, o yüzden BURADA).
+                if ($isAutoRenewalOrder) {
+                    $values['extra_tour_slots'] = $slotItems->where('category_id', $item->category_id)->count();
+                    $values['next_extra_tour_slots'] = null; // plan uygulandı
                 }
 
                 if ($subscription) {
@@ -105,8 +127,10 @@ class CategoryOrderFinalizer
                 }
             }
 
-            // Ekstra tur hakları: satır başına +1 hak, ilgili aboneliğe yazılır.
-            foreach ($slotItems->groupBy('category_id') as $categoryId => $group) {
+            // Ekstra tur hakkı kalemleri: manuel satın almada satır başına +1
+            // EKLENİR. Otomatik yenilemede hak sayısı yukarıda (lisans dalında)
+            // SET edildi — burada tekrar işlenmez (yoksa katlanırdı).
+            foreach (($isAutoRenewalOrder ? collect() : $slotItems)->groupBy('category_id') as $categoryId => $group) {
                 if (! $categoryId) {
                     continue;
                 }
@@ -131,11 +155,58 @@ class CategoryOrderFinalizer
                     continue;
                 }
 
-                $subscription->update([
-                    'extra_tour_slots' => (int) $subscription->extra_tour_slots + $group->count(),
-                ]);
+                $values = $isAutoRenewalOrder
+                    ? ['extra_tour_slots' => $group->count()]
+                    : ['extra_tour_slots' => (int) $subscription->extra_tour_slots + $group->count()];
+
+                // Yeni hak alımı veya yenileme, bekleyen azaltma planını düşürür:
+                // yenilemede plan zaten uygulandı; manuel alımda "azalt" niyeti
+                // yeni satın almayla çelişir, güncel sayı esas olur.
+                if ($autoRenewSchemaReady) {
+                    $values['next_extra_tour_slots'] = null;
+                }
+
+                $subscription->update($values);
             }
         });
+    }
+
+    /**
+     * Checkout sonucunda iyzico kart saklama token'ları döndüyse acentanın
+     * kayıtlı kartı olarak yaz (tek kart: varsa güncellenir). Kart saklama
+     * hatası ödeme finalizasyonunu ASLA bozmamalı — sadece loglanır.
+     */
+    private function captureStoredCard(AgencyCategoryOrder $order, CheckoutForm $checkout): void
+    {
+        if (! CategoryLicensing::autoRenewSchemaReady()) {
+            return;
+        }
+
+        try {
+            $cardUserKey = (string) $checkout->getCardUserKey();
+            $cardToken = (string) $checkout->getCardToken();
+
+            if ($cardUserKey === '' || $cardToken === '') {
+                return; // kullanıcı "kartımı sakla" demedi
+            }
+
+            AgencyStoredCard::updateOrCreate(
+                ['agency_id' => $order->agency_id],
+                [
+                    'card_user_key' => $cardUserKey,
+                    'card_token' => $cardToken,
+                    'last_four' => substr((string) $checkout->getLastFourDigits(), 0, 4) ?: null,
+                    'card_association' => $checkout->getCardAssociation() ?: null,
+                    'card_family' => $checkout->getCardFamily() ?: null,
+                ]
+            );
+        } catch (Throwable $e) {
+            Log::warning('iyzico kart saklama kaydı yazılamadı', [
+                'order_id' => $order->id,
+                'agency_id' => $order->agency_id,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -162,6 +233,7 @@ class CategoryOrderFinalizer
             }
 
             $this->finalize($order, $checkout->getPaymentId());
+            $this->captureStoredCard($order, $checkout);
 
             return 'paid';
         }

@@ -13,6 +13,8 @@ class CategoryLicensing
 
     private static ?bool $slotSchemaReady = null;
 
+    private static ?bool $autoRenewSchemaReady = null;
+
     public static function schemaReady(): bool
     {
         if (self::$schemaReady !== null) {
@@ -44,9 +46,37 @@ class CategoryLicensing
             && Schema::hasColumn('agency_category_order_items', 'item_type');
     }
 
+    /**
+     * Otomatik yenileme + iptal kolonları da ayrı migration'la geldi; aynı
+     * kademeli guard kalıbı — eksikken lisans ve slot sistemleri etkilenmez.
+     */
+    public static function autoRenewSchemaReady(): bool
+    {
+        if (self::$autoRenewSchemaReady !== null) {
+            return self::$autoRenewSchemaReady;
+        }
+
+        return self::$autoRenewSchemaReady = self::slotSchemaReady()
+            && Schema::hasColumn('agency_category_subscriptions', 'auto_renew')
+            && Schema::hasColumn('agency_category_subscriptions', 'next_extra_tour_slots')
+            && Schema::hasColumn('agency_category_orders', 'auto_renewal')
+            && Schema::hasTable('agency_stored_cards');
+    }
+
+    /**
+     * Fiili otomatik çekim açık mı: şema + IYZICO_AUTO_RENEW bayrağı.
+     * Bayrak kapalıyken iptal/kart altyapısı kodda durur ama UI gizli,
+     * yenileme komutu çalışmaz — sistem hatırlatma+manuel yenilemede kalır.
+     */
+    public static function autoRenewEnabled(): bool
+    {
+        return self::autoRenewSchemaReady() && (bool) config('iyzico.auto_renew_enabled');
+    }
+
     public static function resetCache(): void
     {
         self::$schemaReady = null;
         self::$slotSchemaReady = null;
+        self::$autoRenewSchemaReady = null;
     }
 }

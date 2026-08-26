@@ -22,6 +22,10 @@ class AgencyCategorySubscription extends Model
         'last_order_id',
         'monthly_price',
         'extra_tour_slots',
+        'auto_renew',
+        'cancelled_at',
+        'next_extra_tour_slots',
+        'renewal_attempted_at',
         'status',
         'started_at',
         'expires_at',
@@ -31,6 +35,10 @@ class AgencyCategorySubscription extends Model
     protected $casts = [
         'monthly_price' => 'decimal:2',
         'extra_tour_slots' => 'integer',
+        'auto_renew' => 'boolean',
+        'cancelled_at' => 'datetime',
+        'next_extra_tour_slots' => 'integer',
+        'renewal_attempted_at' => 'date',
         'started_at' => 'date',
         'expires_at' => 'date',
         'renewal_reminder_sent_at' => 'datetime',
@@ -63,5 +71,17 @@ class AgencyCategorySubscription extends Model
         return $this->status === self::STATUS_ACTIVE
             && $this->expires_at !== null
             && $this->expires_at->greaterThanOrEqualTo(today());
+    }
+
+    /** Acenta iptal etti: dönem sonuna kadar kullanım sürer, yenileme yapılmaz. */
+    public function isCancelled(): bool
+    {
+        return $this->cancelled_at !== null || ! (bool) ($this->auto_renew ?? true);
+    }
+
+    /** Yeni dönemde geçerli olacak ekstra hak sayısı (azaltma planı varsa o). */
+    public function slotsAfterRenewal(): int
+    {
+        return (int) ($this->next_extra_tour_slots ?? $this->extra_tour_slots ?? 0);
     }
 }

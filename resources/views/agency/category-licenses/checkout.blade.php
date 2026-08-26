@@ -100,6 +100,12 @@
                             <input type="hidden" name="country" value="Turkey">
                         </div>
 
+                        @if($autoRenewEnabled)
+                            <div style="margin-top:20px;padding:14px 16px;border:1px solid #bae6fd;border-radius:12px;background:#f0f9ff;color:#0c4a6e;font-size:13px;line-height:1.6;">
+                                💳 iyzico formunda <strong>"Kartımı sakla"</strong> seçeneğini işaretlerseniz aboneliğiniz her ay güncel tarife üzerinden otomatik yenilenir. Dilediğinizde Kategori Yetkilendirme Merkezi'nden iptal edebilirsiniz; iptalde dönem sonuna kadar kullanım sürer, çekim yapılmaz.
+                            </div>
+                        @endif
+
                         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:24px;" {{ $iyzicoConfigured ? '' : 'disabled' }}>
                             iyzico ile Güvenli Ödemeye Geç →
                         </button>
@@ -120,7 +126,7 @@
                         @endforeach
                         @foreach($slotCartItems as $slotItem)
                             <div style="display:flex;justify-content:space-between;font-size:14px;color:#334155;">
-                                <span>{{ $slotItem->category->name }} — Ekstra Tur Hakkı{{ $slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : '' }} <span style="color:#94a3b8;font-size:12px;">(tek seferlik)</span></span>
+                                <span>{{ $slotItem->category->name }} — Ekstra Tur Hakkı{{ $slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : '' }} <span style="color:#94a3b8;font-size:12px;">({{ $autoRenewEnabled ? 'aylık' : 'tek seferlik' }})</span></span>
                                 <strong>{{ number_format((float) $slotItem->line_total, 0, ',', '.') }} TL</strong>
                             </div>
                         @endforeach

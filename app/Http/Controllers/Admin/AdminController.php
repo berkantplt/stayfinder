@@ -352,6 +352,14 @@ class AdminController extends Controller
                 $attributes['extra_tour_slots'] = 0;
             }
 
+            // Kesintili yeniden başlatma = yeni abonelik iradesi: eski iptal
+            // durumu ve azaltma planı da sıfırlanır (finalizer !extends kuralı).
+            if (! $stillActive && CategoryLicensing::autoRenewSchemaReady()) {
+                $attributes['auto_renew'] = true;
+                $attributes['cancelled_at'] = null;
+                $attributes['next_extra_tour_slots'] = null;
+            }
+
             if ($subscription) {
                 $subscription->update($attributes);
             } else {
@@ -376,10 +384,13 @@ class AdminController extends Controller
         abort_unless($subscription->agency_id === $agency->id, 404);
 
         // İptalle birlikte satın alınmış ekstra tur hakları da düşer — abonelik
-        // yeniden verilirse taban hak (2 tur) ile başlar.
+        // yeniden verilirse taban hak (2 tur) ile başlar. Bekleyen azaltma
+        // planı da temizlenir; kalırsa re-grant sonrası ilk yenilemede acentanın
+        // sahip olmadığı haklar için çekim yapılırdı.
         $subscription->update([
             'status' => AgencyCategorySubscription::STATUS_CANCELLED,
-        ] + (CategoryLicensing::slotSchemaReady() ? ['extra_tour_slots' => 0] : []));
+        ] + (CategoryLicensing::slotSchemaReady() ? ['extra_tour_slots' => 0] : [])
+            + (CategoryLicensing::autoRenewSchemaReady() ? ['next_extra_tour_slots' => null] : []));
 
         $categoryName = $subscription->category?->name ?? 'Kategori';
 

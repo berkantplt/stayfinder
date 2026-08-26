@@ -60,6 +60,10 @@
                                         <th>Kategori</th>
                                         <th>Ücret</th>
                                         <th>Bitiş</th>
+                                        {{-- Bayrak kapalıyken "Otomatik" rozeti yanıltır: çekim yapılmayacak --}}
+                                        @if(\App\Support\CategoryLicensing::autoRenewEnabled())
+                                            <th>Yenileme</th>
+                                        @endif
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -76,8 +80,23 @@
                                                     <div style="font-size:12px;color:#94a3b8;margin-top:2px;">{{ $subscription->category->parent->name }}</div>
                                                 @endif
                                             </td>
-                                            <td>{{ number_format((float) $subscription->monthly_price, 0, ',', '.') }} TL</td>
+                                            <td>
+                                                {{ number_format((float) $subscription->monthly_price, 0, ',', '.') }} TL
+                                                @if(\App\Support\CategoryLicensing::slotSchemaReady() && (int) $subscription->extra_tour_slots > 0)
+                                                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">+{{ $subscription->extra_tour_slots }} ekstra tur hakkı</div>
+                                                @endif
+                                            </td>
                                             <td>{{ $subscription->expires_at?->format('d.m.Y') }}</td>
+                                            @if(\App\Support\CategoryLicensing::autoRenewEnabled())
+                                                <td>
+                                                    @if($subscription->isCancelled())
+                                                        <span class="badge" style="background:#fef2f2;color:#991b1b;">İptal edildi</span>
+                                                        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">{{ $subscription->cancelled_at?->format('d.m.Y') }}</div>
+                                                    @else
+                                                        <span class="badge badge-green">Otomatik</span>
+                                                    @endif
+                                                </td>
+                                            @endif
                                         </tr>
                                     @endforeach
                                 </tbody>

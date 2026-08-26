@@ -113,6 +113,11 @@ class Agency extends Model
         return $this->hasMany(AgencyCategoryOrder::class);
     }
 
+    public function storedCard(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(AgencyStoredCard::class);
+    }
+
     public function licensedCategories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'agency_category_subscriptions')

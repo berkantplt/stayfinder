@@ -124,6 +124,24 @@ Schedule::command('app:expire-category-subscriptions')
 
 /*
 |--------------------------------------------------------------------------
+| Otomatik Abonelik Yenileme (kayıtlı karttan)
+|--------------------------------------------------------------------------
+|
+| Her sabah 07:30 — expire (08:00) KOMUTUNDAN ÖNCE koşar ki son günü gelen
+| abonelik önce yenilensin, dolmadan kapanmasın. IYZICO_AUTO_RENEW bayrağı
+| kapalıyken komut no-op; sistem hatırlatma + manuel yenilemede kalır.
+| İptal edilen abonelikler (auto_renew=false) asla çekilmez.
+|
+*/
+Schedule::command('app:renew-category-subscriptions')
+    ->dailyAt('07:30')
+    ->onOneServer()
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->name('category-subscription-renewal');
+
+/*
+|--------------------------------------------------------------------------
 | Yarım Kalan Ödeme Siparişleri Temizliği
 |--------------------------------------------------------------------------
 |

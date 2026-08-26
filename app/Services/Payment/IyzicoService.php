@@ -7,13 +7,20 @@ use Iyzipay\Model\Address;
 use Iyzipay\Model\BasketItem;
 use Iyzipay\Model\BasketItemType;
 use Iyzipay\Model\Buyer;
+use Iyzipay\Model\Card;
 use Iyzipay\Model\CheckoutForm;
 use Iyzipay\Model\CheckoutFormInitialize;
 use Iyzipay\Model\Locale;
+use Iyzipay\Model\Payment;
+use Iyzipay\Model\PaymentCard;
+use Iyzipay\Model\PaymentChannel;
 use Iyzipay\Model\Status;
 use Iyzipay\Options;
 use Iyzipay\Request\CreateCheckoutFormInitializeRequest;
+use Iyzipay\Request\CreatePaymentRequest;
+use Iyzipay\Request\DeleteCardRequest;
 use Iyzipay\Request\RetrieveCheckoutFormRequest;
+use Iyzipay\Request\RetrievePaymentRequest;
 use RuntimeException;
 
 class IyzicoService
@@ -34,7 +41,8 @@ class IyzicoService
         array $basketItems,
         array $buyer,
         string $callbackUrl,
-        string $clientIp
+        string $clientIp,
+        ?string $cardUserKey = null
     ): CheckoutFormInitialize {
         $this->ensureConfigured();
 
@@ -47,6 +55,12 @@ class IyzicoService
         $request->setBasketId('KYM-' . $order->id);
         $request->setPaymentGroup('SUBSCRIPTION');
         $request->setCallbackUrl($callbackUrl);
+
+        // Kayıtlı kartı olan acentada iyzico formu saklı kartları da listeler;
+        // yeni kart saklama onayını formun kendi "kartımı sakla" kutusu alır.
+        if ($cardUserKey !== null && $cardUserKey !== '') {
+            $request->setCardUserKey($cardUserKey);
+        }
 
         $request->setBuyer($this->buildBuyer($order, $buyer, $clientIp));
 
@@ -65,6 +79,91 @@ class IyzicoService
         }
 
         return $response;
+    }
+
+    /**
+     * Saklı karttan 3DS'siz tahsilat (otomatik aylık yenileme). iyzico
+     * hesabında kart saklama + non-3DS çekim izni AÇIK olmalı; yoksa iyzico
+     * hata döner ve çağıran taraf siparişi failed işaretler.
+     *
+     * @param array<int, array{id:int|string, name:string, category:string, price:float|string}> $basketItems
+     * @param array<string, mixed> $buyer Son ödemeli siparişin buyer_snapshot'ı
+     */
+    public function chargeStoredCard(
+        AgencyCategoryOrder $order,
+        array $basketItems,
+        array $buyer,
+        string $cardUserKey,
+        string $cardToken,
+        string $clientIp = '127.0.0.1'
+    ): Payment {
+        $this->ensureConfigured();
+
+        $request = new CreatePaymentRequest();
+        $request->setLocale($this->resolveLocale());
+        $request->setConversationId((string) $order->id);
+        $request->setPrice($this->formatAmount($order->subtotal));
+        $request->setPaidPrice($this->formatAmount($order->subtotal));
+        $request->setCurrency($order->currency ?: ($this->config['currency'] ?? 'TRY'));
+        $request->setInstallment(1);
+        $request->setBasketId('KYM-' . $order->id);
+        $request->setPaymentChannel(PaymentChannel::WEB);
+        $request->setPaymentGroup('SUBSCRIPTION');
+
+        $paymentCard = new PaymentCard();
+        $paymentCard->setCardUserKey($cardUserKey);
+        $paymentCard->setCardToken($cardToken);
+        $request->setPaymentCard($paymentCard);
+
+        $request->setBuyer($this->buildBuyer($order, $buyer, $clientIp));
+
+        $address = $this->buildAddress($buyer);
+        $request->setShippingAddress($address);
+        $request->setBillingAddress($address);
+
+        $request->setBasketItems($this->buildBasketItems($basketItems));
+
+        return Payment::create($request, $this->buildOptions());
+    }
+
+    /**
+     * Daha önce başlatılmış bir çekimi iyzico'dan geri sorgular (MUTABAKAT):
+     * conversationId = bizim sipariş id'miz. Saklı-kart çekiminde checkout
+     * token'ı olmadığından belirsiz sonuçlar (zaman aşımı, crash) ancak bu
+     * sorguyla çözülür. Çekim iyzico'ya hiç ulaşmadıysa hata statüsü döner.
+     */
+    public function retrievePayment(string $conversationId): Payment
+    {
+        $this->ensureConfigured();
+
+        $request = new RetrievePaymentRequest();
+        $request->setLocale($this->resolveLocale());
+        $request->setConversationId($conversationId);
+        $request->setPaymentConversationId($conversationId);
+
+        return Payment::retrieve($request, $this->buildOptions());
+    }
+
+    /**
+     * Saklı kartı iyzico tarafından siler. Uzak silme başarısız olsa bile
+     * çağıran taraf yerel kaydı silebilir (token'sız kayıt işe yaramaz).
+     */
+    public function deleteStoredCard(string $cardUserKey, string $cardToken): void
+    {
+        $this->ensureConfigured();
+
+        $request = new DeleteCardRequest();
+        $request->setLocale($this->resolveLocale());
+        $request->setCardUserKey($cardUserKey);
+        $request->setCardToken($cardToken);
+
+        $response = Card::delete($request, $this->buildOptions());
+
+        if ($response->getStatus() !== Status::SUCCESS) {
+            throw new RuntimeException(
+                $response->getErrorMessage() ?: 'iyzico kayıtlı kart silinemedi.'
+            );
+        }
     }
 
     public function retrieveCheckoutForm(string $token, string $conversationId): CheckoutForm

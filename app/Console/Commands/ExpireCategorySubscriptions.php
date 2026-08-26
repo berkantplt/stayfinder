@@ -51,9 +51,11 @@ class ExpireCategorySubscriptions extends Command
                 foreach ($subscriptions as $subscription) {
                     // Ekstra tur hakları abonelik kesintisiz sürdükçe geçerli —
                     // süre dolunca haklar da yanar (satın alımda bu böyle sunuluyor).
+                    // Bekleyen azaltma planı da anlamını yitirir, temizlenir.
                     $subscription->update([
                         'status' => AgencyCategorySubscription::STATUS_EXPIRED,
-                    ] + (CategoryLicensing::slotSchemaReady() ? ['extra_tour_slots' => 0] : []));
+                    ] + (CategoryLicensing::slotSchemaReady() ? ['extra_tour_slots' => 0] : [])
+                        + (CategoryLicensing::autoRenewSchemaReady() ? ['next_extra_tour_slots' => null] : []));
 
                     $users = $subscription->agency?->users ?? collect();
                     if ($users->isNotEmpty()) {
@@ -77,14 +79,30 @@ class ExpireCategorySubscriptions extends Command
     {
         $count = 0;
 
+        $autoRenewEnabled = CategoryLicensing::autoRenewEnabled();
+
         AgencyCategorySubscription::query()
             ->where('status', AgencyCategorySubscription::STATUS_ACTIVE)
             ->whereDate('expires_at', '>=', today())
             ->whereDate('expires_at', '<=', today()->addDays(self::REMINDER_DAYS_BEFORE))
             ->whereNull('renewal_reminder_sent_at')
-            ->with(['agency.users', 'category'])
-            ->chunkById(100, function ($subscriptions) use (&$count) {
+            // İptal edilen aboneliğe "yenile" diye dürtme — bilinçli bitiriyor
+            ->when(CategoryLicensing::autoRenewSchemaReady(), fn ($query) => $query->whereNull('cancelled_at'))
+            // storedCard tablosu şema hazır değilse sorgulanamaz (guard şart)
+            ->with(array_merge(
+                ['agency.users', 'category'],
+                CategoryLicensing::autoRenewSchemaReady() ? ['agency.storedCard'] : []
+            ))
+            ->chunkById(100, function ($subscriptions) use (&$count, $autoRenewEnabled) {
                 foreach ($subscriptions as $subscription) {
+                    // Otomatik yenileme bu aboneliği zaten çekecekse hatırlatma
+                    // gereksiz (kart var + yenileme açık + bayrak açık).
+                    if ($autoRenewEnabled
+                        && (bool) ($subscription->auto_renew ?? true)
+                        && $subscription->agency?->storedCard !== null) {
+                        continue;
+                    }
+
                     $users = $subscription->agency?->users ?? collect();
                     if ($users->isNotEmpty()) {
                         Notification::send($users, new CategorySubscriptionExpiringNotification($subscription));

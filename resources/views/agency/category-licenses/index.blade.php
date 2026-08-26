@@ -40,7 +40,9 @@
                 <div class="stat-card" style="padding:20px;">
                     <div style="font-size:13px;color:#64748b;font-weight:600;">Faturalama Modeli</div>
                     <div style="font-size:22px;font-weight:800;color:#0f172a;margin-top:6px;">Aylık</div>
-                    <div style="font-size:13px;color:#94a3b8;margin-top:6px;">Kategori bazlı yenileme döngüsü</div>
+                    <div style="font-size:13px;color:#94a3b8;margin-top:6px;">
+                        {{ $autoRenewEnabled ? 'Kayıtlı kartla otomatik yenileme; dilediğinizde iptal' : 'Kategori bazlı yenileme döngüsü' }}
+                    </div>
                 </div>
             </div>
 
@@ -124,6 +126,9 @@
                                             @if($slotSchemaReady && ! $agency->legacy_category_access)
                                                 <th>Ekstra Hak</th>
                                             @endif
+                                            @if($autoRenewEnabled && ! $agency->legacy_category_access)
+                                                <th>Yenileme</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -165,7 +170,46 @@
                                                             <input type="hidden" name="category_id" value="{{ $license->category->id }}">
                                                             <button type="submit" class="btn btn-outline btn-sm" style="white-space:nowrap;">+ Ekstra Hak</button>
                                                         </form>
-                                                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">{{ number_format((float) $license->category->extra_tour_price, 0, ',', '.') }} TL / hak</div>
+                                                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">{{ number_format((float) $license->category->extra_tour_price, 0, ',', '.') }} TL / hak{{ $autoRenewEnabled ? ' / ay' : '' }}</div>
+                                                        @if($autoRenewEnabled && $license->subscription && $license->extra_slots > 0)
+                                                            @if($license->next_extra_slots !== null)
+                                                                <div style="font-size:11px;color:#b45309;margin-top:6px;">Yeni dönem: {{ $license->next_extra_slots }} hak</div>
+                                                                <form method="POST" action="{{ route('agency.category-licenses.subscription.slot-plan', $license->subscription) }}" style="margin-top:2px;">
+                                                                    @csrf
+                                                                    <input type="hidden" name="keep" value="{{ $license->extra_slots }}">
+                                                                    <button type="submit" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;">Azaltmayı geri al</button>
+                                                                </form>
+                                                            @else
+                                                                <form method="POST" action="{{ route('agency.category-licenses.subscription.slot-plan', $license->subscription) }}" style="display:flex;gap:4px;align-items:center;margin-top:6px;">
+                                                                    @csrf
+                                                                    <input type="number" name="keep" min="0" max="{{ $license->extra_slots }}" value="{{ $license->extra_slots }}" style="width:56px;margin:0;padding:4px 6px;font-size:12px;" title="Yeni dönemde kalacak ekstra hak">
+                                                                    <button type="submit" class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;white-space:nowrap;">Azalt</button>
+                                                                </form>
+                                                            @endif
+                                                        @endif
+                                                    </td>
+                                                @endif
+                                                @if($autoRenewEnabled && ! $agency->legacy_category_access)
+                                                    <td>
+                                                        @if($license->subscription === null)
+                                                            <span style="color:#94a3b8;">—</span>
+                                                        @elseif($license->cancelled)
+                                                            <span class="badge" style="background:#fef2f2;color:#991b1b;white-space:nowrap;">İptal edildi</span>
+                                                            <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">{{ $license->expires_at?->format('d.m.Y') }} tarihinde sona erecek, çekim yapılmayacak</div>
+                                                            <form method="POST" action="{{ route('agency.category-licenses.subscription.resume', $license->subscription) }}" style="margin-top:6px;">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-outline btn-sm" style="white-space:nowrap;">Yenilemeyi Aç</button>
+                                                            </form>
+                                                        @else
+                                                            <span class="badge badge-green" style="white-space:nowrap;">Otomatik</span>
+                                                            <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">
+                                                                {{ $storedCard ? 'Yenilemede '.$storedCard->displayLabel().' kullanılır' : 'Kayıtlı kart yok — ödemede saklayın' }}
+                                                            </div>
+                                                            <form method="POST" action="{{ route('agency.category-licenses.subscription.cancel', $license->subscription) }}" style="margin-top:6px;" onsubmit="return confirm('Abonelik iptal edilsin mi? Dönem sonuna kadar kullanmaya devam edersiniz; dönem sonunda otomatik çekim yapılmaz ve turlarınız yayından kalkar.');">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-outline btn-sm" style="color:#b91c1c;border-color:#fecaca;white-space:nowrap;">İptal Et</button>
+                                                            </form>
+                                                        @endif
                                                     </td>
                                                 @endif
                                             </tr>
@@ -204,6 +248,13 @@
                                                 <button type="submit" class="btn btn-outline btn-sm">Kaldır</button>
                                             </form>
                                         </div>
+                                        @if($slotSchemaReady)
+                                            <form method="POST" action="{{ route('agency.category-licenses.cart.add-slot') }}" data-cart-form style="margin-top:8px;">
+                                                @csrf
+                                                <input type="hidden" name="category_id" value="{{ $category->id }}">
+                                                <button type="submit" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;">+ Ekstra tur hakkı ekle ({{ number_format((float) $category->extra_tour_price, 0, ',', '.') }} TL)</button>
+                                            </form>
+                                        @endif
                                     </div>
                                 @endforeach
                                 @foreach($slotCartItems as $slotItem)
@@ -211,7 +262,7 @@
                                         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
                                             <div>
                                                 <div style="font-weight:700;color:#0f172a;">{{ $slotItem->category->name }} — Ekstra Tur Hakkı{{ $slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : '' }}</div>
-                                                <div style="font-size:12px;color:#94a3b8;margin-top:4px;">{{ number_format((float) $slotItem->line_total, 0, ',', '.') }} TL (tek seferlik)</div>
+                                                <div style="font-size:12px;color:#94a3b8;margin-top:4px;">{{ number_format((float) $slotItem->line_total, 0, ',', '.') }} {{ $autoRenewEnabled ? 'TL / ay' : 'TL (tek seferlik)' }}</div>
                                             </div>
                                             <form method="POST" action="{{ route('agency.category-licenses.cart.remove-slot', $slotItem->category) }}" data-cart-form>
                                                 @csrf
@@ -228,13 +279,42 @@
                                     <span>İlk dönem toplamı</span>
                                     <strong data-cart-total style="font-size:20px;color:#0f172a;">{{ number_format($cartTotal, 0, ',', '.') }} TL</strong>
                                 </div>
-                                <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Satın alım sonrası kategoriler 1 aylık aktif edilir; ekstra tur hakları aboneliğinize anında tanımlanır ve abonelik sürdükçe geçerlidir.</div>
+                                <div style="font-size:12px;color:#94a3b8;margin-top:8px;">
+                                    @if($autoRenewEnabled)
+                                        Satın alım sonrası kategoriler 1 aylık aktif edilir; ekstra tur hakları aboneliğinize anında tanımlanır ve abonelikle birlikte her ay yenilenip ücretlendirilir.
+                                    @else
+                                        Satın alım sonrası kategoriler 1 aylık aktif edilir; ekstra tur hakları aboneliğinize anında tanımlanır ve abonelik sürdükçe geçerlidir.
+                                    @endif
+                                </div>
                                 <a href="{{ route('agency.category-licenses.checkout-form') }}" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;">
                                     Ödemeye Geç
                                 </a>
                             </div>
                         </div>
                     </div>
+
+                    @if($autoRenewEnabled && ! $agency->legacy_category_access)
+                        <div class="stat-card" style="padding:24px;">
+                            <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:14px;">Otomatik Yenileme Kartı</h2>
+                            @if($storedCard)
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;">
+                                    <div>
+                                        <div style="font-weight:700;color:#0f172a;">💳 {{ $storedCard->displayLabel() }}</div>
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Abonelik yenilemelerinde bu kart kullanılır</div>
+                                    </div>
+                                    <form method="POST" action="{{ route('agency.category-licenses.stored-card.delete') }}" onsubmit="return confirm('Kayıtlı kart silinsin mi? Kart olmadan abonelikler otomatik yenilenemez.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline btn-sm">Kartı Sil</button>
+                                    </form>
+                                </div>
+                            @else
+                                <div style="padding:16px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#475569;font-size:13px;line-height:1.6;">
+                                    Kayıtlı kartınız yok. Bir sonraki ödemede iyzico formundaki <strong>"Kartımı sakla"</strong> seçeneğini işaretlerseniz abonelikleriniz her ay otomatik yenilenir; dilediğinizde iptal edebilirsiniz.
+                                </div>
+                            @endif
+                        </div>
+                    @endif
 
                     <div class="stat-card" style="padding:24px;">
                         <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:18px;">Son Satın Alımlar</h2>
@@ -302,6 +382,14 @@
     }
 
     function cartItemHtml(item) {
+        // Lisans kalemine "birlikte hak al" mini formu (slot kalemlerinde yok)
+        const slotForm = item.type === 'license' && item.slot_add_url ? `
+                <form method="POST" action="${esc(item.slot_add_url)}" data-cart-form style="margin-top:8px;">
+                    <input type="hidden" name="_token" value="${esc(csrfToken)}">
+                    <input type="hidden" name="category_id" value="${esc(item.id)}">
+                    <button type="submit" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;">+ Ekstra tur hakkı ekle (${esc(item.slot_price_label)} TL)</button>
+                </form>` : '';
+
         return `
             <div data-cart-item="${esc(item.key)}" style="border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
@@ -314,7 +402,7 @@
                         <input type="hidden" name="_method" value="DELETE">
                         <button type="submit" class="btn btn-outline btn-sm">Kaldır</button>
                     </form>
-                </div>
+                </div>${slotForm}
             </div>`;
     }
 

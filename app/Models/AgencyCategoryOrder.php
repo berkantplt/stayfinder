@@ -35,6 +35,7 @@ class AgencyCategoryOrder extends Model
         'currency',
         'status',
         'payment_provider',
+        'auto_renewal',
         'provider_token',
         'provider_payment_id',
         'buyer_type',
@@ -46,6 +47,7 @@ class AgencyCategoryOrder extends Model
 
     protected $casts = [
         'subtotal' => 'decimal:2',
+        'auto_renewal' => 'boolean',
         'purchased_at' => 'datetime',
         'paid_at' => 'datetime',
         // TC kimlik dahil kişisel veri — at-rest şifreli (APP_KEY'e bağlı)

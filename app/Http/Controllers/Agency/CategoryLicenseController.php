@@ -59,6 +59,8 @@ class CategoryLicenseController extends Controller
         $cartCategoryIds = $cartItems->pluck('id');
         $slotCartItems = $this->resolveSlotCartFor($agency);
         $slotSchemaReady = CategoryLicensing::slotSchemaReady();
+        $autoRenewEnabled = CategoryLicensing::autoRenewEnabled();
+        $storedCard = $autoRenewEnabled ? $agency->storedCard : null;
 
         // Kategori başına kullanılan tur hakkı (aktif+pasif tüm turlar sayılır)
         $usedSlotsByCategory = $agency->tours()
@@ -70,6 +72,7 @@ class CategoryLicenseController extends Controller
         $licensedCategories = $agency->legacy_category_access
             ? $categories->map(function (Category $category) use ($agency, $usedSlotsByCategory) {
                 return (object) [
+                    'subscription' => null,
                     'category' => $category,
                     'monthly_price' => $category->monthly_price,
                     'started_at' => $agency->created_at,
@@ -78,14 +81,17 @@ class CategoryLicenseController extends Controller
                     'tour_limit' => null, // legacy = limitsiz
                     'used_slots' => (int) ($usedSlotsByCategory[$category->id] ?? 0),
                     'extra_slots' => 0,
+                    'cancelled' => false,
+                    'next_extra_slots' => null,
                 ];
             })
             : $agency->activeCategorySubscriptions()
                 ->with('category.parent')
                 ->orderBy('expires_at')
                 ->get()
-                ->map(function (AgencyCategorySubscription $subscription) use ($usedSlotsByCategory, $slotSchemaReady) {
+                ->map(function (AgencyCategorySubscription $subscription) use ($usedSlotsByCategory, $slotSchemaReady, $autoRenewEnabled) {
                     return (object) [
+                        'subscription' => $subscription,
                         'category' => $subscription->category,
                         'monthly_price' => $subscription->monthly_price,
                         'started_at' => $subscription->started_at,
@@ -96,6 +102,8 @@ class CategoryLicenseController extends Controller
                             : null,
                         'used_slots' => (int) ($usedSlotsByCategory[$subscription->category_id] ?? 0),
                         'extra_slots' => $slotSchemaReady ? (int) $subscription->extra_tour_slots : 0,
+                        'cancelled' => $autoRenewEnabled && $subscription->isCancelled(),
+                        'next_extra_slots' => $autoRenewEnabled ? $subscription->next_extra_tour_slots : null,
                     ];
                 });
 
@@ -115,6 +123,8 @@ class CategoryLicenseController extends Controller
             'cartCategoryIds',
             'slotCartItems',
             'slotSchemaReady',
+            'autoRenewEnabled',
+            'storedCard',
             'cartTotal',
             'licensedCategories',
             'recentOrders'
@@ -203,12 +213,14 @@ class CategoryLicenseController extends Controller
             ->whereNotNull('parent_id')
             ->findOrFail((int) $validated['category_id']);
 
+        // Aktif abonelik VEYA aynı satın almada alınan kategori (sepette) —
+        // ikisi de yoksa hak bağlanacak abonelik olmaz, ödeme boşa gider.
         $hasActiveSubscription = $agency->activeCategorySubscriptions()
             ->where('category_id', $category->id)
             ->exists();
 
-        if (! $hasActiveSubscription) {
-            return $this->cartError($request, 'Ekstra tur hakkı için önce '.$category->name.' kategorisinde aktif aboneliğiniz olmalı.');
+        if (! $hasActiveSubscription && ! $this->cartCategoryIds()->contains($category->id)) {
+            return $this->cartError($request, 'Ekstra tur hakkı için '.$category->name.' kategorisinde aktif aboneliğiniz olmalı veya kategori sepetinizde olmalı.');
         }
 
         $slotCart = $this->slotCartQuantities();
@@ -235,6 +247,140 @@ class CategoryLicenseController extends Controller
         session([self::SLOT_CART_SESSION_KEY => $slotCart]);
 
         return $this->cartSuccess($request, $this->currentAgency(), $category->name.' ekstra tur hakkı sepetten çıkarıldı.');
+    }
+
+    /**
+     * Abonelik iptali: dönem sonuna kadar kullanım SÜRER, dönem sonunda
+     * otomatik çekim yapılmaz. Turlar dönem bitene kadar yayında kalır.
+     */
+    public function cancelSubscription(AgencyCategorySubscription $subscription)
+    {
+        if ($redirect = $this->guardAutoRenewSchema()) {
+            return $redirect;
+        }
+
+        $agency = $this->currentAgency();
+        abort_unless($subscription->agency_id === $agency->id, 403);
+
+        if (! $subscription->is_active) {
+            return back()->withErrors('Yalnızca aktif abonelikler iptal edilebilir.');
+        }
+
+        $subscription->update([
+            'auto_renew' => false,
+            'cancelled_at' => now(),
+        ]);
+
+        $categoryName = $subscription->category?->name ?? 'Kategori';
+
+        return back()->with('success', $categoryName.' aboneliği iptal edildi. '.$subscription->expires_at?->format('d.m.Y').' tarihine kadar kullanmaya devam edebilirsiniz; kartınızdan otomatik çekim yapılmayacak.');
+    }
+
+    /** İptalden vazgeç: dönem bitmeden yenilemeyi tekrar açar. */
+    public function resumeSubscription(AgencyCategorySubscription $subscription)
+    {
+        if ($redirect = $this->guardAutoRenewSchema()) {
+            return $redirect;
+        }
+
+        $agency = $this->currentAgency();
+        abort_unless($subscription->agency_id === $agency->id, 403);
+
+        if (! $subscription->is_active) {
+            return back()->withErrors('Süresi dolmuş abonelik için yenileme açılamaz; kategoriyi yeniden satın alın.');
+        }
+
+        $subscription->update([
+            'auto_renew' => true,
+            'cancelled_at' => null,
+        ]);
+
+        $categoryName = $subscription->category?->name ?? 'Kategori';
+
+        // Son gün açılan yenileme sabahki çekim koşusunu kaçırmış olabilir —
+        // kullanıcıyı "açıldı" mesajıyla yanıltıp aboneliği sessizce
+        // düşürmemek için manuel yenilemeye yönlendir.
+        if ($subscription->expires_at !== null && $subscription->expires_at->lessThanOrEqualTo(today())) {
+            return back()->with('success', $categoryName.' aboneliğinde otomatik yenileme tekrar açıldı. Ancak abonelik BUGÜN sona eriyor ve günün otomatik çekim saati geçmiş olabilir — süre kaybetmemek için kategoriyi sepetten manuel yenilemenizi öneririz.');
+        }
+
+        return back()->with('success', $categoryName.' aboneliğinde otomatik yenileme tekrar açıldı.');
+    }
+
+    /**
+     * Ekstra hak azaltma planı: mevcut dönemde haklar korunur, yeni dönem
+     * `keep` hak ile (ve o tutarla) yenilenir. keep = mevcut → plan iptali.
+     */
+    public function planSlotReduction(Request $request, AgencyCategorySubscription $subscription)
+    {
+        if ($redirect = $this->guardAutoRenewSchema()) {
+            return $redirect;
+        }
+
+        $agency = $this->currentAgency();
+        abort_unless($subscription->agency_id === $agency->id, 403);
+
+        if (! $subscription->is_active) {
+            return back()->withErrors('Yalnızca aktif aboneliklerde ekstra hak planı değiştirilebilir.');
+        }
+
+        $currentSlots = (int) $subscription->extra_tour_slots;
+
+        $validated = $request->validate([
+            'keep' => 'required|integer|min:0|max:'.$currentSlots,
+        ], [
+            'keep.max' => 'Ekstra hak artırımı satın almayla yapılır; buradan yalnızca azaltabilirsiniz.',
+        ]);
+
+        $keep = (int) $validated['keep'];
+        $subscription->update([
+            'next_extra_tour_slots' => $keep === $currentSlots ? null : $keep,
+        ]);
+
+        $categoryName = $subscription->category?->name ?? 'Kategori';
+
+        return back()->with('success', $keep === $currentSlots
+            ? $categoryName.' için ekstra hak azaltma planı kaldırıldı.'
+            : $categoryName.' için yeni dönemde '.$keep.' ekstra hak kalacak (mevcut dönemde '.$currentSlots.' hakkınız sürüyor).');
+    }
+
+    /** Kayıtlı kartı hem iyzico'dan hem yerelden siler (otomatik yenileme durur). */
+    public function deleteStoredCard()
+    {
+        if ($redirect = $this->guardAutoRenewSchema()) {
+            return $redirect;
+        }
+
+        $agency = $this->currentAgency();
+        $storedCard = $agency->storedCard;
+
+        if (! $storedCard) {
+            return back()->withErrors('Kayıtlı kart bulunamadı.');
+        }
+
+        try {
+            $this->iyzico->deleteStoredCard((string) $storedCard->card_user_key, (string) $storedCard->card_token);
+        } catch (Throwable $e) {
+            // Uzak silme başarısız olsa da yerel kaydı bırakmak işe yaramaz —
+            // token'sız çekim yapılamaz; loglayıp yerelden siliyoruz.
+            Log::warning('iyzico kart silme başarısız (yerel kayıt yine de silindi)', [
+                'agency_id' => $agency->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        $storedCard->delete();
+
+        return back()->with('success', 'Kayıtlı kartınız silindi. Otomatik yenileme için bir sonraki ödemede kartınızı yeniden saklayabilirsiniz.');
+    }
+
+    private function guardAutoRenewSchema()
+    {
+        if (! CategoryLicensing::autoRenewSchemaReady()) {
+            return back()->withErrors('Otomatik yenileme altyapısı henüz veritabanına uygulanmamış.');
+        }
+
+        return null;
     }
 
     public function checkoutForm(Request $request)
@@ -269,6 +415,7 @@ class CategoryLicenseController extends Controller
             'slotCartItems' => $slotCartItems,
             'cartTotal' => $cartTotal,
             'iyzicoConfigured' => $this->iyzico->isConfigured(),
+            'autoRenewEnabled' => CategoryLicensing::autoRenewEnabled(),
         ]);
     }
 
@@ -366,12 +513,19 @@ class CategoryLicenseController extends Controller
 
             $callbackUrl = route('agency.category-licenses.iyzico.callback', ['order' => $order->id]);
 
+            // Otomatik yenileme açıkken kayıtlı kart anahtarı iletilir: iyzico
+            // formu saklı kartları listeler, yeni kart saklamayı da formda sorar.
+            $cardUserKey = CategoryLicensing::autoRenewEnabled()
+                ? $agency->storedCard?->card_user_key
+                : null;
+
             $response = $this->iyzico->initializeCheckoutForm(
                 $order,
                 $basketItems,
                 $buyer,
                 $callbackUrl,
-                $request->ip() ?? '127.0.0.1'
+                $request->ip() ?? '127.0.0.1',
+                $cardUserKey
             );
 
             $order->update([
@@ -534,6 +688,11 @@ class CategoryLicenseController extends Controller
         $total = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price)
             + $slotItems->sum('line_total');
 
+        $slotSchemaReady = CategoryLicensing::slotSchemaReady();
+        // Otomatik yenileme açıkken ekstra hak AYLIK ücretlendirilir — etiket
+        // "tek seferlik" derse yanıltıcı fiyat beyanı olur.
+        $slotPriceSuffix = CategoryLicensing::autoRenewEnabled() ? ' TL / ay' : ' TL (tek seferlik)';
+
         $items = $cartCategories
             ->map(fn (Category $category) => [
                 'key' => 'license-'.$category->id,
@@ -542,13 +701,16 @@ class CategoryLicenseController extends Controller
                 'name' => trim(($category->icon ? $category->icon.' ' : '').$category->name),
                 'price_label' => number_format((float) $category->monthly_price, 0, ',', '.').' TL / ay',
                 'remove_url' => route('agency.category-licenses.cart.remove', $category),
-            ])
+            ] + ($slotSchemaReady ? [
+                'slot_add_url' => route('agency.category-licenses.cart.add-slot'),
+                'slot_price_label' => number_format((float) $category->extra_tour_price, 0, ',', '.'),
+            ] : []))
             ->concat($slotItems->map(fn ($slotItem) => [
                 'key' => 'slot-'.$slotItem->category->id,
                 'type' => 'extra_slot',
                 'id' => $slotItem->category->id,
                 'name' => $slotItem->category->name.' — Ekstra Tur Hakkı'.($slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : ''),
-                'price_label' => number_format((float) $slotItem->line_total, 0, ',', '.').' TL (tek seferlik)',
+                'price_label' => number_format((float) $slotItem->line_total, 0, ',', '.').$slotPriceSuffix,
                 'remove_url' => route('agency.category-licenses.cart.remove-slot', $slotItem->category),
             ]))
             ->values();
@@ -624,14 +786,19 @@ class CategoryLicenseController extends Controller
             return collect();
         }
 
-        $subscribedCategoryIds = $agency->activeCategorySubscriptions()
+        // Aktif abonelik VEYA aynı sepette alınan kategori için hak alınabilir
+        // (yeni acenta kategori+hakları tek ödemede alabilsin; süresi dolan da
+        // yenilerken haklarını yeniden ekleyebilsin).
+        $allowedCategoryIds = $agency->activeCategorySubscriptions()
             ->pluck('category_id')
             ->map(fn ($id) => (int) $id)
+            ->merge($this->cartCategoryIds())
+            ->unique()
             ->all();
 
         return Category::active()
             ->whereIn('id', array_keys($quantities))
-            ->whereIn('id', $subscribedCategoryIds)
+            ->whereIn('id', $allowedCategoryIds)
             ->whereNotNull('parent_id')
             ->orderBy('sort_order')
             ->orderBy('name')

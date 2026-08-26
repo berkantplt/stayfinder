@@ -275,6 +275,10 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         Route::delete('/kategori-yetkilendirme/sepet/{category}', [AgencyCategoryLicenseController::class, 'removeFromCart'])->name('category-licenses.cart.remove');
         Route::post('/kategori-yetkilendirme/sepet-ekstra-tur-hakki', [AgencyCategoryLicenseController::class, 'addSlotToCart'])->name('category-licenses.cart.add-slot');
         Route::delete('/kategori-yetkilendirme/sepet-ekstra-tur-hakki/{category}', [AgencyCategoryLicenseController::class, 'removeSlotFromCart'])->name('category-licenses.cart.remove-slot');
+        Route::post('/kategori-yetkilendirme/abonelik/{subscription}/iptal', [AgencyCategoryLicenseController::class, 'cancelSubscription'])->name('category-licenses.subscription.cancel');
+        Route::post('/kategori-yetkilendirme/abonelik/{subscription}/yenilemeyi-ac', [AgencyCategoryLicenseController::class, 'resumeSubscription'])->name('category-licenses.subscription.resume');
+        Route::post('/kategori-yetkilendirme/abonelik/{subscription}/ekstra-hak-plani', [AgencyCategoryLicenseController::class, 'planSlotReduction'])->name('category-licenses.subscription.slot-plan');
+        Route::delete('/kategori-yetkilendirme/kayitli-kart', [AgencyCategoryLicenseController::class, 'deleteStoredCard'])->name('category-licenses.stored-card.delete');
         Route::get('/kategori-yetkilendirme/odeme', [AgencyCategoryLicenseController::class, 'checkoutForm'])->name('category-licenses.checkout-form');
         Route::post('/kategori-yetkilendirme/odeme', [AgencyCategoryLicenseController::class, 'initiatePayment'])->name('category-licenses.initiate-payment');
         Route::get('/kategori-yetkilendirme/odeme/{order}/sonuc', [AgencyCategoryLicenseController::class, 'paymentResult'])->name('category-licenses.payment.result');
