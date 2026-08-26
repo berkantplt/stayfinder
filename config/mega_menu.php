@@ -13,12 +13,13 @@
 | yok. Bu yüzden en üstteki gruplama buradan gelir: 13 başlığı tek şeride
 | dizmek üç satıra sarıyordu ve dallanma hissi vermiyordu.
 |
-| KURAL: burada listelenmeyen ana kategori KAYBOLMAZ — MegaMenu onları otomatik
-| olarak son bir "Diğer Turlar" kovasına koyar. Admin yeni bir ana kategori
-| açtığında menüde görünmeye devam eder; buraya eklemek yalnız hangi kovaya
-| gireceğini seçmek içindir. (Menü ile filtre barı aynı listeyi göstermek
-| zorunda; bir kategoriyi menüden gizlemek kullanıcıyı ikisi arasında
-| çelişkiye düşürür.)
+| KURAL: burada listelenmeyen ana kategori KAYBOLMAZ — MegaMenu onları üst
+| şeritte KENDİ başlıkları olarak gösterir (kategori adı + kendi ikonu, tek
+| dallı kova). Admin yeni bir ana kategori açtığında menüde görünmeye devam
+| eder; buraya eklemek yalnız birden çok kategoriyi ortak bir kova başlığında
+| gruplamak içindir. (Menü ile filtre barı aynı listeyi göstermek zorunda;
+| bir kategoriyi menüden gizlemek kullanıcıyı ikisi arasında çelişkiye
+| düşürür.)
 |
 | İkon: kova başlığının yanındaki emoji. Kategorilerin kendi ikonları
 | veritabanından gelir, buraya yazılmaz.
@@ -57,12 +58,5 @@ return [
             'icon' => '💕',
             'categories' => ['balayi-romantik', 'gastronomi-lezzet', 'festival-etkinlik', 'aile-cocuk'],
         ],
-    ],
-
-    /* Hiçbir kovaya girmeyen ana kategorilerin toplandığı kova. */
-    'fallback' => [
-        'key' => 'diger',
-        'label' => 'Diğer Turlar',
-        'icon' => '🧭',
     ],
 ];

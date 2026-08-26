@@ -12,10 +12,11 @@ use Illuminate\Support\Facades\Cache;
  *     üst şerit (kova) → sol ray (ana kategori) → orta sütun (alt kategoriler)
  *
  * Kategori ağacı iki seviye olduğu için en üstteki gruplama config/mega_menu.php
- * dosyasından gelir; kovaya yazılmamış ana kategori "Diğer Turlar" kovasına
- * düşer, yani HİÇBİR kategori menüden kaybolmaz. Turu olmayan kategori de
- * görünür — menü ile filtre barındaki "Kategoriler" paneli aynı listeyi
- * göstermek zorunda, yoksa kullanıcı hangisinin doğru olduğunu bilemez.
+ * dosyasından gelir; kovaya yazılmamış her ana kategori üst şeritte KENDİ
+ * başlığı olarak görünür (tek dallı kova), yani HİÇBİR kategori menüden
+ * kaybolmaz. Turu olmayan kategori de görünür — menü ile filtre barındaki
+ * "Kategoriler" paneli aynı listeyi göstermek zorunda, yoksa kullanıcı
+ * hangisinin doğru olduğunu bilemez.
  *
  * Linkler düz landing adresleridir (/kultur-turlari), query string DEĞİL:
  * tek facet'li query adresi zaten TourController tarafından 301 ile oraya
@@ -31,7 +32,7 @@ class MegaMenu
      * Aksi halde deploy sonrası eski biçimdeki önbellek okunur ve şablon
      * "Undefined array key" ile 500 verir (bir kez yaşandı).
      */
-    public const CACHE_KEY = 'home_mega_menu_v4';
+    public const CACHE_KEY = 'home_mega_menu_v5';
 
     public static function forget(): void
     {
@@ -81,14 +82,15 @@ class MegaMenu
                 ];
             }
 
-            // Kovaya yazılmamış ana kategoriler kaybolmasın
-            if ($kalanlar !== []) {
-                $yedek = config('mega_menu.fallback', []);
+            // Kovaya yazılmamış ana kategoriler kaybolmasın: ortak bir "Diğer
+            // Turlar" çatısına gömmek yerine her biri üst şeritte kendi başlığı
+            // olur; üzerine gelince yalnız kendi alt kategori ağacı açılır.
+            foreach ($kalanlar as $dal) {
                 $kovalar[] = [
-                    'key' => $yedek['key'] ?? 'diger',
-                    'label' => $yedek['label'] ?? 'Diğer Turlar',
-                    'icon' => $yedek['icon'] ?? '',
-                    'rail' => array_map(self::rayOgesi(...), array_values($kalanlar)),
+                    'key' => $dal['slug'],
+                    'label' => $dal['name'],
+                    'icon' => $dal['icon'] ?? '',
+                    'rail' => [self::rayOgesi($dal)],
                 ];
             }
 

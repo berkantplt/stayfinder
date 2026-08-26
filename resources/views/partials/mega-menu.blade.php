@@ -24,7 +24,11 @@
                 </button>
 
                 <div class="mega-panel">
-                    {{-- Sol ray: ana kategoriler --}}
+                    {{-- Sol ray: ana kategoriler. Tek dallı kovada (kovaya
+                         yazılmamış, kendi başlığıyla açılan ana kategori) ray
+                         tek kartlık bir tekrar olurdu: atlanır, ağaç panelin
+                         tamamını kullanır. --}}
+                    @if(count($kova['rail']) > 1)
                     <div class="mega-rail">
                         @foreach($kova['rail'] as $i => $dal)
                             <a class="mega-card {{ $i === 0 ? 'on' : '' }}"
@@ -37,6 +41,7 @@
                             </a>
                         @endforeach
                     </div>
+                    @endif
 
                     {{-- Orta sütun: seçili dalın alt kategorileri --}}
                     <div class="mega-content">
