@@ -262,6 +262,32 @@
                                 @endforeach
                             @endforeach
                         </select>
+                        @if(!empty($categorySlotUsage))
+                            <div id="categorySlotHint" style="display:none;font-size:12px;font-weight:600;margin-top:6px;"></div>
+                            <script>
+                            (function () {
+                                const usage = @json($categorySlotUsage);
+                                const currentCategoryId = '{{ (int) $tour->category_id }}';
+                                const select = document.querySelector('select[name="category_id"]');
+                                const hint = document.getElementById('categorySlotHint');
+                                if (!select || !hint) return;
+                                function render() {
+                                    const info = usage[select.value];
+                                    if (!info) { hint.style.display = 'none'; return; }
+                                    // Turun mevcut kategorisi seçiliyken kendisi hak tüketmiş sayılmaz
+                                    const used = info.used - (select.value === currentCategoryId ? 1 : 0);
+                                    const remaining = Math.max(0, info.limit - used);
+                                    hint.textContent = remaining === 0
+                                        ? 'Bu kategorideki tur ekleme hakkınız doldu (' + used + '/' + info.limit + ') — turu buraya taşımak için ekstra tur hakkı satın almalısınız.'
+                                        : 'Bu kategorideki tur hakkınız: ' + used + '/' + info.limit + ' (' + remaining + ' hak kaldı)';
+                                    hint.style.color = remaining === 0 ? '#dc2626' : 'var(--text-muted)';
+                                    hint.style.display = '';
+                                }
+                                select.addEventListener('change', render);
+                                render();
+                            })();
+                            </script>
+                        @endif
                     </div>
                     <div class="form-row form-row-3">
                         <div class="form-group"><label>Destinasyon *</label><input type="text" name="destination" value="{{ old('destination', $tour->destination) }}" required></div>

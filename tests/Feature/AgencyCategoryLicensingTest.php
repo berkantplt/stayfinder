@@ -369,7 +369,7 @@ class AgencyCategoryLicensingTest extends TestCase
                 'ok' => true,
                 'count' => 1,
                 'total_label' => '2.000',
-                'items' => [['id' => $category->id, 'name' => 'Kültür Turları', 'price_label' => '2.000']],
+                'items' => [['key' => 'license-'.$category->id, 'type' => 'license', 'id' => $category->id, 'name' => 'Kültür Turları', 'price_label' => '2.000 TL / ay']],
             ]);
 
         $this->assertSame([$category->id], session('agency_category_license_cart', []));

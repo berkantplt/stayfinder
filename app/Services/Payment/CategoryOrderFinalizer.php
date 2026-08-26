@@ -4,6 +4,7 @@ namespace App\Services\Payment;
 
 use App\Models\AgencyCategoryOrder;
 use App\Models\AgencyCategorySubscription;
+use App\Support\CategoryLicensing;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Iyzipay\Model\CheckoutForm;
@@ -39,8 +40,14 @@ class CategoryOrderFinalizer
             ]);
 
             $items = $order->items()->with('category')->get();
+            $slotSchemaReady = CategoryLicensing::slotSchemaReady();
 
-            foreach ($items as $item) {
+            // Lisans kalemleri ÖNCE işlenir: aynı siparişte lapse yenilemesi +
+            // ekstra hak varsa önce dönem sıfırdan başlar, sonra haklar eklenir.
+            $licenseItems = $items->reject(fn ($item) => $item->isExtraSlot());
+            $slotItems = $slotSchemaReady ? $items->filter(fn ($item) => $item->isExtraSlot()) : collect();
+
+            foreach ($licenseItems as $item) {
                 if (! $item->category_id) {
                     continue;
                 }
@@ -82,6 +89,12 @@ class CategoryOrderFinalizer
                     'renewal_reminder_sent_at' => null,
                 ];
 
+                // Ekstra tur hakları abonelik KESİNTİSİZ sürdükçe geçerli:
+                // dönem lapse sonrası sıfırdan başlıyorsa eski haklar yanar.
+                if ($slotSchemaReady && ! $extends) {
+                    $values['extra_tour_slots'] = 0;
+                }
+
                 if ($subscription) {
                     $subscription->update($values);
                 } else {
@@ -90,6 +103,37 @@ class CategoryOrderFinalizer
                         'category_id' => $item->category_id,
                     ]);
                 }
+            }
+
+            // Ekstra tur hakları: satır başına +1 hak, ilgili aboneliğe yazılır.
+            foreach ($slotItems->groupBy('category_id') as $categoryId => $group) {
+                if (! $categoryId) {
+                    continue;
+                }
+
+                $subscription = AgencyCategorySubscription::query()
+                    ->where('agency_id', $order->agency_id)
+                    ->where('category_id', $categoryId)
+                    ->lockForUpdate()
+                    ->first();
+
+                // Sepete eklerken aktif abonelik şartı var; yine de ödeme ile
+                // finalize arasında abonelik silinmiş olabilir — para çekildi,
+                // admin manuel telafi için uyarılır.
+                if (! $subscription) {
+                    Log::warning('iyzico finalize: aboneliği olmayan kategoriye ekstra tur hakkı ödendi — manuel inceleme gerekli', [
+                        'order_id' => $order->id,
+                        'agency_id' => $order->agency_id,
+                        'category_id' => $categoryId,
+                        'slot_count' => $group->count(),
+                    ]);
+
+                    continue;
+                }
+
+                $subscription->update([
+                    'extra_tour_slots' => (int) $subscription->extra_tour_slots + $group->count(),
+                ]);
             }
         });
     }

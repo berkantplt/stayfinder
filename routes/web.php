@@ -273,6 +273,8 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         Route::get('/kategori-yetkilendirme', [AgencyCategoryLicenseController::class, 'index'])->name('category-licenses.index');
         Route::post('/kategori-yetkilendirme/sepet', [AgencyCategoryLicenseController::class, 'addToCart'])->name('category-licenses.cart.add');
         Route::delete('/kategori-yetkilendirme/sepet/{category}', [AgencyCategoryLicenseController::class, 'removeFromCart'])->name('category-licenses.cart.remove');
+        Route::post('/kategori-yetkilendirme/sepet-ekstra-tur-hakki', [AgencyCategoryLicenseController::class, 'addSlotToCart'])->name('category-licenses.cart.add-slot');
+        Route::delete('/kategori-yetkilendirme/sepet-ekstra-tur-hakki/{category}', [AgencyCategoryLicenseController::class, 'removeSlotFromCart'])->name('category-licenses.cart.remove-slot');
         Route::get('/kategori-yetkilendirme/odeme', [AgencyCategoryLicenseController::class, 'checkoutForm'])->name('category-licenses.checkout-form');
         Route::post('/kategori-yetkilendirme/odeme', [AgencyCategoryLicenseController::class, 'initiatePayment'])->name('category-licenses.initiate-payment');
         Route::get('/kategori-yetkilendirme/odeme/{order}/sonuc', [AgencyCategoryLicenseController::class, 'paymentResult'])->name('category-licenses.payment.result');

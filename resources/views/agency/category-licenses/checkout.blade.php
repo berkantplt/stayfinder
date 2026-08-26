@@ -114,16 +114,22 @@
                     <div style="display:flex;flex-direction:column;gap:10px;">
                         @foreach($cartCategories as $category)
                             <div style="display:flex;justify-content:space-between;font-size:14px;color:#334155;">
-                                <span>{{ $category->name }}</span>
+                                <span>{{ $category->name }} <span style="color:#94a3b8;font-size:12px;">(aylık)</span></span>
                                 <strong>{{ number_format((float) $category->monthly_price, 0, ',', '.') }} TL</strong>
+                            </div>
+                        @endforeach
+                        @foreach($slotCartItems as $slotItem)
+                            <div style="display:flex;justify-content:space-between;font-size:14px;color:#334155;">
+                                <span>{{ $slotItem->category->name }} — Ekstra Tur Hakkı{{ $slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : '' }} <span style="color:#94a3b8;font-size:12px;">(tek seferlik)</span></span>
+                                <strong>{{ number_format((float) $slotItem->line_total, 0, ',', '.') }} TL</strong>
                             </div>
                         @endforeach
                     </div>
                     <div style="border-top:1px solid #e2e8f0;margin-top:16px;padding-top:16px;display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:14px;color:#475569;">Aylık toplam</span>
+                        <span style="font-size:14px;color:#475569;">Toplam</span>
                         <strong style="font-size:22px;color:#0f172a;">{{ number_format((float) $cartTotal, 0, ',', '.') }} TL</strong>
                     </div>
-                    <div style="font-size:12px;color:#94a3b8;margin-top:10px;">Ödeme onaylandıktan sonra kategoriler 1 ay aktive edilir.</div>
+                    <div style="font-size:12px;color:#94a3b8;margin-top:10px;">Ödeme onaylandıktan sonra kategoriler 1 ay aktive edilir; ekstra tur hakları aboneliğinize anında tanımlanır.</div>
                 </div>
             </div>
         </div>

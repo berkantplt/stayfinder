@@ -30,6 +30,7 @@ class CategoryController extends Controller
             ->get();
         $parentCategories = Category::parents()->orderBy('sort_order')->orderBy('name')->get();
         $categoryLicensingReady = CategoryLicensing::schemaReady();
+        $extraSlotReady = CategoryLicensing::slotSchemaReady();
 
         // Üst kategori başına "sonraki sıra no" = mevcut en yüksek alt kategori sırası + 1
         // (alt kategorisi olmayan üst kategoriler haritada yer almaz → JS varsayılanı 1)
@@ -40,7 +41,7 @@ class CategoryController extends Controller
             ->pluck('max_sort', 'parent_id')
             ->map(fn ($max) => (int) $max + 1);
 
-        return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady', 'nextSortByParent'));
+        return view('admin.categories.index', compact('categories', 'parentCategories', 'categoryLicensingReady', 'extraSlotReady', 'nextSortByParent'));
     }
 
     /**
@@ -76,12 +77,20 @@ class CategoryController extends Controller
             $rules['monthly_price'] = 'required|numeric|min:0';
         }
 
+        if (CategoryLicensing::slotSchemaReady()) {
+            $rules['extra_tour_price'] = 'required|numeric|min:0';
+        }
+
         $validated = $request->validate($rules);
 
         $validated['slug'] = Str::slug($validated['name']);
         $validated['monthly_price'] = CategoryLicensing::schemaReady()
             ? round((float) $validated['monthly_price'], 2)
             : 0;
+
+        if (CategoryLicensing::slotSchemaReady()) {
+            $validated['extra_tour_price'] = round((float) $validated['extra_tour_price'], 2);
+        }
 
         Category::create($validated);
 
@@ -104,6 +113,10 @@ class CategoryController extends Controller
         $validated['slug'] = Str::slug($validated['name']);
         $validated['parent_id'] = null;
         $validated['monthly_price'] = 0; // üst kategoriler fiyatsız (sadece gruplama)
+
+        if (CategoryLicensing::slotSchemaReady()) {
+            $validated['extra_tour_price'] = 0;
+        }
 
         Category::create($validated);
 
@@ -128,10 +141,18 @@ class CategoryController extends Controller
             $rules['monthly_price'] = 'required|numeric|min:0';
         }
 
+        if (CategoryLicensing::slotSchemaReady() && $isChild) {
+            $rules['extra_tour_price'] = 'required|numeric|min:0';
+        }
+
         $validated = $request->validate($rules);
 
         $validated['slug'] = Str::slug($validated['name']);
         $validated['monthly_price'] = $isChild ? round((float) $request->input('monthly_price', 0), 2) : 0;
+
+        if (CategoryLicensing::slotSchemaReady()) {
+            $validated['extra_tour_price'] = $isChild ? round((float) $request->input('extra_tour_price', 0), 2) : 0;
+        }
 
         $category->update($validated);
 

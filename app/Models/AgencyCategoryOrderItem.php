@@ -10,10 +10,15 @@ class AgencyCategoryOrderItem extends Model
 {
     use HasFactory;
 
+    public const TYPE_LICENSE = 'license';
+
+    public const TYPE_EXTRA_SLOT = 'extra_slot';
+
     protected $fillable = [
         'order_id',
         'category_id',
         'category_name',
+        'item_type',
         'unit_price',
         'billing_cycle',
     ];
@@ -30,5 +35,11 @@ class AgencyCategoryOrderItem extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function isExtraSlot(): bool
+    {
+        // Slot şeması yoksa kolon gelmez → null → false (eski davranış korunur)
+        return ($this->item_type ?? self::TYPE_LICENSE) === self::TYPE_EXTRA_SLOT;
     }
 }

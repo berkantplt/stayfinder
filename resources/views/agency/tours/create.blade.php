@@ -262,6 +262,29 @@
                                 @endforeach
                             @endforeach
                         </select>
+                        @if(!empty($categorySlotUsage))
+                            <div id="categorySlotHint" style="display:none;font-size:12px;font-weight:600;margin-top:6px;"></div>
+                            <script>
+                            (function () {
+                                const usage = @json($categorySlotUsage);
+                                const select = document.querySelector('select[name="category_id"]');
+                                const hint = document.getElementById('categorySlotHint');
+                                if (!select || !hint) return;
+                                function render() {
+                                    const info = usage[select.value];
+                                    if (!info) { hint.style.display = 'none'; return; }
+                                    const remaining = Math.max(0, info.limit - info.used);
+                                    hint.textContent = remaining === 0
+                                        ? 'Bu kategorideki tur ekleme hakkınız doldu (' + info.used + '/' + info.limit + ') — Kategori Yetkilendirme Merkezi\'nden ekstra tur hakkı satın alabilirsiniz.'
+                                        : 'Bu kategorideki tur hakkınız: ' + info.used + '/' + info.limit + ' (' + remaining + ' hak kaldı)';
+                                    hint.style.color = remaining === 0 ? '#dc2626' : 'var(--text-muted)';
+                                    hint.style.display = '';
+                                }
+                                select.addEventListener('change', render);
+                                render();
+                            })();
+                            </script>
+                        @endif
                         <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">
                             Uygun kategori bulamadın mı? <a href="{{ route('agency.category-requests.index') }}" style="color:var(--accent);font-weight:600;">Admine kategori talebi oluştur</a>.
                         </div>

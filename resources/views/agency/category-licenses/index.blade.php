@@ -85,7 +85,12 @@
                                             </div>
                                             <div style="font-size:18px;font-weight:800;color:#0f172a;white-space:nowrap;">{{ number_format((float) $category->monthly_price, 0, ',', '.') }} TL</div>
                                         </div>
-                                        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Aylık yetki bedeli</div>
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">
+                                            Aylık yetki bedeli
+                                            @if($slotSchemaReady)
+                                                · {{ \App\Support\CategoryLicensing::BASE_TOUR_ALLOWANCE }} tur ekleme hakkı dahil
+                                            @endif
+                                        </div>
                                         <form method="POST" action="{{ route('agency.category-licenses.cart.add') }}" data-cart-form style="margin-top:16px;">
                                             @csrf
                                             <input type="hidden" name="category_id" value="{{ $category->id }}">
@@ -111,8 +116,14 @@
                                         <tr>
                                             <th>Kategori</th>
                                             <th>Aylık Ücret</th>
+                                            @if($slotSchemaReady)
+                                                <th>Tur Hakkı</th>
+                                            @endif
                                             <th>Başlangıç</th>
                                             <th>Durum</th>
+                                            @if($slotSchemaReady && ! $agency->legacy_category_access)
+                                                <th>Ekstra Hak</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -125,6 +136,20 @@
                                                     @endif
                                                 </td>
                                                 <td>{{ number_format((float) $license->monthly_price, 0, ',', '.') }} TL</td>
+                                                @if($slotSchemaReady)
+                                                    <td>
+                                                        @if($license->tour_limit === null)
+                                                            <span class="badge badge-green">Limitsiz</span>
+                                                        @else
+                                                            <div style="font-weight:700;color:{{ $license->used_slots >= $license->tour_limit ? '#dc2626' : '#0f172a' }};">
+                                                                {{ $license->used_slots }}/{{ $license->tour_limit }}
+                                                            </div>
+                                                            @if($license->extra_slots > 0)
+                                                                <div style="font-size:11px;color:#94a3b8;margin-top:2px;">{{ $license->extra_slots }} ekstra hak dahil</div>
+                                                            @endif
+                                                        @endif
+                                                    </td>
+                                                @endif
                                                 <td>{{ $license->started_at?->format('d.m.Y') ?? '—' }}</td>
                                                 <td>
                                                     @if($license->source === 'legacy')
@@ -133,6 +158,16 @@
                                                         <span class="badge badge-green">Aktif · {{ $license->expires_at?->format('d.m.Y') }}</span>
                                                     @endif
                                                 </td>
+                                                @if($slotSchemaReady && ! $agency->legacy_category_access)
+                                                    <td>
+                                                        <form method="POST" action="{{ route('agency.category-licenses.cart.add-slot') }}" data-cart-form>
+                                                            @csrf
+                                                            <input type="hidden" name="category_id" value="{{ $license->category->id }}">
+                                                            <button type="submit" class="btn btn-outline btn-sm" style="white-space:nowrap;">+ Ekstra Hak</button>
+                                                        </form>
+                                                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">{{ number_format((float) $license->category->extra_tour_price, 0, ',', '.') }} TL / hak</div>
+                                                    </td>
+                                                @endif
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -144,25 +179,41 @@
 
                 <div style="display:flex;flex-direction:column;gap:24px;">
                     <div class="stat-card" style="padding:24px;">
+                        @php($cartEmpty = $cartItems->isEmpty() && $slotCartItems->isEmpty())
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;">
                             <h2 style="font-size:18px;font-weight:700;color:#0f172a;">Sepet</h2>
-                            <span class="badge" data-cart-count>{{ $cartItems->count() }} kategori</span>
+                            <span class="badge" data-cart-count>{{ $cartItems->count() + $slotCartItems->count() }} kalem</span>
                         </div>
 
-                        <div data-cart-empty style="padding:18px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;{{ $cartItems->isEmpty() ? '' : 'display:none;' }}">
+                        <div data-cart-empty style="padding:18px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;{{ $cartEmpty ? '' : 'display:none;' }}">
                             Sepetiniz boş. Satın alınabilir kategorilerden seçim yapın.
                         </div>
 
-                        <div data-cart-body style="{{ $cartItems->isEmpty() ? 'display:none;' : '' }}">
+                        <div data-cart-body style="{{ $cartEmpty ? 'display:none;' : '' }}">
                             <div data-cart-items style="display:flex;flex-direction:column;gap:12px;">
                                 @foreach($cartItems as $category)
-                                    <div data-cart-item="{{ $category->id }}" style="border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;">
+                                    <div data-cart-item="license-{{ $category->id }}" style="border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;">
                                         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
                                             <div>
                                                 <div style="font-weight:700;color:#0f172a;">{{ $category->icon }} {{ $category->name }}</div>
                                                 <div style="font-size:12px;color:#94a3b8;margin-top:4px;">{{ number_format((float) $category->monthly_price, 0, ',', '.') }} TL / ay</div>
                                             </div>
                                             <form method="POST" action="{{ route('agency.category-licenses.cart.remove', $category) }}" data-cart-form>
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline btn-sm">Kaldır</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                @foreach($slotCartItems as $slotItem)
+                                    <div data-cart-item="slot-{{ $slotItem->category->id }}" style="border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;">
+                                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                                            <div>
+                                                <div style="font-weight:700;color:#0f172a;">{{ $slotItem->category->name }} — Ekstra Tur Hakkı{{ $slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : '' }}</div>
+                                                <div style="font-size:12px;color:#94a3b8;margin-top:4px;">{{ number_format((float) $slotItem->line_total, 0, ',', '.') }} TL (tek seferlik)</div>
+                                            </div>
+                                            <form method="POST" action="{{ route('agency.category-licenses.cart.remove-slot', $slotItem->category) }}" data-cart-form>
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-outline btn-sm">Kaldır</button>
@@ -177,7 +228,7 @@
                                     <span>İlk dönem toplamı</span>
                                     <strong data-cart-total style="font-size:20px;color:#0f172a;">{{ number_format($cartTotal, 0, ',', '.') }} TL</strong>
                                 </div>
-                                <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Satın alım sonrası kategoriler 1 aylık aktif edilir.</div>
+                                <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Satın alım sonrası kategoriler 1 aylık aktif edilir; ekstra tur hakları aboneliğinize anında tanımlanır ve abonelik sürdükçe geçerlidir.</div>
                                 <a href="{{ route('agency.category-licenses.checkout-form') }}" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;">
                                     Ödemeye Geç
                                 </a>
@@ -251,14 +302,12 @@
     }
 
     function cartItemHtml(item) {
-        const label = [item.icon, item.name].filter(Boolean).join(' ');
-
         return `
-            <div data-cart-item="${esc(item.id)}" style="border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;">
+            <div data-cart-item="${esc(item.key)}" style="border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
                     <div>
-                        <div style="font-weight:700;color:#0f172a;">${esc(label)}</div>
-                        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${esc(item.price_label)} TL / ay</div>
+                        <div style="font-weight:700;color:#0f172a;">${esc(item.name)}</div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${esc(item.price_label)}</div>
                     </div>
                     <form method="POST" action="${esc(item.remove_url)}" data-cart-form>
                         <input type="hidden" name="_token" value="${esc(csrfToken)}">
@@ -271,10 +320,12 @@
 
     function renderCart(data) {
         const items = Array.isArray(data.items) ? data.items : [];
-        const inCart = new Set(items.map((item) => String(item.id)));
+        // Kategori kartlarını yalnızca LİSANS kalemleri gizler — ekstra tur
+        // hakkı kalemi, zaten lisanslı kategoriye aittir (kartı listede yok).
+        const inCart = new Set(items.filter((item) => item.type === 'license').map((item) => String(item.id)));
 
         cartItems.innerHTML = items.map(cartItemHtml).join('');
-        if (cartCount) cartCount.textContent = `${data.count} kategori`;
+        if (cartCount) cartCount.textContent = `${data.count} kalem`;
         if (cartTotal) cartTotal.textContent = `${data.total_label} TL`;
         if (cartTotalStat) cartTotalStat.textContent = `${data.total_label} TL`;
 

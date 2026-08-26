@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'slug', 'icon', 'description', 'monthly_price', 'parent_id', 'sort_order', 'is_active'];
+    protected $fillable = ['name', 'slug', 'icon', 'description', 'monthly_price', 'extra_tour_price', 'parent_id', 'sort_order', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',
         'monthly_price' => 'decimal:2',
+        'extra_tour_price' => 'decimal:2',
     ];
 
     public function parent(): BelongsTo

@@ -62,8 +62,9 @@ class TourController extends Controller
         $categories = $this->resolveAgencyCategoryTree($agency);
         $currencyOptions = Tour::supportedCurrencies();
         $canCreateTours = $agency->legacy_category_access || $categories->isNotEmpty();
+        $categorySlotUsage = $this->categorySlotUsageFor($agency);
 
-        return view('agency.tours.create', compact('categories', 'currencyOptions', 'canCreateTours'));
+        return view('agency.tours.create', compact('categories', 'currencyOptions', 'canCreateTours', 'categorySlotUsage'));
     }
 
     public function show(Tour $tour)
@@ -115,6 +116,7 @@ class TourController extends Controller
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
+        $this->ensureAgencyHasTourSlot($agency, (int) $validated['category_id']);
 
         $pricingOptions = $this->pricingOptionsWithDerivedPrices($request);
         $dates = $this->prepareValidatedDatePrices(
@@ -169,8 +171,9 @@ class TourController extends Controller
         $categories = $this->resolveAgencyCategoryTree($agency);
         $currencyOptions = Tour::supportedCurrencies();
         $currentCategoryAccessible = $agency->hasCategoryAccess($tour->category_id);
+        $categorySlotUsage = $this->categorySlotUsageFor($agency);
 
-        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions', 'currentCategoryAccessible'));
+        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions', 'currentCategoryAccessible', 'categorySlotUsage'));
     }
 
     public function update(Request $request, Tour $tour)
@@ -211,6 +214,13 @@ class TourController extends Controller
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
+
+        // Limit yalnızca turu BAŞKA kategoriye taşırken uygulanır — mevcut
+        // kategorisinde kalan tur, acenta limit üstünde olsa bile düzenlenebilir
+        // (grandfathering: eski turlar silinmez/kilitlenmez).
+        if ((int) $validated['category_id'] !== (int) $tour->category_id) {
+            $this->ensureAgencyHasTourSlot($agency, (int) $validated['category_id'], $tour);
+        }
         $validated['stop_cities'] = $this->normalizeStopCities($validated['stop_cities'] ?? null, $validated['departure_city']);
         // Yurt içi/dışı bayrağı destinasyondan otomatik türetilir (store ile aynı kural)
         $classified = \App\Support\DestinationClassifier::isInternational($validated['destination']);
@@ -545,6 +555,63 @@ class TourController extends Controller
         throw ValidationException::withMessages([
             'category_id' => 'Bu kategoride tur yayınlamak için önce Kategori Yetkilendirme Merkezi üzerinden aylık yetki satın almalısınız.',
         ]);
+    }
+
+    /**
+     * Kategori aboneliği CategoryLicensing::BASE_TOUR_ALLOWANCE tur hakkı
+     * içerir; fazlası için KYM'den ekstra hak satın alınmalı. Limit yalnızca
+     * yeni ekleme / kategoriye taşımada uygulanır (mevcut turlar korunur).
+     */
+    private function ensureAgencyHasTourSlot(Agency $agency, int $categoryId, ?Tour $ignore = null): void
+    {
+        $limit = $agency->categoryTourLimit($categoryId);
+
+        if ($limit === null) {
+            return; // legacy acenta veya slot şeması yok — limitsiz
+        }
+
+        $used = $agency->usedCategoryTourSlots($categoryId, $ignore?->id);
+
+        if ($used < $limit) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'category_id' => sprintf(
+                'Bu kategorideki tur ekleme hakkınız doldu (%d/%d). Kategori Yetkilendirme Merkezi üzerinden bu kategori için ekstra tur hakkı satın alabilirsiniz.',
+                $used,
+                $limit
+            ),
+        ]);
+    }
+
+    /**
+     * Tur formundaki kategori seçiminde "kullanılan/limit" ipucu için kategori
+     * başına hak durumu. Legacy veya slot şeması yoksa boş döner (limitsiz).
+     *
+     * @return array<int, array{used: int, limit: int}>
+     */
+    private function categorySlotUsageFor(Agency $agency): array
+    {
+        if (! \App\Support\CategoryLicensing::slotSchemaReady() || $agency->legacy_category_access) {
+            return [];
+        }
+
+        $usedByCategory = $agency->tours()
+            ->whereNotNull('category_id')
+            ->selectRaw('category_id, COUNT(*) as used_count')
+            ->groupBy('category_id')
+            ->pluck('used_count', 'category_id');
+
+        return $agency->activeCategorySubscriptions()
+            ->pluck('extra_tour_slots', 'category_id')
+            ->mapWithKeys(fn ($extraSlots, $categoryId) => [
+                (int) $categoryId => [
+                    'used' => (int) ($usedByCategory[$categoryId] ?? 0),
+                    'limit' => \App\Support\CategoryLicensing::BASE_TOUR_ALLOWANCE + (int) $extraSlots,
+                ],
+            ])
+            ->all();
     }
 
     private function resolveAgencyCategoryTree(Agency $agency)

@@ -40,7 +40,7 @@
                 <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">+ Yeni Alt Kategori Ekle</h3>
                 <form method="POST" action="{{ route('admin.categories.store') }}">
                     @csrf
-                    <div style="display:grid;grid-template-columns:repeat({{ $categoryLicensingReady ? 6 : 5 }}, 1fr);gap:12px;align-items:end;">
+                    <div style="display:grid;grid-template-columns:repeat({{ 5 + ($categoryLicensingReady ? 1 : 0) + ($extraSlotReady ? 1 : 0) }}, 1fr);gap:12px;align-items:end;">
                         <div class="form-group" style="margin:0;">
                             <label>Ad *</label>
                             <input type="text" name="name" required placeholder="Kültür Turları">
@@ -64,6 +64,12 @@
                                 <input type="number" name="monthly_price" value="2000" min="0" step="0.01" required>
                             </div>
                         @endif
+                        @if($extraSlotReady)
+                            <div class="form-group" style="margin:0;">
+                                <label>Ekstra Tur Fiyatı (TL) *</label>
+                                <input type="number" name="extra_tour_price" value="1000" min="0" step="0.01" required>
+                            </div>
+                        @endif
                         <div class="form-group" style="margin:0;">
                             <label>Sıralama</label>
                             <input type="number" name="sort_order" id="createSort" value="0">
@@ -76,7 +82,7 @@
             {{-- Alt kategoriler tablosu --}}
             <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;max-width:94%;margin-left:auto;margin-right:auto;">
                 <table class="table" style="margin:0;border:none;">
-                    <thead><tr><th>İkon & Ad</th><th>Üst Kategori</th>@if($categoryLicensingReady)<th>Aylık Ücret</th>@endif<th>Sıralama</th><th>Durum</th><th>İşlemler</th></tr></thead>
+                    <thead><tr><th>İkon & Ad</th><th>Üst Kategori</th>@if($categoryLicensingReady)<th>Aylık Ücret</th>@endif @if($extraSlotReady)<th>Ekstra Tur</th>@endif <th>Sıralama</th><th>Durum</th><th>İşlemler</th></tr></thead>
                     <tbody>
                         @forelse($categories as $category)
                         <tr style="border-bottom:1px solid var(--border-light);">
@@ -90,6 +96,9 @@
                             </td>
                             @if($categoryLicensingReady)
                                 <td>{{ number_format((float) $category->monthly_price, 0, ',', '.') }} TL</td>
+                            @endif
+                            @if($extraSlotReady)
+                                <td>{{ number_format((float) $category->extra_tour_price, 0, ',', '.') }} TL</td>
                             @endif
                             <td>{{ $category->sort_order }}</td>
                             <td>
@@ -110,6 +119,9 @@
                                         @if($categoryLicensingReady)
                                         data-monthly-price="{{ number_format((float) $category->monthly_price, 2, '.', '') }}"
                                         @endif
+                                        @if($extraSlotReady)
+                                        data-extra-tour-price="{{ number_format((float) $category->extra_tour_price, 2, '.', '') }}"
+                                        @endif
                                         data-sort-order="{{ $category->sort_order }}"
                                         data-parent-id="{{ $category->parent_id }}"
                                         data-update-url="{{ route('admin.categories.update', $category) }}"
@@ -123,7 +135,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="{{ $categoryLicensingReady ? 6 : 5 }}" style="text-align:center;color:var(--text-muted);padding:24px;">Henüz alt kategori yok.</td></tr>
+                        <tr><td colspan="{{ 5 + ($categoryLicensingReady ? 1 : 0) + ($extraSlotReady ? 1 : 0) }}" style="text-align:center;color:var(--text-muted);padding:24px;">Henüz alt kategori yok.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -145,8 +157,14 @@
                 @if($categoryLicensingReady)
                     <div class="form-group"><label>Aylık Ücret (TL) *</label><input type="number" name="monthly_price" id="editMonthlyPrice" min="0" step="0.01" required></div>
                 @endif
+                @if($extraSlotReady)
+                    <div class="form-group"><label>Ekstra Tur Fiyatı (TL) *</label><input type="number" name="extra_tour_price" id="editExtraTourPrice" min="0" step="0.01" required></div>
+                @endif
                 <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort"></div>
             </div>
+            @if($extraSlotReady)
+                <div style="font-size:12px;color:var(--text-muted);margin:-6px 0 12px;">Her abonelik {{ \App\Support\CategoryLicensing::BASE_TOUR_ALLOWANCE }} tur hakkı içerir; ekstra tur fiyatı, hak başına tek seferlik bedeldir.</div>
+            @endif
             <div class="form-group">
                 <label>Üst Kategori *</label>
                 <select name="parent_id" id="editParent" required>
@@ -179,6 +197,9 @@ function editCategory(button) {
     document.getElementById('editIcon').value = button.dataset.icon || '';
     @if($categoryLicensingReady)
     document.getElementById('editMonthlyPrice').value = button.dataset.monthlyPrice || 0;
+    @endif
+    @if($extraSlotReady)
+    document.getElementById('editExtraTourPrice').value = button.dataset.extraTourPrice || 0;
     @endif
     document.getElementById('editSort').value = button.dataset.sortOrder || 0;
     document.getElementById('editParent').value = button.dataset.parentId || '';

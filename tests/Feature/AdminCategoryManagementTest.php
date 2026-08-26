@@ -38,6 +38,7 @@ class AdminCategoryManagementTest extends TestCase
                 'icon' => '🏛️',
                 'parent_id' => $parent->id,
                 'monthly_price' => 1500,
+                'extra_tour_price' => 900,
                 'sort_order' => 2,
             ])
             ->assertRedirect(route('admin.categories.index'));
@@ -47,6 +48,7 @@ class AdminCategoryManagementTest extends TestCase
             'name' => 'Yeni Kategori',
             'slug' => 'yeni-kategori',
             'monthly_price' => '1500.00',
+            'extra_tour_price' => '900.00',
             'sort_order' => 2,
         ]);
 
@@ -105,6 +107,7 @@ class AdminCategoryManagementTest extends TestCase
                 'icon' => '🏛️',
                 'parent_id' => $parent->id,
                 'monthly_price' => 2500,
+                'extra_tour_price' => 1250,
                 'sort_order' => 1,
             ])
             ->assertRedirect(route('admin.categories.index'));
@@ -113,6 +116,7 @@ class AdminCategoryManagementTest extends TestCase
             'name' => 'Kültür Turları',
             'parent_id' => $parent->id,
             'monthly_price' => '2500.00',
+            'extra_tour_price' => '1250.00',
         ]);
     }
 

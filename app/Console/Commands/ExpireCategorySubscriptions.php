@@ -49,7 +49,11 @@ class ExpireCategorySubscriptions extends Command
             ->with(['agency.users', 'category'])
             ->chunkById(100, function ($subscriptions) use (&$count) {
                 foreach ($subscriptions as $subscription) {
-                    $subscription->update(['status' => AgencyCategorySubscription::STATUS_EXPIRED]);
+                    // Ekstra tur hakları abonelik kesintisiz sürdükçe geçerli —
+                    // süre dolunca haklar da yanar (satın alımda bu böyle sunuluyor).
+                    $subscription->update([
+                        'status' => AgencyCategorySubscription::STATUS_EXPIRED,
+                    ] + (CategoryLicensing::slotSchemaReady() ? ['extra_tour_slots' => 0] : []));
 
                     $users = $subscription->agency?->users ?? collect();
                     if ($users->isNotEmpty()) {

@@ -11,6 +11,9 @@
                     <div style="font-size:13px;font-weight:700;color:#0ea5e9;letter-spacing:0.3px;text-transform:uppercase;">Kategori Yetkilendirme</div>
                     <h1 style="font-size:28px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;margin-top:6px;">Kategori Fiyat Tarifesi</h1>
                     <div style="font-size:14px;color:#64748b;margin-top:4px;">Kategori başı aylık bedeli, talebi ve portföy etkisini tek tabloda yönetin.</div>
+                    @if($extraSlotReady)
+                        <div style="font-size:13px;color:#0ea5e9;margin-top:4px;">Her abonelik {{ \App\Support\CategoryLicensing::BASE_TOUR_ALLOWANCE }} tur ekleme hakkı içerir; fazlası kategori başına belirlediğiniz ekstra tur fiyatıyla satılır.</div>
+                    @endif
                 </div>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
                     <a href="{{ route('admin.category-licenses.index') }}" class="btn btn-outline">Genel Bakış</a>
@@ -57,7 +60,7 @@
                                 <th>Gerçek Lisans</th>
                                 <th>Legacy Talep</th>
                                 <th>Aktif Tur</th>
-                                <th>Aylık Ücret</th>
+                                <th>{{ $extraSlotReady ? 'Ücretler' : 'Aylık Ücret' }}</th>
                                 <th>Portföy</th>
                                 <th>Durum</th>
                             </tr>
@@ -74,12 +77,21 @@
                                     <td>{{ $category->active_subscriptions_count }}</td>
                                     <td>{{ $category->legacy_demand_count }}</td>
                                     <td>{{ $category->active_tours_count }}</td>
-                                    <td style="min-width:220px;">
-                                        <form method="POST" action="{{ route('admin.category-licenses.pricing.update', $category) }}" style="display:flex;gap:10px;align-items:center;">
+                                    <td style="min-width:240px;">
+                                        <form method="POST" action="{{ route('admin.category-licenses.pricing.update', $category) }}" style="display:flex;flex-direction:column;gap:8px;">
                                             @csrf
                                             @method('PUT')
-                                            <input type="number" name="monthly_price" min="0" step="0.01" value="{{ number_format((float) $category->monthly_price, 2, '.', '') }}" style="margin:0;">
-                                            <button type="submit" class="btn btn-outline btn-sm">Kaydet</button>
+                                            <label style="font-size:11px;font-weight:600;color:#64748b;display:block;">
+                                                Aylık Ücret (TL)
+                                                <input type="number" name="monthly_price" min="0" step="0.01" value="{{ number_format((float) $category->monthly_price, 2, '.', '') }}" style="margin:4px 0 0;width:100%;">
+                                            </label>
+                                            @if($extraSlotReady)
+                                                <label style="font-size:11px;font-weight:600;color:#64748b;display:block;">
+                                                    Ekstra Tur Fiyatı (TL)
+                                                    <input type="number" name="extra_tour_price" min="0" step="0.01" value="{{ number_format((float) $category->extra_tour_price, 2, '.', '') }}" style="margin:4px 0 0;width:100%;">
+                                                </label>
+                                            @endif
+                                            <button type="submit" class="btn btn-outline btn-sm" style="align-self:flex-start;">Kaydet</button>
                                         </form>
                                     </td>
                                     <td>

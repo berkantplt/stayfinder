@@ -346,6 +346,12 @@ class AdminController extends Controller
                 'renewal_reminder_sent_at' => null,
             ];
 
+            // Kesintili yeniden başlatmada ekstra tur hakları yanar (finalizer
+            // ile aynı kural); süren aboneliğin uzatılmasında korunur.
+            if (! $stillActive && CategoryLicensing::slotSchemaReady()) {
+                $attributes['extra_tour_slots'] = 0;
+            }
+
             if ($subscription) {
                 $subscription->update($attributes);
             } else {
@@ -369,7 +375,11 @@ class AdminController extends Controller
         abort_unless(CategoryLicensing::schemaReady(), 404);
         abort_unless($subscription->agency_id === $agency->id, 404);
 
-        $subscription->update(['status' => AgencyCategorySubscription::STATUS_CANCELLED]);
+        // İptalle birlikte satın alınmış ekstra tur hakları da düşer — abonelik
+        // yeniden verilirse taban hak (2 tur) ile başlar.
+        $subscription->update([
+            'status' => AgencyCategorySubscription::STATUS_CANCELLED,
+        ] + (CategoryLicensing::slotSchemaReady() ? ['extra_tour_slots' => 0] : []));
 
         $categoryName = $subscription->category?->name ?? 'Kategori';
 

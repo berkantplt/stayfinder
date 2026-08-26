@@ -190,6 +190,38 @@ class Agency extends Model
         return $this->accessibleCategoriesQuery()->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 
+    /**
+     * Bu kategoriye eklenebilecek toplam tur sayısı: abonelik başına
+     * CategoryLicensing::BASE_TOUR_ALLOWANCE + satın alınmış ekstra haklar.
+     * null = limitsiz (legacy acenta veya slot şeması henüz uygulanmamış).
+     */
+    public function categoryTourLimit(null|int|Category $category): ?int
+    {
+        $categoryId = $category instanceof Category ? $category->id : $category;
+
+        if (! $categoryId || ! CategoryLicensing::slotSchemaReady() || $this->legacy_category_access) {
+            return null;
+        }
+
+        $extraSlots = (int) $this->activeCategorySubscriptions()
+            ->where('category_id', $categoryId)
+            ->value('extra_tour_slots');
+
+        return CategoryLicensing::BASE_TOUR_ALLOWANCE + $extraSlots;
+    }
+
+    /**
+     * Limit sayımı: kategorideki aktif+pasif TÜM turlar hakkı doldurur —
+     * pasife çekip yerine yenisini ekleme açığı olmasın; hak tur silinince boşalır.
+     */
+    public function usedCategoryTourSlots(int $categoryId, ?int $excludeTourId = null): int
+    {
+        return $this->tours()
+            ->where('category_id', $categoryId)
+            ->when($excludeTourId !== null, fn ($query) => $query->whereKeyNot($excludeTourId))
+            ->count();
+    }
+
     public function hasCategoryAccess(null|int|Category $category): bool
     {
         $categoryId = $category instanceof Category ? $category->id : $category;

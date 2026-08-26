@@ -21,6 +21,7 @@ class AgencyCategorySubscription extends Model
         'category_id',
         'last_order_id',
         'monthly_price',
+        'extra_tour_slots',
         'status',
         'started_at',
         'expires_at',
@@ -29,6 +30,7 @@ class AgencyCategorySubscription extends Model
 
     protected $casts = [
         'monthly_price' => 'decimal:2',
+        'extra_tour_slots' => 'integer',
         'started_at' => 'date',
         'expires_at' => 'date',
         'renewal_reminder_sent_at' => 'datetime',

@@ -22,6 +22,11 @@ class CategoryLicenseController extends Controller
 {
     private const CART_SESSION_KEY = 'agency_category_license_cart';
 
+    /** Ekstra tur hakkı sepeti: [category_id => adet]. */
+    private const SLOT_CART_SESSION_KEY = 'agency_category_slot_cart';
+
+    private const MAX_SLOTS_PER_CHECKOUT = 10;
+
     public function __construct(
         private readonly IyzicoService $iyzico,
         private readonly \App\Services\Payment\CategoryOrderFinalizer $finalizer,
@@ -52,28 +57,45 @@ class CategoryLicenseController extends Controller
 
         $cartItems = $this->resolveCartCategoriesFor($agency);
         $cartCategoryIds = $cartItems->pluck('id');
+        $slotCartItems = $this->resolveSlotCartFor($agency);
+        $slotSchemaReady = CategoryLicensing::slotSchemaReady();
+
+        // Kategori başına kullanılan tur hakkı (aktif+pasif tüm turlar sayılır)
+        $usedSlotsByCategory = $agency->tours()
+            ->whereNotNull('category_id')
+            ->selectRaw('category_id, COUNT(*) as used_count')
+            ->groupBy('category_id')
+            ->pluck('used_count', 'category_id');
 
         $licensedCategories = $agency->legacy_category_access
-            ? $categories->map(function (Category $category) use ($agency) {
+            ? $categories->map(function (Category $category) use ($agency, $usedSlotsByCategory) {
                 return (object) [
                     'category' => $category,
                     'monthly_price' => $category->monthly_price,
                     'started_at' => $agency->created_at,
                     'expires_at' => null,
                     'source' => 'legacy',
+                    'tour_limit' => null, // legacy = limitsiz
+                    'used_slots' => (int) ($usedSlotsByCategory[$category->id] ?? 0),
+                    'extra_slots' => 0,
                 ];
             })
             : $agency->activeCategorySubscriptions()
                 ->with('category.parent')
                 ->orderBy('expires_at')
                 ->get()
-                ->map(function (AgencyCategorySubscription $subscription) {
+                ->map(function (AgencyCategorySubscription $subscription) use ($usedSlotsByCategory, $slotSchemaReady) {
                     return (object) [
                         'category' => $subscription->category,
                         'monthly_price' => $subscription->monthly_price,
                         'started_at' => $subscription->started_at,
                         'expires_at' => $subscription->expires_at,
                         'source' => 'purchase',
+                        'tour_limit' => $slotSchemaReady
+                            ? CategoryLicensing::BASE_TOUR_ALLOWANCE + (int) $subscription->extra_tour_slots
+                            : null,
+                        'used_slots' => (int) ($usedSlotsByCategory[$subscription->category_id] ?? 0),
+                        'extra_slots' => $slotSchemaReady ? (int) $subscription->extra_tour_slots : 0,
                     ];
                 });
 
@@ -83,13 +105,16 @@ class CategoryLicenseController extends Controller
             ->limit(8)
             ->get();
 
-        $cartTotal = $cartItems->sum(fn (Category $category) => (float) $category->monthly_price);
+        $cartTotal = $cartItems->sum(fn (Category $category) => (float) $category->monthly_price)
+            + $slotCartItems->sum('line_total');
 
         return view('agency.category-licenses.index', compact(
             'agency',
             'availableCategories',
             'cartItems',
             'cartCategoryIds',
+            'slotCartItems',
+            'slotSchemaReady',
             'cartTotal',
             'licensedCategories',
             'recentOrders'
@@ -149,6 +174,69 @@ class CategoryLicenseController extends Controller
         return $this->cartSuccess($request, $this->currentAgency(), $category->name.' sepetten çıkarıldı.');
     }
 
+    /**
+     * Aktif abonelikli bir kategoriye +1 ekstra tur hakkı (aynı kategoriye
+     * tekrar basıldıkça adet artar). Hak tek seferlik ödenir, abonelik
+     * kesintisiz sürdükçe geçerlidir.
+     */
+    public function addSlotToCart(Request $request)
+    {
+        if ($response = $this->guardSchema($request)) {
+            return $response;
+        }
+
+        if (! CategoryLicensing::slotSchemaReady()) {
+            return $this->cartError($request, 'Ekstra tur hakkı altyapısı henüz veritabanına uygulanmamış.');
+        }
+
+        $agency = $this->currentAgency();
+
+        if ($agency->legacy_category_access) {
+            return $this->cartError($request, 'Geçiş erişimli acentalarda tur limiti yok; ekstra hak satın almanız gerekmiyor.');
+        }
+
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+        ]);
+
+        $category = Category::active()
+            ->whereNotNull('parent_id')
+            ->findOrFail((int) $validated['category_id']);
+
+        $hasActiveSubscription = $agency->activeCategorySubscriptions()
+            ->where('category_id', $category->id)
+            ->exists();
+
+        if (! $hasActiveSubscription) {
+            return $this->cartError($request, 'Ekstra tur hakkı için önce '.$category->name.' kategorisinde aktif aboneliğiniz olmalı.');
+        }
+
+        $slotCart = $this->slotCartQuantities();
+        $currentQuantity = (int) ($slotCart[$category->id] ?? 0);
+
+        if ($currentQuantity >= self::MAX_SLOTS_PER_CHECKOUT) {
+            return $this->cartError($request, 'Tek siparişte bir kategori için en fazla '.self::MAX_SLOTS_PER_CHECKOUT.' ekstra tur hakkı alabilirsiniz.');
+        }
+
+        $slotCart[$category->id] = $currentQuantity + 1;
+        session([self::SLOT_CART_SESSION_KEY => $slotCart]);
+
+        return $this->cartSuccess($request, $agency, $category->name.' için ekstra tur hakkı sepete eklendi.');
+    }
+
+    public function removeSlotFromCart(Request $request, Category $category)
+    {
+        if ($response = $this->guardSchema($request)) {
+            return $response;
+        }
+
+        $slotCart = $this->slotCartQuantities();
+        unset($slotCart[$category->id]);
+        session([self::SLOT_CART_SESSION_KEY => $slotCart]);
+
+        return $this->cartSuccess($request, $this->currentAgency(), $category->name.' ekstra tur hakkı sepetten çıkarıldı.');
+    }
+
     public function checkoutForm(Request $request)
     {
         if ($redirect = $this->redirectIfSchemaMissing()) {
@@ -164,18 +252,21 @@ class CategoryLicenseController extends Controller
         }
 
         $cartCategories = $this->resolveCartCategoriesFor($agency);
+        $slotCartItems = $this->resolveSlotCartFor($agency);
 
-        if ($cartCategories->isEmpty()) {
+        if ($cartCategories->isEmpty() && $slotCartItems->isEmpty()) {
             return redirect()
                 ->route('agency.category-licenses.index')
-                ->withErrors('Ödeme için sepetinize en az 1 kategori eklemelisiniz.');
+                ->withErrors('Ödeme için sepetinize en az 1 kalem eklemelisiniz.');
         }
 
-        $cartTotal = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price);
+        $cartTotal = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price)
+            + $slotCartItems->sum('line_total');
 
         return view('agency.category-licenses.checkout', [
             'agency' => $agency,
             'cartCategories' => $cartCategories,
+            'slotCartItems' => $slotCartItems,
             'cartTotal' => $cartTotal,
             'iyzicoConfigured' => $this->iyzico->isConfigured(),
         ]);
@@ -194,11 +285,12 @@ class CategoryLicenseController extends Controller
         }
 
         $cartCategories = $this->resolveCartCategoriesFor($agency);
+        $slotCartItems = $this->resolveSlotCartFor($agency);
 
-        if ($cartCategories->isEmpty()) {
+        if ($cartCategories->isEmpty() && $slotCartItems->isEmpty()) {
             return redirect()
                 ->route('agency.category-licenses.index')
-                ->withErrors('Sepetinizde satın alınabilir kategori bulunamadı.');
+                ->withErrors('Sepetinizde satın alınabilir kalem bulunamadı.');
         }
 
         if (! $this->iyzico->isConfigured()) {
@@ -206,10 +298,12 @@ class CategoryLicenseController extends Controller
         }
 
         $buyer = $this->validateBuyer($request);
+        $slotSchemaReady = CategoryLicensing::slotSchemaReady();
 
         try {
-            $order = DB::transaction(function () use ($agency, $cartCategories, $buyer) {
-                $subtotal = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price);
+            $order = DB::transaction(function () use ($agency, $cartCategories, $slotCartItems, $buyer, $slotSchemaReady) {
+                $subtotal = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price)
+                    + $slotCartItems->sum('line_total');
 
                 $order = AgencyCategoryOrder::create([
                     'agency_id' => $agency->id,
@@ -231,7 +325,22 @@ class CategoryLicenseController extends Controller
                         'category_name' => $category->name,
                         'unit_price' => $category->monthly_price,
                         'billing_cycle' => 'monthly',
-                    ]);
+                    ] + ($slotSchemaReady ? ['item_type' => AgencyCategoryOrderItem::TYPE_LICENSE] : []));
+                }
+
+                // Ekstra tur hakları: hak başına BİR kalem — finalize satır
+                // sayarak aboneliğe yazar, ayrıca adet kolonu gerekmez.
+                foreach ($slotCartItems as $slotItem) {
+                    for ($unit = 0; $unit < $slotItem->quantity; $unit++) {
+                        AgencyCategoryOrderItem::create([
+                            'order_id' => $order->id,
+                            'category_id' => $slotItem->category->id,
+                            'category_name' => $slotItem->category->name.' — Ekstra Tur Hakkı',
+                            'item_type' => AgencyCategoryOrderItem::TYPE_EXTRA_SLOT,
+                            'unit_price' => $slotItem->unit_price,
+                            'billing_cycle' => 'one_time',
+                        ]);
+                    }
                 }
 
                 return $order;
@@ -243,6 +352,17 @@ class CategoryLicenseController extends Controller
                 'category' => optional($category->parent)->name ?? 'Kategori Yetkisi',
                 'price' => $category->monthly_price,
             ])->values()->all();
+
+            foreach ($slotCartItems as $slotItem) {
+                for ($unit = 1; $unit <= $slotItem->quantity; $unit++) {
+                    $basketItems[] = [
+                        'id' => 'slot-'.$slotItem->category->id.'-'.$unit,
+                        'name' => $slotItem->category->name.' — Ekstra Tur Hakkı',
+                        'category' => 'Ekstra Tur Hakkı',
+                        'price' => $slotItem->unit_price,
+                    ];
+                }
+            }
 
             $callbackUrl = route('agency.category-licenses.iyzico.callback', ['order' => $order->id]);
 
@@ -307,6 +427,7 @@ class CategoryLicenseController extends Controller
 
             if ($this->finalizer->settleFromCheckout($order, $checkout) === 'paid') {
                 session()->forget(self::CART_SESSION_KEY);
+                session()->forget(self::SLOT_CART_SESSION_KEY);
             }
         } catch (Throwable $e) {
             Log::error('iyzico callback retrieve failed', [
@@ -409,17 +530,32 @@ class CategoryLicenseController extends Controller
     private function cartPayload(Agency $agency): array
     {
         $cartCategories = $this->resolveCartCategoriesFor($agency);
-        $total = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price);
+        $slotItems = $this->resolveSlotCartFor($agency);
+        $total = $cartCategories->sum(fn (Category $category) => (float) $category->monthly_price)
+            + $slotItems->sum('line_total');
+
+        $items = $cartCategories
+            ->map(fn (Category $category) => [
+                'key' => 'license-'.$category->id,
+                'type' => 'license',
+                'id' => $category->id,
+                'name' => trim(($category->icon ? $category->icon.' ' : '').$category->name),
+                'price_label' => number_format((float) $category->monthly_price, 0, ',', '.').' TL / ay',
+                'remove_url' => route('agency.category-licenses.cart.remove', $category),
+            ])
+            ->concat($slotItems->map(fn ($slotItem) => [
+                'key' => 'slot-'.$slotItem->category->id,
+                'type' => 'extra_slot',
+                'id' => $slotItem->category->id,
+                'name' => $slotItem->category->name.' — Ekstra Tur Hakkı'.($slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : ''),
+                'price_label' => number_format((float) $slotItem->line_total, 0, ',', '.').' TL (tek seferlik)',
+                'remove_url' => route('agency.category-licenses.cart.remove-slot', $slotItem->category),
+            ]))
+            ->values();
 
         return [
-            'items' => $cartCategories->map(fn (Category $category) => [
-                'id' => $category->id,
-                'name' => $category->name,
-                'icon' => (string) $category->icon,
-                'price_label' => number_format((float) $category->monthly_price, 0, ',', '.'),
-                'remove_url' => route('agency.category-licenses.cart.remove', $category),
-            ])->all(),
-            'count' => $cartCategories->count(),
+            'items' => $items->all(),
+            'count' => $items->count(),
             'total_label' => number_format((float) $total, 0, ',', '.'),
         ];
     }
@@ -459,6 +595,58 @@ class CategoryLicenseController extends Controller
             ->orderBy('name')
             ->get()
             ->reject(fn (Category $category) => $agency->hasCategoryAccess($category))
+            ->values();
+    }
+
+    private function slotCartQuantities(): array
+    {
+        return collect(session(self::SLOT_CART_SESSION_KEY, []))
+            ->mapWithKeys(fn ($quantity, $id) => [(int) $id => min(max((int) $quantity, 0), self::MAX_SLOTS_PER_CHECKOUT)])
+            ->filter(fn ($quantity) => $quantity > 0)
+            ->all();
+    }
+
+    /**
+     * Slot sepetini doğrulanmış kalemlere çevirir: kategori aktif bir alt
+     * kategori olmalı VE acentanın o kategoride aktif aboneliği olmalı.
+     *
+     * @return Collection<int, object{category: Category, quantity: int, unit_price: float, line_total: float}>
+     */
+    private function resolveSlotCartFor(Agency $agency)
+    {
+        if (! CategoryLicensing::slotSchemaReady() || $agency->legacy_category_access) {
+            return collect();
+        }
+
+        $quantities = $this->slotCartQuantities();
+
+        if (empty($quantities)) {
+            return collect();
+        }
+
+        $subscribedCategoryIds = $agency->activeCategorySubscriptions()
+            ->pluck('category_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return Category::active()
+            ->whereIn('id', array_keys($quantities))
+            ->whereIn('id', $subscribedCategoryIds)
+            ->whereNotNull('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(function (Category $category) use ($quantities) {
+                $quantity = $quantities[$category->id];
+                $unitPrice = (float) $category->extra_tour_price;
+
+                return (object) [
+                    'category' => $category,
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'line_total' => $unitPrice * $quantity,
+                ];
+            })
             ->values();
     }
 

@@ -41,6 +41,7 @@ class CategoryLicenseController extends Controller
             // Fiyat yalnızca alt kategorilerde belirlenir; üst kategoriler fiyatsız gruptur
             'categories' => $data['categories']->whereNotNull('parent_id')->values(),
             'stats' => $data['stats'],
+            'extraSlotReady' => CategoryLicensing::slotSchemaReady(),
         ]);
     }
 
@@ -104,17 +105,25 @@ class CategoryLicenseController extends Controller
                 ->withErrors('Üst kategoriler fiyatlandırılmaz. Fiyat yalnızca alt kategorilerde belirlenir.');
         }
 
-        $validated = $request->validate([
-            'monthly_price' => 'required|numeric|min:0',
-        ]);
+        $slotReady = CategoryLicensing::slotSchemaReady();
+
+        $rules = ['monthly_price' => 'required|numeric|min:0'];
+
+        if ($slotReady) {
+            $rules['extra_tour_price'] = 'required|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules);
 
         $category->update([
             'monthly_price' => round((float) $validated['monthly_price'], 2),
-        ]);
+        ] + ($slotReady ? [
+            'extra_tour_price' => round((float) $validated['extra_tour_price'], 2),
+        ] : []));
 
         return redirect()
             ->route('admin.category-licenses.pricing')
-            ->with('success', $category->name.' için aylık kategori ücreti güncellendi.');
+            ->with('success', $category->name.' için '.($slotReady ? 'aylık ücret ve ekstra tur fiyatı' : 'aylık kategori ücreti').' güncellendi.');
     }
 
     private function redirectIfSchemaMissing(bool $back = false)
