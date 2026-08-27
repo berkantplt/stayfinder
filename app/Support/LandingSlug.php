@@ -84,9 +84,21 @@ class LandingSlug
     {
         $stem = self::stem($slug);
 
+        // Stem'in tüm ek varyantları aranır: DB'deki slug'lar tutarsız ekli
+        // ("gunubirlik-turlar", "tekne-turu") — yalnız tam slug + çıplak stem
+        // aranınca bu kategorilerin landing adresleri 404 veriyordu.
+        $candidates = array_unique([
+            $slug,
+            $stem,
+            $stem.'-turlari',
+            $stem.'-turlar',
+            $stem.'-turu',
+            $stem.'-tur',
+        ]);
+
         $category = Category::query()
             ->active()
-            ->where(fn ($q) => $q->where('slug', $slug)->orWhere('slug', $stem))
+            ->whereIn('slug', $candidates)
             ->first();
 
         if ($category !== null) {
@@ -94,7 +106,7 @@ class LandingSlug
         }
 
         $destination = Destination::query()
-            ->where(fn ($q) => $q->where('slug', $slug)->orWhere('slug', $stem))
+            ->whereIn('slug', $candidates)
             ->first();
 
         if ($destination !== null) {
