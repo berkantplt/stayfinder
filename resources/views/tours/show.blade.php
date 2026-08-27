@@ -636,7 +636,7 @@
                             <a href="{{ route('tour.redirect', $tour) }}" target="_blank" class="btn btn-primary p-go" style="width:100%;">🌐 Tura Git →</a>
                         @endif
                         @if($tour->agency->phone)
-                            <a href="tel:{{ $tour->agency->phone }}" class="btn btn-outline p-call" style="width:100%;">📞 <span class="p-tel-full">{{ $tour->agency->phone }}</span><span class="p-tel-short">Ara</span></a>
+                            <a href="tel:{{ preg_replace('/\s+/', '', $tour->agency->phone) }}" class="btn btn-outline p-call" style="width:100%;">📞 <span class="p-tel-full">{{ $tour->agency->phone }}</span><span class="p-tel-short">Ara</span></a>
                         @endif
                         @if($tour->agency->email)
                             <a href="mailto:{{ $tour->agency->email }}" class="btn btn-outline p-mail" style="width:100%;">✉️<span class="p-mail-text"> E-posta Gönder</span></a>

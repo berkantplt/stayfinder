@@ -77,7 +77,7 @@
                     <span style="width:36px;height:36px;background:var(--accent-bg);border-radius:10px;display:flex;align-items:center;justify-content:center;">📞</span>
                     <div>
                         <div style="font-size:12px;color:var(--text-muted);">Telefon</div>
-                        <a href="tel:{{ $agency->phone }}" style="font-size:14px;font-weight:600;color:var(--text);">{{ $agency->phone }}</a>
+                        <a href="tel:{{ preg_replace('/\s+/', '', $agency->phone) }}" style="font-size:14px;font-weight:600;color:var(--text);">{{ $agency->phone }}</a>
                     </div>
                 </div>
                 @endif

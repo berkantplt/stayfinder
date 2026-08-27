@@ -217,7 +217,7 @@
                         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:#475569;padding:8px 0;border-bottom:1px solid #f8fafc;">
                             <span style="background:{{ $lead->status === 'new' ? '#dcfce7' : '#f1f5f9' }};color:{{ $lead->status === 'new' ? '#15803d' : '#64748b' }};border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;">{{ $lead->status === 'new' ? 'Yeni' : ucfirst($lead->status) }}</span>
                             <span style="font-weight:700;color:#0f172a;">{{ $lead->name }}</span>
-                            <a href="tel:{{ $lead->phone }}" style="color:var(--accent);font-weight:600;">{{ $lead->phone }}</a>
+                            <a href="tel:{{ preg_replace('/\s+/', '', $lead->phone) }}" style="color:var(--accent);font-weight:600;">{{ $lead->phone }}</a>
                             <span style="background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:11px;">{{ $lead->intentLabel() }}</span>
                             @if($lead->tour)
                                 <span style="color:#94a3b8;">·</span>
