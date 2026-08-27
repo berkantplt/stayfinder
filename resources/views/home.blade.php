@@ -743,7 +743,10 @@
              satır içi style ile basılıyor (bkz. App\Support\HeroVeil). --}}
         .hero-veil { position:absolute; inset:0; z-index:2; pointer-events:none; }
         .hero-overlay { position:absolute; inset:0; z-index:3; display:flex; align-items:center; pointer-events:none; padding-bottom:130px; }
-        .hero-overlay .container { pointer-events:auto; position:relative; }
+        {{-- width:100% şart: .container burada flex item, genişlik verilmezse
+             içeriğine göre boyutlanır ve tarih kutusu type değiştirince (text↔date)
+             tüm hero içeriği kayar. --}}
+        .hero-overlay .container { pointer-events:auto; position:relative; width:100%; }
         /* Referans tasarımda ok yok — otomatik döner, noktalarla da gezilir.
            Geri istenirse bu satırı silmek yeterli. */
         .hero-arrow { display:none; }
