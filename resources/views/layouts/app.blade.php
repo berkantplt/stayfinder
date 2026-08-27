@@ -75,6 +75,8 @@
         /* Gruplar logonun iki yanında ortada kümeli — kenarlar boş */
         .nav-links-left { grid-column:1; grid-row:1; justify-self:end; margin-right:36px; }
         .nav-links-right { grid-column:3; grid-row:1; justify-self:start; margin-left:36px; }
+        .nav-back { grid-column:1; grid-row:1; justify-self:start; display:inline-flex; align-items:center; gap:7px; height:38px; padding:0 15px; border:1px solid #cbd5e1; border-radius:100px; background:var(--white); color:#0f172a; font-family:var(--font); font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap; }
+        .nav-back:hover { background:#f8fafc; border-color:#94a3b8; color:var(--accent); }
         .nav-bell-mobile { display:none; grid-column:3; grid-row:1; justify-self:end; position:relative; font-size:20px; text-decoration:none; align-items:center; }
         .nav-links a:not(.nav-btn) { color:#475569; font-weight:600; font-size:14.5px; transition:all 0.2s; display:flex; align-items:center; gap:6px; letter-spacing:0.1px; padding:6px 0; border-bottom:2px solid transparent; }
         .nav-links a:not(.nav-btn):hover { color:var(--accent); }
@@ -358,6 +360,7 @@
 
             .m-head { position:relative; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:calc(9px + env(safe-area-inset-top)) 14px 9px; background:var(--white); }
             .m-head-btn { width:42px; height:42px; flex:none; padding:0; border-radius:14px; border:1px solid rgba(15,36,33,.10); background:#fff; color:#0f2421; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+            .m-head-left { display:flex; align-items:center; gap:8px; }
             .m-head-logo { position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; }
             .m-head-right { display:flex; align-items:center; gap:2px; }
             .m-head-ico { position:relative; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#0f2421; text-decoration:none; }
@@ -460,18 +463,21 @@
         {{-- ===== Mobil başlık (≤768px): hamburger + ortada logo + favori/bildirim =====
              Ana sayfada hero fotoğrafının üstüne saydam biner (body.m-hero-head). --}}
         <div class="m-head">
-            {{-- Tur detayında hamburger yerine geri oku (uygulama kalıbı) --}}
-            @if(request()->routeIs('tours.show'))
-                <button type="button" class="m-head-btn" aria-label="Geri"
-                    onclick="history.length > 1 ? history.back() : location.assign(@js(route('tours.index')))">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-                </button>
-            @else
+            {{-- Ana sayfa dışında her sayfada geri oku + hamburger yan yana
+                 (uygulama kalıbı; eskiden yalnız tur detayında ve hamburgerin
+                 YERİNE vardı — artık global, menü de her sayfada duruyor). --}}
+            <div class="m-head-left">
+                @unless(request()->routeIs('home'))
+                    <button type="button" class="m-head-btn" aria-label="Geri"
+                        onclick="history.length > 1 ? history.back() : location.assign(@js(route('home')))">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+                    </button>
+                @endunless
                 <button type="button" class="m-head-btn" aria-label="Menü"
                     onclick="document.getElementById('mobileNav').classList.toggle('open')">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 </button>
-            @endif
+            </div>
             <a href="{{ route('home') }}" class="m-head-logo" aria-label="turXtur">@include('partials.logo', ['height' => 26, 'light' => request()->routeIs('home')])</a>
             <div class="m-head-right">
                 <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="m-head-ico" aria-label="Favorilerim">
@@ -485,6 +491,16 @@
         </div>
 
         <div class="container nav-inner">
+            {{-- Masaüstü geri düğmesi: ana sayfa hariç her sayfada, barın sol
+                 ucunda (grid'de sol hücreye start hizalı; linkler end hizalı
+                 kaldığı için aynı hücreyi paylaşırlar, çakışmazlar). --}}
+            @unless(request()->routeIs('home'))
+                <button type="button" class="nav-back" aria-label="Geri"
+                    onclick="history.length > 1 ? history.back() : location.assign(@js(route('home')))">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+                    Geri
+                </button>
+            @endunless
             <button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">☰</button>
 
             {{-- Sol grup: gezinme --}}
