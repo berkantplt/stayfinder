@@ -1196,6 +1196,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!wasOpen) {
             const maxLeft = Math.max(12, filterForm.clientWidth - 280);
             pop.style.left = Math.min(btn.offsetLeft, maxLeft) + 'px';
+            // CSS'teki top:100% panelin barın TAMAMININ (sayaç satırı dahil)
+            // altına düşmesine yol açıyordu; hapın kendi satırının altına alınır.
+            pop.style.top = (btn.offsetTop + btn.offsetHeight + 6) + 'px';
             pop.classList.add('open');
         }
     }));
