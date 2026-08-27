@@ -627,7 +627,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>
                 Favorilerim
             </a>
-            <a href="{{ route('tours.compare') }}" class="{{ request()->is('turlar/karsilastir*') ? 'active' : '' }}">
+            {{-- Çıplak link ids taşımadığı için controller hep /turlar'a geri
+                 yönlendiriyordu; goToCompare() localStorage'daki seçimi ekler,
+                 2'den az seçimde de kullanıcıya sebebini söyler. --}}
+            <a href="{{ route('tours.compare') }}" onclick="if (window.goToCompare) { event.preventDefault(); goToCompare(); }" class="{{ request()->is('turlar/karsilastir*') ? 'active' : '' }}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7M13 6h7"/><path d="M7.5 6v13M16.5 6v13"/><path d="M4.5 13 7.5 7l3 6a3 3 0 0 1-6 0zM13.5 13l3-6 3 6a3 3 0 0 1-6 0z"/></svg>
                 Karşılaştır
             </a>
