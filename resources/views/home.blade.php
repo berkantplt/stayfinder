@@ -745,8 +745,9 @@
         .hero-overlay { position:absolute; inset:0; z-index:3; display:flex; align-items:center; pointer-events:none; padding-bottom:130px; }
         {{-- width:100% şart: .container burada flex item, genişlik verilmezse
              içeriğine göre boyutlanır ve tarih kutusu type değiştirince (text↔date)
-             tüm hero içeriği kayar. --}}
-        .hero-overlay .container { pointer-events:auto; position:relative; width:100%; }
+             tüm hero içeriği kayar. max-width:990 (950 arama kartı + 40 padding)
+             hero bloğunu daraltıp margin:auto ile sayfada ortalar. --}}
+        .hero-overlay .container { pointer-events:auto; position:relative; width:100%; max-width:990px; }
         /* Referans tasarımda ok yok — otomatik döner, noktalarla da gezilir.
            Geri istenirse bu satırı silmek yeterli. */
         .hero-arrow { display:none; }
