@@ -179,7 +179,9 @@
                 <button type="button" class="ybtn" data-ypop="ypDep"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4.5 13.6l2.2.6 3-2.6-5.3-4.1 1.9-.9 6.6 3 3.8-3.3c.9-.8 2.2-.7 2.9.2.6.8.4 2-.5 2.6l-9.3 6.6-2.9-.6z"/></svg></i> Kalkış <b class="ybadge" data-yb="departures"></b> {!! $yCaret !!}</button>
                 <button type="button" class="ybtn" data-ypop="ypBudget"><i class="yico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><rect x="3" y="8" width="18" height="12" rx="3"/><circle cx="16" cy="14" r="1.4"/></svg></i> Bütçe <b class="ybadge" data-yb="budget_max"></b> {!! $yCaret !!}</button>
 
-                <span class="ycount">Canlı: <b id="yLiveCount">{{ number_format($filteredCount, 0, ',', '.') }}</b> tur</span>
+                {{-- Canlı tur sayacı GEÇİCİ gizli: envanter henüz az, sayı artınca
+                     bu satırı geri aç (JS null-guard'lı, gizliyken de çalışır). --}}
+                {{-- <span class="ycount">Canlı: <b id="yLiveCount">{{ number_format($filteredCount, 0, ',', '.') }}</b> tur</span> --}}
                 <select name="sort" class="ysort" aria-label="Sıralama">
                     <option value="price_asc" {{ request('sort', 'price_asc') === 'price_asc' ? 'selected' : '' }}>Fiyat ↑</option>
                     <option value="price_desc" {{ request('sort') === 'price_desc' ? 'selected' : '' }}>Fiyat ↓</option>
