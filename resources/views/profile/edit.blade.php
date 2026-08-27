@@ -31,17 +31,16 @@
                                 ? (\Illuminate\Support\Str::startsWith($user->avatar, ['http://','https://']) ? $user->avatar : asset('storage/'.$user->avatar))
                                 : null;
                         @endphp
-                        @if($avatarUrl)
-                            <img src="{{ $avatarUrl }}" alt="avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);">
-                        @else
-                            <div style="width:64px;height:64px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--accent);border:2px solid var(--border);">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</div>
-                        @endif
+                        {{-- İki öğe de hep basılır: dosya seçilince JS resmi anında gösterir (kaydetmeden önizleme) --}}
+                        <img id="avatarPreview" src="{{ $avatarUrl ?? '' }}" alt="avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);{{ $avatarUrl ? '' : 'display:none;' }}">
+                        <div id="avatarInitial" style="width:64px;height:64px;border-radius:50%;background:var(--accent-bg);display:{{ $avatarUrl ? 'none' : 'flex' }};align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--accent);border:2px solid var(--border);">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</div>
                         <div style="flex:1;">
-                            <input type="file" name="avatar_file" accept="image/jpeg,image/png,image/webp">
+                            <input type="file" name="avatar_file" id="avatarInput" accept="image/jpeg,image/png,image/webp">
                             <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">JPG, PNG veya WEBP — max 2 MB</div>
+                            <div id="avatarSizeWarn" style="display:none;font-size:12px;color:#dc2626;margin-top:4px;">Dosya 2 MB'den büyük — kaydederken reddedilir, daha küçük bir görsel seçin.</div>
                             @if($avatarUrl)
                                 <label style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#dc2626;cursor:pointer;">
-                                    <input type="checkbox" name="remove_avatar" value="1"> Mevcut fotoğrafı kaldır
+                                    <input type="checkbox" name="remove_avatar" value="1" id="removeAvatar"> Mevcut fotoğrafı kaldır
                                 </label>
                             @endif
                         </div>
@@ -104,4 +103,65 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    // Fotoğraf seçilir seçilmez avatar yuvarlağında önizleme — kaydetmeyi beklemeden
+    const input = document.getElementById('avatarInput');
+    const preview = document.getElementById('avatarPreview');
+    const initial = document.getElementById('avatarInitial');
+    const removeBox = document.getElementById('removeAvatar');
+    const sizeWarn = document.getElementById('avatarSizeWarn');
+    if (!input || !preview || !initial) return;
+
+    const originalSrc = preview.getAttribute('src') || '';
+    let objectUrl = null;
+
+    function showPreview(src) {
+        preview.src = src;
+        preview.style.display = '';
+        initial.style.display = 'none';
+    }
+
+    function showInitial() {
+        preview.style.display = 'none';
+        initial.style.display = 'flex';
+    }
+
+    input.addEventListener('change', function () {
+        if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+        if (sizeWarn) sizeWarn.style.display = 'none';
+
+        const file = input.files && input.files[0];
+
+        if (!file || !file.type.startsWith('image/')) {
+            // Seçim iptal edildi: kayıtlı fotoğrafa (veya baş harfe) geri dön
+            if (originalSrc && (!removeBox || !removeBox.checked)) { showPreview(originalSrc); } else { showInitial(); }
+            return;
+        }
+
+        if (sizeWarn && file.size > 2 * 1024 * 1024) sizeWarn.style.display = '';
+
+        objectUrl = URL.createObjectURL(file);
+        showPreview(objectUrl);
+
+        // Yeni fotoğraf seçmek "mevcut fotoğrafı kaldır" niyetini geçersiz kılar
+        if (removeBox) removeBox.checked = false;
+    });
+
+    if (removeBox) {
+        removeBox.addEventListener('change', function () {
+            if (removeBox.checked) {
+                // Kaldırma işaretlenince seçili dosya da temizlenir, baş harfe dönülür
+                input.value = '';
+                if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+                if (sizeWarn) sizeWarn.style.display = 'none';
+                showInitial();
+            } else if (originalSrc) {
+                showPreview(originalSrc);
+            }
+        });
+    }
+})();
+</script>
 @endsection
