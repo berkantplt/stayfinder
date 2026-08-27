@@ -49,9 +49,11 @@
             Acenta mısınız? <a href="{{ route('agency.register') }}" style="color:var(--accent);font-weight:700;">Acenta hesabı oluşturun</a>
         </div>
 
-        <div style="text-align:center;margin-top:20px;font-size:13px;color:#64748b;padding-top:20px;border-top:1px solid #e2e8f0;">
-            Demo: <strong>admin@turxtur.com</strong> / password
-        </div>
+        @if(app()->environment('local'))
+            <div style="text-align:center;margin-top:20px;font-size:13px;color:#64748b;padding-top:20px;border-top:1px solid #e2e8f0;">
+                Demo: <strong>admin@turxtur.com</strong> / password
+            </div>
+        @endif
     </div>
 </div>
 @endsection
