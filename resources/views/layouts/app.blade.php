@@ -442,7 +442,10 @@
     </style>
     @stack('head')
 </head>
-<body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta*') ? 'panel-layout-active' : '' }} {{ request()->routeIs('home') ? 'm-hero-head' : '' }}">
+{{-- 'acenta', 'acenta/*': çıplak 'acenta*' herkese açık /acentalar/... profilini de
+     yakalayıp sayfayı panel moduna sokuyordu (masaüstü nav mobilde geri açılıyor,
+     alt sekme barı kayboluyordu). --}}
+<body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta', 'acenta/*') ? 'panel-layout-active' : '' }} {{ request()->routeIs('home') ? 'm-hero-head' : '' }}">
     {{-- Ana sayfada menü hero'nun üstünde yüzen beyaz hap olur (nav-float);
          diğer sayfalarda klasik beyaz sticky şerit kalır. --}}
     <nav class="nav {{ request()->routeIs('home') ? 'nav-float' : '' }}">
@@ -591,7 +594,7 @@
     <main>@yield('content')</main>
 
     {{-- ===== Mobil sabit alt gezinme (≤768px, panel sayfaları hariç) ===== --}}
-    @if(! request()->is('admin*') && ! request()->is('agency*') && ! request()->is('acenta*'))
+    @if(! request()->is('admin*') && ! request()->is('agency*') && ! request()->is('acenta', 'acenta/*'))
         @php
             $mProfileUrl = auth()->guest()
                 ? route('login')
@@ -1336,7 +1339,7 @@
             || request()->is('admin*')
             || request()->is('super-admin*')
             || request()->is('superadmin*')
-            || request()->is('acenta*')
+            || request()->is('acenta', 'acenta/*')
             || request()->routeIs('agency.*')
             || (auth()->check() && in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'], true));
     @endphp
@@ -2092,7 +2095,7 @@
             && ! request()->is('admin*')
             && ! request()->is('super-admin*')
             && ! request()->is('superadmin*')
-            && ! request()->is('acenta*')
+            && ! request()->is('acenta', 'acenta/*')
             && ! request()->routeIs('agency.*')
             && ! (auth()->check() && in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'], true));
     @endphp
