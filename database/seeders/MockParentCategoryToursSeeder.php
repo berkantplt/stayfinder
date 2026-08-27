@@ -419,7 +419,7 @@ class MockParentCategoryToursSeeder extends Seeder
                 'agency_id' => 3, 'category_id' => 33,
                 'title' => 'Bursa Uludağ, Yeşil Türbe ve Çarşılar Günübirlik Turu',
                 'destination' => 'Bursa',
-                'description' => '<p>Osmanlı\'nın ilk başkenti Bursa\'yı bir günde enlemesine geçiyoruz. Ulu Camii ve Kapalıçarşı\'da Osmanlı mirasını keşfediyoruz, Yeşil Cami ve Yeşil Türbe\'de İznik çinilerinin renk cümbüşüne hayran kalıyoruz.</p><p>Öğle yemeği olarak Bursa\'nın simge lezzeti İskender Kebap'ı ilk icra edildiği ustanın torunlarından yiyoruz. Sonrasında Uludağ Teleferik ile dağın zirvesine çıkıp manzarayı seyrediyoruz. Tarihi çarşıda ipekli kumaş ve peştamal alışverişi için serbest vakit tanınıyor.</p>',
+                'description' => '<p>Osmanlı\'nın ilk başkenti Bursa\'yı bir günde enlemesine geçiyoruz. Ulu Camii ve Kapalıçarşı\'da Osmanlı mirasını keşfediyoruz, Yeşil Cami ve Yeşil Türbe\'de İznik çinilerinin renk cümbüşüne hayran kalıyoruz.</p><p>Öğle yemeği olarak Bursa\'nın simge lezzeti İskender Kebap\'ı ilk icra edildiği ustanın torunlarından yiyoruz. Sonrasında Uludağ Teleferik ile dağın zirvesine çıkıp manzarayı seyrediyoruz. Tarihi çarşıda ipekli kumaş ve peştamal alışverişi için serbest vakit tanınıyor.</p>',
                 'price' => 1100.00, 'currency' => 'TRY', 'duration_days' => 1,
                 'is_active' => true, 'is_international' => false, 'requires_visa' => false,
                 'image' => 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800',
