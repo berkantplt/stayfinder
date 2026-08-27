@@ -591,7 +591,17 @@
         <div id="mobileNavBack" onclick="document.getElementById('mobileNav').classList.remove('open')"></div>
     </nav>
 
-    <main>@yield('content')</main>
+    <main>
+        {{-- Global hata bandı: redirect()->with('error', …) mesajları hiçbir
+             view'da basılmıyordu — kullanıcı sessizce geri yönlendiriliyordu.
+             (success mesajları sayfa sayfa basılıyor, burada yalnız error.) --}}
+        @if(session('error'))
+            <div class="container" style="padding-top:16px;">
+                <div class="alert alert-error">{{ session('error') }}</div>
+            </div>
+        @endif
+        @yield('content')
+    </main>
 
     {{-- ===== Mobil sabit alt gezinme (≤768px, panel sayfaları hariç) ===== --}}
     @if(! request()->is('admin*') && ! request()->is('agency*') && ! request()->is('acenta', 'acenta/*'))
