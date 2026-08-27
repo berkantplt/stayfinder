@@ -28,7 +28,13 @@
         </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:32px;">
+    <style>
+        @media(max-width:768px) {
+            .agency-cols { grid-template-columns:minmax(0,1fr) !important; gap:20px !important; }
+            .agency-cols > div { min-width:0; }
+        }
+    </style>
+    <div class="agency-cols" style="display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:32px;">
         {{-- Left: Tours --}}
         <div>
             <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Turlar</h2>

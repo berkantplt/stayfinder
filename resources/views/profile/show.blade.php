@@ -11,7 +11,10 @@
         <style>
         @media(max-width:768px) {
             .profile-hero { padding:20px !important; }
-            .profile-cols { grid-template-columns:1fr !important; gap:16px !important; }
+            {{-- minmax(0,1fr): çıplak 1fr'de favori satırındaki nowrap başlık
+                 sütunu min-content'ine (~412px) itip sayfayı taşırıyordu. --}}
+            .profile-cols { grid-template-columns:minmax(0,1fr) !important; gap:16px !important; }
+            .profile-cols > div { min-width:0; }
         }
         </style>
 
@@ -61,7 +64,7 @@
             </div>
         </div>
 
-        <div class="profile-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="profile-cols" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;">
             {{-- Favorites --}}
             <div>
                 <h2 style="font-size:17px;font-weight:700;margin-bottom:14px;">❤️ Favorilerim</h2>

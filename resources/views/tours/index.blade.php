@@ -58,7 +58,11 @@
     .m-sheet-foot .m-apply { flex:2; background:linear-gradient(135deg,#0d9488,#0c6e63); border:none; border-radius:12px; padding:13px; font-family:'Manrope',var(--font); font-size:14px; font-weight:800; color:#fff; cursor:pointer; }
 
     /* ===== Tur kartları: ana sayfayla aynı 2 sütun dikey kart dili ===== */
-    .m-vgrid { display:grid !important; grid-template-columns:1fr 1fr; gap:12px !important; }
+    {{-- minmax(0,1fr): çıplak 1fr'in örtük minimumu auto — kart görselinin
+         doğal genişliği (~210px) sütunu itip sayfayı 375px'te 424px'e taşırıyordu
+         (fixed tabbar ve filtre sheet'i de sayfayla birlikte genişliyordu). --}}
+    .m-vgrid { display:grid !important; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px !important; }
+    .m-vgrid .m-cardwrap { min-width:0; }
     .m-vgrid .card { border-radius:16px; border:1px solid rgba(15,36,33,.08); box-shadow:0 8px 20px rgba(4,24,21,.05); overflow:hidden; }
     .m-vgrid .card-img { height:112px !important; }
     .m-vgrid .card-body { padding:10px 11px 12px !important; }
