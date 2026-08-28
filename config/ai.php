@@ -42,6 +42,15 @@ return [
     // riskini getirirdi (bkz. sohbet v1'de yaşanan durum).
     'quiz_enabled' => env('AI_QUIZ_ENABLED', false),
 
+    // ---- Keşif Rehberi (/kesif-rehberi) ----
+    // Şehir + gün girdisinden günlere bölünmüş içerik planı. Varsayılan AÇIK;
+    // kapatmak için AI_DISCOVERY_ENABLED=false (uçlar 404 döner, kod yerinde).
+    'discovery_enabled' => env('AI_DISCOVERY_ENABLED', true),
+
+    // Rehber üretim modeli — tek seferlik, cache'lenen, kalite-kritik üretim:
+    // destinasyon zenginleştirmeyle aynı gerekçeyle AI_DEST_MODEL'i izler.
+    'discovery_model' => env('AI_DISCOVERY_MODEL', env('AI_DEST_MODEL', 'gpt-5.4-mini')),
+
     // ---- Chatbot v2 (araç çağırma mimarisi, bkz. CHATBOT_V2.md) ----
     // Konuşan yüzey GÜÇLÜ model ister: v1'de burası gpt-4o-mini'ydi ve
     // "istediğim zekada değil" şikayetinin birinci sebebiydi. Mesaj başına

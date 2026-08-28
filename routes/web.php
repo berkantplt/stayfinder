@@ -5,9 +5,13 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryLicenseController as AdminCategoryLicenseController;
+use App\Http\Controllers\Admin\DepartureCityController;
 use App\Http\Controllers\Admin\DestinationProfileController;
 use App\Http\Controllers\Admin\FeaturedCityController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RubricReviewController;
+use App\Http\Controllers\Admin\TourVisaController;
+use App\Http\Controllers\Admin\TrafficController;
 use App\Http\Controllers\Agency\CampaignController;
 use App\Http\Controllers\Agency\CategoryLicenseController;
 use App\Http\Controllers\Agency\CategoryLicenseController as AgencyCategoryLicenseController;
@@ -20,21 +24,29 @@ use App\Http\Controllers\Agency\TourImportController;
 use App\Http\Controllers\AgencyController;
 use App\Http\Controllers\AiSearchController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\ChatV2Controller;
 use App\Http\Controllers\Customer\CouponController;
 use App\Http\Controllers\DestinationController;
+use App\Http\Controllers\DiscoveryGuideController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecreationQuizController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TourController;
+use App\Http\Middleware\EnsureAiChatEnabled;
+use App\Http\Middleware\EnsureAiChatV2Enabled;
+use App\Http\Middleware\EnsureDiscoveryGuideEnabled;
 use App\Models\Agency;
 use App\Models\Tour;
 use App\Models\TourClick;
 use App\Models\User;
+use App\Support\LandingSlug;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -70,19 +82,40 @@ Route::view('/kullanim-kosullari', 'legal.kullanim-kosullari')->name('legal.kosu
 Route::view('/siralama-kriterleri', 'legal.siralama-kriterleri')->name('legal.siralama');
 // Tur eşleştirme testi — chatbot dondurmasından ETKİLENMEZ (LLM'siz çalışır)
 Route::middleware('throttle:ai_search')->group(function () {
-    Route::get('/tatil-karakteri', [\App\Http\Controllers\RecreationQuizController::class, 'definition'])->name('recreation.quiz.definition');
-    Route::post('/tatil-karakteri', [\App\Http\Controllers\RecreationQuizController::class, 'submit'])->name('recreation.quiz.submit');
+    Route::get('/tatil-karakteri', [RecreationQuizController::class, 'definition'])->name('recreation.quiz.definition');
+    Route::post('/tatil-karakteri', [RecreationQuizController::class, 'submit'])->name('recreation.quiz.submit');
+});
+
+// AI Keşif Rehberi — şehir + gün girdisinden günlere bölünmüş içerik planı.
+// AI_DISCOVERY_ENABLED=false ile kapatılabilir. Üretim uçları OpenAI çağrısı
+// tetiklediği için ai_search limitinde; status polling ucu daha gevşek search
+// limitinde (3 sn'lik poll aralığı anonim ai_search limitini aşardı).
+Route::middleware(EnsureDiscoveryGuideEnabled::class)->group(function () {
+    Route::get('/kesif-rehberi', [DiscoveryGuideController::class, 'index'])->name('discovery.index');
+    Route::get('/kesif-rehberi/{guide}', [DiscoveryGuideController::class, 'show'])
+        ->whereUuid('guide')
+        ->name('discovery.show');
+    Route::get('/kesif-rehberi/{guide}/durum', [DiscoveryGuideController::class, 'status'])
+        ->whereUuid('guide')
+        ->middleware('throttle:search')
+        ->name('discovery.status');
+    Route::middleware('throttle:ai_search')->group(function () {
+        Route::post('/kesif-rehberi', [DiscoveryGuideController::class, 'store'])->name('discovery.store');
+        Route::post('/kesif-rehberi/{guide}/kisisellestir', [DiscoveryGuideController::class, 'personalize'])
+            ->whereUuid('guide')
+            ->name('discovery.personalize');
+    });
 });
 
 // Chatbot v2 (araç çağırma) — AI_CHAT_V2_ENABLED ile ayrı açılır
-Route::middleware([\App\Http\Middleware\EnsureAiChatV2Enabled::class, 'throttle:ai_search'])->group(function () {
-    Route::post('/sohbet/akis', [\App\Http\Controllers\ChatV2Controller::class, 'stream'])->name('chat.v2.stream');
-    Route::post('/sohbet/digerleri', [\App\Http\Controllers\ChatV2Controller::class, 'more'])->name('chat.v2.more');
-    Route::post('/sohbet/sifirla', [\App\Http\Controllers\ChatV2Controller::class, 'reset'])->name('chat.v2.reset');
+Route::middleware([EnsureAiChatV2Enabled::class, 'throttle:ai_search'])->group(function () {
+    Route::post('/sohbet/akis', [ChatV2Controller::class, 'stream'])->name('chat.v2.stream');
+    Route::post('/sohbet/digerleri', [ChatV2Controller::class, 'more'])->name('chat.v2.more');
+    Route::post('/sohbet/sifirla', [ChatV2Controller::class, 'reset'])->name('chat.v2.reset');
 });
 
 // ❄️ Sohbet asistanı uçları — AI_CHAT_ENABLED kapalıyken 404 (bkz. config/ai.php)
-Route::middleware(\App\Http\Middleware\EnsureAiChatEnabled::class)->group(function () {
+Route::middleware(EnsureAiChatEnabled::class)->group(function () {
     Route::get('/yapay-zeka-arama', [AiSearchController::class, 'chat'])->name('ai.search');
     Route::get('/yapay-zeka-arama/{log}/turlar', [AiSearchController::class, 'showResults'])
         ->whereNumber('log')
@@ -333,8 +366,8 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
 // Admin Panel
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::get('/rubrik-inceleme', [\App\Http\Controllers\Admin\RubricReviewController::class, 'index'])->name('rubric.index');
-    Route::post('/rubrik-inceleme/{score}/onayla', [\App\Http\Controllers\Admin\RubricReviewController::class, 'approve'])->name('rubric.approve');
+    Route::get('/rubrik-inceleme', [RubricReviewController::class, 'index'])->name('rubric.index');
+    Route::post('/rubrik-inceleme/{score}/onayla', [RubricReviewController::class, 'approve'])->name('rubric.approve');
     Route::get('/kategori-yetkilendirme', [AdminCategoryLicenseController::class, 'index'])->name('category-licenses.index');
     Route::get('/kategori-yetkilendirme/kategori-tarifesi', [AdminCategoryLicenseController::class, 'pricing'])->name('category-licenses.pricing');
     Route::get('/kategori-yetkilendirme/acenta-erisimleri', [AdminCategoryLicenseController::class, 'access'])->name('category-licenses.access');
@@ -352,13 +385,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/acenta-basvurulari/{agency}/reddet', [AdminController::class, 'rejectAgencyApplication'])->name('agency-applications.reject');
     Route::get('/turlar', [AdminController::class, 'tours'])->name('tours');
     // Trafik — hangi tur tıklanıyor/görüntüleniyor (dashboard kutularının hedefi)
-    Route::get('/trafik', [App\Http\Controllers\Admin\TrafficController::class, 'index'])->name('traffic');
-    Route::get('/trafik/{tour}', [App\Http\Controllers\Admin\TrafficController::class, 'show'])->name('traffic.show');
+    Route::get('/trafik', [TrafficController::class, 'index'])->name('traffic');
+    Route::get('/trafik/{tour}', [TrafficController::class, 'show'])->name('traffic.show');
     // Kalkış şehri toplu düzenleme — "{şehir} kalkışlı" sayfa ailesinin girdisi
-    Route::get('/kalkis-sehirleri', [App\Http\Controllers\Admin\DepartureCityController::class, 'index'])->name('departure-cities');
-    Route::put('/kalkis-sehirleri', [App\Http\Controllers\Admin\DepartureCityController::class, 'update'])->name('departure-cities.update');
-    Route::get('/vize-durumu', [App\Http\Controllers\Admin\TourVisaController::class, 'index'])->name('tour-visa');
-    Route::put('/vize-durumu', [App\Http\Controllers\Admin\TourVisaController::class, 'update'])->name('tour-visa.update');
+    Route::get('/kalkis-sehirleri', [DepartureCityController::class, 'index'])->name('departure-cities');
+    Route::put('/kalkis-sehirleri', [DepartureCityController::class, 'update'])->name('departure-cities.update');
+    Route::get('/vize-durumu', [TourVisaController::class, 'index'])->name('tour-visa');
+    Route::put('/vize-durumu', [TourVisaController::class, 'update'])->name('tour-visa.update');
     Route::get('/destinasyonlar', [AdminController::class, 'destinations'])->name('destinations');
     Route::put('/destinasyonlar/{destination}', [AdminController::class, 'updateDestination'])->name('destinations.update');
     Route::post('/destinasyonlar/{destination}/toggle', [AdminController::class, 'toggleDestination'])->name('destinations.toggle');
@@ -438,6 +471,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 | segmentli adresleri eşler, bu yüzden /turlar, /blog, /admin/... etkilenmez.
 | Yine de en sona konur ki üstteki tüm açık rotalar öncelikli kalsın.
 */
-Route::get('/{slug}', [\App\Http\Controllers\LandingController::class, 'show'])
-    ->where('slug', \App\Support\LandingSlug::ROUTE_PATTERN)
+Route::get('/{slug}', [LandingController::class, 'show'])
+    ->where('slug', LandingSlug::ROUTE_PATTERN)
     ->name('landing.show');

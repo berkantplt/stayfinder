@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Jobs\GenerateDestinationProfileJob;
+use App\Jobs\GenerateDiscoveryGuideJob;
 use App\Jobs\GenerateKnowledgeEmbeddingJob;
 use App\Jobs\GenerateTourCharacterJob;
 use App\Jobs\GenerateTourEmbeddingJob;
@@ -28,6 +29,7 @@ abstract class TestCase extends BaseTestCase
             GenerateDestinationProfileJob::class,
             GenerateTourCharacterJob::class,
             ScoreTourRubricJob::class,
+            GenerateDiscoveryGuideJob::class,
         ]);
     }
 }
