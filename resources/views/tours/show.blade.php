@@ -94,6 +94,15 @@
     .inc-box.kisa .inc-body::after { display:none; }
     .inc-box.kisa .inc-more { display:none; }
     .inc-box.kisa .inc-head { cursor:default; }
+
+    /* ── Tur programı: gün gün akordeon ──
+       Her günün başlığı her zaman görünür; içeriği satıra tıklanınca açılır. */
+    .prog-day { border-bottom:1px dashed var(--border); }
+    .prog-day:last-child { border-bottom:0; }
+    .prog-day summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 0; font-weight:700; color:#0f172a; font-size:14px; }
+    .prog-day[open] > summary .inc-caret { transform:rotate(180deg); }
+    .prog-day-body { color:var(--text-sec); line-height:1.8; font-size:14px; white-space:pre-line; padding:0 0 12px; }
+    .prog-day-plain { padding:11px 0; font-weight:700; color:#0f172a; font-size:14px; }
 </style>
 @endpush
 
@@ -265,14 +274,12 @@
 
                 {{-- Sekme: Tur Programı --}}
                 @if($hasProgram)
-                {{-- Dahil kutularıyla aynı önizlemeli akordeon (.inc-box):
-                     kapalıyken ilk satırlar + soldurma, alttaki yuvarlak okla açılır --}}
+                {{-- Gün gün akordeon: TÜM gün başlıkları listede görünür, her günün
+                     içeriği kendi satırına tıklanınca açılır (native details).
+                     İçeriği olmayan gün tıklanamaz düz satır olarak yazılır. --}}
                 <div class="tour-tab-panel" data-tab-panel="program" @if($defaultTab !== 'program') hidden @endif>
-                    <div class="inc-box">
-                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
-                            <h3>📋 Tur Programı</h3>
-                        </button>
-                        <div class="inc-body" style="margin-top:14px;">
+                    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+                        <h3 style="font-size:15px;font-weight:700;margin-bottom:6px;">📋 Tur Programı</h3>
                         @foreach($tour->itinerary as $i => $day)
                             @php
                                 // Başlıkta zaten "N. Gün" / "Gün N" ön eki varsa temizle (sayfa kendi ekliyor)
@@ -280,18 +287,20 @@
                                 $dayTitle = preg_replace('/^\s*\d+\s*\.?\s*g[üu]n\s*[:\-–—]?\s*/iu', '', $dayTitle);
                                 $dayTitle = preg_replace('/^\s*g[üu]n\s*\d+\s*[:\-–—]?\s*/iu', '', $dayTitle);
                                 $dayTitle = trim($dayTitle);
+                                $dayLabel = ($i + 1) . '. Gün' . ($dayTitle !== '' ? ': ' . $dayTitle : '');
                             @endphp
-                            <div style="margin-bottom:14px;padding-bottom:14px;{{ ! $loop->last ? 'border-bottom:1px dashed var(--border);' : '' }}">
-                                <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">{{ $i + 1 }}. Gün{{ $dayTitle !== '' ? ': '.$dayTitle : '' }}</div>
-                                @if(! empty($day['content']))
-                                    <div style="color:var(--text-sec);line-height:1.8;font-size:14px;white-space:pre-line;">{{ $day['content'] }}</div>
-                                @endif
-                            </div>
+                            @if(! empty($day['content']))
+                                <details class="prog-day">
+                                    <summary>
+                                        <span>{{ $dayLabel }}</span>
+                                        <span class="inc-caret" aria-hidden="true">▾</span>
+                                    </summary>
+                                    <div class="prog-day-body">{{ $day['content'] }}</div>
+                                </details>
+                            @else
+                                <div class="prog-day prog-day-plain">{{ $dayLabel }}</div>
+                            @endif
                         @endforeach
-                        </div>
-                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
-                            <span class="inc-caret" aria-hidden="true">▾</span>
-                        </button>
                     </div>
                 </div>
                 @endif
