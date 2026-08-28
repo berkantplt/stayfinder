@@ -73,6 +73,11 @@
         .pricing-table td.pkg-price::before { content:attr(data-label); color:var(--text-muted); font-size:12.5px; font-weight:600; }
         .pricing-table td.pkg-price .pkg-price-val { white-space:nowrap; text-align:right; }
     }
+
+    /* Dahil olan/olmayan akordeonları: ok açıkken yukarı bakar */
+    .inc-caret { color:var(--text-muted); font-size:14px; transition:transform .25s; }
+    details[open] > summary .inc-caret { transform:rotate(180deg); }
+    summary::-webkit-details-marker { display:none; }
 </style>
 @endpush
 
@@ -644,10 +649,16 @@
                     </div>
                 </div>
 
+                {{-- Dahil olan/olmayan kutuları akordeon: ok yönü details[open]
+                     ile döner (bkz. .inc-caret CSS'i). Varsayılan açık — kapalı
+                     başlasın istenirse open attribute'unu silmek yeterli. --}}
                 @if($tour->included)
-                    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
-                        <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">✅ Dahil Olanlar</h3>
-                        <ul style="list-style:none;">
+                    <details open style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+                        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <h3 style="font-size:15px;font-weight:700;">✅ Dahil Olanlar</h3>
+                            <span class="inc-caret" aria-hidden="true">▾</span>
+                        </summary>
+                        <ul style="list-style:none;margin-top:10px;">
                             @foreach(explode("\n", $tour->included) as $item)
                                 @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
                                 @if($line !== '')
@@ -655,13 +666,16 @@
                                 @endif
                             @endforeach
                         </ul>
-                    </div>
+                    </details>
                 @endif
 
                 @if($tour->excluded)
-                    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
-                        <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">❌ Dahil Olmayanlar</h3>
-                        <ul style="list-style:none;">
+                    <details open style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+                        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <h3 style="font-size:15px;font-weight:700;">❌ Dahil Olmayanlar</h3>
+                            <span class="inc-caret" aria-hidden="true">▾</span>
+                        </summary>
+                        <ul style="list-style:none;margin-top:10px;">
                             @foreach(explode("\n", $tour->excluded) as $item)
                                 @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
                                 @if($line !== '')
@@ -669,7 +683,7 @@
                                 @endif
                             @endforeach
                         </ul>
-                    </div>
+                    </details>
                 @endif
 
                 {{-- Other Agencies --}}
