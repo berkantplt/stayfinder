@@ -290,6 +290,396 @@
         </div>
     @endif
 
+    {{-- ===== AI asistan bölümü (masaüstü): Keşif Rehberi AI + Tur Danışmanı AI =====
+         Kullanıcının 2026-08-28 tasarımından. Kart görünürlüğü bayraklara bağlı:
+         Keşif Rehberi → ai.discovery_enabled, Tur Danışmanı → ai.chat_v2_enabled
+         (layout'taki cv2 balonuyla aynı bayrak; admin rolünde balon render edilmediği
+         için kart da gizlenir — ölü buton kalmasın). İkisi de kapalıysa bölüm yok.
+         Mobil (≤768px) BİLEREK dışarıda: mobil yüzey turXtur Mobil 3 tasarımına ait. --}}
+    @php
+        $aiKesifAcik = (bool) config('ai.discovery_enabled');
+        // Balonla AYNI kural (App\Support\ChatV2Visibility) — kart varsa balon da
+        // kesin vardır, "Sohbete Başla" asla hedefsiz kalmaz.
+        $aiDanismanAcik = \App\Support\ChatV2Visibility::visible(request());
+    @endphp
+    @if($aiKesifAcik || $aiDanismanAcik)
+    <style>
+        /* Yatay geometri kapsayıcı .container'dan gelir (max-width 1280 + 20px
+           padding) — burada tekrarlanmaz, yoksa panel kardeşlerinden 20px içeri
+           kaçıyordu (inceleme bulgusu). */
+        .ai-hub-wrap { margin: 26px 0 6px; }
+        .ai-hub { background: #fdf9f5; border-radius: 24px; padding: 24px 28px; display: flex; align-items: stretch; gap: 20px; flex-wrap: wrap; }
+        .ai-hub-intro { flex: 1 1 220px; display: flex; flex-direction: column; justify-content: center; min-width: 210px; }
+        .ai-hub-intro h2 { font-size: 21px; font-weight: 800; color: var(--text); line-height: 1.35; letter-spacing: -0.3px; }
+        .ai-hub-intro p { margin-top: 8px; font-size: 13.5px; color: var(--text-sec); }
+        .ai-hub-card { flex: 1 1 300px; background: var(--white); border: 1px solid var(--border-light); border-radius: 16px; box-shadow: var(--shadow); display: flex; gap: 14px; min-width: 290px; overflow: hidden; }
+        /* Tasarımdaki gibi: karakter beyaz kart zemininde, alt kenara taşarak
+           (bleed) oturur — ayrı renkli kutu yok. object-position:top ile baş
+           daima görünür, kırpma alttan olur. */
+        .ai-hub-figure { flex: 0 0 34%; max-width: 175px; }
+        .ai-hub-figure img { display: block; width: 100%; height: 100%; min-height: 150px; object-fit: cover; object-position: top center; }
+        .ai-hub-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 14px 16px 14px 0; }
+        .ai-hub-body h3 { font-size: 16px; font-weight: 800; color: var(--text); }
+        .ai-hub-body p { margin: 6px 0 12px; font-size: 12.5px; line-height: 1.55; color: var(--text-sec); }
+        .ai-hub-body .btn { align-self: flex-start; padding: 9px 18px; }
+        /* 769-1000px bandında üçlü tek satıra sığmaz; intro tam satıra alınır,
+           iki kart altta yan yana kalır (tek kartın kocaman sarması önlenir). */
+        @media (max-width: 1000px) { .ai-hub-intro { flex-basis: 100%; } }
+        @media (max-width: 768px) { .ai-hub-wrap { display: none; } }
+
+        /* ===== Keşif Rehberi penceresi: sayfa değiştirmeyen yatay <dialog> ===== */
+        /* margin:auto ŞART: global reset (*{margin:0}) dialog'un doğal ortalamasını
+           eziyor, pencere sol üst köşeye yapışıyordu. */
+        .dgm { margin: auto; border: none; border-radius: 20px; padding: 0; width: min(720px, 94vw); max-height: 86vh; box-shadow: 0 24px 64px rgba(0,0,0,.25); font-family: var(--font); color: var(--text); }
+        .dgm::backdrop { background: rgba(15, 23, 42, .45); }
+        .dgm-ic { padding: 22px 26px 24px; }
+        .dgm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .dgm-head h3 { font-size: 17px; font-weight: 800; }
+        .dgm-kapat { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 4px 8px; }
+        .dgm-satir { display: flex; gap: 12px; }
+        .dgm-satir input, .dgm-satir select { border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; font-size: 14px; font-family: inherit; }
+        .dgm-satir input { flex: 1; min-width: 0; }
+        .dgm-satir input:focus, .dgm-satir select:focus { outline: none; border-color: var(--accent); }
+        .dgm-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+        .dgm-chip { border: 1px solid var(--border); background: var(--white); color: var(--text-sec); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+        .dgm-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .dgm-detay { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 2px; }
+        .dgm-detay summary { cursor: pointer; list-style: none; padding: 10px 0; font-weight: 700; font-size: 13px; color: var(--accent-dark); }
+        .dgm-detay summary::-webkit-details-marker { display: none; }
+        .dgm-opt { font-size: 12px; font-weight: 700; margin: 10px 0 6px; }
+        .dgm-hata { display: none; margin-top: 12px; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+        .dgm-durum { text-align: center; padding: 26px 10px 10px; }
+        .dgm-spin { width: 38px; height: 38px; border: 4px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 14px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ===== Tur Danışmanı: karttan açılınca köşe balonu yerine ORTADA yatay pencere ===== */
+        #cv2.cv2-orta::before { content: ''; position: fixed; inset: 0; background: rgba(15, 23, 42, .45); }
+        #cv2.cv2-orta #cv2-trigger { visibility: hidden; }
+        #cv2.cv2-orta #cv2-panel {
+            position: fixed !important; left: 50% !important; top: 50% !important;
+            right: auto !important; bottom: auto !important; transform: translate(-50%, -50%);
+            width: min(760px, 94vw) !important; height: min(500px, 85vh) !important;
+        }
+    </style>
+    <div class="ai-hub-wrap">
+        <div class="ai-hub">
+            <div class="ai-hub-intro">
+                <h2>Seyahatini planlamana<br>AI asistanlarımız yardımcı olsun ✨</h2>
+                <p>Kişiye özel öneriler al, planını kolayca oluştur.</p>
+            </div>
+            @if($aiKesifAcik)
+            <div class="ai-hub-card">
+                <div class="ai-hub-figure">
+                    <img src="{{ asset('images/ai/kesif-rehberi-ai.webp') }}" alt="Keşif Rehberi AI karakteri" width="432" height="540" loading="lazy" decoding="async">
+                </div>
+                <div class="ai-hub-body">
+                    <h3>Keşif Rehberi AI</h3>
+                    <p>Destinasyonuna, sürene ve ilgi alanlarına göre sana özel gün gün plan ve öneriler sunar.</p>
+                    {{-- Yeni sayfaya GÖTÜRMEZ: ortadaki yatay pencerede form + üretim
+                         takibi (kullanıcı kararı). /kesif-rehberi sayfası nav/footer'dan
+                         hâlâ erişilebilir. --}}
+                    <button type="button" id="dgm-ac" class="btn btn-primary">Plan Oluştur</button>
+                </div>
+            </div>
+            @endif
+            @if($aiDanismanAcik)
+            <div class="ai-hub-card">
+                <div class="ai-hub-figure">
+                    <img src="{{ asset('images/ai/tur-danismani-ai.webp') }}" alt="Tur Danışmanı AI karakteri" width="444" height="540" loading="lazy" decoding="async">
+                </div>
+                <div class="ai-hub-body">
+                    <h3>Tur Danışmanı AI</h3>
+                    <p>Turlar hakkında sor, karşılaştır, en uygun seçeneği birlikte bulalım.</p>
+                    {{-- Karttan açılınca sohbet köşedeki dikey balon yerine ORTADA
+                         yatay pencere olarak açılır (cv2-orta sınıfı, kullanıcı
+                         kararı); balondan açılınca klasik görünüm korunur. Panel
+                         zaten açıksa yalnız mesaj kutusuna odaklanır (toggle tuzağı). --}}
+                    <button type="button" id="cv2-karttan-ac" class="btn btn-primary">Sohbete Başla</button>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+
+    @if($aiKesifAcik)
+    {{-- Keşif Rehberi penceresi: form + üretim takibi burada, sayfa değişmez.
+         Plan hazır olunca "Rehberi Gör" tam rehber sayfasını açar. --}}
+    <dialog id="dg-modal" class="dgm" aria-label="AI Keşif Rehberi">
+        <div class="dgm-ic">
+            <div class="dgm-head">
+                <h3>🧭 AI Keşif Rehberi</h3>
+                <button type="button" class="dgm-kapat" id="dgm-x" aria-label="Kapat">✕</button>
+            </div>
+
+            <div id="dgm-form-alani">
+                <form id="dgm-form" novalidate>
+                    <div class="dgm-satir">
+                        <input type="text" id="dgm-destinasyon" maxlength="100" placeholder="Nereye? Örn. Paris, Roma, Kapadokya..." autocomplete="off" required>
+                        <select id="dgm-gun" aria-label="Kaç gün?">
+                            @foreach(range(1, 7) as $gun)
+                                <option value="{{ $gun }}" @selected($gun === 4)>{{ $gun }} gün</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" id="dgm-gonder" class="btn btn-primary" style="white-space:nowrap;">Planı Oluştur</button>
+                    </div>
+
+                    <details class="dgm-detay">
+                        <summary>✨ Planı kişiselleştir <span style="font-weight:500;color:var(--text-muted);">(isteğe bağlı)</span></summary>
+                        <div class="dgm-opt">Kimlerle seyahat ediyorsun?</div>
+                        <div class="dgm-chips" data-group="traveler_type" data-single="1">
+                            @foreach(\App\Models\DiscoveryGuide::TRAVELER_TYPES as $deger => $etiket)
+                                <button type="button" class="dgm-chip" data-value="{{ $deger }}">{{ $etiket }}</button>
+                            @endforeach
+                        </div>
+                        <div class="dgm-opt">İlgi alanları</div>
+                        <div class="dgm-chips" data-group="interests">
+                            @foreach(\App\Models\DiscoveryGuide::INTERESTS as $deger => $etiket)
+                                <button type="button" class="dgm-chip" data-value="{{ $deger }}">{{ $etiket }}</button>
+                            @endforeach
+                        </div>
+                        <div class="dgm-opt">Tempo</div>
+                        <div class="dgm-chips" data-group="pace" data-single="1">
+                            @foreach(\App\Models\DiscoveryGuide::PACES as $deger => $etiket)
+                                <button type="button" class="dgm-chip {{ $deger === 'normal' ? 'on' : '' }}" data-value="{{ $deger }}">{{ $etiket }}</button>
+                            @endforeach
+                        </div>
+                        <div class="dgm-opt">Bütçe</div>
+                        <div class="dgm-chips" data-group="budget" data-single="1">
+                            @foreach(\App\Models\DiscoveryGuide::BUDGETS as $deger => $etiket)
+                                <button type="button" class="dgm-chip {{ $deger === 'standard' ? 'on' : '' }}" data-value="{{ $deger }}">{{ $etiket }}</button>
+                            @endforeach
+                        </div>
+                    </details>
+
+                    <div id="dgm-hata" class="dgm-hata" role="alert"></div>
+                </form>
+            </div>
+
+            <div id="dgm-bekleme" class="dgm-durum" hidden>
+                <div class="dgm-spin"></div>
+                <div style="font-weight:800;font-size:15px;" id="dgm-bekleme-baslik">Rehberiniz hazırlanıyor...</div>
+                <p style="color:var(--text-sec);font-size:13px;margin-top:6px;">Bu genellikle bir dakikadan kısa sürer; pencereyi kapatsanız bile plan hazırlanmaya devam eder.</p>
+            </div>
+
+            <div id="dgm-hazir" class="dgm-durum" hidden>
+                <div style="font-size:40px;margin-bottom:8px;">🎉</div>
+                <div style="font-weight:800;font-size:16px;">Rehberiniz hazır!</div>
+                <p style="color:var(--text-sec);font-size:13px;margin:6px 0 16px;" id="dgm-hazir-ozet"></p>
+                <a id="dgm-gor" class="btn btn-primary" href="#">Rehberi Gör</a>
+                <button type="button" class="btn btn-outline" id="dgm-yeni" style="margin-left:8px;">Yeni Plan</button>
+            </div>
+
+            <div id="dgm-basarisiz" class="dgm-durum" hidden>
+                <div style="font-size:40px;margin-bottom:8px;">😔</div>
+                <div style="font-weight:800;font-size:15px;">Rehber oluşturulamadı</div>
+                <p style="color:var(--text-sec);font-size:13px;margin:6px 0 16px;" id="dgm-basarisiz-mesaj"></p>
+                <button type="button" class="btn btn-primary" id="dgm-tekrar">🔄 Tekrar dene</button>
+                <button type="button" class="btn btn-outline" id="dgm-yeni2" style="margin-left:8px;">Yeni Plan</button>
+            </div>
+        </div>
+    </dialog>
+    @endif
+
+    <script>
+    (function () {
+        // ---- Tur Danışmanı: karttan aç → ortada yatay pencere ----
+        // DİKKAT: bu script layout'taki cv2 balonundan ÖNCE parse edilir; #cv2-panel
+        // burada henüz DOM'da yoktur. Bu yüzden gözcü sayfa yüklenince değil, İLK
+        // tıklamada kurulur (o anda panel kesin var).
+        const sohbetBtn = document.getElementById('cv2-karttan-ac');
+        let cv2Gozcu = false;
+        if (sohbetBtn) {
+            sohbetBtn.addEventListener('click', function () {
+                const cv2 = document.getElementById('cv2');
+                const panel = document.getElementById('cv2-panel');
+                if (!cv2 || !panel) return;
+                if (!cv2Gozcu) {
+                    // Panel kapanınca (X, Escape, toggle — her yol) orta modu bırak:
+                    // balondan sonraki açılış klasik köşe görünümüne döner.
+                    new MutationObserver(function () {
+                        if (panel.hidden) cv2.classList.remove('cv2-orta');
+                    }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+                    cv2Gozcu = true;
+                }
+                if (panel.hidden) {
+                    cv2.classList.add('cv2-orta');
+                    document.getElementById('cv2-trigger')?.click();
+                } else {
+                    document.getElementById('cv2-input')?.focus();
+                }
+            });
+        }
+
+        // ---- Keşif Rehberi penceresi ----
+        const modal = document.getElementById('dg-modal');
+        const acBtn = document.getElementById('dgm-ac');
+        if (!modal || !acBtn) return;
+
+        const csrfToken = @json(csrf_token());
+        const storeUrl = @json(route('discovery.store'));
+        const durumlar = ['dgm-form-alani', 'dgm-bekleme', 'dgm-hazir', 'dgm-basarisiz'];
+        let rehberUrl = null;
+        let pollZamanlayici = null;
+
+        function durumGoster(id) {
+            durumlar.forEach(d => { document.getElementById(d).hidden = (d !== id); });
+        }
+
+        function pollDurdur() {
+            if (pollZamanlayici) { clearTimeout(pollZamanlayici); pollZamanlayici = null; }
+        }
+
+        acBtn.addEventListener('click', function () {
+            modal.showModal();
+            if (!document.getElementById('dgm-form-alani').hidden) {
+                document.getElementById('dgm-destinasyon').focus();
+            }
+        });
+        document.getElementById('dgm-x').addEventListener('click', () => modal.close());
+        // Karartıya tıklayınca kapat (üretim sunucuda sürer, kayıp olmaz)
+        modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
+
+        function sifirla() {
+            pollDurdur();
+            rehberUrl = null;
+            document.getElementById('dgm-form').reset();
+            document.querySelectorAll('#dg-modal .dgm-chip.on').forEach(c => c.classList.remove('on'));
+            document.querySelector('#dg-modal .dgm-chips[data-group="pace"] [data-value="normal"]')?.classList.add('on');
+            document.querySelector('#dg-modal .dgm-chips[data-group="budget"] [data-value="standard"]')?.classList.add('on');
+            document.getElementById('dgm-hata').style.display = 'none';
+            durumGoster('dgm-form-alani');
+            document.getElementById('dgm-destinasyon').focus();
+        }
+        document.getElementById('dgm-yeni').addEventListener('click', sifirla);
+        document.getElementById('dgm-yeni2').addEventListener('click', sifirla);
+
+        document.querySelectorAll('#dg-modal .dgm-chips').forEach(function (grup) {
+            grup.addEventListener('click', function (e) {
+                const cip = e.target.closest('.dgm-chip');
+                if (!cip) return;
+                if (grup.dataset.single) {
+                    const aktifti = cip.classList.contains('on');
+                    grup.querySelectorAll('.dgm-chip').forEach(c => c.classList.remove('on'));
+                    if (!aktifti) cip.classList.add('on');
+                } else {
+                    cip.classList.toggle('on');
+                }
+            });
+        });
+
+        function tekSecim(grup) {
+            return document.querySelector('#dg-modal .dgm-chips[data-group="' + grup + '"] .dgm-chip.on')?.dataset.value || null;
+        }
+
+        function cokluSecim(grup) {
+            return Array.from(document.querySelectorAll('#dg-modal .dgm-chips[data-group="' + grup + '"] .dgm-chip.on')).map(c => c.dataset.value);
+        }
+
+        function hataGoster(mesaj) {
+            const kutu = document.getElementById('dgm-hata');
+            kutu.textContent = mesaj;
+            kutu.style.display = 'block';
+        }
+
+        function dostcaHata(status) {
+            if (status === 429) return 'Biraz hızlı gidiyoruz 🙂 Birkaç saniye bekleyip tekrar dener misin?';
+            if (status === 419) return 'Oturumun yenilenmiş — sayfayı yenileyip (F5) tekrar dener misin?';
+            return 'Sunucuda bir sorun oluştu (HTTP ' + status + ') — lütfen tekrar dene.';
+        }
+
+        function durumTakibi() {
+            const durumUrl = rehberUrl + '/durum';
+            const baslangic = Date.now();
+            async function bak() {
+                try {
+                    const res = await fetch(durumUrl, { headers: { 'Accept': 'application/json' } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status === 'completed') {
+                            pollDurdur();
+                            document.getElementById('dgm-gor').href = rehberUrl;
+                            durumGoster('dgm-hazir');
+                            return;
+                        }
+                        if (data.status === 'failed') {
+                            pollDurdur();
+                            document.getElementById('dgm-basarisiz-mesaj').textContent = data.error_message || 'Beklenmedik bir sorun oluştu.';
+                            durumGoster('dgm-basarisiz');
+                            return;
+                        }
+                    }
+                } catch (e) { /* geçici ağ hatası — sonraki denemede tekrar */ }
+                const gecen = Date.now() - baslangic;
+                if (gecen > 30 * 60 * 1000) return;
+                pollZamanlayici = setTimeout(bak, gecen > 3 * 60 * 1000 ? 15000 : 3000);
+            }
+            pollZamanlayici = setTimeout(bak, 3000);
+        }
+
+        document.getElementById('dgm-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            document.getElementById('dgm-hata').style.display = 'none';
+
+            const destinasyon = document.getElementById('dgm-destinasyon').value.trim();
+            if (destinasyon.length < 2) { hataGoster('Lütfen bir şehir veya ilçe adı yazın.'); return; }
+
+            const govde = {
+                destination: destinasyon,
+                duration_days: parseInt(document.getElementById('dgm-gun').value, 10),
+                traveler_type: tekSecim('traveler_type'),
+                interests: cokluSecim('interests'),
+                pace: tekSecim('pace') || 'normal',
+                budget: tekSecim('budget') || 'standard',
+            };
+
+            const gonder = document.getElementById('dgm-gonder');
+            gonder.disabled = true;
+            try {
+                const res = await fetch(storeUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                    body: JSON.stringify(govde),
+                });
+                if (res.status === 422) {
+                    const data = await res.json().catch(() => ({}));
+                    const ilk = data.errors ? Object.values(data.errors)[0] : null;
+                    throw new Error(ilk && ilk[0] ? ilk[0] : 'Girdiğiniz bilgileri kontrol eder misiniz?');
+                }
+                if (!res.ok) throw new Error(dostcaHata(res.status));
+
+                const data = await res.json();
+                rehberUrl = data.redirect_url;
+                document.getElementById('dgm-bekleme-baslik').textContent = destinasyon + ' rehberiniz hazırlanıyor...';
+                document.getElementById('dgm-hazir-ozet').textContent = destinasyon + ' için ' + govde.duration_days + ' günlük gün gün planınız oluşturuldu.';
+                durumGoster('dgm-bekleme');
+                durumTakibi();
+            } catch (err) {
+                hataGoster(err.message || 'Beklenmedik bir sorun oluştu — lütfen tekrar dene.');
+            } finally {
+                gonder.disabled = false;
+            }
+        });
+
+        // Tekrar dene: aynı rehberi yeniden üret (kisisellestir ucu boş gövdeyle)
+        document.getElementById('dgm-tekrar').addEventListener('click', async function () {
+            if (!rehberUrl) { sifirla(); return; }
+            try {
+                const res = await fetch(rehberUrl + '/kisisellestir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                    body: JSON.stringify({}),
+                });
+                if (!res.ok) throw new Error(dostcaHata(res.status));
+                durumGoster('dgm-bekleme');
+                durumTakibi();
+            } catch (err) {
+                document.getElementById('dgm-basarisiz-mesaj').textContent = err.message;
+            }
+        });
+    })();
+    </script>
+    @endif
+
     {{-- Hero'nun güven şeridi (masaüstü; mobilde üstteki .m-trust şeridi var) --}}
     <div class="hero-trust">
         <div class="hero-trust-item">

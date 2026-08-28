@@ -506,6 +506,9 @@
             {{-- Sol grup: gezinme --}}
             <div class="nav-links nav-links-left">
                 <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar') ? 'nav-active' : '' }}">Turlar</a>
+                @if(config('ai.discovery_enabled'))
+                    <a href="{{ route('discovery.index') }}" class="{{ request()->is('kesif-rehberi*') ? 'nav-active' : '' }}">Keşif Rehberi</a>
+                @endif
                 <a href="{{ route('blog.index') }}" class="{{ request()->is('blog*') ? 'nav-active' : '' }}">Blog</a>
                 @auth
                     @if(! auth()->user()->isAdmin() && ! auth()->user()->isAgency())
@@ -573,6 +576,9 @@
                     onclick="document.getElementById('mobileNav').classList.remove('open')">✕</button>
             </div>
             <a href="{{ route('tours.index') }}">🧭 Turlar</a>
+            @if(config('ai.discovery_enabled'))
+                <a href="{{ route('discovery.index') }}">🗺️ Keşif Rehberi</a>
+            @endif
             <a href="{{ route('blog.index') }}">✍️ Blog</a>
             @auth
                 @php
@@ -666,6 +672,9 @@
                 </div>
                 <div><h4>Platform</h4><ul>
                     <li><a href="{{ route('tours.index') }}">Turlar</a></li>
+                    @if(config('ai.discovery_enabled'))
+                        <li><a href="{{ route('discovery.index') }}">Keşif Rehberi</a></li>
+                    @endif
                     <li><a href="{{ route('legal.nasil-calisir') }}">Nasıl Çalışır?</a></li>
                     <li><a href="{{ route('blog.index') }}">Blog</a></li>
                     <li><a href="{{ route('legal.iletisim') }}">İletişim</a></li>
@@ -2119,14 +2128,10 @@
     </script>
 
     @php
-        // v2 sohbet: v1'den BAĞIMSIZ bayrak (v1 dondurulmuşken kademeli açılabilsin)
-        $showChatV2 = config('ai.chat_v2_enabled')
-            && ! request()->is('admin*')
-            && ! request()->is('super-admin*')
-            && ! request()->is('superadmin*')
-            && ! request()->is('acenta', 'acenta/*')
-            && ! request()->routeIs('agency.*')
-            && ! (auth()->check() && in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'], true));
+        // v2 sohbet: v1'den BAĞIMSIZ bayrak (v1 dondurulmuşken kademeli açılabilsin).
+        // Kural TEK yerde: ana sayfadaki "Tur Danışmanı AI" kartı da aynı sınıfı
+        // çağırır — koşul burada değişirse kart otomatik uyum sağlar (ölü buton olmaz).
+        $showChatV2 = \App\Support\ChatV2Visibility::visible(request());
     @endphp
 
     @if($showChatV2)
