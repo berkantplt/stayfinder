@@ -140,8 +140,12 @@
         </div>
     </div>
     {{-- Navigation Arrows --}}
-    <button class="hero-arrow hero-arrow-left" onclick="slideCarousel(-1)" aria-label="Önceki">❮</button>
-    <button class="hero-arrow hero-arrow-right" onclick="slideCarousel(1)" aria-label="Sonraki">❯</button>
+    <button class="hero-arrow hero-arrow-left" onclick="slideCarousel(-1)" aria-label="Önceki">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="hero-arrow hero-arrow-right" onclick="slideCarousel(1)" aria-label="Sonraki">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
     {{-- Dots --}}
     <div class="hero-dots" id="heroDots">
         @foreach($carouselBanners as $i => $b)
@@ -750,9 +754,15 @@
              tüm hero içeriği kayar. max-width:990 (950 arama kartı + 40 padding)
              hero bloğunu daraltıp margin:auto ile sayfada ortalar. --}}
         .hero-overlay .container { pointer-events:auto; position:relative; width:100%; max-width:990px; }
-        /* Referans tasarımda ok yok — otomatik döner, noktalarla da gezilir.
-           Geri istenirse bu satırı silmek yeterli. */
-        .hero-arrow { display:none; }
+        /* Oklar kenarlarda dikeyde ortalı; cam görünümü .hero-slide-label ile
+           aynı. Hero içeriği 990px'te ortalandığından (bkz. .hero-overlay
+           .container) dar ekranda okla arama kartı çakışır — 1120px altında
+           gizlenir, gezinme noktalarla sürer. */
+        .hero-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:6; width:46px; height:46px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.75); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.8); border-radius:50%; color:#0f172a; cursor:pointer; transition:all 0.3s; }
+        .hero-arrow-left { left:22px; }
+        .hero-arrow-right { right:22px; }
+        .hero-arrow:hover { background:#fff; color:var(--accent); transform:translateY(-50%) scale(1.08); }
+        @media(max-width:1120px) { .hero-arrow { display:none; } }
         .hero-dots { position:absolute; top:164px; right:38px; bottom:auto; left:auto; transform:none; z-index:6; display:flex; gap:9px; }
         .hero-dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.7); border:1px solid rgba(15,23,42,.15); cursor:pointer; transition:all 0.3s; }
         .hero-dot.active { background:var(--accent); border-color:var(--accent); transform:scale(1.25); }
