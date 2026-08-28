@@ -144,16 +144,6 @@
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Acenta</label>
-                    <select name="agency_id" class="filter-select">
-                        <option value="">Tümü</option>
-                        @foreach($agencies as $agency)
-                            <option value="{{ $agency->id }}" {{ request('agency_id') == $agency->id ? 'selected' : '' }}>{{ $agency->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="filter-group">
                     <label class="filter-label">Tarih Aralığı</label>
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <input type="date" name="date_start" value="{{ request('date_start') }}" class="filter-input" placeholder="Başlangıç" title="Başlangıç Tarihi">
