@@ -87,7 +87,8 @@
     .inc-more { display:flex; align-items:center; justify-content:center; width:34px; height:34px; margin:6px auto 0; border-radius:50%; border:1px solid var(--border); background:var(--white); color:var(--text-muted); cursor:pointer; box-shadow:0 1px 4px rgba(15,23,42,.06); transition:color .2s, border-color .2s; }
     .inc-more:hover { color:var(--accent); border-color:var(--accent); }
     .inc-caret { font-size:16px; line-height:1; transition:transform .25s; }
-    .inc-box.acik .inc-body { max-height:1600px; }
+    {{-- Tavan, en uzun içerik (çok günlük tur programı) taşmayacak kadar yüksek --}}
+    .inc-box.acik .inc-body { max-height:6000px; }
     .inc-box.acik .inc-body::after { opacity:0; }
     .inc-box.acik .inc-caret { transform:rotate(180deg); }
     .inc-box.kisa .inc-body::after { display:none; }
@@ -264,9 +265,14 @@
 
                 {{-- Sekme: Tur Programı --}}
                 @if($hasProgram)
+                {{-- Dahil kutularıyla aynı önizlemeli akordeon (.inc-box):
+                     kapalıyken ilk satırlar + soldurma, alttaki yuvarlak okla açılır --}}
                 <div class="tour-tab-panel" data-tab-panel="program" @if($defaultTab !== 'program') hidden @endif>
-                    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
-                        <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">📋 Tur Programı</h3>
+                    <div class="inc-box">
+                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
+                            <h3>📋 Tur Programı</h3>
+                        </button>
+                        <div class="inc-body" style="margin-top:14px;">
                         @foreach($tour->itinerary as $i => $day)
                             @php
                                 // Başlıkta zaten "N. Gün" / "Gün N" ön eki varsa temizle (sayfa kendi ekliyor)
@@ -282,6 +288,10 @@
                                 @endif
                             </div>
                         @endforeach
+                        </div>
+                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
+                            <span class="inc-caret" aria-hidden="true">▾</span>
+                        </button>
                     </div>
                 </div>
                 @endif
