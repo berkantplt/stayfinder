@@ -81,14 +81,17 @@
     .inc-box { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
     .inc-head { width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; background:none; border:0; padding:0; margin:0; cursor:pointer; font-family:var(--font); text-align:left; color:inherit; }
     .inc-head h3 { font-size:15px; font-weight:700; margin:0; }
-    .inc-caret { color:var(--text-muted); font-size:14px; transition:transform .25s; }
     .inc-body { position:relative; overflow:hidden; max-height:104px; transition:max-height .35s ease; }
     .inc-body::after { content:''; position:absolute; left:0; right:0; bottom:0; height:60px; background:linear-gradient(rgba(255,255,255,0), var(--white)); pointer-events:none; transition:opacity .3s; }
+    /* Yuvarlak aç/kapa butonu: gövdenin altında ortada, ok açıkken yukarı döner */
+    .inc-more { display:flex; align-items:center; justify-content:center; width:34px; height:34px; margin:6px auto 0; border-radius:50%; border:1px solid var(--border); background:var(--white); color:var(--text-muted); cursor:pointer; box-shadow:0 1px 4px rgba(15,23,42,.06); transition:color .2s, border-color .2s; }
+    .inc-more:hover { color:var(--accent); border-color:var(--accent); }
+    .inc-caret { font-size:16px; line-height:1; transition:transform .25s; }
     .inc-box.acik .inc-body { max-height:1600px; }
     .inc-box.acik .inc-body::after { opacity:0; }
     .inc-box.acik .inc-caret { transform:rotate(180deg); }
     .inc-box.kisa .inc-body::after { display:none; }
-    .inc-box.kisa .inc-caret { display:none; }
+    .inc-box.kisa .inc-more { display:none; }
     .inc-box.kisa .inc-head { cursor:default; }
 </style>
 @endpush
@@ -669,7 +672,6 @@
                     <div class="inc-box">
                         <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
                             <h3>✅ Dahil Olanlar</h3>
-                            <span class="inc-caret" aria-hidden="true">▾</span>
                         </button>
                         <div class="inc-body">
                             <ul style="list-style:none;margin-top:10px;">
@@ -681,6 +683,9 @@
                                 @endforeach
                             </ul>
                         </div>
+                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
+                            <span class="inc-caret" aria-hidden="true">▾</span>
+                        </button>
                     </div>
                 @endif
 
@@ -688,7 +693,6 @@
                     <div class="inc-box">
                         <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
                             <h3>❌ Dahil Olmayanlar</h3>
-                            <span class="inc-caret" aria-hidden="true">▾</span>
                         </button>
                         <div class="inc-body">
                             <ul style="list-style:none;margin-top:10px;">
@@ -700,6 +704,9 @@
                                 @endforeach
                             </ul>
                         </div>
+                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
+                            <span class="inc-caret" aria-hidden="true">▾</span>
+                        </button>
                     </div>
                 @endif
 
@@ -743,8 +750,8 @@
 window.incToggle = function (btn) {
     var box = btn.closest('.inc-box');
     if (box.classList.contains('kisa')) return;
-    box.classList.toggle('acik');
-    btn.setAttribute('aria-expanded', box.classList.contains('acik'));
+    var acik = box.classList.toggle('acik');
+    box.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', acik); });
 };
 document.querySelectorAll('.inc-box .inc-body').forEach(function (body) {
     if (body.scrollHeight <= body.clientHeight) body.closest('.inc-box').classList.add('kisa');
