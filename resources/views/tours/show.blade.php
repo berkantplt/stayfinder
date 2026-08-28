@@ -96,12 +96,20 @@
     .inc-box.kisa .inc-head { cursor:default; }
 
     /* ── Tur programı: gün gün akordeon ──
-       Her günün başlığı her zaman görünür; içeriği satıra tıklanınca açılır. */
+       Her günün başlığı her zaman görünür; içeriğin ilk ~2-3 satırı görünüp
+       ::after degradesiyle beyaza kaybolur, satıra tıklanınca tamamı açılır.
+       .kisa: içerik önizlemeye zaten sığıyor (ölçüm scripts'te, inc-box ile ortak). */
     .prog-day { border-bottom:1px dashed var(--border); }
     .prog-day:last-child { border-bottom:0; }
-    .prog-day summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 0; font-weight:700; color:#0f172a; font-size:14px; }
-    .prog-day[open] > summary .inc-caret { transform:rotate(180deg); }
-    .prog-day-body { color:var(--text-sec); line-height:1.8; font-size:14px; white-space:pre-line; padding:0 0 12px; }
+    .prog-day-head { width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; background:none; border:0; padding:11px 0; margin:0; cursor:pointer; font-family:var(--font); text-align:left; font-weight:700; color:#0f172a; font-size:14px; }
+    .prog-day-body { position:relative; overflow:hidden; max-height:66px; transition:max-height .35s ease; margin-bottom:12px; color:var(--text-sec); line-height:1.8; font-size:14px; white-space:pre-line; }
+    .prog-day-body::after { content:''; position:absolute; left:0; right:0; bottom:0; height:40px; background:linear-gradient(rgba(255,255,255,0), var(--white)); pointer-events:none; transition:opacity .3s; }
+    .prog-day.acik .prog-day-body { max-height:6000px; }
+    .prog-day.acik .prog-day-body::after { opacity:0; }
+    .prog-day.acik .inc-caret { transform:rotate(180deg); }
+    .prog-day.kisa .prog-day-body::after { display:none; }
+    .prog-day.kisa .inc-caret { display:none; }
+    .prog-day.kisa .prog-day-head { cursor:default; }
     .prog-day-plain { padding:11px 0; font-weight:700; color:#0f172a; font-size:14px; }
 </style>
 @endpush
@@ -274,9 +282,10 @@
 
                 {{-- Sekme: Tur Programı --}}
                 @if($hasProgram)
-                {{-- Gün gün akordeon: TÜM gün başlıkları listede görünür, her günün
-                     içeriği kendi satırına tıklanınca açılır (native details).
-                     İçeriği olmayan gün tıklanamaz düz satır olarak yazılır. --}}
+                {{-- Gün gün akordeon: TÜM gün başlıkları listede görünür; her günün
+                     içeriğinin ilk ~2-3 satırı görünüp alta doğru beyaza kaybolur,
+                     satıra tıklanınca o gün tamamen açılır (dahil kutularıyla aynı
+                     kalıp, incToggle ortak). İçeriksiz gün tıklanamaz düz satırdır. --}}
                 <div class="tour-tab-panel" data-tab-panel="program" @if($defaultTab !== 'program') hidden @endif>
                     <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
                         <h3 style="font-size:15px;font-weight:700;margin-bottom:6px;">📋 Tur Programı</h3>
@@ -290,13 +299,13 @@
                                 $dayLabel = ($i + 1) . '. Gün' . ($dayTitle !== '' ? ': ' . $dayTitle : '');
                             @endphp
                             @if(! empty($day['content']))
-                                <details class="prog-day">
-                                    <summary>
+                                <div class="prog-day">
+                                    <button type="button" class="prog-day-head" aria-expanded="false" onclick="window.incToggle(this)">
                                         <span>{{ $dayLabel }}</span>
                                         <span class="inc-caret" aria-hidden="true">▾</span>
-                                    </summary>
+                                    </button>
                                     <div class="prog-day-body">{{ $day['content'] }}</div>
-                                </details>
+                                </div>
                             @else
                                 <div class="prog-day prog-day-plain">{{ $dayLabel }}</div>
                             @endif
@@ -763,17 +772,17 @@
 
 @push('scripts')
 <script>
-// Dahil olan/olmayan kutuları: başlık tıklaması aç/kapa. Liste kapalı
-// önizlemeye (max-height) zaten sığıyorsa kutu .kisa olur — soldurma ve
-// ok gizlenir, tıklama işlevsizleşir.
+// Önizlemeli akordeonlar (dahil kutuları + program günleri): tıklama aç/kapa.
+// İçerik kapalı önizlemeye (max-height) zaten sığıyorsa öğe .kisa olur —
+// soldurma ve ok gizlenir, tıklama işlevsizleşir.
 window.incToggle = function (btn) {
-    var box = btn.closest('.inc-box');
+    var box = btn.closest('.inc-box, .prog-day');
     if (box.classList.contains('kisa')) return;
     var acik = box.classList.toggle('acik');
     box.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', acik); });
 };
-document.querySelectorAll('.inc-box .inc-body').forEach(function (body) {
-    if (body.scrollHeight <= body.clientHeight) body.closest('.inc-box').classList.add('kisa');
+document.querySelectorAll('.inc-box .inc-body, .prog-day .prog-day-body').forEach(function (body) {
+    if (body.scrollHeight <= body.clientHeight) body.closest('.inc-box, .prog-day').classList.add('kisa');
 });
 </script>
 <script>
