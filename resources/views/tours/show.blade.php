@@ -74,10 +74,22 @@
         .pricing-table td.pkg-price .pkg-price-val { white-space:nowrap; text-align:right; }
     }
 
-    /* Dahil olan/olmayan akordeonları: ok açıkken yukarı bakar */
+    /* ── Dahil olan/olmayan kutuları ──
+       Kapalı: gövde ~3 satırda kırpılır, alt kısım ::after degradesiyle beyaza
+       kaybolur. .acik sınıfı gelince max-height büyür, degrade söner, ok döner.
+       .kisa: liste önizlemeye zaten sığıyor — soldurma ve ok gereksiz. */
+    .inc-box { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+    .inc-head { width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; background:none; border:0; padding:0; margin:0; cursor:pointer; font-family:var(--font); text-align:left; color:inherit; }
+    .inc-head h3 { font-size:15px; font-weight:700; margin:0; }
     .inc-caret { color:var(--text-muted); font-size:14px; transition:transform .25s; }
-    details[open] > summary .inc-caret { transform:rotate(180deg); }
-    summary::-webkit-details-marker { display:none; }
+    .inc-body { position:relative; overflow:hidden; max-height:104px; transition:max-height .35s ease; }
+    .inc-body::after { content:''; position:absolute; left:0; right:0; bottom:0; height:60px; background:linear-gradient(rgba(255,255,255,0), var(--white)); pointer-events:none; transition:opacity .3s; }
+    .inc-box.acik .inc-body { max-height:1600px; }
+    .inc-box.acik .inc-body::after { opacity:0; }
+    .inc-box.acik .inc-caret { transform:rotate(180deg); }
+    .inc-box.kisa .inc-body::after { display:none; }
+    .inc-box.kisa .inc-caret { display:none; }
+    .inc-box.kisa .inc-head { cursor:default; }
 </style>
 @endpush
 
@@ -649,41 +661,46 @@
                     </div>
                 </div>
 
-                {{-- Dahil olan/olmayan kutuları akordeon: ok yönü details[open]
-                     ile döner (bkz. .inc-caret CSS'i). Varsayılan açık — kapalı
-                     başlasın istenirse open attribute'unu silmek yeterli. --}}
+                {{-- Dahil olan/olmayan kutuları: kapalıyken ilk ~3 satır görünür,
+                     devamı beyaza kaybolur (.inc-body::after degradesi); başlığa
+                     basınca tamamı açılır. Liste önizlemeye zaten sığıyorsa
+                     soldurma + ok gizlenir (bkz. scripts'teki inc-box ölçümü). --}}
                 @if($tour->included)
-                    <details open style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
-                        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                            <h3 style="font-size:15px;font-weight:700;">✅ Dahil Olanlar</h3>
+                    <div class="inc-box">
+                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
+                            <h3>✅ Dahil Olanlar</h3>
                             <span class="inc-caret" aria-hidden="true">▾</span>
-                        </summary>
-                        <ul style="list-style:none;margin-top:10px;">
-                            @foreach(explode("\n", $tour->included) as $item)
-                                @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
-                                @if($line !== '')
-                                    <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    </details>
+                        </button>
+                        <div class="inc-body">
+                            <ul style="list-style:none;margin-top:10px;">
+                                @foreach(explode("\n", $tour->included) as $item)
+                                    @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
+                                    @if($line !== '')
+                                        <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
                 @endif
 
                 @if($tour->excluded)
-                    <details open style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
-                        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                            <h3 style="font-size:15px;font-weight:700;">❌ Dahil Olmayanlar</h3>
+                    <div class="inc-box">
+                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
+                            <h3>❌ Dahil Olmayanlar</h3>
                             <span class="inc-caret" aria-hidden="true">▾</span>
-                        </summary>
-                        <ul style="list-style:none;margin-top:10px;">
-                            @foreach(explode("\n", $tour->excluded) as $item)
-                                @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
-                                @if($line !== '')
-                                    <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    </details>
+                        </button>
+                        <div class="inc-body">
+                            <ul style="list-style:none;margin-top:10px;">
+                                @foreach(explode("\n", $tour->excluded) as $item)
+                                    @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
+                                    @if($line !== '')
+                                        <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
                 @endif
 
                 {{-- Other Agencies --}}
@@ -719,6 +736,20 @@
 @endsection
 
 @push('scripts')
+<script>
+// Dahil olan/olmayan kutuları: başlık tıklaması aç/kapa. Liste kapalı
+// önizlemeye (max-height) zaten sığıyorsa kutu .kisa olur — soldurma ve
+// ok gizlenir, tıklama işlevsizleşir.
+window.incToggle = function (btn) {
+    var box = btn.closest('.inc-box');
+    if (box.classList.contains('kisa')) return;
+    box.classList.toggle('acik');
+    btn.setAttribute('aria-expanded', box.classList.contains('acik'));
+};
+document.querySelectorAll('.inc-box .inc-body').forEach(function (body) {
+    if (body.scrollHeight <= body.clientHeight) body.closest('.inc-box').classList.add('kisa');
+});
+</script>
 <script>
 // Sekme geçişi: içerik DOM'da kalır (SEO), yalnız görünürlük değişir.
 // Derin link: #program / #tarihler / #genel / #yorumlar
