@@ -24,7 +24,12 @@ return [
 
     // Chatbot v2 (araç çağırma) yayın anahtarı. v1 sohbet asistanı 2026-08'de
     // tamamen SİLİNDİ (kod + uçlar); geriye yalnız durumsuz AI arama uçları kaldı.
-    'chat_v2_enabled' => env('AI_CHAT_V2_ENABLED', false),
+    //
+    // Varsayılan AÇIK (2026-08-31): canlıda test edilebilsin diye. Bayrak
+    // BİLEREK duruyor — sohbet her mesajda LLM maliyeti ürettiği için acil
+    // kapatma anahtarı gerekli: .env'e AI_CHAT_V2_ENABLED=false yazmak yeter
+    // (deploy gerekmez, yalnız config cache temizliği).
+    'chat_v2_enabled' => env('AI_CHAT_V2_ENABLED', true),
 
     // ⏸️ Tur eşleştirme testi ASKIDA (2026-08-11, kullanıcı kararı): ana sayfadaki
     // "Hangi tur sana uygun?" girişi gizlendi. Kod, rubrik ve testler yerinde;
