@@ -347,8 +347,10 @@ class TourSchemaTest extends TestCase
     {
         $tour = $this->tur(['included' => null, 'excluded' => null, 'cancellation_policy' => null]);
 
+        // Footer'da da "Sıkça Sorulan Sorular" bağlantısı var (290afb4) — bu yüzden
+        // blok kimliği (sss-baslik) üzerinden bakılır, çıplak metinle değil.
         $this->get(route('tours.show', $tour))
             ->assertOk()
-            ->assertDontSee('Sıkça Sorulan Sorular');
+            ->assertDontSee('id="sss-baslik"', false);
     }
 }
