@@ -56,21 +56,58 @@
         /* Neon şerit: tek yerden ayarlansın diye değişken. Çizgi kolonun
            dış hattı, ışık içeriden sızan parıltı. */
         --neon:#0d9488; --neon-cizgi:rgba(13,148,136,.7); --neon-isik:rgba(13,148,136,.42); }
-    .kiyas-ust-satir { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:22px; }
-    .kiyas-sayfa h1 { font-size:32px; font-weight:800; letter-spacing:-1px; color:var(--text); margin:12px 0 6px; }
-    .kiyas-sayfa .kiyas-alt-baslik { color:var(--text-sec); font-size:15px; }
+    /* ——— ÜST BANT ———
+       Başlık düz metin olarak sayfaya asılıydı; kıyasın kendi başına bir ekran
+       olduğunu hissettirmiyordu. Footer CTA bandıyla AYNI koyu palet + turkuaz
+       neon kullanıldı: sayfa iki ucundan aynı dille çerçeveleniyor, yeni bir
+       renk sistemi icat edilmiyor. */
+    .kiyas-hero { position:relative; overflow:hidden; border-radius:26px; margin-bottom:26px;
+        padding:30px 34px 32px; color:#fff;
+        background:linear-gradient(120deg,#0b3238 0%,#0d474b 55%,#0b3a40 100%);
+        border:1px solid rgba(45,212,191,.45);
+        box-shadow:0 0 0 1px rgba(45,212,191,.10), 0 24px 50px -30px rgba(45,212,191,.85); }
+    /* Köşelerden sızan iki turkuaz ışık: düz zemin yerine derinlik. */
+    .kiyas-hero::before, .kiyas-hero::after { content:""; position:absolute; border-radius:50%; pointer-events:none; }
+    .kiyas-hero::before { width:440px; height:440px; top:-270px; right:-90px;
+        background:radial-gradient(circle,rgba(45,212,191,.30),transparent 68%); }
+    .kiyas-hero::after { width:360px; height:360px; bottom:-250px; left:-70px;
+        background:radial-gradient(circle,rgba(13,148,136,.28),transparent 70%); }
+    .kiyas-hero > * { position:relative; z-index:1; }
+    /* Alt kenardaki neon çizgi: bandı bitiren, tablodaki şeritle aynı ışık. */
+    .kiyas-hero-cizgi { position:absolute; left:0; right:0; bottom:0; height:3px; z-index:2;
+        background:linear-gradient(90deg,transparent,#5df3dd 50%,transparent);
+        box-shadow:0 0 16px 1px rgba(45,212,191,.85); }
 
-    /* Üst eylemler: görseldeki gibi iki eşit hap düğme. "Sadece farkları
-       göster" checkbox değil basılı-kalır düğme (aria-pressed). */
-    .kiyas-eylemler { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .kiyas-eylem { display:inline-flex; align-items:center; gap:8px; cursor:pointer;
-        border:1.5px solid var(--border); background:var(--white); border-radius:12px;
-        padding:11px 18px; font-size:14px; font-weight:600; color:var(--text-sec); font-family:inherit; }
-    .kiyas-eylem:hover { border-color:var(--neon); color:var(--accent-dark); }
+    .kiyas-hero-ust { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+    .kiyas-geri { display:inline-flex; align-items:center; gap:8px; padding:9px 17px; border-radius:999px;
+        border:1px solid rgba(255,255,255,.20); background:rgba(255,255,255,.05);
+        font-size:13.5px; font-weight:600; color:#dbeceb; transition:all .2s; }
+    .kiyas-geri:hover { border-color:rgba(45,212,191,.65); background:rgba(45,212,191,.13); color:#fff; }
+    /* Kaç tur kıyaslandığı bandın içinde okunsun: kolon saymaya gerek kalmasın. */
+    .kiyas-sayac { display:inline-flex; align-items:center; gap:9px; padding:8px 16px; border-radius:999px;
+        border:1px solid rgba(45,212,191,.45); background:rgba(45,212,191,.10);
+        font-size:12.5px; font-weight:700; letter-spacing:.3px; color:#7ff0e0; }
+    .kiyas-sayac::before { content:""; width:7px; height:7px; border-radius:50%; background:#2dd4bf;
+        box-shadow:0 0 10px 2px rgba(45,212,191,.85); }
+
+    .kiyas-hero-alt { display:flex; align-items:flex-end; justify-content:space-between; gap:22px; flex-wrap:wrap; }
+    .kiyas-sayfa h1 { font-size:38px; font-weight:800; letter-spacing:-1.2px; color:#fff; margin:0 0 9px; }
+    .kiyas-sayfa h1 span { color:#2dd4bf; text-shadow:0 0 22px rgba(45,212,191,.55); }
+    .kiyas-sayfa .kiyas-alt-baslik { color:#9db8bd; font-size:15px; max-width:540px; line-height:1.6; }
+
+    /* Üst eylemler: koyu zeminde cam hap düğmeler. "Sadece farkları göster"
+       checkbox değil basılı-kalır düğme (aria-pressed) — açıkken neon doluyor. */
+    .kiyas-eylemler { display:flex; gap:11px; align-items:center; flex-wrap:wrap; }
+    .kiyas-eylem { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:inherit;
+        border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.05); border-radius:13px;
+        padding:12px 20px; font-size:14px; font-weight:700; color:#dbeceb; transition:all .2s; }
     .kiyas-eylem svg { width:17px; height:17px; flex:0 0 auto; }
-    .kiyas-eylem[aria-pressed="true"] { border-color:var(--neon); color:var(--accent-dark);
-        background:var(--accent-bg); box-shadow:0 0 0 3px rgba(13,148,136,.12); }
-    .kiyas-eylem-sil:hover { border-color:#ef4444; color:#ef4444; }
+    .kiyas-eylem:hover { border-color:rgba(45,212,191,.75); background:rgba(45,212,191,.14); color:#fff;
+        box-shadow:0 0 18px -4px rgba(45,212,191,.55); }
+    .kiyas-eylem[aria-pressed="true"] { border-color:#2dd4bf; color:#04302c;
+        background:linear-gradient(135deg,#2ee6cf,#0fa294); box-shadow:0 0 26px -3px rgba(45,212,191,.75); }
+    .kiyas-eylem-sil:hover { border-color:rgba(248,113,113,.85); background:rgba(248,113,113,.14);
+        color:#fecaca; box-shadow:0 0 18px -4px rgba(248,113,113,.5); }
 
     /* Yapışkan mini başlık: tablo uzun, kolon kimliği kaybolmasın */
     .kiyas-mini { position:sticky; top:var(--kiyas-ust,70px); z-index:40; background:var(--white);
@@ -220,9 +257,13 @@
 
     @media(max-width:768px) {
         .kiyas-sayfa { padding:20px 16px 40px; --etiket-g:120px; --kolon-g:232px; }
-        .kiyas-sayfa h1 { font-size:23px; }
+        .kiyas-hero { padding:20px 18px 22px; border-radius:20px; margin-bottom:20px; }
+        .kiyas-hero-ust { margin-bottom:16px; }
+        .kiyas-sayfa h1 { font-size:26px; }
         .kiyas-sayfa .kiyas-alt-baslik { font-size:13.5px; }
-        .kiyas-eylem { padding:9px 13px; font-size:13px; }
+        /* Dar ekranda düğmeler alta iner: iki eşit parça, tam genişlik. */
+        .kiyas-eylemler { width:100%; }
+        .kiyas-eylem { flex:1; justify-content:center; padding:11px 12px; font-size:13px; }
         .kiyas th, .kiyas td { padding:12px 13px; }
         .kiyas-etiket { font-size:12px; padding:12px 11px; }
         .kiyas-ikon { width:15px; height:15px; }
@@ -236,20 +277,28 @@
 </style>
 
 <div class="container kiyas-sayfa">
-    <div class="kiyas-ust-satir">
-        <div>
-            <a href="{{ route('tours.index') }}" class="btn btn-outline btn-sm">← Turlara dön</a>
-            <h1>Turları Karşılaştır</h1>
-            <p class="kiyas-alt-baslik">Beğendiğin turları yan yana karşılaştır ve sana en uygun olanı seç.</p>
+    <div class="kiyas-hero">
+        <div class="kiyas-hero-ust">
+            <a href="{{ route('tours.index') }}" class="kiyas-geri">← Turlara dön</a>
+            <span class="kiyas-sayac">{{ count($tours) }} tur karşılaştırılıyor</span>
         </div>
-        <div class="kiyas-eylemler">
-            <button type="button" class="kiyas-eylem kiyas-eylem-sil" onclick="clearAndReturn()">
-                {!! $ikon('cop', 'kiyas-eylem-ikon') !!} Temizle
-            </button>
-            <button type="button" class="kiyas-eylem" id="kiyas-farklar" aria-pressed="false">
-                {!! $ikon('goz', 'kiyas-eylem-ikon') !!} Sadece farkları göster
-            </button>
+
+        <div class="kiyas-hero-alt">
+            <div>
+                <h1>Turları <span>Karşılaştır</span></h1>
+                <p class="kiyas-alt-baslik">Beğendiğin turları yan yana karşılaştır ve sana en uygun olanı seç.</p>
+            </div>
+            <div class="kiyas-eylemler">
+                <button type="button" class="kiyas-eylem kiyas-eylem-sil" onclick="clearAndReturn()">
+                    {!! $ikon('cop', 'kiyas-eylem-ikon') !!} Temizle
+                </button>
+                <button type="button" class="kiyas-eylem" id="kiyas-farklar" aria-pressed="false">
+                    {!! $ikon('goz', 'kiyas-eylem-ikon') !!} Sadece farkları göster
+                </button>
+            </div>
         </div>
+
+        <span class="kiyas-hero-cizgi" aria-hidden="true"></span>
     </div>
 
     {{-- Gerçek başlık ekrandan çıkınca devreye giren kompakt kopya. Yatay
