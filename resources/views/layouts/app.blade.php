@@ -223,15 +223,65 @@
         .detail-grid > div { min-width:0; }
         .detail-sidebar { position:sticky; top:80px; align-self:start; }
 
-        /* ── Footer ── */
-        .footer { background:#0f172a; color:#94a3b8; padding:48px 0 24px; margin-top:48px; }
-        .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:32px; margin-bottom:32px; }
-        .footer h4 { color:white; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
-        .footer ul { list-style:none; }
-        .footer ul li { margin-bottom:8px; }
-        .footer ul a { font-size:14px; color:#94a3b8; transition:color .2s; }
-        .footer ul a:hover { color:white; }
-        .footer-bottom { border-top:1px solid rgba(255,255,255,.06); padding-top:20px; text-align:center; font-size:13px; }
+        /* ── Footer (CTA bandı + dalga + koyu gövde tasarımı) ── */
+        .ftr { margin-top:56px; padding:0 14px 14px; }
+        .ftr-shell { border-radius:28px; overflow:hidden; }
+        .ftr-cta-wrap { background:linear-gradient(120deg,#0b3238 0%,#0d474b 55%,#0b3a40 100%); }
+        .ftr-cta { display:flex; align-items:center; gap:26px; max-width:1280px; margin:0 auto; padding:44px 40px 24px; }
+        .ftr-cta-path { width:150px; height:104px; flex:none; color:rgba(255,255,255,.30); margin-right:-8px; }
+        .ftr-cta-ico { width:84px; height:84px; flex:none; border-radius:50%; background:rgba(45,212,191,.08); border:1px solid rgba(45,212,191,.35); display:flex; align-items:center; justify-content:center; color:#2dd4bf; }
+        .ftr-cta-ico svg { width:34px; height:34px; }
+        .ftr-cta-text { flex:1; min-width:0; }
+        .ftr-cta-text h2 { color:#fff; font-size:27px; font-weight:800; letter-spacing:-.5px; margin-bottom:8px; }
+        .ftr-cta-text p { color:#9db8bd; font-size:15px; line-height:1.65; max-width:560px; }
+        .ftr-cta-btns { display:flex; gap:14px; flex:none; }
+        .ftr-btn { display:inline-flex; align-items:center; gap:10px; padding:15px 26px; border-radius:14px; font-size:15px; font-weight:700; transition:all .2s; }
+        .ftr-btn svg { width:20px; height:20px; }
+        .ftr-btn-primary { background:linear-gradient(135deg,#0fa294,#2ec4b6); color:#fff; box-shadow:0 8px 24px rgba(46,196,182,.30); }
+        .ftr-btn-primary:hover { filter:brightness(1.07); transform:translateY(-1px); }
+        .ftr-btn-ghost { border:1px solid rgba(255,255,255,.22); color:#fff; background:rgba(255,255,255,.03); }
+        .ftr-btn-ghost:hover { border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.07); }
+        .ftr-wave { display:block; width:100%; height:74px; }
+        .ftr-main { background:#0a1622; color:#94a3b8; padding:0 40px 26px; }
+        .ftr-inner { max-width:1280px; margin:0 auto; }
+        .ftr-grid { display:grid; grid-template-columns:1.45fr 1.18fr .95fr 1.12fr 1fr; gap:30px; padding:28px 0 38px; }
+        .ftr-col + .ftr-col { border-left:1px solid rgba(255,255,255,.06); padding-left:32px; }
+        .ftr-logo { font-size:22px; font-weight:800; color:#fff; letter-spacing:-.4px; margin-bottom:14px; }
+        .ftr-logo span { color:#2dd4bf; }
+        .ftr-desc { font-size:14px; line-height:1.8; color:#8fa3b3; max-width:290px; }
+        .ftr-phone { margin-top:22px; display:inline-flex; align-items:center; gap:13px; padding:13px 24px 13px 13px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); border-radius:16px; color:inherit; }
+        .ftr-phone-ico { width:44px; height:44px; border-radius:50%; background:rgba(45,212,191,.12); color:#2dd4bf; display:flex; align-items:center; justify-content:center; flex:none; }
+        .ftr-phone-ico svg { width:22px; height:22px; }
+        .ftr-phone b { display:block; color:#fff; font-size:15px; font-weight:700; }
+        .ftr-phone span { font-size:13.5px; color:#8fa3b3; }
+        .ftr-col h4 { color:#2dd4bf; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:18px; }
+        .ftr-col ul { list-style:none; }
+        .ftr-col ul li { margin-bottom:13px; }
+        .ftr-col ul a { display:inline-flex; align-items:center; gap:10px; font-size:14px; color:#a5b8c5; transition:color .2s; }
+        .ftr-col ul a:hover { color:#fff; }
+        .ftr-col ul a svg { width:17px; height:17px; color:#2dd4bf; flex:none; }
+        .ftr-col ul a svg.chev { width:13px; height:13px; }
+        .ftr-trust { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.02); border-radius:18px; padding:20px 8px; }
+        .ftr-trust > div { display:flex; align-items:center; gap:14px; padding:4px 26px; }
+        .ftr-trust > div + div { border-left:1px solid rgba(255,255,255,.07); }
+        .ftr-trust-ico { width:46px; height:46px; border-radius:50%; background:rgba(45,212,191,.12); color:#2dd4bf; display:flex; align-items:center; justify-content:center; flex:none; }
+        .ftr-trust-ico svg { width:22px; height:22px; }
+        .ftr-trust b { display:block; color:#fff; font-size:15px; font-weight:700; }
+        .ftr-trust span { font-size:13.5px; color:#8fa3b3; }
+        .ftr-bottom { display:flex; align-items:center; justify-content:space-between; gap:16px; border-top:1px solid rgba(255,255,255,.06); margin-top:26px; padding-top:22px; font-size:13.5px; color:#8fa3b3; flex-wrap:wrap; }
+        .ftr-bottom b { color:#e2e8f0; font-weight:700; }
+        .ftr-social { display:flex; gap:12px; }
+        .ftr-social a { width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; color:#cbd5e1; transition:all .2s; }
+        .ftr-social a:hover { border-color:#2dd4bf; color:#2dd4bf; }
+        .ftr-social svg { width:17px; height:17px; }
+        .ftr-made { display:inline-flex; align-items:center; gap:8px; }
+        .ftr-made svg { width:16px; height:16px; color:#2dd4bf; }
+        @media(max-width:1100px) {
+            .ftr-cta-path { display:none; }
+            .ftr-grid { grid-template-columns:1fr 1fr; }
+            .ftr-col + .ftr-col { border-left:none; padding-left:0; }
+            .ftr-brand { grid-column:1 / -1; }
+        }
 
         /* ── Pagination ── */
         .pagination-wrapper { display:flex; justify-content:center; gap:4px; margin-top:24px; }
@@ -330,7 +380,20 @@
             .container { padding:0 16px; }
             .grid-3,.grid-4 { grid-template-columns:repeat(2,1fr); gap:12px; }
             .form-row { grid-template-columns:1fr; }
-            .footer-grid { grid-template-columns:1fr 1fr; }
+            .ftr { padding:0 8px 8px; }
+            .ftr-shell { border-radius:20px; }
+            .ftr-cta { flex-direction:column; text-align:center; padding:34px 20px 16px; gap:18px; }
+            .ftr-cta-text h2 { font-size:22px; }
+            .ftr-cta-text p { margin:0 auto; }
+            .ftr-cta-btns { width:100%; flex-direction:column; gap:10px; }
+            .ftr-btn { justify-content:center; }
+            .ftr-wave { height:44px; }
+            .ftr-main { padding:0 18px 20px; }
+            .ftr-grid { gap:26px; padding:22px 0 30px; }
+            .ftr-trust { grid-template-columns:1fr; padding:8px 16px; }
+            .ftr-trust > div { padding:14px 4px; }
+            .ftr-trust > div + div { border-left:none; border-top:1px solid rgba(255,255,255,.07); }
+            .ftr-bottom { flex-direction:column; text-align:center; gap:14px; }
             /* Çekmece nav'ın İÇİNDE yaşıyor: nav kendi yığın bağlamını kurduğu için
                (z-index) çekmecenin 2000'i bu bağlamda sıkışıyordu — alt sekme barı
                (1500) üstüne biniyordu. Mobilde nav'ı yukarı alıyoruz. */
@@ -438,7 +501,7 @@
         }
         @media(max-width:480px) {
             .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
-            .footer-grid { grid-template-columns:1fr; }
+            .ftr-grid { grid-template-columns:1fr; }
         }
 
         @yield('styles')
@@ -663,39 +726,136 @@
         </div>
     @endif
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <div style="font-size:20px;font-weight:800;color:white;margin-bottom:10px;letter-spacing:-0.4px;">tur<span style="color:#2dd4bf;">X</span>tur</div>
-                    <p style="font-size:14px;line-height:1.8;">Türkiye'nin en iyi tur acentalarından fiyatları karşılaştırın. En uygun turu bulun.</p>
+    @php
+        // Telefon config'ten gelir; boşsa tasarımdaki yer tutucu görünür (COMPANY_PHONE ile değişir)
+        $ftrPhone = config('company.phone') ?: '+90 850 532 00 00';
+        // Sosyal hesaplar: .env doldurulana dek '#' yer tutucu (gerçek adreste yeni sekme açılır)
+        $ftrSocial = [
+            'Facebook' => [config('company.social.facebook'), '<path d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5h1.3V4.9c-.6-.1-1.4-.2-2.3-.2-2.3 0-3.8 1.4-3.8 3.9V11H8v3h2.3v7z" fill="currentColor"/>'],
+            'Instagram' => [config('company.social.instagram'), '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="12" cy="12" r="3.8" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/>'],
+            'YouTube' => [config('company.social.youtube'), '<path d="M22 12s0-3.3-.4-4.9a2.6 2.6 0 0 0-1.8-1.8C18.2 4.9 12 4.9 12 4.9s-6.2 0-7.8.4A2.6 2.6 0 0 0 2.4 7C2 8.7 2 12 2 12s0 3.3.4 4.9a2.6 2.6 0 0 0 1.8 1.8c1.6.4 7.8.4 7.8.4s6.2 0 7.8-.4a2.6 2.6 0 0 0 1.8-1.8c.4-1.6.4-4.9.4-4.9z" fill="currentColor"/><path d="m10 9.2 5 2.8-5 2.8z" fill="#0a1622"/>'],
+            'LinkedIn' => [config('company.social.linkedin'), '<path d="M6.5 8.8H3.9V20h2.6zM5.2 7.6a1.55 1.55 0 1 0 0-3.1 1.55 1.55 0 0 0 0 3.1zM20.1 20h-2.6v-5.7c0-1.4-.5-2.3-1.7-2.3-1 0-1.5.7-1.8 1.3-.1.2-.1.6-.1.9V20h-2.6V8.8h2.6v1.6c.3-.5 1-1.3 2.6-1.3 1.9 0 3.6 1.3 3.6 4z" fill="currentColor"/>'],
+        ];
+    @endphp
+    <footer class="ftr">
+        <div class="ftr-shell">
+            {{-- ── Üst CTA bandı ── --}}
+            <div class="ftr-cta-wrap">
+                <div class="ftr-cta">
+                    <svg class="ftr-cta-path" viewBox="0 0 150 110" fill="none" aria-hidden="true">
+                        <path d="M8 96 C10 60 40 44 66 56 C92 68 96 92 74 96 C52 100 44 74 64 58 C86 40 118 34 142 40" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 9"/>
+                    </svg>
+                    <div class="ftr-cta-ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+                    </div>
+                    <div class="ftr-cta-text">
+                        <h2>Turunuzu binlerce gezginle buluşturun</h2>
+                        <p>turXtur acentası olarak turunuzu yayınlayın, daha fazla gezgine ulaşın ve satışlarınızı artırın.</p>
+                    </div>
+                    <div class="ftr-cta-btns">
+                        <a href="{{ route('agency.register') }}" class="ftr-btn ftr-btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16"/><path d="M16 9h3a2 2 0 0 1 2 2v10"/><path d="M9 7h2M9 11h2M9 15h2"/></svg>
+                            Acenta Ol
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                        </a>
+                        <a href="{{ route('login') }}" class="ftr-btn ftr-btn-ghost">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>
+                            Giriş Yap
+                        </a>
+                    </div>
                 </div>
-                <div><h4>Platform</h4><ul>
-                    <li><a href="{{ route('tours.index') }}">Turlar</a></li>
-                    @if(config('ai.discovery_enabled'))
-                        <li><a href="{{ route('discovery.index') }}">Keşif Rehberi</a></li>
-                    @endif
-                    <li><a href="{{ route('legal.nasil-calisir') }}">Nasıl Çalışır?</a></li>
-                    <li><a href="{{ route('blog.index') }}">Blog</a></li>
-                    <li><a href="{{ route('legal.iletisim') }}">İletişim</a></li>
-                </ul></div>
-                <div><h4>Acentalar</h4><ul>
-                    <li><a href="{{ route('login') }}">Acenta Girişi</a></li>
-                    <li><a href="{{ route('agency.register') }}">Acenta Ol</a></li>
-                    <li><a href="{{ route('legal.siralama') }}">Sıralama Kriterleri</a></li>
-                </ul></div>
-                <div><h4>Yasal</h4><ul>
-                    <li><a href="{{ route('legal.kvkk') }}">KVKK Aydınlatma Metni</a></li>
-                    <li><a href="{{ route('legal.gizlilik') }}">Gizlilik Politikası</a></li>
-                    <li><a href="{{ route('legal.cerez') }}">Çerez Politikası</a></li>
-                    <li><a href="{{ route('legal.kosullar') }}">Kullanım Koşulları</a></li>
-                </ul></div>
+                {{-- Dalga geçişi: turkuaz şerit + koyu gövdeye akış --}}
+                <svg class="ftr-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="ftrWaveGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0" stop-color="#14b8a6"/><stop offset="1" stop-color="#2dd4bf"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,30 C220,70 440,0 720,16 C1000,32 1220,66 1440,22 L1440,90 L0,90 Z" fill="url(#ftrWaveGrad)"/>
+                    <path d="M0,52 C220,86 440,20 720,34 C1000,48 1220,78 1440,42 L1440,90 L0,90 Z" fill="#0a1622"/>
+                </svg>
             </div>
-            <div class="footer-bottom">
-                @if(config('company.legal_name'))
-                    <div style="margin-bottom:4px;">{{ config('company.legal_name') }}</div>
-                @endif
-                turXtur © {{ date('Y') }} · Tüm hakları saklıdır.
+
+            {{-- ── Koyu gövde ── --}}
+            <div class="ftr-main">
+                <div class="ftr-inner">
+                    <div class="ftr-grid">
+                        <div class="ftr-col ftr-brand">
+                            <div class="ftr-logo">tur<span>X</span>tur</div>
+                            <p class="ftr-desc">Türkiye'nin en iyi tur acentalarından fiyatları karşılaştırın. En uygun turu bulun, yeni rotalar keşfedin.</p>
+                            <a class="ftr-phone" href="tel:{{ preg_replace('/[^0-9+]/', '', $ftrPhone) }}">
+                                <span class="ftr-phone-ico">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-3a8 8 0 0 1 16 0v3"/><path d="M4 14h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M20 14h-2a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1z"/><path d="M17 19v1a2 2 0 0 1-2 2h-3"/></svg>
+                                </span>
+                                <span><b>7/24 Destek</b><span>{{ $ftrPhone }}</span></span>
+                            </a>
+                        </div>
+                        <div class="ftr-col"><h4>Popüler Bağlantılar</h4><ul>
+                            <li><a href="{{ route('tours.index') }}"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>Turlar</a></li>
+                            <li><a href="{{ route('legal.nasil-calisir') }}"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>Nasıl Çalışır?</a></li>
+                            <li><a href="{{ route('home') }}#destinationsSection"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>Popüler Rotalar</a></li>
+                            @if(config('ai.discovery_enabled'))
+                                <li><a href="{{ route('discovery.index') }}"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>Keşif Rehberi</a></li>
+                            @endif
+                            <li><a href="{{ route('blog.index') }}"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>Blog</a></li>
+                            <li><a href="{{ route('legal.iletisim') }}"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>İletişim</a></li>
+                        </ul></div>
+                        <div class="ftr-col"><h4>Acentalar</h4><ul>
+                            <li><a href="{{ route('login') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>Acenta Girişi</a></li>
+                            <li><a href="{{ route('agency.register') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16"/><path d="M16 9h3a2 2 0 0 1 2 2v10"/><path d="M9 7h2M9 11h2M9 15h2"/></svg>Acenta Ol</a></li>
+                            <li><a href="{{ route('legal.siralama') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a2 2 0 0 0 2 4h1"/><path d="M17 6h3a2 2 0 0 1-2 4h-1"/></svg>Sıralama Kriterleri</a></li>
+                            <li><a href="{{ route('blog.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6L12 16.8 6.6 19.6l1.1-6L3.2 9.4l6.1-.8z"/></svg>Başarı Hikayeleri</a></li>
+                        </ul></div>
+                        <div class="ftr-col"><h4>Destek Merkezi</h4><ul>
+                            <li><a href="{{ route('legal.nasil-calisir') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.7 2.2-2.7 3.6"/><path d="M12 17h.01"/></svg>Sıkça Sorulan Sorular</a></li>
+                            <li><a href="{{ route('legal.nasil-calisir') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>Rezervasyon Rehberi</a></li>
+                            <li><a href="{{ route('legal.kosullar') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>İptal ve İade Koşulları</a></li>
+                            {{-- Canlı Destek: v2 sohbet açıksa pencereyi açar, kapalıysa iletişime düşer --}}
+                            <li><a href="{{ route('legal.iletisim') }}" onclick="var t=document.getElementById('cv2-trigger'); if(t){event.preventDefault(); t.click();}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>Canlı Destek</a></li>
+                        </ul></div>
+                        <div class="ftr-col"><h4>Yasal</h4><ul>
+                            <li><a href="{{ route('legal.kvkk') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 9.6 4-1.2 7-5.2 7-9.6V6z"/><path d="m9 11.5 2.2 2.2 3.3-4.2"/></svg>KVKK Aydınlatma Metni</a></li>
+                            <li><a href="{{ route('legal.gizlilik') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 9.6 4-1.2 7-5.2 7-9.6V6z"/><path d="m9 11.5 2.2 2.2 3.3-4.2"/></svg>Gizlilik Politikası</a></li>
+                            <li><a href="{{ route('legal.cerez') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 9.6 4-1.2 7-5.2 7-9.6V6z"/><path d="m9 11.5 2.2 2.2 3.3-4.2"/></svg>Çerez Politikası</a></li>
+                            <li><a href="{{ route('legal.kosullar') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 9.6 4-1.2 7-5.2 7-9.6V6z"/><path d="m9 11.5 2.2 2.2 3.3-4.2"/></svg>Kullanım Koşulları</a></li>
+                        </ul></div>
+                    </div>
+
+                    <div class="ftr-trust">
+                        <div>
+                            <span class="ftr-trust-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 9.6 4-1.2 7-5.2 7-9.6V6z"/><path d="m9 11.5 2.2 2.2 3.3-4.2"/></svg></span>
+                            <span><b>7/24 Destek</b><span>Uzman ekibimiz her zaman yanınızda.</span></span>
+                        </div>
+                        <div>
+                            <span class="ftr-trust-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v3"/></svg></span>
+                            <span><b>Güvenli Platform</b><span>Verileriniz 256-bit SSL ile korunur.</span></span>
+                        </div>
+                        <div>
+                            <span class="ftr-trust-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.18 2.18 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-4A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0"/><path d="M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5"/></svg></span>
+                            <span><b>Hızlı Başlangıç</b><span>Acenta hesabınızı dakikalar içinde açın.</span></span>
+                        </div>
+                    </div>
+
+                    <div class="ftr-bottom">
+                        <div>
+                            @if(config('company.legal_name'))
+                                <div style="margin-bottom:2px;">{{ config('company.legal_name') }}</div>
+                            @endif
+                            © {{ date('Y') }} <b>turXtur</b>. Tüm hakları saklıdır.
+                        </div>
+                        <div class="ftr-social">
+                            @foreach($ftrSocial as $ftrName => [$ftrUrl, $ftrIcon])
+                                <a href="{{ $ftrUrl ?: '#' }}" aria-label="{{ $ftrName }}" @if($ftrUrl) target="_blank" rel="noopener" @endif>
+                                    <svg viewBox="0 0 24 24">{!! $ftrIcon !!}</svg>
+                                </a>
+                            @endforeach
+                        </div>
+                        <div class="ftr-made">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>
+                            Turizm profesyonelleri için üretildi.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>

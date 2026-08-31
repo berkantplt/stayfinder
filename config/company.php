@@ -51,4 +51,12 @@ return [
 
     // Sözleşmenin/metinlerin son güncellenme tarihi (sayfa altında gösterilir)
     'legal_updated_at' => env('COMPANY_LEGAL_UPDATED_AT', '2026-08-08'),
+
+    // Sosyal medya hesapları (footer'da gösterilir; boş kalan ikon '#' yer tutucuya gider)
+    'social' => [
+        'facebook' => env('COMPANY_FACEBOOK'),
+        'instagram' => env('COMPANY_INSTAGRAM'),
+        'youtube' => env('COMPANY_YOUTUBE'),
+        'linkedin' => env('COMPANY_LINKEDIN'),
+    ],
 ];
