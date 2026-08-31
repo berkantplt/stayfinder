@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
 use App\Models\CurrencyRate;
+use App\Services\AiSearch\IntentHeuristics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,10 +17,7 @@ class AiIntentHeuristicsTest extends TestCase
 
     private function invoke(string $method, mixed ...$args): mixed
     {
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, $method);
-
-        return $reflection->invoke($controller, ...$args);
+        return app(IntentHeuristics::class)->{$method}(...$args);
     }
 
     public function test_icin_kelimesi_cin_sanilmaz(): void

@@ -2,17 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
+use App\Services\AiSearch\TourScorer;
 use Tests\TestCase;
 
 class AiVibeScoreTest extends TestCase
 {
     private function score(?bool $wantsNature, ?bool $wantsLively, ?bool $avoidCrowded, ?array $vibeTags): float
     {
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'scoreVibeMatch');
-
-        return $reflection->invoke($controller, $wantsNature, $wantsLively, $avoidCrowded, $vibeTags);
+        return app(TourScorer::class)->scoreVibeMatch($wantsNature, $wantsLively, $avoidCrowded, $vibeTags);
     }
 
     public function test_wants_nature_with_nature_tag_returns_positive_bonus(): void

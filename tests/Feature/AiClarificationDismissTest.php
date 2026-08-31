@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Agency;
 use App\Models\Tour;
-use App\Services\AiSearch\ConversationService;
+use App\Services\AiSearch\ClarificationAdvisor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Responses\Chat\CreateResponse as ChatResponse;
@@ -41,11 +41,11 @@ class AiClarificationDismissTest extends TestCase
 
     public function test_farketmez_cevabi_soruyu_gecistirir_arama_yapilir(): void
     {
-        $service = app(ConversationService::class);
+        $advisor = app(ClarificationAdvisor::class);
 
         // Ekrandaki birleşik sorgu: hâlâ tek eksen (destinasyon) dolu ama
         // kullanıcı "farketmez" dediği için soru SORULMAMALI
-        $question = $service->maybeAskClarification(
+        $question = $advisor->maybeAskClarification(
             'yurt dışı turu öner farketmez yurt dışı olsun yeter',
             []
         );
@@ -55,7 +55,7 @@ class AiClarificationDismissTest extends TestCase
 
     public function test_gecistirme_kaliplari_taninir(): void
     {
-        $service = app(ConversationService::class);
+        $advisor = app(ClarificationAdvisor::class);
 
         foreach ([
             'önemli değil sen seç',
@@ -65,13 +65,13 @@ class AiClarificationDismissTest extends TestCase
             'FARKETMEZ',
         ] as $message) {
             $this->assertNull(
-                $service->maybeAskClarification($message, []),
+                $advisor->maybeAskClarification($message, []),
                 "'{$message}' geçiştirme olarak tanınmalıydı"
             );
         }
 
         // Kontrol: geçiştirme İÇERMEYEN tek eksenli sorgu hâlâ soru üretmeli
-        $this->assertNotNull($service->maybeAskClarification('tur önerir misin', []));
+        $this->assertNotNull($advisor->maybeAskClarification('tur önerir misin', []));
     }
 
     public function test_widget_farketmez_sonrasi_ayni_soruyu_tekrarlamaz(): void
@@ -118,5 +118,15 @@ class AiClarificationDismissTest extends TestCase
         $second->assertOk();
         $this->assertNotTrue($second->json('is_clarification'), 'Aynı soru kullanıcıya ikinci kez soruldu');
         $this->assertNotEmpty($second->json('results'));
+    }
+
+    public function test_nisanlimla_ay_sinyali_sayilmaz(): void
+    {
+        // Kelime sınırı düzeltmesi: "nişanlımla" içindeki 'nisan' ay değildir
+        $advisor = app(ClarificationAdvisor::class);
+
+        $this->assertFalse($advisor->hasTimeSignal([], 'nişanlımla romantik bir yer'));
+        $this->assertFalse($advisor->hasTimeSignal([], 'nisanlimla romantik bir yer'), 'ASCII yazım — eski str_contains tuzağı');
+        $this->assertTrue($advisor->hasTimeSignal([], 'nisanda gidelim'), 'Gerçek ay + çekim eki eşleşmeli');
     }
 }

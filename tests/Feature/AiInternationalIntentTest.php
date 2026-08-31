@@ -2,17 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
+use App\Services\AiSearch\IntentHeuristics;
 use Tests\TestCase;
 
 class AiInternationalIntentTest extends TestCase
 {
     private function detect(string $query): ?bool
     {
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'detectInternationalIntent');
-
-        return $reflection->invoke($controller, $query);
+        return app(IntentHeuristics::class)->detectInternationalIntent($query);
     }
 
     public function test_explicit_yurt_disi_returns_true(): void

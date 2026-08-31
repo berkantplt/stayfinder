@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * AI sohbetinden toplanan sıcak lead (geri arama / opsiyon / fiyat alarmı).
  * Acenta panelinde listelenir; oluşturulunca acenta kullanıcılarına DB
  * bildirimi gider.
+ *
+ * NOT: leadleri üreten v1 sohbet asistanı kaldırıldı — mevcut kayıtlar GEÇMİŞ
+ * veridir ve acenta panelinde görünmeye devam eder. conversation_id kolonu
+ * veride duruyor ama artık bir modele işaret etmiyor (ilişki kaldırıldı).
  */
 class AiLead extends Model
 {
@@ -29,11 +33,6 @@ class AiLead extends Model
     public function agency(): BelongsTo
     {
         return $this->belongsTo(Agency::class);
-    }
-
-    public function conversation(): BelongsTo
-    {
-        return $this->belongsTo(AiSearchConversation::class, 'conversation_id');
     }
 
     public function intentLabel(): string

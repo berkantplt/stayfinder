@@ -39,7 +39,6 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TourController;
-use App\Http\Middleware\EnsureAiChatEnabled;
 use App\Http\Middleware\EnsureAiChatV2Enabled;
 use App\Http\Middleware\EnsureDiscoveryGuideEnabled;
 use App\Models\Agency;
@@ -80,7 +79,7 @@ Route::view('/kvkk-aydinlatma-metni', 'legal.kvkk')->name('legal.kvkk');
 Route::view('/cerez-politikasi', 'legal.cerez-politikasi')->name('legal.cerez');
 Route::view('/kullanim-kosullari', 'legal.kullanim-kosullari')->name('legal.kosullar');
 Route::view('/siralama-kriterleri', 'legal.siralama-kriterleri')->name('legal.siralama');
-// Tur eşleştirme testi — chatbot dondurmasından ETKİLENMEZ (LLM'siz çalışır)
+// Tur eşleştirme testi — LLM'siz, deterministik çalışır
 Route::middleware('throttle:ai_search')->group(function () {
     Route::get('/tatil-karakteri', [RecreationQuizController::class, 'definition'])->name('recreation.quiz.definition');
     Route::post('/tatil-karakteri', [RecreationQuizController::class, 'submit'])->name('recreation.quiz.submit');
@@ -114,21 +113,17 @@ Route::middleware([EnsureAiChatV2Enabled::class, 'throttle:ai_search'])->group(f
     Route::post('/sohbet/sifirla', [ChatV2Controller::class, 'reset'])->name('chat.v2.reset');
 });
 
-// ❄️ Sohbet asistanı uçları — AI_CHAT_ENABLED kapalıyken 404 (bkz. config/ai.php)
-Route::middleware(EnsureAiChatEnabled::class)->group(function () {
-    Route::get('/yapay-zeka-arama', [AiSearchController::class, 'chat'])->name('ai.search');
-    Route::get('/yapay-zeka-arama/{log}/turlar', [AiSearchController::class, 'showResults'])
+// AI arama uçları — sohbet v1 kaldırıldı, bunlar durumsuz arama uçlarıdır.
+// Bayrak/gate YOK: all_results_url (TourSearchService) ve tur kartlarındaki
+// reddet butonu bunlara bağlı, 404 dönmemeli.
+Route::get('/yapay-zeka-arama/{log}/turlar', [AiSearchController::class, 'showResults'])
+    ->whereNumber('log')
+    ->name('ai.search.results');
+Route::middleware('throttle:ai_search')->group(function () {
+    Route::get('/yapay-zeka-arama-api', [AiSearchController::class, 'searchApi'])->name('ai.search.api');
+    Route::post('/yapay-zeka-arama/{log}/reddet', [AiSearchController::class, 'rejectTour'])
         ->whereNumber('log')
-        ->name('ai.search.results');
-    Route::get('/yapay-zeka-arama/{uuid}', [AiSearchController::class, 'chat'])->name('ai.search.show')->whereUuid('uuid');
-    Route::middleware('throttle:ai_search')->group(function () {
-        Route::post('/yapay-zeka-arama/mesaj', [AiSearchController::class, 'sendMessage'])->name('ai.search.message');
-        Route::post('/yapay-zeka-arama/mesaj/akis', [AiSearchController::class, 'streamMessage'])->name('ai.search.message.stream');
-        Route::get('/yapay-zeka-arama-api', [AiSearchController::class, 'searchApi'])->name('ai.search.api');
-        Route::post('/yapay-zeka-arama/{log}/reddet', [AiSearchController::class, 'rejectTour'])
-            ->whereNumber('log')
-            ->name('ai.search.reject');
-    });
+        ->name('ai.search.reject');
 });
 
 // Favorites (auth required)

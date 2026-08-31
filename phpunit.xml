@@ -38,9 +38,6 @@
         <!-- Re-ranker testlerde varsayılan kapalı (fake yanıt dizilerini kaydırmasın);
              kendi testi config ile açar -->
         <env name="AI_RERANK" value="false"/>
-        <!-- Sohbet asistanı canlıda DONDURULDU; kod korunduğu için testleri
-             açık koşar (dondurma davranışının kendi testi bayrağı kapatır) -->
-        <env name="AI_CHAT_ENABLED" value="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

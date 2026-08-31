@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
 use App\Models\Agency;
 use App\Models\Tour;
+use App\Services\AiSearch\HybridRanker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
@@ -56,14 +56,10 @@ class AiTopKByCosineTest extends TestCase
             ]);
         }
 
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'topKByCosine');
-        $reflection->setAccessible(true);
-
         $query = Tour::whereNotNull('embedding')
             ->where('agency_id', $agency->id);
 
-        $top3 = $reflection->invoke($controller, $query, $queryVector, 3);
+        $top3 = app(HybridRanker::class)->topKByCosine($query, $queryVector, 3);
 
         $this->assertCount(3, $top3);
 
@@ -83,14 +79,10 @@ class AiTopKByCosineTest extends TestCase
 
     public function test_topkbycosine_handles_empty_candidate_set(): void
     {
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'topKByCosine');
-        $reflection->setAccessible(true);
-
         $emptyQuery = Tour::whereNotNull('embedding')->where('id', -1);
         $queryVector = array_pad([1.0], 1536, 0.0);
 
-        $result = $reflection->invoke($controller, $emptyQuery, $queryVector, 50);
+        $result = app(HybridRanker::class)->topKByCosine($emptyQuery, $queryVector, 50);
 
         $this->assertCount(0, $result);
     }
@@ -134,15 +126,11 @@ class AiTopKByCosineTest extends TestCase
             'embedding' => null,
         ]);
 
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'topKByCosine');
-        $reflection->setAccessible(true);
-
         // Filter sadece embedding'i NULL OLMAYAN turları çekiyor (mevcut akıştaki gibi)
         $query = Tour::whereNotNull('embedding')->where('agency_id', $agency->id);
         $queryVector = array_pad([1.0], 1536, 0.0);
 
-        $result = $reflection->invoke($controller, $query, $queryVector, 10);
+        $result = app(HybridRanker::class)->topKByCosine($query, $queryVector, 10);
 
         $this->assertCount(1, $result);
         $this->assertSame($valid->id, $result[0]->id);

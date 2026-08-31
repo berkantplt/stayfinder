@@ -12,8 +12,8 @@ use Illuminate\Support\Str;
  * günlere bölünmüş içerik planı. Harita/rota/navigasyon DEĞİLDİR — çıktı
  * tamamen editöryel bir gezi rehberidir (guide_payload JSON'ı).
  *
- * Sahiplik AiSearchConversation kalıbı: giriş yapmış kullanıcıda user_id,
- * misafirde session_id. Rehber URL'si uuid ile çözülür.
+ * Sahiplik iki uçlu: giriş yapmış kullanıcıda user_id, misafirde session_id.
+ * Rehber URL'si uuid ile çözülür.
  */
 class DiscoveryGuide extends Model
 {
@@ -100,8 +100,8 @@ class DiscoveryGuide extends Model
     }
 
     /**
-     * Sahiplik kontrolü (ConversationService::canAccess paritesi): kullanıcıya
-     * bağlı rehberi yalnız o kullanıcı, misafir rehberini yalnız aynı oturum açar.
+     * Sahiplik kontrolü: kullanıcıya bağlı rehberi yalnız o kullanıcı, misafir
+     * rehberini yalnız aynı oturum açar.
      */
     public function canBeAccessedBy(Request $request): bool
     {

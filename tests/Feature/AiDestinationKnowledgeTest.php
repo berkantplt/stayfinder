@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
+use App\Services\AiSearch\TourSearchService;
 use App\Jobs\GenerateTourCharacterJob;
 use App\Jobs\GenerateTourEmbeddingJob;
 use App\Models\Agency;
-use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Services\AiSearch\DestinationKnowledgeService;
+use App\Services\AiSearch\DestinationProfileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -17,8 +17,11 @@ use Tests\TestCase;
 
 /**
  * Destinasyon+tur bilgisi katmanları: envanter ("nerelere turunuz var"),
- * şehir karakteri ("İstanbul nasıl bir şehir") ve tur karakteri üretimi.
- * Sohbet cevapları TAMAMEN LLM'siz — OpenAI::fake([]) boşken 200 dönmesi kanıt.
+ * şehir eşleştirme ve tur karakteri üretimi. Bu katmanlar TAMAMEN LLM'siz
+ * çalışır; envanter listesi arama yorumu promptuna da girer.
+ *
+ * Not: sohbet v1 kaldırıldığında bu dosyadaki sohbet uçlu cevap testleri ve
+ * v1 servisinin private metotlarını yoklayan testler silindi.
  */
 class AiDestinationKnowledgeTest extends TestCase
 {
@@ -69,82 +72,6 @@ class AiDestinationKnowledgeTest extends TestCase
         $this->assertArrayNotHasKey('izmir', $inventory);
     }
 
-    public function test_nerelere_turunuz_var_llmsiz_deterministik_listeyle_cevaplanir(): void
-    {
-        OpenAI::fake([]);
-        Queue::fake();
-        $agency = $this->makeAgency();
-        $this->makeTour($agency, 'Paris, Roma');
-        $this->makeTour($agency, 'Paris');
-        DestinationKnowledgeService::flushInventory();
-
-        $r = $this->postJson(route('ai.search.message'), ['message' => 'nerelere turunuz var?'])
-            ->assertOk();
-
-        $content = $r->json('assistant_message.content');
-        $this->assertStringContainsString('Paris (2 tur)', $content);
-        $this->assertStringContainsString('Roma (1 tur)', $content);
-        $this->assertStringContainsString('2 destinasyonda toplam 2 aktif', $content);
-    }
-
-    public function test_sehir_karakter_sorusu_profil_verisinden_llmsiz_cevaplanir(): void
-    {
-        OpenAI::fake([]);
-        Queue::fake();
-        // Profil turdan ÖNCE: TourObserver bilinmeyen şehre placeholder yazar,
-        // sonradan create unique çakışması yaratır
-        DestinationProfile::create([
-            'city' => 'İstanbul',
-            'normalized_city' => DestinationProfile::normalize('İstanbul'),
-            'crowd_score' => 0.98,
-            'liveliness_score' => 0.90,
-            'source' => DestinationProfile::SOURCE_LLM,
-            'enrichment_version' => DestinationProfile::CURRENT_ENRICHMENT_VERSION,
-            'summary' => 'İki kıtayı birleştiren, tarih ve kültür dolu bir metropol.',
-            'vibe_tags' => ['nightlife', 'cultural', 'historical'],
-            'best_months' => [5, 9],
-            'requires_visa_for_tr' => false,
-        ]);
-        $this->makeTour($this->makeAgency(), 'İstanbul');
-        DestinationKnowledgeService::flushInventory();
-
-        $r = $this->postJson(route('ai.search.message'), ['message' => 'İstanbul nasıl bir şehir? kalabalık mı?'])
-            ->assertOk();
-
-        $content = $r->json('assistant_message.content');
-        // Karakter niteleyicileri gerçek profil verisinden (mb-büyük harfle başlar)
-        $this->assertStringContainsString('Çok kalabalık', $content);
-        $this->assertStringContainsString('gece hayatı', $content);
-        $this->assertStringContainsString('İki kıtayı birleştiren', $content);
-        $this->assertStringContainsString('Mayıs, Eylül', $content);
-        // Envanter kesişimi: gerçekten kaç turumuz olduğu söylenir
-        $this->assertStringContainsString('1 aktif turumuz var', $content);
-    }
-
-    public function test_profili_hazir_olmayan_sehirde_uydurma_niteleyici_yazilmaz(): void
-    {
-        OpenAI::fake([]);
-        Queue::fake();
-        DestinationProfile::create([
-            'city' => 'Bolu',
-            'normalized_city' => 'bolu',
-            'crowd_score' => 0.50,
-            'liveliness_score' => 0.50,
-            'source' => DestinationProfile::SOURCE_DEFAULT,
-            'enrichment_version' => 1,
-        ]);
-        DestinationKnowledgeService::flushInventory();
-
-        $r = $this->postJson(route('ai.search.message'), ['message' => 'Bolu nasıl bir şehir?'])
-            ->assertOk();
-
-        $content = $r->json('assistant_message.content');
-        $this->assertStringContainsString('henüz hazır değil', $content);
-        $this->assertStringNotContainsString('kalabalık', $content);
-        // Envanterde tur yok → dürüstçe söylenir
-        $this->assertStringContainsString('aktif turumuz yok', $content);
-    }
-
     public function test_yeni_tur_karakter_jobu_kuyruga_alinir(): void
     {
         Queue::fake();
@@ -166,7 +93,7 @@ class AiDestinationKnowledgeTest extends TestCase
             ])]]]]),
         ]);
 
-        (new GenerateTourCharacterJob($tour->id))->handle();
+        (new GenerateTourCharacterJob($tour->id))->handle(app(DestinationProfileService::class));
 
         $tour->refresh();
         $this->assertSame('Sakin vadilerden geçen, düşük tempolu bir dinlenme turu.', $tour->character_summary);
@@ -189,47 +116,13 @@ class AiDestinationKnowledgeTest extends TestCase
         ]);
         DestinationKnowledgeService::flushInventory();
 
-        $controller = app(AiSearchController::class);
-        [$systemPrompt] = (new \ReflectionMethod($controller, 'buildCommentPromptParts'))
-            ->invoke($controller, 'kapadokya turu', Tour::whereKey($tour->id)->get(), '', null);
+        [$systemPrompt] = app(TourSearchService::class)
+            ->buildCommentPromptParts('kapadokya turu', Tour::whereKey($tour->id)->get(), '');
 
         $this->assertStringContainsString('SİTEDEKİ DESTİNASYONLAR', $systemPrompt);
         $this->assertStringContainsString('Kapadokya', $systemPrompt);
         $this->assertStringContainsString('| KARAKTER: Sakin, doğa ağırlıklı bir keşif turu.', $systemPrompt);
         $this->assertStringContainsString('listede olmayan bir şehir/ülke için turumuz olduğunu ima etme', $systemPrompt);
-    }
-
-    public function test_arama_mesaji_destinasyon_sorusu_sanilmaz(): void
-    {
-        // Arama/öneri/tur mesajları Phase 0d'ye TAKILMAMALI — inceleme
-        // bulgusundaki gerçek repro mesajları burada kilitli.
-        Queue::fake();
-        $agency = $this->makeAgency();
-        $this->makeTour($agency, 'İstanbul');
-        $this->makeTour($agency, 'Kapadokya');
-        DestinationKnowledgeService::flushInventory();
-
-        $service = app(\App\Services\AiSearch\ConversationService::class);
-
-        $wantsList = new \ReflectionMethod($service, 'wantsDestinationList');
-        $this->assertFalse($wantsList->invoke($service, 'İstanbul turu var mı?'));
-        $this->assertFalse($wantsList->invoke($service, '20 bin bütçeyle eylülde deniz tatili'));
-        // Kriterli öneri istekleri envanter dökümü DEĞİL aramadır (intent'e işlenmeli)
-        $this->assertFalse($wantsList->invoke($service, 'Eylülde 30 bin bütçeyle nereye tur önerirsin?'));
-        $this->assertFalse($wantsList->invoke($service, 'Balayı için nereye gidebiliriz?'));
-        $this->assertFalse($wantsList->invoke($service, 'Çocuklu aile için nerelere tur var?'));
-        $this->assertTrue($wantsList->invoke($service, 'nerelere turunuz var acaba'));
-        $this->assertTrue($wantsList->invoke($service, 'Hangi şehirlere gidiyorsunuz?'));
-
-        $detect = new \ReflectionMethod($service, 'detectDestinationQuestion');
-        $this->assertNull($detect->invoke($service, 'İstanbul turu var mı?'));
-        $this->assertNull($detect->invoke($service, 'vizesiz tur istiyorum'));
-        // "tur" kelimesi geçen mesajlar TUR akışına gider, şehir cevabına değil
-        $this->assertNull($detect->invoke($service, "İstanbul'da gece hayatı olan tur öner"));
-        $this->assertNull($detect->invoke($service, 'İstanbul turu hakkında bilgi verir misin'));
-        $this->assertNull($detect->invoke($service, 'Kapadokya turunu anlatır mısın'));
-        // Saf şehir sorusu yakalanmaya devam eder
-        $this->assertNotNull($detect->invoke($service, 'İstanbul nasıl bir şehir?'));
     }
 
     public function test_sehir_eslesmesi_baska_kelimenin_on_ekine_takilmaz(): void
@@ -286,7 +179,7 @@ class AiDestinationKnowledgeTest extends TestCase
                 'pace' => 0.5, 'character_summary' => 'Orta tempolu bir keşif turu.',
             ])]]]]),
         ]);
-        (new GenerateTourCharacterJob($tour->id))->handle();
+        (new GenerateTourCharacterJob($tour->id))->handle(app(DestinationProfileService::class));
 
         // Job bitti → kilit bırakıldı → sonraki içerik düzenlemesi yeniden
         // üretimi tetikleyebilir (600 sn bayat-kalma tuzağı kapalı)

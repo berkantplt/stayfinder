@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
+use App\Services\AiSearch\TourSearchService;
 use App\Models\Agency;
 use App\Models\AiSearchLog;
 use App\Models\Tour;
@@ -111,7 +111,7 @@ class AiNegativeFeedbackTest extends TestCase
         $log->recordRejection($tours[0]->id, 'too_expensive');
         $log->recordRejection($tours[1]->id, 'wrong_vibe');
 
-        $controller = app(AiSearchController::class);
+        $controller = app(TourSearchService::class);
         $reflection = new \ReflectionMethod($controller, 'collectRejectedTourIds');
 
         $rejected = $reflection->invoke($controller, $this->buildRequestWithSessionAndUser($user));
@@ -133,7 +133,7 @@ class AiNegativeFeedbackTest extends TestCase
             'rejected_at' => now()->subDays(2),
         ]);
 
-        $controller = app(AiSearchController::class);
+        $controller = app(TourSearchService::class);
         $reflection = new \ReflectionMethod($controller, 'collectRejectedTourIds');
 
         $rejected = $reflection->invoke($controller, $this->buildRequestWithSessionAndUser($user));
@@ -157,16 +157,13 @@ class AiNegativeFeedbackTest extends TestCase
         $t1 = $this->makeTour($agency, 'T1', [1.0, 0.0, 0.0]);
         $t2 = $this->makeTour($agency, 'T2', [0.0, 1.0, 0.0]);
 
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'computeRejectionAvgEmbedding');
-
         // Debug: gerçek embedding'leri DB'den oku
         $fresh1 = $t1->fresh();
         $fresh2 = $t2->fresh();
         $this->assertCount(3, $fresh1->embedding, 'T1 embedding DB\'de 3-dim olmalı');
         $this->assertCount(3, $fresh2->embedding, 'T2 embedding DB\'de 3-dim olmalı');
 
-        $avg = $reflection->invoke($controller, [$t1->id, $t2->id]);
+        $avg = app(\App\Services\AiSearch\HybridRanker::class)->computeRejectionAvgEmbedding([$t1->id, $t2->id]);
 
         $this->assertNotNull($avg);
         $this->assertCount(3, $avg);
@@ -177,11 +174,10 @@ class AiNegativeFeedbackTest extends TestCase
 
     public function test_compute_avg_returns_null_for_empty_or_missing_embeddings(): void
     {
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'computeRejectionAvgEmbedding');
+        $ranker = app(\App\Services\AiSearch\HybridRanker::class);
 
-        $this->assertNull($reflection->invoke($controller, []));
-        $this->assertNull($reflection->invoke($controller, [99999])); // var olmayan id
+        $this->assertNull($ranker->computeRejectionAvgEmbedding([]));
+        $this->assertNull($ranker->computeRejectionAvgEmbedding([99999])); // var olmayan id
     }
 
     /**

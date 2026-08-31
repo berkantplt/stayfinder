@@ -265,14 +265,13 @@ class ChatV2StreamTest extends TestCase
         $this->postJson('/sohbet/sifirla')->assertNotFound();
     }
 
-    public function test_v1_bayragindan_bagimsiz(): void
+    public function test_v2_bayragi_tek_basina_yeterli(): void
     {
-        // v1 dondurulmuş olsa bile v2 açılabilmeli
-        config(['ai.chat_enabled' => false, 'ai.chat_v2_enabled' => true]);
+        // Sohbet v1 kaldırıldı: v2'nin tek kapısı ai.chat_v2_enabled
+        config(['ai.chat_v2_enabled' => true]);
         OpenAI::fake([$this->textResponse('Buradayım.')]);
 
         $this->post('/sohbet/akis', ['message' => 'selam'])->assertOk();
-        $this->get('/yapay-zeka-arama')->assertNotFound();
     }
 
     public function test_bos_mesaj_reddedilir(): void

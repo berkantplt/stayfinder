@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Listeners\MigrateAnonymousAiConversations;
+use App\Listeners\MigrateAnonymousAiSearchLogs;
 use App\Models\Destination;
 use App\Models\Post;
 use App\Models\TourDate;
@@ -43,8 +43,8 @@ class AppServiceProvider extends ServiceProvider
         // Tur tarihleri değişince turun embedding'i (kalkış ayları) tazelensin
         TourDate::observe(TourDateObserver::class);
 
-        // Girişte anonim AI konuşmalarını yeni kimliğe bağla (sahipsiz kalmasın)
-        Event::listen(Login::class, MigrateAnonymousAiConversations::class);
+        // Girişte anonim AI arama loglarını yeni kimliğe bağla (sahipsiz kalmasın)
+        Event::listen(Login::class, MigrateAnonymousAiSearchLogs::class);
     }
 
     /**

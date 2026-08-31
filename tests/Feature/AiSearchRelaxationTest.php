@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
+use App\Services\AiSearch\TourSearchService;
 use App\Models\Agency;
 use App\Models\Tour;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -65,7 +65,7 @@ class AiSearchRelaxationTest extends TestCase
         $request = Request::create('/test', 'GET');
         $request->setLaravelSession(app('session.store'));
 
-        $result = app(AiSearchController::class)->performAiSearch(
+        $result = app(TourSearchService::class)->performAiSearch(
             $request,
             'yazlık bir tur istiyorum denize gireyim',
             ['max_budget' => 100]
@@ -93,7 +93,7 @@ class AiSearchRelaxationTest extends TestCase
         $request = Request::create('/test', 'GET');
         $request->setLaravelSession(app('session.store'));
 
-        $result = app(AiSearchController::class)->performAiSearch($request, 'yurt dışı istiyorum');
+        $result = app(TourSearchService::class)->performAiSearch($request, 'yurt dışı istiyorum');
 
         $this->assertIsArray($result);
         // Envanterde yurt dışı tur yok → yurt içi Ege turu ASLA önerilmez, dürüst 0
@@ -158,10 +158,7 @@ class AiSearchRelaxationTest extends TestCase
 
     public function test_yazlik_kelimesi_temmuza_eslenir(): void
     {
-        $controller = app(AiSearchController::class);
-        $reflection = new \ReflectionMethod($controller, 'extractPreferredMonth');
-
-        $this->assertSame(7, $reflection->invoke($controller, [], 'yazlık bir tur istiyorum'));
+        $this->assertSame(7, app(\App\Services\AiSearch\IntentHeuristics::class)->extractPreferredMonth([], 'yazlık bir tur istiyorum'));
     }
 
     public function test_sohbette_en_iyi_7_gosterilir_tamami_loglanir_ve_sayfada_acilir(): void
@@ -205,7 +202,7 @@ class AiSearchRelaxationTest extends TestCase
         $request->setLaravelSession(app('session.store'));
         $request->setUserResolver(fn () => $user);
 
-        $result = app(AiSearchController::class)->performAiSearch($request, 'ege turu istiyorum');
+        $result = app(TourSearchService::class)->performAiSearch($request, 'ege turu istiyorum');
 
         $this->assertIsArray($result);
         // Sohbette en isabetli 7 tur

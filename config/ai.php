@@ -22,15 +22,8 @@ return [
     |
     */
 
-    // ❄️ CHATBOT DONDURULDU (2026-07-28, kullanıcı kararı): v1 sohbet asistanı
-    // yayından kaldırıldı — yerine yeni mimari kurulacak. Kod ve veri yerinde
-    // duruyor; geri açmak için .env'e AI_CHAT_ENABLED=true yazmak yeterli.
-    // Kapsam: yüzen widget + /yapay-zeka-arama sayfası + mesaj uçları.
-    // ETKİLENMEZ: tur eşleştirme testi (/tatil-karakteri) ve rubrik puanlama.
-    'chat_enabled' => env('AI_CHAT_ENABLED', false),
-
-    // v2 KENDİ bayrağı: chat_enabled v1'i kapatıyor, aynı bayrak kullanılırsa
-    // v1 kapalıyken v2 canlıda denenemezdi. İkisi bağımsız açılıp kapanır.
+    // Chatbot v2 (araç çağırma) yayın anahtarı. v1 sohbet asistanı 2026-08'de
+    // tamamen SİLİNDİ (kod + uçlar); geriye yalnız durumsuz AI arama uçları kaldı.
     'chat_v2_enabled' => env('AI_CHAT_V2_ENABLED', false),
 
     // ⏸️ Tur eşleştirme testi ASKIDA (2026-08-11, kullanıcı kararı): ana sayfadaki

@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AiSearchController;
+use App\Services\AiSearch\TourSearchService;
 use App\Models\Agency;
+use App\Models\AiSearchLog;
 use App\Models\Tour;
 use App\Models\TourDate;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -61,7 +63,7 @@ class AiSearchPhase2Test extends TestCase
         $request = Request::create('/test', 'GET');
         $request->setLaravelSession(app('session.store'));
 
-        $result = app(AiSearchController::class)->performAiSearch($request, $query);
+        $result = app(TourSearchService::class)->performAiSearch($request, $query);
         $this->assertIsArray($result);
         $this->assertArrayNotHasKey('error', $result, $result['error'] ?? '');
 
@@ -132,9 +134,8 @@ class AiSearchPhase2Test extends TestCase
         $this->makeTour(['title' => 'Kapadokya Turu', 'destination' => 'Kapadokya']);
         cache()->forget('ai_search_known_destinations_v1');
 
-        $controller = app(AiSearchController::class);
-        $found = (new \ReflectionMethod($controller, 'findKnownDestinationFromText'))
-            ->invoke($controller, 'kapadokia turu bakıyorum');
+        $found = app(\App\Services\AiSearch\IntentHeuristics::class)
+            ->findKnownDestinationFromText('kapadokia turu bakıyorum');
 
         $this->assertSame('Kapadokya', $found);
     }
@@ -167,11 +168,64 @@ class AiSearchPhase2Test extends TestCase
         $request = Request::create('/test', 'GET');
         $request->setLaravelSession(app('session.store'));
 
-        $result = app(AiSearchController::class)->performAiSearch($request, 'sakin tempolu tur');
+        $result = app(TourSearchService::class)->performAiSearch($request, 'sakin tempolu tur');
         $this->assertArrayNotHasKey('error', $result, $result['error'] ?? '');
 
         $first = $result['results'][0];
         $this->assertSame($c->id, $first['id'], 'Re-ranker C\'yi öne almalıydı');
         $this->assertStringContainsString('Sakin tempolu', $first['reason']);
+    }
+
+    /** Sohbet v1 ile silinen AiChatRouterTest'ten kurtarıldı. */
+    public function test_gerekce_deterministik_uretilir(): void
+    {
+        $service = app(TourSearchService::class);
+
+        $tour = new Tour(['price' => 9000, 'currency' => 'TRY']);
+        $tour->price_try = 9000;
+        $tour->month_score = 1.0;
+        $tour->nature_score = 0.9;
+        $tour->similarity = 0.8;
+
+        $reason = $service->buildTourReason($tour, 20000, 9, null, true, null, null);
+
+        $this->assertIsString($reason);
+        $this->assertStringContainsString('Eylül kalkışı var', $reason);
+        $this->assertStringContainsString('bütçene uyuyor', $reason);
+    }
+
+    /**
+     * Tur sayfası AI danışman barı: aramadan gelen kullanıcı bağlamını görür ve
+     * tıklama loglanır. (Sohbet v1 ile silinen AiPhase4Test'ten kurtarıldı.)
+     */
+    public function test_tur_sayfasi_danisman_bari_ai_baglaminda_gosterilir(): void
+    {
+        $tour = $this->makeTour(['title' => 'Kaş Balayı Turu', 'destination' => 'Kaş', 'price' => 20000]);
+        $user = User::factory()->create(['role' => 'visitor']);
+        $this->actingAs($user);
+
+        $log = AiSearchLog::create([
+            'user_id' => $user->id,
+            'session_id' => '', // sahiplik kullanıcı üzerinden (test istekleri arasında session id değişir)
+            'raw_query' => 'balayı için sakin bir yer',
+            'normalized_query' => 'balayı',
+            'intent' => ['max_budget' => 25000],
+            'applied_filters' => [],
+            'candidate_count' => 1,
+            'result_tour_ids' => [$tour->id],
+            'result_scores' => [['tour_id' => $tour->id, 'rank' => 1, 'compatibility_score' => 0.87]],
+            'latency_ms' => 100,
+        ]);
+
+        $response = $this->get(route('tours.show', $tour).'?ai_log_id='.$log->id.'&ai_rank=1');
+
+        $response->assertOk();
+        $response->assertSee('Aradığın', false);
+        $response->assertSee('%87 uyumlu');
+        $response->assertSee('bütçe', false);
+
+        // Tıklama loglandı
+        $log->refresh();
+        $this->assertSame($tour->id, (int) $log->selected_tour_id);
     }
 }
