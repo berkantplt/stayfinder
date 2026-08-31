@@ -727,23 +727,22 @@
             {{-- Katman 0: arka plan fotoğrafı (admin'in ilk banner'ı, dinamik) --}}
             <img src="{{ $carouselBanners->first()->image_url }}" alt="turXtur" class="m-hero-photo">
 
-            {{-- Katman 1: sol tarafta okunabilirlik sağlayan koyu lacivert-teal degrade --}}
+            {{-- Katman 1: soldan sağa açılan perde — başlık okunur kalsın, sağdaki
+                 manzara açıkta dursun. Üstteki ikinci degrade şeffaf header içindir. --}}
             <div class="m-hero-veil"></div>
 
-            {{-- Katman 2: dekoratif kavisler — tümü Bézier path'li inline SVG.
-                 preserveAspectRatio="none": eğriler banner'la birlikte esner,
-                 mobil oranlarda kompozisyon bozulmaz. --}}
-            <svg class="m-hero-deco" style="{{ \App\Support\HeroDeco::css() }}" viewBox="0 0 375 430" preserveAspectRatio="none" aria-hidden="true">
-                @include('partials.hero-deco-shapes')
-            </svg>
             <div class="m-hero-body">
-                <h2 class="m-hero-title">Keşfetmenin<br><span>en kolay yolu</span></h2>
-                <p class="m-hero-sub">Hayalindeki turu karşılaştır,<br>en uygun fiyatı bul!</p>
-                <div class="m-hero-badge">
-                    <i class="m-hero-badge-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg></i>
-                    <div><b>Güvenilir acentalar</b><span>Onaylı, güvenli rezervasyon</span></div>
-                </div>
+                <h2 class="m-hero-title">Hayalindeki turu<br><span>en uygun<br>fiyatla bul</span></h2>
+                <p class="m-hero-sub">Yüzlerce turu karşılaştır,<br>sana en uygun fiyatı kolayca bul.</p>
             </div>
+
+            {{-- Katman 2: hero'yu sayfa zeminine bağlayan dalga — kullanıcının verdiği
+                 turxtur-banner-wave.svg'nin path'i BİREBİR, tek fark dolgu rengi:
+                 beyaz yerine sayfa zemini (#f5f8f7), yoksa dalganın bittiği yerde
+                 düz bir renk dikişi kalıyor. En/boy oranı da orijinali (732:100). --}}
+            <svg class="m-hero-wave" viewBox="0 0 732 100" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="#f5f8f7" d="M 0 12 C 42 7, 67 7, 100 14 C 166 28, 215 49, 295 53 C 366 57, 418 52, 487 37 C 540 25, 570 15, 610 15 C 670 15, 712 32, 732 55 L 732 100 L 0 100 Z"/>
+            </svg>
         </div>
 
         {{-- Arama kartı: 4 kutu (Nereye / Ne zaman / Bütçe / Nereden) → /turlar filtreleri.
@@ -1381,24 +1380,19 @@
             .hero-trust, .mega-wrap { display:none; }
             #destinationsSection { display:none !important; }
 
-            /* ---- Hero: koyu teal degrade + fotoğraf, header üstüne biner ---- */
+            /* ---- Hero: fotoğraf + soldan perde, altta sayfa zeminine bağlanan dalga ---- */
             .m-home { display:block; margin:0 -16px; font-family:'Manrope',var(--font); }
             .m-hero { position:relative; padding-top:calc(74px + env(safe-area-inset-top)); background:linear-gradient(135deg,#12756a,#0b4f49 58%,#083b36); overflow:hidden; }
-            .m-hero-photo { position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; object-position:65% center; }
-            .m-hero-veil { position:absolute; inset:0; z-index:1; background:linear-gradient(100deg, rgba(4,32,44,.93) 0%, rgba(5,44,52,.84) 34%, rgba(7,58,60,.48) 64%, rgba(7,58,60,.10) 100%); }
-            .m-hero-deco { position:absolute; inset:0; z-index:2; width:100%; height:100%; pointer-events:none; }
-            .m-hero-body { position:relative; z-index:3; padding:8px 20px 112px; }
-            .m-hero-title { margin:0; font-size:27px; line-height:1.12; font-weight:800; letter-spacing:-.8px; color:#fff; }
-            .m-hero-title span { color:#5eead4; }
-            .m-hero-sub { margin:8px 0 0; font-size:12.5px; font-weight:600; line-height:1.5; color:rgba(255,255,255,.85); }
-            .m-hero-badge { display:inline-flex; align-items:center; gap:8px; margin-top:14px; padding:7px 14px 7px 10px; border-radius:100px; background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#5eead4; }
-            .m-hero-badge-ico { display:flex; align-items:center; justify-content:center; width:28px; height:28px; flex:none; border-radius:50%; background:rgba(255,255,255,.18); color:#fff; }
-            .m-hero-badge div { display:flex; flex-direction:column; line-height:1.25; }
-            .m-hero-badge b { font-size:10.5px; font-weight:800; color:#fff; }
-            .m-hero-badge span { font-size:8.8px; font-weight:600; color:rgba(255,255,255,.62); }
+            .m-hero-photo { position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; object-position:62% center; }
+            .m-hero-veil { position:absolute; inset:0; z-index:1; background:linear-gradient(100deg, rgba(3,28,38,.88) 0%, rgba(4,40,48,.66) 36%, rgba(6,54,58,.26) 66%, rgba(6,54,58,0) 100%), linear-gradient(180deg, rgba(3,28,38,.42) 0%, rgba(3,28,38,0) 30%); }
+            .m-hero-body { position:relative; z-index:2; padding:10px 20px 104px; }
+            .m-hero-title { margin:0; font-size:30px; line-height:1.16; font-weight:800; letter-spacing:-1px; color:#fff; text-shadow:0 2px 20px rgba(3,22,30,.4); }
+            .m-hero-title span { color:#43cfc0; }
+            .m-hero-sub { margin:10px 0 0; font-size:13px; font-weight:600; line-height:1.55; color:rgba(255,255,255,.88); text-shadow:0 1px 14px rgba(3,22,30,.4); }
+            .m-hero-wave { position:absolute; left:0; right:0; bottom:-1px; z-index:3; display:block; width:100%; height:auto; aspect-ratio:732/100; }
 
             /* ---- Arama kartı: 4 kutu + karşılaştır butonu ---- */
-            .m-search { position:relative; z-index:5; margin:-100px 16px 0; background:#fff; border-radius:20px; box-shadow:0 18px 44px rgba(4,24,21,.15); padding:12px; }
+            .m-search { position:relative; z-index:5; margin:8px 16px 0; background:#fff; border-radius:20px; box-shadow:0 18px 44px rgba(4,24,21,.15); padding:12px; }
             .m-sgrid { display:flex; align-items:stretch; gap:1px; }
             .m-sbox { position:relative; flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; background:#fff; border:1px solid rgba(15,36,33,.10); border-radius:14px; padding:11px 3px 10px; cursor:pointer; font-family:'Manrope',var(--font); -webkit-appearance:none; appearance:none; }
             .m-sbox > svg { width:21px; height:21px; color:var(--accent); }
