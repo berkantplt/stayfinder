@@ -75,6 +75,11 @@ class TourComparison
                 'etiket' => self::paraEtiketi($gecerli, $tour->currency_symbol),
                 'eskiEtiket' => $kampanya ? self::paraEtiketi($liste, $tour->currency_symbol) : null,
                 'kampanya' => $kampanya !== null,
+                // Kart rozeti "%X İNDİRİM": liste fiyatına göre düşüş oranı.
+                // Yuvarlama sonucu %0 çıkan kampanyalarda rozet basılmaz.
+                'indirimYuzde' => $kampanya !== null && $liste > 0 && $gecerli < $liste
+                    ? max((int) round(($liste - $gecerli) / $liste * 100), 1)
+                    : null,
                 // Para birimi TL değilse kıyasın hangi sayı üzerinden yapıldığını
                 // göstermek dürüstlük meselesi — rozet havadan gelmiş görünmesin.
                 'tryEtiket' => strtoupper((string) $tour->currency) === 'TRY'

@@ -391,6 +391,10 @@ class TourController extends Controller
             ->with(['agency', 'category', 'dates' => function ($q) {
                 $q->orderBy('departure_date');
             }])
+            // Kart üstündeki puan rozeti: tur başına ayrı sorgu yerine tek çekim
+            // (tours.index ile aynı biçim). Yorum yoksa sayı 0 gelir, rozet basılmaz.
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
             ->active()
             ->get()
             // whereIn sonucu DB sırasında döner. Kullanıcı turları bir sırayla
