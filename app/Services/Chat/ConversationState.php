@@ -2,6 +2,10 @@
 
 namespace App\Services\Chat;
 
+use App\Services\Chat\Tools\SehirBilgisi;
+use App\Services\Chat\Tools\TurAra;
+use App\Services\Chat\Tools\TurDetay;
+
 /**
  * Oturumluk yapısal hafıza (karar 2: kalıcı profil YOK).
  *
@@ -86,7 +90,7 @@ class ConversationState
      */
     public function absorb(string $tool, array $args, array $result): void
     {
-        if ($tool === 'tur_ara') {
+        if ($tool === TurAra::name()) {
             $this->kisitlar = array_merge($this->kisitlar, $this->temizFiltre((array) ($args['filtre'] ?? [])));
 
             foreach ((array) ($result['kabul_edilen_degerler'] ?? []) as $d => $v) {
@@ -107,13 +111,13 @@ class ConversationState
             }
         }
 
-        if ($tool === 'tur_detay') {
+        if ($tool === TurDetay::name()) {
             $this->turEkle($result['id'] ?? null, $result['baslik'] ?? null);
         }
 
         // Yalnız hakkında GERÇEK veri olan şehir hatırlanır; veri_var=false olan
         // şehri "konuşuldu" diye geri vermek modeli niteleme yapmaya iter
-        if ($tool === 'sehir_bilgisi' && ($result['veri_var'] ?? false) === true && ! empty($args['sehir'])) {
+        if ($tool === SehirBilgisi::name() && ($result['veri_var'] ?? false) === true && ! empty($args['sehir'])) {
             $sehir = mb_substr((string) $args['sehir'], 0, 60, 'UTF-8');
             if (! in_array($sehir, $this->sehirler, true)) {
                 $this->sehirler[] = $sehir;

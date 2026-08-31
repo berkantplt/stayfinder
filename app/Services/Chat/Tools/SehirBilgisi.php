@@ -2,8 +2,8 @@
 
 namespace App\Services\Chat\Tools;
 
-use App\Services\AiSearch\DestinationProfileService;
 use App\Models\DestinationProfile;
+use App\Services\AiSearch\DestinationProfileService;
 
 /**
  * Şehir/destinasyon karakteri (şartname madde 5-6): kalabalıklık, canlılık,

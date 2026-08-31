@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Services\AiSearch\PiiMasker;
 use App\Services\Chat\ChatAgent;
 use App\Services\Chat\ConversationState;
-use App\Services\Matching\TourMatcher;
+use App\Services\Chat\Tools\TurAra;
+use App\Support\SseStream;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -28,7 +29,7 @@ class ChatV2Controller extends Controller
 
     public function __construct(private readonly ChatAgent $agent) {}
 
-    /** SSE akışı. İskelet v1'den birebir taşındı (nginx altında kazanılmış ayarlar). */
+    /** SSE akışı. Ortam kurulumu + emit üretimi SseStream'de (nginx altında kazanılmış ayarlar). */
     public function stream(Request $request): StreamedResponse
     {
         $validated = $request->validate([
@@ -43,36 +44,7 @@ class ChatV2Controller extends Controller
         $durum = ConversationState::fromArray($oturum['durum'] ?? null);
 
         return response()->stream(function () use ($request, $mesaj, $gecmis, $durum) {
-            // İstemci koparsa bile oturum yazımı tamamlansın
-            @ignore_user_abort(true);
-
-            // Sunucu tarafı buffering'i kapat (FastCGI/PHP-FPM'de kritik).
-            // Testte ATLANIR: test koşucusu akışı kendi çıktı tamponundan
-            // okuyor, tamponları yıkmak onu bozuyor. Atlanan kısım ortam
-            // ayarı; olay/başlık mantığı testlerde aynen doğrulanıyor.
-            if (! app()->runningUnitTests()) {
-                if (function_exists('apache_setenv')) {
-                    @apache_setenv('no-gzip', '1');
-                }
-                @ini_set('zlib.output_compression', '0');
-                @ini_set('output_buffering', 'off');
-                @ini_set('implicit_flush', '1');
-                while (ob_get_level() > 0) {
-                    @ob_end_flush();
-                }
-                @ob_implicit_flush(true);
-            }
-
-            $emit = function (string $event, $data): void {
-                echo "event: {$event}\n";
-                echo 'data: '.json_encode($data, JSON_UNESCAPED_UNICODE)."\n\n";
-                @flush();
-            };
-
-            // İlk baytı hemen akıt: araç turları çıktı üretmeden önce nginx
-            // proxy_read_timeout sıfır-bayt görüp bağlantıyı koparmasın
-            echo ": keep-alive\n\n";
-            @flush();
+            $emit = SseStream::baslat();
 
             try {
                 $sonuc = $this->agent->handle(
@@ -116,22 +88,14 @@ class ChatV2Controller extends Controller
                 $emit('error', ['message' => 'Şu an bir sorun oluştu, mesajını tekrar gönderir misin?']);
                 $emit('done', ['is_error' => true]);
             }
-        }, 200, [
-            'Content-Type' => 'text/event-stream; charset=UTF-8',
-            'Cache-Control' => 'no-cache, no-transform',
-            'X-Accel-Buffering' => 'no',
-            'Connection' => 'keep-alive',
-        ]);
+        }, 200, SseStream::headers());
     }
 
     /**
      * "Diğerleri": chat'te gösterilen 5 turdan sonrakiler.
-     *
-     * LLM'e hiç gidilmez — oturumdaki profil (değerler + ağırlıklar + kısıtlar)
-     * yeniden kullanılıp aynı eşleştirici daha uzun listeyle çalıştırılır.
-     * Böylece hem ücretsiz hem sıralama chat'tekiyle birebir tutarlı.
+     * Kurgu TurAra::genisletilmisListe'de — controller yalnız oturumu okur.
      */
-    public function more(Request $request, TourMatcher $matcher)
+    public function more(Request $request, TurAra $turAra)
     {
         $oturum = (array) $request->session()->get(self::OTURUM_ANAHTARI, []);
         $durum = ConversationState::fromArray($oturum['durum'] ?? null);
@@ -140,20 +104,7 @@ class ChatV2Controller extends Controller
             return response()->json(['items' => [], 'not' => 'Önce bir tatil tarifi gerekiyor.']);
         }
 
-        $gosterilen = $durum->gosterilenIdler();
-        $sonuc = $matcher->match(
-            ['degerler' => $durum->degerler, 'agirliklar' => $durum->agirliklar],
-            $durum->varsayilanFiltre() + [
-                'top_n' => max(1, self::GENISLETILMIS_LIMIT - count($gosterilen)),
-                'haric' => $gosterilen,   // konum değil KİMLİK dışlama
-                'cesitlilik' => false,    // genişletilmiş liste saf sıralama
-            ],
-        );
-
-        return response()->json([
-            'items' => $sonuc['tours'],
-            'toplam' => $sonuc['toplam_eslesme'],
-        ]);
+        return response()->json($turAra->genisletilmisListe($durum, self::GENISLETILMIS_LIMIT));
     }
 
     /** Konuşmayı sıfırla (oturumluk hafızayı temizler). */

@@ -2,7 +2,6 @@
 
 namespace App\Services\Chat\Tools;
 
-use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Services\AiSearch\DestinationProfileService;
 use Illuminate\Support\Str;
@@ -72,14 +71,9 @@ class TurDetay implements ChatTool
 
         // Çok şehirli rotada her şehrin KENDİ profili — tek şehir tüm rotanın
         // karakteri gibi sunulmasın
-        $sehirProfilleri = collect(DestinationProfile::splitCities((string) $tour->destination))
-            ->take(4)
-            ->map(function ($city) {
-                $p = $this->profiles->get($city);
-                $tarif = DestinationProfileService::describeProfile($p);
-
-                return $tarif === null ? null : ['sehir' => $city, 'karakter' => $tarif, 'ozet' => $p['summary'] ?? null];
-            })->filter()->values()->all();
+        $sehirProfilleri = collect($this->profiles->describeCities((string) $tour->destination))
+            ->map(fn ($p) => ['sehir' => $p['city'], 'karakter' => $p['character'], 'ozet' => $p['summary']])
+            ->all();
 
         return [
             'id' => $tour->id,

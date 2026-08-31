@@ -2,9 +2,12 @@
 
 namespace App\Services\Chat\Tools;
 
+use App\Services\Chat\ChatPrompts;
+use App\Services\Chat\ConversationState;
 use App\Services\Chat\LlmProfileBuilder;
 use App\Services\Matching\Rubric;
 use App\Services\Matching\TourMatcher;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Kullanıcının tarif ettiği tatili katalogda arar.
@@ -51,11 +54,7 @@ class TurAra implements ChatTool
             'type' => 'function',
             'function' => [
                 'name' => self::name(),
-                'description' => 'Kullanıcının tarif ettiği tatile uyan turları katalogda arar. '
-                    .'Boyutları yalnız kullanıcının söylediklerinden doldur; emin olmadığını BOŞ BIRAK '
-                    .'(boş bırakılan boyut eşleştirmeye hiç girmez, yanlış doldurmaktan iyidir). '
-                    .'Ölçek çıpaları: "sakin kasaba" ≈ kalabaliklik 20, "her gün yeni şehir" ≈ tempo 85, '
-                    .'"5 yıldız" ≈ konfor 80, "kamp" ≈ konfor 15, "kimse rahatsız etmesin" ≈ sosyallik 10.',
+                'description' => ChatPrompts::TUR_ARA_ACIKLAMA,
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -96,48 +95,7 @@ class TurAra implements ChatTool
         $baglam = is_array($args['filtre'] ?? null) ? $args['filtre'] : [];
 
         if ($profil['agirliklar'] === [] || array_sum($profil['agirliklar']) <= 0) {
-            // Düşen boyutlar her iki dalda da raporlanır: eval "kanıtsız boyut
-            // doldurma denemesi"ni buradan okuyor, sessizce yutulmamalı
-            $dusurulen = array_map(fn ($d) => Rubric::label($d), $profil['dusurulen']);
-
-            // Kullanıcı SOMUT kısıt verdiyse (Fethiye / 4-5 gün / bütçe...) elimizde
-            // arama yapacak kadar bilgi VAR — tatil tarzı boyutu çıkmadı diye soru
-            // sormak, cevabı bilerek geri çevirmek olur. Canlı şikayet: "fethiye
-            // turu düşünüyorum 2 kişi 4 veya 5 gün" mesajına tur yerine soru döndü.
-            //
-            // Soru sormak yalnızca ELDE HİÇBİR ŞEY YOKKA makul; orada da ikinci kez
-            // boş dönersek kullanıcıyı döngüye sokmamak için listeye düşülür.
-            $somutKisit = $this->somutKisitVarMi($baglam);
-
-            if (! $somutKisit && $this->kullaniciTuru((string) ($args['transkript'] ?? '')) < 2) {
-                return [
-                    'turlar' => [],
-                    'olculemeyen_boyutlar' => $dusurulen,
-                    'hata' => 'Hiçbir boyut doldurulamadı ve elde kısıt da yok — kullanıcının '
-                        .'ne istediğini anlatan en az bir alıntı gerekiyor. Ona ne aradığını sor.',
-                ];
-            }
-
-            $liste = $this->matcher->listele($baglam, 5);
-
-            return [
-                'turlar' => $liste['tours'],
-                // Bilerek 'toplam_eslesme' DEĞİL: o anahtar "diğerleri" butonunu
-                // açıyor, buton ise oturumdaki profille çalışıyor — profil
-                // yokken boş dönerdi. Sayı yalnız modelin bilgisi olarak durur.
-                'toplam_uygun_tur' => $liste['toplam_eslesme'],
-                'olculemeyen_boyutlar' => $dusurulen,
-                'profilsiz_liste' => true,
-                'not' => $somutKisit
-                    ? 'Kullanıcının verdiği kısıtlara uyan turlar bunlar. ÖNCE BUNLARI GÖSTER — '
-                        .'"boyut çıkmadı", "arama sonuç vermedi" gibi teknik gerekçe ANLATMA, '
-                        .'kullanıcıyı ilgilendirmiyor. "Sana %X uyumlu" da deme (tercih profili '
-                        .'yok). Kartları verdikten SONRA istersen tek bir daraltma sorusu sor.'
-                    : 'Tercih profili çıkarılamadı; bunlar yalnız verdiği kısıtlara uyan, '
-                        .'kalkışı en yakın turlar. Bunları "sana %X uyumlu" diye sunma — '
-                        .'"elimdekilerden öne çıkanlar" çerçevesinde göster. Soru sorma; '
-                        .'istersen kapanışta tek bir daraltma sorusu sorabilirsin.',
-            ];
+            return $this->profilsizDal($profil, $baglam, (string) ($args['transkript'] ?? ''));
         }
 
         $sonuc = $this->matcher->match($profil, $baglam);
@@ -146,18 +104,98 @@ class TurAra implements ChatTool
         // isteğiyle ilgisi yok. Ayırt edilmezse bot "sana uyan tur yok" diyerek
         // yanlış bilgi verir (aslında hiçbir tur aranabilir durumda değildir).
         if (($sonuc['katalog_puanli_tur'] ?? 0) === 0) {
-            \Illuminate\Support\Facades\Log::warning('[TurAra] Katalogda yayınlanabilir rubrik puanı yok — arama yapılamıyor');
+            return $this->katalogHazirDegilDali();
+        }
 
+        return $this->normalDal($profil, $sonuc);
+    }
+
+    /**
+     * "Diğerleri" görünümü: chat'te gösterilen turlardan sonrakiler.
+     *
+     * LLM'e hiç gidilmez — oturumdaki profil (değerler + ağırlıklar + kısıtlar)
+     * yeniden kullanılıp aynı eşleştirici daha uzun listeyle çalıştırılır.
+     * Böylece hem ücretsiz hem sıralama chat'tekiyle birebir tutarlı.
+     *
+     * @param  int  $limit  toplamda kaç tur gösterilir (chat'teki kartlar dahil)
+     * @return array{items: array, toplam: int}
+     */
+    public function genisletilmisListe(ConversationState $durum, int $limit): array
+    {
+        $gosterilen = $durum->gosterilenIdler();
+        $sonuc = $this->matcher->match(
+            ['degerler' => $durum->degerler, 'agirliklar' => $durum->agirliklar],
+            $durum->varsayilanFiltre() + [
+                'top_n' => max(1, $limit - count($gosterilen)),
+                'haric' => $gosterilen,   // konum değil KİMLİK dışlama
+                'cesitlilik' => false,    // genişletilmiş liste saf sıralama
+            ],
+        );
+
+        return [
+            'items' => $sonuc['tours'],
+            'toplam' => $sonuc['toplam_eslesme'],
+        ];
+    }
+
+    /**
+     * Profil çıkmadı (hiçbir boyut kanıtla doldurulamadı) dalı.
+     *
+     * Kullanıcı SOMUT kısıt verdiyse (Fethiye / 4-5 gün / bütçe...) elimizde
+     * arama yapacak kadar bilgi VAR — tatil tarzı boyutu çıkmadı diye soru
+     * sormak, cevabı bilerek geri çevirmek olur. Canlı şikayet: "fethiye
+     * turu düşünüyorum 2 kişi 4 veya 5 gün" mesajına tur yerine soru döndü.
+     *
+     * Soru sormak yalnızca ELDE HİÇBİR ŞEY YOKKA makul; orada da ikinci kez
+     * boş dönersek kullanıcıyı döngüye sokmamak için listeye düşülür.
+     */
+    private function profilsizDal(array $profil, array $baglam, string $transkript): array
+    {
+        // Düşen boyutlar her iki dalda da raporlanır: eval "kanıtsız boyut
+        // doldurma denemesi"ni buradan okuyor, sessizce yutulmamalı
+        $dusurulen = array_map(fn ($d) => Rubric::label($d), $profil['dusurulen']);
+
+        $somutKisit = $this->somutKisitVarMi($baglam);
+
+        if (! $somutKisit && $this->kullaniciTuru($transkript) < 2) {
             return [
                 'turlar' => [],
-                'katalog_hazir_degil' => true,
-                'hata' => 'Katalog araması şu an kullanılamıyor (teknik). Kullanıcıya '
-                    .'"sana uyan tur yok" DEME — bu onun isteğiyle ilgili değil. '
-                    .'Kısaca sistemsel bir aksaklık olduğunu söyle ve biraz sonra tekrar '
-                    .'denemesini öner.',
+                'olculemeyen_boyutlar' => $dusurulen,
+                'hata' => ChatPrompts::TUR_ARA_PROFILSIZ_HATA,
             ];
         }
 
+        $liste = $this->matcher->listele($baglam, 5);
+
+        return [
+            'turlar' => $liste['tours'],
+            // Bilerek 'toplam_eslesme' DEĞİL: o anahtar "diğerleri" butonunu
+            // açıyor, buton ise oturumdaki profille çalışıyor — profil
+            // yokken boş dönerdi. Sayı yalnız modelin bilgisi olarak durur.
+            'toplam_uygun_tur' => $liste['toplam_eslesme'],
+            'olculemeyen_boyutlar' => $dusurulen,
+            'profilsiz_liste' => true,
+            'not' => $somutKisit
+                ? ChatPrompts::TUR_ARA_PROFILSIZ_NOT_KISITLI
+                : ChatPrompts::TUR_ARA_PROFILSIZ_NOT_KISITSIZ,
+        ];
+    }
+
+    /** Katalogda hiç yayınlanabilir rubrik puanı yok — SİSTEM durumu dalı. */
+    private function katalogHazirDegilDali(): array
+    {
+        Log::warning('[TurAra] Katalogda yayınlanabilir rubrik puanı yok — arama yapılamıyor');
+
+        return [
+            'turlar' => [],
+            'katalog_hazir_degil' => true,
+            'hata' => ChatPrompts::TUR_ARA_KATALOG_HAZIR_DEGIL,
+        ];
+    }
+
+    /** Normal dal: profil kuruldu, eşleştirici koştu, sonuç zenginleştirilerek döner. */
+    private function normalDal(array $profil, array $sonuc): array
+    {
         return [
             'turlar' => $sonuc['tours'],
             // Eşiği geçen tur azken doldurulan "tam uymuyor ama en yakını"
@@ -180,10 +218,6 @@ class TurAra implements ChatTool
         ];
     }
 
-    /**
-     * Transkript kullanıcı satırlarından oluşur (ChatAgent birleştirir); satır
-     * sayısı kaçıncı kez denendiğini verir. Ayrı sayaç taşımaya gerek yok.
-     */
     /**
      * Kullanıcı arama yapmaya yetecek somut bir kısıt verdi mi?
      *
@@ -211,6 +245,10 @@ class TurAra implements ChatTool
         return is_array($baglam['aylar'] ?? null) && $baglam['aylar'] !== [];
     }
 
+    /**
+     * Transkript kullanıcı satırlarından oluşur (ChatAgent birleştirir); satır
+     * sayısı kaçıncı kez denendiğini verir. Ayrı sayaç taşımaya gerek yok.
+     */
     private function kullaniciTuru(string $transkript): int
     {
         return count(array_filter(

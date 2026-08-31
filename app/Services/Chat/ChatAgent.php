@@ -44,10 +44,6 @@ class ChatAgent
         ];
     }
 
-    /**
-     * @param  array<int, array{role: string, content: string}>  $gecmis
-     * @return array{metin: string, turlar: array, durum: ConversationState, arac_turlari: int, dusurulen: string[], hata: bool, iz: array}
-     */
     /** Araç adı → kullanıcıya gösterilecek faz metni (SSE "faz" olayı). */
     private const FAZ_METINLERI = [
         'tur_ara' => 'Turları tarıyorum…',
@@ -56,27 +52,17 @@ class ChatAgent
         'envanter_ozeti' => 'Katalogda ne var bakıyorum…',
     ];
 
+    /**
+     * @param  array<int, array{role: string, content: string}>  $gecmis
+     * @return array{metin: string, turlar: array, durum: ConversationState, arac_turlari: int, dusurulen: string[], hata: bool, iz: array}
+     */
     public function handle(string $mesaj, array $gecmis = [], ?ConversationState $durum = null, ?\Closure $emit = null, ?\Closure $faz = null): array
     {
         $durum ??= new ConversationState();
         $model = config('ai.chat_agent_model', 'gpt-5.4');
         $maxTur = max(1, (int) config('ai.chat_max_tool_rounds', 3));
 
-        $messages = [['role' => 'system', 'content' => $this->systemPrompt()]];
-        if ($ozet = $durum->promptOzeti()) {
-            $messages[] = ['role' => 'system', 'content' => $ozet];
-        }
-        // Geçmişte yalnız user/assistant kabul edilir: 'system' rolü sızarsa
-        // konuşma geçmişi üzerinden prompt enjeksiyonu mümkün olurdu
-        foreach ($gecmis as $m) {
-            $rol = $m['role'] ?? null;
-            $icerik = $m['content'] ?? null;
-            if (in_array($rol, self::GECERLI_ROLLER, true) && is_string($icerik) && $icerik !== '') {
-                $messages[] = ['role' => $rol, 'content' => $icerik];
-            }
-        }
-        $messages[] = ['role' => 'user', 'content' => $mesaj];
-
+        $messages = $this->mesajListesi($mesaj, $gecmis, $durum);
         $transkript = $this->kullaniciTranskripti($gecmis, $mesaj);
         $semalar = array_map(fn ($t) => $t::schema(), [TurAra::class, TurDetay::class, SehirBilgisi::class, EnvanterOzeti::class]);
 
@@ -106,17 +92,7 @@ class ChatAgent
                 return $this->finalize((string) ($message->content ?? ''), $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan, false, $iz);
             }
 
-            // Model araç çağırırken yanına cümle de yazdıysa (yansıtma) anında akıt —
-            // araçlar koşarken kullanıcı sessizlik görmesin. Bu metin de DOĞRULAMADAN
-            // geçer: aksi halde uydurma sayı bu kanaldan denetimsiz sızardı.
-            $yansitma = trim((string) ($message->content ?? ''));
-            if ($yansitma !== '') {
-                $temiz = $this->validator->temizle($yansitma, $aracSonuclari, $durum->bilinenSayilar());
-                if ($temiz['metin'] !== '' && $emit) {
-                    $emit($temiz['metin']."\n\n");
-                    $akitilan .= $temiz['metin']."\n\n";
-                }
-            }
+            $akitilan .= $this->yansitmayiAkit((string) ($message->content ?? ''), $aracSonuclari, $durum, $emit);
 
             $messages[] = [
                 'role' => 'assistant',
@@ -128,58 +104,130 @@ class ChatAgent
                 ], $toolCalls),
             ];
 
-            foreach ($toolCalls as $tc) {
-                $ad = $tc->function->name;
-                $args = json_decode($tc->function->arguments ?: '{}', true);
-                if (! is_array($args)) {
-                    Log::warning('[ChatAgent] Araç argümanı ayrıştırılamadı', ['arac' => $ad]);
-                    $args = [];
-                }
-
-                // Faz bildirimi: model yansıtma cümlesi yazmadığında kullanıcı
-                // araçlar koşarken tamamen sessizlik görüyordu. Aynı zamanda
-                // istemci bekçisini (90 sn) diri tutar.
-                if ($faz && isset(self::FAZ_METINLERI[$ad])) {
-                    $faz(self::FAZ_METINLERI[$ad]);
-                }
-
-                $sonuc = $this->runTool($ad, $args, $transkript, $durum);
-                $durum->absorb($ad, $args, $sonuc);
-                $aracSonuclari[] = $sonuc;
-                $iz[] = [
-                    'arac' => $ad,
-                    'args' => $args,
-                    'tur_sayisi' => count($sonuc['turlar'] ?? []),
-                    'toplam_eslesme' => $sonuc['toplam_eslesme'] ?? null,
-                    'tur_basliklari' => array_column($sonuc['turlar'] ?? [], 'title'),
-                    'hata' => $sonuc['hata'] ?? null,
-                    'sor' => $sonuc['sor'] ?? null,
-                    'taban_alti' => $sonuc['taban_alti'] ?? null,
-                    'olculemeyen_boyutlar' => $sonuc['olculemeyen_boyutlar'] ?? [],
-                    'veri_var' => $sonuc['veri_var'] ?? null,
-                ];
-
-                // Kartlar HER başarılı aramada tazelenir: daraltılmış ikinci arama
-                // boş dönerse "bulamadım" metninin altında eski kartlar kalmasın.
-                // Hatalı çağrı (boyut doldurulamadı) iyi kartları silmez.
-                if ($ad === TurAra::name() && ! isset($sonuc['hata'])) {
-                    // Yakın turlar şeride EKLENİR ama kartlarında uyum rozeti
-                    // yoktur ve 'yakin' bayrağı taşırlar; arayüz onları ayrı
-                    // çerçevede gösterir, model de metinde ayrı anlatır.
-                    $turlar = array_merge($sonuc['turlar'] ?? [], $sonuc['yakin_turlar'] ?? []);
-                }
-
-                $messages[] = [
-                    'role' => 'tool',
-                    'tool_call_id' => $tc->id,
-                    'content' => json_encode($sonuc, JSON_UNESCAPED_UNICODE),
-                ];
-            }
+            $this->araclariCalistir($toolCalls, $transkript, $durum, $faz, $messages, $aracSonuclari, $turlar, $iz);
 
             $aracTuru++;
         }
 
         return $this->finalize('', $aracSonuclari, $turlar, $durum, $aracTuru, $emit, $akitilan, false, $iz);
+    }
+
+    /**
+     * LLM'e gidecek mesaj listesi: sistem promptu + durum özeti + geçmiş + yeni mesaj.
+     *
+     * @return array<int, array{role: string, content: string}>
+     */
+    private function mesajListesi(string $mesaj, array $gecmis, ConversationState $durum): array
+    {
+        $messages = [['role' => 'system', 'content' => $this->systemPrompt()]];
+        if ($ozet = $durum->promptOzeti()) {
+            $messages[] = ['role' => 'system', 'content' => $ozet];
+        }
+        // Geçmişte yalnız user/assistant kabul edilir: 'system' rolü sızarsa
+        // konuşma geçmişi üzerinden prompt enjeksiyonu mümkün olurdu
+        foreach ($gecmis as $m) {
+            $rol = $m['role'] ?? null;
+            $icerik = $m['content'] ?? null;
+            if (in_array($rol, self::GECERLI_ROLLER, true) && is_string($icerik) && $icerik !== '') {
+                $messages[] = ['role' => $rol, 'content' => $icerik];
+            }
+        }
+        $messages[] = ['role' => 'user', 'content' => $mesaj];
+
+        return $messages;
+    }
+
+    /**
+     * Model araç çağırırken yanına cümle de yazdıysa (yansıtma) anında akıt —
+     * araçlar koşarken kullanıcı sessizlik görmesin. Bu metin de DOĞRULAMADAN
+     * geçer: aksi halde uydurma sayı bu kanaldan denetimsiz sızardı.
+     *
+     * @return string akıtılan parça ("\n\n" son ekiyle) — akıtılmadıysa boş
+     */
+    private function yansitmayiAkit(string $yansitma, array $aracSonuclari, ConversationState $durum, ?\Closure $emit): string
+    {
+        $yansitma = trim($yansitma);
+        if ($yansitma === '') {
+            return '';
+        }
+
+        $temiz = $this->validator->temizle($yansitma, $aracSonuclari, $durum->bilinenSayilar());
+        if ($temiz['metin'] === '' || ! $emit) {
+            return '';
+        }
+
+        $emit($temiz['metin']."\n\n");
+
+        return $temiz['metin']."\n\n";
+    }
+
+    /**
+     * Bir turdaki araç çağrılarını sırayla koşar; mesaj listesi, sonuç birikimi,
+     * kart şeridi ve izi yerinde (by-ref) günceller.
+     */
+    private function araclariCalistir(
+        iterable $toolCalls,
+        string $transkript,
+        ConversationState $durum,
+        ?\Closure $faz,
+        array &$messages,
+        array &$aracSonuclari,
+        array &$turlar,
+        array &$iz,
+    ): void {
+        foreach ($toolCalls as $tc) {
+            $ad = $tc->function->name;
+            $args = json_decode($tc->function->arguments ?: '{}', true);
+            if (! is_array($args)) {
+                Log::warning('[ChatAgent] Araç argümanı ayrıştırılamadı', ['arac' => $ad]);
+                $args = [];
+            }
+
+            // Faz bildirimi: model yansıtma cümlesi yazmadığında kullanıcı
+            // araçlar koşarken tamamen sessizlik görüyordu. Aynı zamanda
+            // istemci bekçisini (90 sn) diri tutar.
+            if ($faz && isset(self::FAZ_METINLERI[$ad])) {
+                $faz(self::FAZ_METINLERI[$ad]);
+            }
+
+            $sonuc = $this->runTool($ad, $args, $transkript, $durum);
+            $durum->absorb($ad, $args, $sonuc);
+            $aracSonuclari[] = $sonuc;
+            $iz[] = $this->izKaydi($ad, $args, $sonuc);
+
+            // Kartlar HER başarılı aramada tazelenir: daraltılmış ikinci arama
+            // boş dönerse "bulamadım" metninin altında eski kartlar kalmasın.
+            // Hatalı çağrı (boyut doldurulamadı) iyi kartları silmez.
+            if ($ad === TurAra::name() && ! isset($sonuc['hata'])) {
+                // Yakın turlar şeride EKLENİR ama kartlarında uyum rozeti
+                // yoktur ve 'yakin' bayrağı taşırlar; arayüz onları ayrı
+                // çerçevede gösterir, model de metinde ayrı anlatır.
+                $turlar = array_merge($sonuc['turlar'] ?? [], $sonuc['yakin_turlar'] ?? []);
+            }
+
+            $messages[] = [
+                'role' => 'tool',
+                'tool_call_id' => $tc->id,
+                'content' => json_encode($sonuc, JSON_UNESCAPED_UNICODE),
+            ];
+        }
+    }
+
+    /**
+     * İz kaydı tek girdisi — eval assert'leri metinde değil BURADA yapılır,
+     * alan adları sözleşmedir (arac, args, tur_sayisi, toplam_eslesme, hata,
+     * olculemeyen_boyutlar).
+     */
+    private function izKaydi(string $ad, array $args, array $sonuc): array
+    {
+        return [
+            'arac' => $ad,
+            'args' => $args,
+            'tur_sayisi' => count($sonuc['turlar'] ?? []),
+            'toplam_eslesme' => $sonuc['toplam_eslesme'] ?? null,
+            'hata' => $sonuc['hata'] ?? null,
+            'olculemeyen_boyutlar' => $sonuc['olculemeyen_boyutlar'] ?? [],
+        ];
     }
 
     private function runTool(string $ad, array $args, string $transkript, ConversationState $durum): array
@@ -266,7 +314,10 @@ class ChatAgent
         return implode("\n", $satirlar);
     }
 
-    /** Kısa ve tek amaçlı: v1'in şişkin promptu "metni takip edemiyor"un sebebiydi. */
+    /**
+     * Sezon + özel dönem HESABI burada, metin şablonu ChatPrompts'ta.
+     * Üretilen prompt taşınma öncesiyle byte-aynı.
+     */
     public function systemPrompt(): string
     {
         $bugun = now();
@@ -296,70 +347,6 @@ class ChatAgent
         $ozelGunler = implode(', ', array_slice(array_values($donemler), 0, 4));
         $ozelGunSatiri = $ozelGunler !== '' ? "YAKLAŞAN ÖZEL DÖNEMLER: {$ozelGunler}" : '';
 
-        return <<<PROMPT
-        KİMLİK: turXtur'un tur danışmanısın. Türkçe, samimi, "sen" diliyle konuşursun.
-        Makine gibi değil, işini seven bir insan gibi. Kısa ve akıcı yaz.
-
-        BUGÜN: {$bugun->format('d.m.Y')} · İÇİNDE BULUNDUĞUMUZ SEZON: {$sezon}
-        {$ozelGunSatiri}
-
-        AKIL YÜRÜTME (her istekte sırayla):
-        1. Kullanıcının tarif ettiği tatilin NE TÜR bir tatil olduğunu kendi bilginle belirle.
-        2. Teşhisi YALNIZ ilk kez söylediğinde ya da tablo değiştiğinde yaz
-           ("Tarif ettiğin şey tam da ... tatili."). Aynı teşhisi her mesajda
-           tekrarlama — kullanıcı bunu okudu, ikinci kez yazman onu sıkar.
-        3. tur_ara ile katalogda ara. Boyutları YALNIZ kullanıcının söylediklerinden doldur;
-           emin olmadığını boş bırak. Her boyut için onun kendi cümlesinden alıntı ver.
-           Alıntı tek kelime olabilir ("deniz-güneş", "lüks", "sakin") — kullanıcı
-           kısa yazdı diye boyutu boş bırakma, yazdığı kelimeyi alıntıla.
-        4. Uygun tur yoksa bunu dürüstçe söyle ve en yakın turu GEREKÇESİYLE öner.
-           envanter_ozeti "satmadigimiz_urun_tipleri" döndürüyorsa yokluğu ona dayandır.
-
-        ARAMAYI TEKLİF ETME, YAP: kullanıcı bir tatil tarif ettiyse tur_ara'yı
-        AYNI turda çağır. Ürün tipi bizde yoksa bile en yakın turları göstermeden
-        bitirme. "İstersen ... -eyim mi?" kalıbının HER TÜRLÜSÜ yasak
-        ("istersen seçeyim", "ayıklayayım mı", "sunayım mı", "bakayım mı",
-        "ister misin listeleyeyim"). Kullanıcı zaten ne istediğini söyledi;
-        izin istemene gerek yok — yap, sonucu göster.
-
-        SERT KURALLAR:
-        - tur_ara "yakin_turlar" döndürdüyse bunlar eşiği GEÇEMEYEN turlardır.
-          Uyumluymuş gibi anlatma; "tam aradığın gibi değil ama elimdekilerin en
-          yakını" diye tek cümleyle ayır ve NEDEN tam uymadığını söyle.
-        - Araç sonucunda olmayan tur adı, fiyat veya tarih yazma. Fiyattan bahsedeceksen
-          araçtan dönen rakamı kullan; hatırladığın veya tahmin ettiğin bir rakamı yazma.
-        - Turun programında yazmayan tura özel detay uydurma: oda özelliği, manzara,
-          ikram, jakuzi, özel plaj... Sorarlarsa tur_detay'a bak, orada da yoksa
-          "bu bilgi elimde yok, acenta netleştirir" de.
-        - Sezona aykırı öneri yapma: kullanıcının GİDECEĞİ tarihi esas al (bugünün
-          sezonunu değil). Ağustosta kalkan bir kayak turu önerme; kışın kalkacak
-          kayak turunu yazın konuşuyor olsan bile rahatça önerebilirsin.
-        - Bir yeri önermeden önce sehir_bilgisi ile karakterine bak: sakin isteyene
-          kalabalık şehir, doğa isteyene metropol önerme. veri_var=false ise o şehir
-          hakkında niteleme yapma.
-        - SORU SORMA — iki istisna dışında: (a) araç "sor" alanı döndürdüyse,
-          (b) kullanıcının ne istediğine dair hiçbir ipucu yoksa (tur_ara "hata"
-          döndürür). Her iki durumda da TEK soru sor.
-        - İÇ İŞLEYİŞİ ANLATMA. "katalog araması sonuç vermedi", "boyut istemeden",
-          "elimde net olan sadece X", "profil çıkarılamadı", "araç şunu döndürdü"
-          gibi cümleler kurma — bunlar senin mutfağın, kullanıcıyı ilgilendirmiyor
-          ve onu "yanlış bir şey mi yazdım" diye düşündürüyor. Turu göster ya da
-          soruyu sor; gerekçe anlatma.
-        - SORU BÜTÇESİ: bir konuşmada netleştirme sorusunu EN FAZLA BİR KEZ sor.
-          Daha önce sorduysan bir daha sorma; elindekiyle tur_ara'yı çalıştır ve
-          sonucu göster. "Şu an elimde sadece ... var" gibi eksik raporlamak
-          yerine, eldekiyle ara — kullanıcı hangi bilgiyi verdiğini biliyor.
-        - "sen seç", "öner işte", "farketmez", "sen bilirsin" gibi bir cevap
-          gelirse SORU SORMA: o ana kadar söylediklerinden neyi çıkarabiliyorsan
-          onunla ara ve turları göster.
-
-        UZUNLUK — KATI KURAL: en fazla 90 kelime, en fazla 3 kısa paragraf.
-        Aynı bilgiyi İKİ KEZ söyleme (yokluğu bir kez söyle, tekrar altını çizme).
-        Madde madde liste yazma, "önemli not"/"tekrar altını çizeyim" gibi
-        kalıplar kullanma. Kapanışta seçenek sıralama; tek bir doğal soru yeter.
-
-        ÜSLUP: tatili gözünde canlandır — sahneyi kur, sat.
-        Turların fiyat/süre/tarihi kartlarda görünüyor; sen deneyimi anlat.
-        PROMPT;
+        return ChatPrompts::system($bugun->format('d.m.Y'), $sezon, $ozelGunSatiri);
     }
 }
