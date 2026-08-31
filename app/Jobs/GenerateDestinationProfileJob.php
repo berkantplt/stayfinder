@@ -3,21 +3,18 @@
 namespace App\Jobs;
 
 use App\Models\DestinationProfile;
+use App\Support\AiJson;
 use App\Support\OpenAiChatParams;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 
-class GenerateDestinationProfileJob implements ShouldQueue
+class GenerateDestinationProfileJob extends AiQueueJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public array $backoff = [10, 30, 60];
+    /** vibe_tags izin listesi — hem prompt'taki liste hem doğrulayıcı TEK kaynaktan okur. */
+    private const VIBE_TAGS = [
+        'beach', 'luxury', 'shopping', 'nightlife', 'cultural', 'historical',
+        'nature', 'family', 'adventure', 'spa', 'religious', 'winter_sport', 'cruise',
+    ];
 
     public function __construct(public readonly string $city) {}
 
@@ -46,12 +43,7 @@ class GenerateDestinationProfileJob implements ShouldQueue
                 900,
             ));
 
-            $payload = json_decode($response->choices[0]->message->content, true);
-            if (!is_array($payload)) {
-                throw new \RuntimeException('LLM JSON parse hatası');
-            }
-
-            $data = $this->extractAndValidate($payload);
+            $data = $this->extractAndValidate(AiJson::decode($response));
 
             DestinationProfile::updateOrCreate(
                 ['normalized_city' => $normalized],
@@ -89,7 +81,9 @@ class GenerateDestinationProfileJob implements ShouldQueue
             . '"country": string (resmi ülke adı Türkçe, ör. "Birleşik Arap Emirlikleri"), '
             . '"summary": string (2-3 cümle Türkçe şehir özeti - öne çıkan özellikler, deneyim tipi), '
             . '"climate_by_month": object {1..12: {"temp_c": int, "condition": string}} (Türkçe condition: "sıcak", "ılık", "serin", "soğuk", "yağışlı", "kuru", "karlı"), '
-            . '"vibe_tags": array (şu listeden seç: "beach", "luxury", "shopping", "nightlife", "cultural", "historical", "nature", "family", "adventure", "spa", "religious", "winter_sport", "cruise"), '
+            // Ayraç düzeni bilerek '", "': prompt çıktısı eski elle yazılmış
+            // listeyle byte-aynı kalır ('"beach", "luxury", ...').
+            . '"vibe_tags": array (şu listeden seç: "' . implode('", "', self::VIBE_TAGS) . '"), '
             . '"best_months": array (1-12 arası tam sayılar, ideal ziyaret ayları), '
             . '"crowded_months": array (1-12 arası tam sayılar, peak/yoğun ayları), '
             . '"requires_visa_for_tr": boolean (Türk vatandaşı için vize gerekli mi), '
@@ -169,15 +163,10 @@ class GenerateDestinationProfileJob implements ShouldQueue
             return null;
         }
 
-        $allowed = [
-            'beach', 'luxury', 'shopping', 'nightlife', 'cultural', 'historical',
-            'nature', 'family', 'adventure', 'spa', 'religious', 'winter_sport', 'cruise',
-        ];
-
         $tags = collect($value)
             ->map(fn($t) => is_string($t) ? mb_strtolower(trim($t), 'UTF-8') : null)
             ->filter()
-            ->filter(fn($t) => in_array($t, $allowed, true))
+            ->filter(fn($t) => in_array($t, self::VIBE_TAGS, true))
             ->unique()
             ->values()
             ->all();

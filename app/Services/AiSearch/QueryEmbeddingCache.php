@@ -2,8 +2,8 @@
 
 namespace App\Services\AiSearch;
 
+use App\Support\EmbeddingClient;
 use Illuminate\Support\Facades\Cache;
-use OpenAI\Laravel\Facades\OpenAI;
 
 /**
  * Sorgu embedding'lerini önbellekten sunar: aynı metin (aynı modelle) 24 saat
@@ -18,16 +18,10 @@ class QueryEmbeddingCache
     /** @return array<int, float> */
     public function vector(string $text): array
     {
+        // Model adı anahtara girer: model değişirse eski vektörler kullanılmaz.
         $model = config('ai.embedding_model', 'text-embedding-3-small');
         $key = 'ai:emb:'.md5($model.'|'.$text);
 
-        return Cache::remember($key, self::TTL_SECONDS, function () use ($model, $text) {
-            $response = OpenAI::embeddings()->create([
-                'model' => $model,
-                'input' => $text,
-            ]);
-
-            return $response->embeddings[0]->embedding;
-        });
+        return Cache::remember($key, self::TTL_SECONDS, fn () => EmbeddingClient::embed($text));
     }
 }

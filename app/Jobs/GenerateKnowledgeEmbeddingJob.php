@@ -3,21 +3,11 @@
 namespace App\Jobs;
 
 use App\Models\KnowledgeChunk;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use OpenAI\Laravel\Facades\OpenAI;
+use App\Support\EmbeddingClient;
 use Illuminate\Support\Facades\Log;
 
-class GenerateKnowledgeEmbeddingJob implements ShouldQueue
+class GenerateKnowledgeEmbeddingJob extends AiQueueJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public array $backoff = [10, 30, 60];
-
     public function __construct(
         public int $chunkId
     ) {}
@@ -32,12 +22,7 @@ class GenerateKnowledgeEmbeddingJob implements ShouldQueue
         }
 
         try {
-            $response = OpenAI::embeddings()->create([
-                'model' => config('ai.embedding_model', 'text-embedding-3-small'),
-                'input' => $chunk->content,
-            ]);
-
-            $embedding = $response->embeddings[0]->embedding;
+            $embedding = EmbeddingClient::embed($chunk->content);
 
             $chunk->update([
                 'embedding' => $embedding

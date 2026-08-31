@@ -41,6 +41,35 @@ final class OpenAiChatParams
     }
 
     /**
+     * Serbest metin çıktılı chat çağrısı parametreleri (response_format YOK —
+     * yorum/persona gibi düz Türkçe üreten çağrılar için). create() kadar
+     * createStreamed() ile de kullanılabilir; streaming, çağrı biçiminin işi.
+     *
+     * @param  array<int, array<string, string>>  $messages
+     * @return array<string, mixed>
+     */
+    public static function text(string $model, array $messages, int $maxTokens, ?float $temperature = null): array
+    {
+        $params = [
+            'model' => $model,
+            'messages' => $messages,
+        ];
+
+        if (self::isReasoningModel($model)) {
+            // Reasoning ailesi temperature kabul etmez — istense de gönderilmez
+            $params['max_completion_tokens'] = $maxTokens + 4000;
+            $params['reasoning_effort'] = 'low';
+        } else {
+            $params['max_tokens'] = $maxTokens;
+            if ($temperature !== null) {
+                $params['temperature'] = $temperature;
+            }
+        }
+
+        return $params;
+    }
+
+    /**
      * Araç çağırma (tool calling) parametreleri.
      *
      * json()'dan farkı: response_format GÖNDERİLMEZ. json_object ile tools

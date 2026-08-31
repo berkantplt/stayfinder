@@ -12,6 +12,7 @@ use App\Support\DestinationFilter;
 use App\Support\LandingSlug;
 use App\Support\TourComparison;
 use App\Support\TurkishCities;
+use App\Support\TurkishMonths;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -337,7 +338,7 @@ class TourController extends Controller
     {
         $intent = (array) ($log->intent ?? []);
         $scoreEntry = collect($log->result_scores ?? [])->firstWhere('tour_id', $tour->id);
-        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        $monthNames = TurkishMonths::NAMES;
 
         $checks = [];
 

@@ -3,22 +3,14 @@
 namespace App\Jobs;
 
 use App\Models\Tour;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Str;
+use App\Support\EmbeddingClient;
+use App\Support\SearchText;
+use App\Support\TurkishMonths;
 use Illuminate\Support\Facades\Log;
-use OpenAI\Laravel\Facades\OpenAI;
+use Illuminate\Support\Str;
 
-class GenerateTourEmbeddingJob implements ShouldQueue
+class GenerateTourEmbeddingJob extends AiQueueJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public array $backoff = [10, 30, 60];
-
     public function __construct(
         public int $tourId
     ) {}
@@ -27,7 +19,7 @@ class GenerateTourEmbeddingJob implements ShouldQueue
     {
         $tour = Tour::with('category')->find($this->tourId);
 
-        if (!$tour) {
+        if (! $tour) {
             Log::warning("[EmbeddingJob] Tour #{$this->tourId} bulunamadı, atlanıyor.");
             return;
         }
@@ -35,12 +27,7 @@ class GenerateTourEmbeddingJob implements ShouldQueue
         try {
             $inputText = self::textFor($tour);
 
-            $response = OpenAI::embeddings()->create([
-                'model' => config('ai.embedding_model', 'text-embedding-3-small'),
-                'input' => $inputText,
-            ]);
-
-            $embedding = $response->embeddings[0]->embedding;
+            $embedding = EmbeddingClient::embed($inputText);
 
             // Observer'ın tekrar tetiklenmesini engellemek için quietly güncelle.
             // search_text: hibrit aramanın anahtar kelime kanalı — aynı temsilin
@@ -48,7 +35,7 @@ class GenerateTourEmbeddingJob implements ShouldQueue
             Tour::withoutEvents(function () use ($tour, $embedding, $inputText) {
                 $tour->update([
                     'embedding' => $embedding,
-                    'search_text' => \App\Support\SearchText::normalize($inputText),
+                    'search_text' => SearchText::normalize($inputText),
                 ]);
             });
 
@@ -84,13 +71,12 @@ class GenerateTourEmbeddingJob implements ShouldQueue
             ->implode("\n");
 
         // Kalkış ayları: "yazlık / eylülde" gibi sorgular ay bilgisiyle eşleşsin
-        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
         $months = $tour->dates
             ->map(fn ($d) => $d->departure_date?->format('n'))
             ->filter()
             ->unique()
             ->sort()
-            ->map(fn ($m) => $monthNames[(int) $m])
+            ->map(fn ($m) => TurkishMonths::NAMES[(int) $m])
             ->implode(', ');
 
         $boardingCities = collect([$tour->departure_city])

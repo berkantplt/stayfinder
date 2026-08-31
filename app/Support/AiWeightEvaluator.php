@@ -13,20 +13,45 @@ class AiWeightEvaluator
 {
     public const CACHE_KEY = 'ai:scoring_weights';
 
+    /**
+     * Eksen listesinin TEK KAYNAĞI (sıra önemli): defaultWeights anahtarları,
+     * score() aktiflik haritası ve evaluate() bileşen skorları ({eksen}_score)
+     * hep buradan türetilir.
+     */
+    private const AXES = [
+        'budget',
+        'international',
+        'visa',
+        'duration',
+        'nature',
+        'city_escape',
+        'lively',
+        'month',
+        'destination',
+    ];
+
+    /**
+     * hit@k metriğinin k'sı. Dönen anahtar (hit_at_7) tüketicilerde
+     * (CalibrateAiWeights, ReplayAiEval, testler) sabit yazılıdır —
+     * k değişirse onlar da güncellenmeli.
+     */
+    private const HIT_AT_K = 7;
+
     /** @return array<string, float> */
     public static function defaultWeights(): array
     {
-        return [
-            'budget' => 0.16,
-            'international' => 0.08,
-            'visa' => 0.07,
-            'duration' => 0.10,
-            'nature' => 0.09,
-            'city_escape' => 0.12,
-            'lively' => 0.14,
-            'month' => 0.06,
-            'destination' => 0.16,
-        ];
+        // Değerler AXES ile birebir aynı sırada eşleşir
+        return array_combine(self::AXES, [
+            0.16, // budget
+            0.08, // international
+            0.07, // visa
+            0.10, // duration
+            0.09, // nature
+            0.12, // city_escape
+            0.14, // lively
+            0.06, // month
+            0.16, // destination
+        ]);
     }
 
     /** Aktif ağırlıklar: varsayılan + kalibrasyonla onaylanmış override'lar. */
@@ -47,17 +72,20 @@ class AiWeightEvaluator
     {
         $weights = $weights ?? self::activeWeights();
 
-        $active = [
-            'budget' => ! empty($criteria['max_budget']) && (int) $criteria['max_budget'] > 0,
-            'international' => ($criteria['is_international'] ?? null) !== null,
-            'visa' => ($criteria['requires_visa'] ?? null) !== null,
-            'duration' => ((int) ($criteria['preferred_min_days'] ?? 0) > 0) || ((int) ($criteria['preferred_max_days'] ?? 0) > 0),
-            'nature' => ($criteria['wants_nature'] ?? null) === true,
-            'city_escape' => ($criteria['avoid_crowded_city'] ?? null) === true,
-            'lively' => ($criteria['wants_lively'] ?? null) !== null,
-            'month' => (int) ($criteria['preferred_month'] ?? 0) > 0,
-            'destination' => ! empty($criteria['preferred_destination']),
-        ];
+        $active = [];
+        foreach (self::AXES as $axis) {
+            $active[$axis] = match ($axis) {
+                'budget' => ! empty($criteria['max_budget']) && (int) $criteria['max_budget'] > 0,
+                'international' => ($criteria['is_international'] ?? null) !== null,
+                'visa' => ($criteria['requires_visa'] ?? null) !== null,
+                'duration' => ((int) ($criteria['preferred_min_days'] ?? 0) > 0) || ((int) ($criteria['preferred_max_days'] ?? 0) > 0),
+                'nature' => ($criteria['wants_nature'] ?? null) === true,
+                'city_escape' => ($criteria['avoid_crowded_city'] ?? null) === true,
+                'lively' => ($criteria['wants_lively'] ?? null) !== null,
+                'month' => (int) ($criteria['preferred_month'] ?? 0) > 0,
+                'destination' => ! empty($criteria['preferred_destination']),
+            };
+        }
 
         $activeCount = count(array_filter($active, fn ($isActive) => $isActive === true));
         $baseWeight = max(0.30, 0.56 - ($activeCount * 0.06));
@@ -118,18 +146,12 @@ class AiWeightEvaluator
             $criteria = (array) ($log->applied_filters ?? []);
 
             $ranked = $items->map(function ($item) use ($criteria, $weights) {
-                $base = self::score([
-                    'semantic' => (float) ($item['semantic_score'] ?? 0),
-                    'budget' => (float) ($item['budget_score'] ?? 0),
-                    'international' => (float) ($item['international_score'] ?? 0),
-                    'visa' => (float) ($item['visa_score'] ?? 0),
-                    'duration' => (float) ($item['duration_score'] ?? 0),
-                    'nature' => (float) ($item['nature_score'] ?? 0),
-                    'city_escape' => (float) ($item['city_escape_score'] ?? 0),
-                    'lively' => (float) ($item['lively_score'] ?? 0),
-                    'month' => (float) ($item['month_score'] ?? 0),
-                    'destination' => (float) ($item['destination_score'] ?? 0),
-                ], $criteria, $weights);
+                $components = ['semantic' => (float) ($item['semantic_score'] ?? 0)];
+                foreach (self::AXES as $axis) {
+                    $components[$axis] = (float) ($item[$axis.'_score'] ?? 0);
+                }
+
+                $base = self::score($components, $criteria, $weights);
 
                 // Skor-sonrası düzeltmeler logdan aynen uygulanır
                 $final = $base
@@ -147,13 +169,13 @@ class AiWeightEvaluator
 
             $n++;
             $mrrSum += 1 / ($rank + 1);
-            $hitSum += ($rank < 7) ? 1 : 0;
+            $hitSum += ($rank < self::HIT_AT_K) ? 1 : 0;
         }
 
         return [
             'n' => $n,
             'mrr' => $n > 0 ? round($mrrSum / $n, 4) : 0.0,
-            'hit_at_7' => $n > 0 ? round($hitSum / $n, 4) : 0.0,
+            'hit_at_'.self::HIT_AT_K => $n > 0 ? round($hitSum / $n, 4) : 0.0,
         ];
     }
 }

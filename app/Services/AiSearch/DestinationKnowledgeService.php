@@ -21,6 +21,14 @@ class DestinationKnowledgeService
     /** Envanter cevabında listelenen maksimum şehir sayısı. */
     private const LIST_LIMIT = 25;
 
+    /**
+     * Yorum LLM'i system promptuna giren şehir sayısı üst sınırı.
+     * LIST_LIMIT'ten BİLEREK ayrı: LIST_LIMIT kullanıcıya okunan envanter
+     * cevabını kısa tutar, bu sınır ise modelin yönlendirebileceği destinasyon
+     * kapsamını geniş tutar — ikisi farklı amaçla ayarlanır, birlikte değişmez.
+     */
+    private const PROMPT_LIST_LIMIT = 40;
+
     public function __construct(private readonly DestinationProfileService $profiles) {}
 
     /**
@@ -238,8 +246,8 @@ class DestinationKnowledgeService
             return null;
         }
 
-        $names = collect($inventory)->take(40)->pluck('city')->implode(', ');
-        $rest = count($inventory) - min(count($inventory), 40);
+        $names = collect($inventory)->take(self::PROMPT_LIST_LIMIT)->pluck('city')->implode(', ');
+        $rest = count($inventory) - min(count($inventory), self::PROMPT_LIST_LIMIT);
 
         return $names.($rest > 0 ? " (+{$rest} destinasyon)" : '');
     }

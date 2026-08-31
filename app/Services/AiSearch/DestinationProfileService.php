@@ -4,6 +4,7 @@ namespace App\Services\AiSearch;
 
 use App\Jobs\GenerateDestinationProfileJob;
 use App\Models\DestinationProfile;
+use App\Support\TurkishMonths;
 use Illuminate\Support\Facades\Cache;
 
 class DestinationProfileService
@@ -21,10 +22,8 @@ class DestinationProfileService
         'winter_sport' => 'kış sporu', 'cruise' => 'gemi turu',
     ];
 
-    public const MONTH_NAMES_TR = [
-        1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
-    ];
+    /** Dış kullanıcılar bu ada bağlı — ad korunur, içerik TEK kaynaktan gelir. */
+    public const MONTH_NAMES_TR = TurkishMonths::NAMES;
 
     /** Yeni şehir kayıtlarının cache TTL'i — aynı request'te tekrar çağırma maliyeti olmasın. */
     private const CACHE_TTL_SECONDS = 300;
@@ -140,6 +139,40 @@ class DestinationProfileService
         }
 
         return implode('; ', $bits);
+    }
+
+    /**
+     * Çok şehirli destinasyon metnini şehir başına karakter fişine çevirir:
+     * splitCities → get → describeProfile üçlemesinin TEK kaynağı (4 kopya
+     * buradan beslenir). Biçimlendirme çağıran tarafta kalır — üretilen prompt
+     * metinleri byte-aynı korunur.
+     *
+     * @param  string|array<int, string>  $destination  Ham destinasyon metni ya da hazır şehir listesi
+     * @param  int|null  $limit  İlk N şehir (null = tümü; controller/TurDetay 4 kullanır)
+     * @param  bool  $onlyDescribed  true: karakteri null (zenginleşmemiş profil) olan şehirler elenir;
+     *                               false: hepsi döner (çağıran fallback metnini/filtreyi kendi uygular)
+     * @return array<int, array{city: string, character: ?string, summary: ?string}>
+     */
+    public function describeCities(string|array $destination, ?int $limit = 4, bool $onlyDescribed = true): array
+    {
+        $cities = is_array($destination)
+            ? $destination
+            : DestinationProfile::splitCities($destination);
+
+        return collect($cities)
+            ->when($limit !== null, fn ($c) => $c->take($limit))
+            ->map(function ($city) {
+                $profile = $this->get((string) $city);
+
+                return [
+                    'city' => (string) $city,
+                    'character' => self::describeProfile($profile),
+                    'summary' => $profile['summary'] ?? null,
+                ];
+            })
+            ->when($onlyDescribed, fn ($c) => $c->filter(fn ($entry) => $entry['character'] !== null))
+            ->values()
+            ->all();
     }
 
     /**

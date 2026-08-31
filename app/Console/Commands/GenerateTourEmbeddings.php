@@ -35,12 +35,7 @@ class GenerateTourEmbeddings extends Command
                 // TEK KAYNAK: job ile birebir aynı temsil (iki kopya ayrışmasın)
                 $inputText = \App\Jobs\GenerateTourEmbeddingJob::textFor($tour);
 
-                $response = \OpenAI\Laravel\Facades\OpenAI::embeddings()->create([
-                    'model' => config('ai.embedding_model', 'text-embedding-3-small'),
-                    'input' => $inputText,
-                ]);
-
-                $embedding = $response->embeddings[0]->embedding;
+                $embedding = \App\Support\EmbeddingClient::embed($inputText);
 
                 $tour->update([
                     'embedding' => $embedding,

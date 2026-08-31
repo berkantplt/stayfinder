@@ -26,16 +26,30 @@ class DiscoveryGuideController extends Controller
         return view('discovery.index');
     }
 
-    public function store(Request $request): JsonResponse
+    /**
+     * store + personalize ortak tercih kuralları (TEK KAYNAK). Bilerek
+     * FormRequest değil: bu uçlarda sahiplik kontrolü (403) validasyondan
+     * ÖNCE koşmalı — FormRequest enjeksiyonu sırayı tersine çevirirdi.
+     *
+     * @return array<string, mixed>
+     */
+    private static function preferenceRules(): array
     {
-        $validated = $request->validate([
-            'destination' => 'required|string|min:2|max:100',
-            'duration_days' => 'required|integer|min:1|max:7',
+        return [
             'traveler_type' => ['nullable', 'string', Rule::in(array_keys(DiscoveryGuide::TRAVELER_TYPES))],
             'interests' => 'nullable|array|max:7',
             'interests.*' => ['string', Rule::in(array_keys(DiscoveryGuide::INTERESTS))],
             'pace' => ['nullable', Rule::in(array_keys(DiscoveryGuide::PACES))],
             'budget' => ['nullable', Rule::in(array_keys(DiscoveryGuide::BUDGETS))],
+        ];
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'destination' => 'required|string|min:2|max:100',
+            'duration_days' => 'required|integer|min:1|max:7',
+            ...self::preferenceRules(),
         ]);
 
         $guide = $this->guides->create($request, $validated);
@@ -81,13 +95,7 @@ class DiscoveryGuideController extends Controller
     {
         abort_unless($guide->canBeAccessedBy($request), 403);
 
-        $validated = $request->validate([
-            'traveler_type' => ['nullable', 'string', Rule::in(array_keys(DiscoveryGuide::TRAVELER_TYPES))],
-            'interests' => 'nullable|array|max:7',
-            'interests.*' => ['string', Rule::in(array_keys(DiscoveryGuide::INTERESTS))],
-            'pace' => ['nullable', Rule::in(array_keys(DiscoveryGuide::PACES))],
-            'budget' => ['nullable', Rule::in(array_keys(DiscoveryGuide::BUDGETS))],
-        ]);
+        $validated = $request->validate(self::preferenceRules());
 
         $this->guides->personalize($guide, $validated);
 

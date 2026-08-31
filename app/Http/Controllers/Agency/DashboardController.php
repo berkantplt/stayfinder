@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Agency;
 use App\Http\Controllers\Controller;
 use App\Models\Tour;
 use App\Models\TourClick;
+use App\Support\TurkishMonths;
 
 class DashboardController extends Controller
 {
@@ -95,7 +96,7 @@ class DashboardController extends Controller
      */
     private function buildDemandRadar(int $agencyId): array
     {
-        $monthNames = [1 => 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        $monthNames = TurkishMonths::NAMES;
         $logs = \App\Models\AiSearchLog::where('created_at', '>=', now()->subDays(30))
             ->get(['intent', 'applied_filters', 'result_tour_ids', 'near_misses']);
 

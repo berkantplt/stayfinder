@@ -5,11 +5,6 @@ namespace App\Jobs;
 use App\Models\DiscoveryGuide;
 use App\Services\Discovery\DestinationContentService;
 use App\Services\Discovery\DiscoveryGuideAiService;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -19,10 +14,8 @@ use Illuminate\Support\Facades\Log;
  * completed | failed. Hatalı/eksik AI içeriği kullanıcıya asla gösterilmez —
  * doğrulama servis katmanında, buraya yalnız geçerli payload düşer.
  */
-class GenerateDiscoveryGuideJob implements ShouldQueue
+class GenerateDiscoveryGuideJob extends AiQueueJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
     /**
      * Aynı rehber için üst üste dispatch'i emen kilit (Cache::add kalıbı,
      * GenerateTourCharacterJob paritesi). Başarıda ve kalıcı hatada bırakılır;
@@ -31,10 +24,6 @@ class GenerateDiscoveryGuideJob implements ShouldQueue
     public const DISPATCH_LOCK_PREFIX = 'discovery_guide_dispatch:';
 
     public const DISPATCH_LOCK_SECONDS = 180;
-
-    public int $tries = 3;
-
-    public array $backoff = [10, 30, 60];
 
     /** DB_QUEUE_RETRY_AFTER=600'ün altında kalmalı (çifte faturalama notu, .env). */
     public int $timeout = 180;

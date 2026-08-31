@@ -2,15 +2,10 @@
 
 namespace App\Jobs;
 
-use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Services\AiSearch\DestinationProfileService;
+use App\Support\AiJson;
 use App\Support\OpenAiChatParams;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -23,19 +18,14 @@ use OpenAI\Laravel\Facades\OpenAI;
  * uydurmaz. Sonuç: "sakin şehirler, düşük tempo — dinlenme turu" gibi
  * chatbot'un kullanacağı topraklanmış karakter cümlesi.
  */
-class GenerateTourCharacterJob implements ShouldQueue
+class GenerateTourCharacterJob extends AiQueueJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public array $backoff = [10, 30, 60];
-
     /** Observer/komutun tekrar-dispatch kilidi — job bitince bırakılır. */
     public const DISPATCH_LOCK_PREFIX = 'tour_character_dispatch:';
 
     public function __construct(public readonly int $tourId) {}
 
-    public function handle(): void
+    public function handle(DestinationProfileService $profiles): void
     {
         $tour = Tour::find($this->tourId);
         if (! $tour) {
@@ -49,15 +39,12 @@ class GenerateTourCharacterJob implements ShouldQueue
                 config('ai.tour_character_model', 'gpt-5.4-mini'),
                 [
                     ['role' => 'system', 'content' => $this->systemPrompt()],
-                    ['role' => 'user', 'content' => $this->tourContext($tour)],
+                    ['role' => 'user', 'content' => $this->tourContext($tour, $profiles)],
                 ],
                 300,
             ));
 
-            $payload = json_decode($response->choices[0]->message->content ?? '', true);
-            if (! is_array($payload)) {
-                throw new \RuntimeException('LLM JSON parse hatası');
-            }
+            $payload = AiJson::decode($response);
 
             $summary = trim((string) ($payload['character_summary'] ?? ''));
             $summary = $summary !== '' ? mb_substr($summary, 0, 300, 'UTF-8') : null;
@@ -111,17 +98,13 @@ class GenerateTourCharacterJob implements ShouldQueue
             .'Şehir profili verilmemiş şehir hakkında niteleme yapma.';
     }
 
-    private function tourContext(Tour $tour): string
+    private function tourContext(Tour $tour, DestinationProfileService $profiles): string
     {
-        $cities = DestinationProfile::splitCities((string) $tour->destination);
-        $profileService = app(DestinationProfileService::class);
-
-        $cityLines = collect($cities)->map(function ($city) use ($profileService) {
-            $profile = $profileService->get($city);
-            $description = DestinationProfileService::describeProfile($profile);
-
-            return '- '.$city.': '.($description ?? 'profil henüz hazır değil — bu şehir hakkında niteleme yapma');
-        })->implode("\n");
+        // Limit yok (rotadaki TÜM şehirler) ve profili hazır olmayan şehir de
+        // listelenir — model o şehir hakkında niteleme yapmaması gerektiğini görür.
+        $cityLines = collect($profiles->describeCities((string) $tour->destination, limit: null, onlyDescribed: false))
+            ->map(fn ($p) => '- '.$p['city'].': '.($p['character'] ?? 'profil henüz hazır değil — bu şehir hakkında niteleme yapma'))
+            ->implode("\n");
 
         $itinerary = collect(is_array($tour->itinerary) ? $tour->itinerary : [])
             ->map(fn ($day, $i) => ($i + 1).'. Gün — '.($day['title'] ?? '').': '.Str::limit((string) ($day['content'] ?? ''), 200))
