@@ -330,9 +330,25 @@
         /* ===== Keşif Rehberi penceresi: sayfa değiştirmeyen yatay <dialog> ===== */
         /* margin:auto ŞART: global reset (*{margin:0}) dialog'un doğal ortalamasını
            eziyor, pencere sol üst köşeye yapışıyordu. */
-        .dgm { margin: auto; border: none; border-radius: 20px; padding: 0; width: min(720px, 94vw); max-height: 86vh; box-shadow: 0 24px 64px rgba(0,0,0,.25); font-family: var(--font); color: var(--text); }
+        /* overflow:hidden ŞART: köşeye taşan karakter görseli yuvarlak köşeyi
+           delmesin; kaydırma içeride (.dgm-ic) kalır. Genişlik 720→840: solda
+           karakter sütunu açıldı, form alanı daralmasın. */
+        .dgm { margin: auto; border: none; border-radius: 20px; padding: 0; width: min(840px, 94vw); max-height: 86vh; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.25); font-family: var(--font); color: var(--text); }
         .dgm::backdrop { background: rgba(15, 23, 42, .45); }
-        .dgm-ic { padding: 22px 26px 24px; }
+        /* Grid: başlık tam satır; solda karakter (Turi) 2 satır boyu, sağda balon
+           + form/durumlar. Karakter align-self:end + eksi marj ile pencerenin sol
+           alt köşesine basar — görselin bacak hizasındaki kesiği pencere kenarında
+           kaybolur, boydan duruyormuş etkisi verir (asset tam boy değil). */
+        .dgm-ic { padding: 22px 26px 24px; max-height: 86vh; overflow-y: auto; display: grid; grid-template-columns: 184px 1fr; grid-template-rows: auto auto 1fr; column-gap: 18px; min-height: 340px; }
+        .dgm-head { grid-area: 1 / 1 / 2 / -1; }
+        .dgm-figur { grid-area: 2 / 1 / 4 / 2; align-self: end; margin: 0 0 -24px -26px; }
+        .dgm-figur img { display: block; width: 100%; height: auto; }
+        .dgm-balon { grid-area: 2 / 2 / 3 / 3; position: relative; align-self: start; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; font-size: 13.5px; font-weight: 600; line-height: 1.6; }
+        .dgm-balon::before { content: ''; position: absolute; left: -7px; top: 22px; width: 12px; height: 12px; background: #f0fdfa; border-left: 1px solid #99f6e4; border-bottom: 1px solid #99f6e4; transform: rotate(45deg); }
+        /* Dört durum kutusu aynı hücreyi paylaşır (aynı anda tek görünür) */
+        #dgm-form-alani, .dgm-durum { grid-area: 3 / 2 / 4 / 3; min-width: 0; }
+        /* Pencere yalnız masaüstü karttan açılır; yine de dar ekran emniyeti */
+        @media (max-width: 768px) { .dgm-ic { display: block; min-height: 0; } .dgm-figur { display: none; } .dgm-balon::before { display: none; } }
         .dgm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
         .dgm-head h3 { font-size: 17px; font-weight: 800; }
         .dgm-kapat { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 4px 8px; }
@@ -410,6 +426,11 @@
                 <h3>🧭 AI Keşif Rehberi</h3>
                 <button type="button" class="dgm-kapat" id="dgm-x" aria-label="Kapat">✕</button>
             </div>
+
+            <div class="dgm-figur">
+                <img src="{{ asset('images/ai/kesif-rehberi-ai.webp') }}" alt="Turi — Keşif Rehberi AI karakteri" width="432" height="540" loading="lazy" decoding="async">
+            </div>
+            <div class="dgm-balon">Merhaba, ben Turi! 👋 Hadi seninle birlikte keşfedebileceğin yerleri ve yemekleri bulalım.</div>
 
             <div id="dgm-form-alani">
                 <form id="dgm-form" novalidate>

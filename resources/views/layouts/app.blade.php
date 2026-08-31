@@ -2158,7 +2158,13 @@
             </div>
 
             <div id="cv2-msgs" aria-live="polite" style="flex:1; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px;">
-                <div class="cv2-ai">Merhaba! Nasıl bir tatil hayal ediyorsun? Anlat bana — sessizlik mi, hareket mi, yoksa lezzet peşinde misin?</div>
+                {{-- Karşılama: karakter boydan + baş hizasından çıkan konuşma balonu
+                     (kullanıcı kararı, 2026-08-31). Sıfırlamada da geri konur —
+                     reset handler bu bloğun referansını tutar. --}}
+                <div id="cv2-karsilama">
+                    <img src="{{ asset('images/ai/tur-danismani-ai.webp') }}" alt="Tur Danışmanı AI karakteri" width="444" height="540" loading="lazy" decoding="async">
+                    <div class="cv2-karsilama-balon">Merhaba! 👋 Ben senin kişisel tur danışmanınım — sana en uygun turu birlikte bulalım. Nasıl bir tatil hayal ediyorsun?</div>
+                </div>
             </div>
 
             <div style="padding:12px 14px; border-top:1px solid rgba(255,255,255,0.1);">
@@ -2176,6 +2182,14 @@
         #cv2-msgs .cv2-user { align-self:flex-end; max-width:85%; background:linear-gradient(135deg,#0d9488,#2dd4bf); color:#fff; padding:10px 14px; border-radius:16px 16px 4px 16px; font-size:14px; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
         #cv2-msgs .cv2-ai { align-self:flex-start; max-width:90%; background:rgba(255,255,255,0.07); color:#e2e8f0; padding:11px 14px; border-radius:16px 16px 16px 4px; font-size:14px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
         #cv2-msgs .cv2-err { align-self:flex-start; max-width:90%; background:rgba(239,68,68,0.15); color:#fca5a5; padding:10px 14px; border-radius:14px; font-size:13px; }
+        /* Karşılama: karakter boydan durur, balon baş hizasından konuşur. Görsel
+           tam boy olmadığı için (bacak hizasında kesik) alt kenar maskeyle
+           yumuşatılır — sert kesik çizgisi görünmez. Balon zemini DÜZ renk
+           (#1e293b): saydam zemin, kuyruk üçgeniyle üst üste binince koyulaşıyordu. */
+        #cv2-karsilama { display:flex; align-items:flex-end; gap:10px; flex:0 0 auto; margin:0 0 2px -6px; }
+        #cv2-karsilama img { display:block; width:126px; height:auto; flex:0 0 auto; -webkit-mask-image:linear-gradient(to bottom,#000 78%,transparent); mask-image:linear-gradient(to bottom,#000 78%,transparent); }
+        #cv2-karsilama .cv2-karsilama-balon { position:relative; background:#1e293b; border:1px solid rgba(45,212,191,0.4); color:#e2e8f0; padding:11px 14px; border-radius:16px 16px 16px 4px; font-size:14px; line-height:1.6; margin-bottom:56px; }
+        #cv2-karsilama .cv2-karsilama-balon::before { content:''; position:absolute; left:-6px; bottom:14px; width:10px; height:10px; background:#1e293b; border-left:1px solid rgba(45,212,191,0.4); border-bottom:1px solid rgba(45,212,191,0.4); transform:rotate(45deg); }
         /* flex-shrink:0 ŞART: #cv2-msgs bir flex sütunu; şerit ezilebilir öğe
            olduğu için kartlar dikeyde kırpılıp yalnız üst kısımları görünüyordu. */
         #cv2-msgs .cv2-cards { display:flex; align-items:flex-start; gap:10px; overflow-x:auto; overflow-y:hidden; padding:4px 2px 10px; max-width:100%; scroll-snap-type:x mandatory; flex:0 0 auto; min-height:266px; }
@@ -2212,6 +2226,9 @@
         const form = document.getElementById('cv2-form');
         const input = document.getElementById('cv2-input');
         const sendBtn = document.getElementById('cv2-send');
+        // Karşılama bloğunun referansı: sıfırlamada replaceChildren tüm mesajları
+        // silse de bu düğüm elimizde kalır, geri eklenir.
+        const karsilama = document.getElementById('cv2-karsilama');
         let sending = false;
 
         function el(cls, text) {
@@ -2359,8 +2376,14 @@
             if (sending) return;
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             try { await fetch('/sohbet/sifirla', { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' } }); } catch (e) {}
-            msgs.replaceChildren();
-            el('cv2-ai', 'Baştan başlayalım — nasıl bir tatil istiyorsun?');
+            // Sıfırlama = ilk açılış görünümü: karakterli karşılama geri gelir,
+            // balon zaten "nasıl bir tatil?" diye sorduğu için ek mesaj gerekmez.
+            if (karsilama) {
+                msgs.replaceChildren(karsilama);
+            } else {
+                msgs.replaceChildren();
+                el('cv2-ai', 'Baştan başlayalım — nasıl bir tatil istiyorsun?');
+            }
         };
 
         input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 110) + 'px'; });
