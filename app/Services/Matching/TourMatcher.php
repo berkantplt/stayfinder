@@ -23,6 +23,26 @@ use Illuminate\Support\Collection;
  */
 class TourMatcher
 {
+    private const ORTUSME_METIN = [
+        'tempo' => 'Tempo', 'fiziksel' => 'Fiziksel seviye', 'kultur' => 'Kültür yoğunluğu',
+        'doga_sehir' => 'Doğa-şehir dengesi', 'adrenalin' => 'Heyecan dozu', 'gastronomi' => 'Gastronomi ağırlığı',
+        'sosyallik' => 'Grup yapısı', 'konfor' => 'Konfor seviyesi', 'yapilandirilmislik' => 'Program esnekliği',
+        'kalabaliklik' => 'Rota sakinliği',
+    ];
+
+    private const SAPMA_METIN = [
+        'tempo' => ['yuksek' => 'Program beklediğinden bir tık yoğun.', 'dusuk' => 'Program beklediğinden daha rahat.'],
+        'fiziksel' => ['yuksek' => 'Fiziksel olarak beklediğinden zorlayıcı.', 'dusuk' => 'Fiziksel olarak oldukça hafif.'],
+        'kultur' => ['yuksek' => 'Kültür programı beklediğinden yoğun.', 'dusuk' => 'Kültürel içerik beklediğinden az.'],
+        'doga_sehir' => ['yuksek' => 'Beklediğinden daha doğa ağırlıklı.', 'dusuk' => 'Beklediğinden daha şehir ağırlıklı.'],
+        'adrenalin' => ['yuksek' => 'Heyecan dozu beklediğinin üstünde.', 'dusuk' => 'Adrenalin kısmı beklediğinden sakin.'],
+        'gastronomi' => ['yuksek' => 'Yemek programı beklediğinden yoğun.', 'dusuk' => 'Gastronomi vurgusu beklediğinden az.'],
+        'sosyallik' => ['yuksek' => 'Grup beklediğinden kalabalık.', 'dusuk' => 'Beklediğinden daha bireysel bir program.'],
+        'konfor' => ['yuksek' => 'Konfor beklediğinin üstünde.', 'dusuk' => 'Konfor seviyesi beklediğinden bir tık sade.'],
+        'yapilandirilmislik' => ['yuksek' => 'Program beklediğinden planlı.', 'dusuk' => 'Program beklediğinden serbest.'],
+        'kalabaliklik' => ['yuksek' => 'Rota beklediğinden turistik.', 'dusuk' => 'Rota beklediğinden tenha.'],
+    ];
+
     /**
      * @param  array{degerler: array<string,float>, agirliklar: array<string,float>, filtre: array<string,mixed>}  $profil
      * @return array{tours: array, relaxation_notes: string[], below_floor: bool}
@@ -30,7 +50,6 @@ class TourMatcher
     public function match(array $profil, array $baglam = []): array
     {
         $rules = Rubric::resultRules();
-        $notlar = [];
 
         // Yalnız YAYINLANABİLİR puanı olan turlar aday olabilir: needs_review
         // işaretliler editör onayına kadar canlıda kullanılmaz (brif §3.5) ve
@@ -40,7 +59,7 @@ class TourMatcher
             ->get()
             ->keyBy('tour_id');
 
-        [$adaylar, $notlar] = $this->hardFilter($baglam, $rules, $notlar, $scores->keys()->all());
+        [$adaylar, $notlar] = $this->hardFilter($baglam, $rules, [], $scores->keys()->all());
 
         $puanli = $adaylar->map(function (Tour $tour) use ($scores, $profil) {
             $rubricScore = $scores->get($tour->id);
@@ -207,11 +226,7 @@ class TourMatcher
             }
 
             $fark = $turDeger - ($kullanici[$d] ?? 50);
-            $katsayi = match (Rubric::type($d)) {
-                'tavan' => $fark > 0 ? $penalty['tavan_asim'] : $penalty['tavan_alti'],
-                'taban' => $fark < 0 ? $penalty['taban_alti'] : $penalty['taban_ustu'],
-                default => $penalty['mesafe'],
-            };
+            $katsayi = $this->cezaKatsayisi($d, $fark, $penalty);
 
             $cezaToplam += $w * $katsayi * abs($fark);
             $agirlikToplam += $w;
@@ -222,6 +237,20 @@ class TourMatcher
         }
 
         return (int) max(0, round(100 - ($cezaToplam / $agirlikToplam) * $penalty['olcek']));
+    }
+
+    /**
+     * Asimetrik ceza katsayısı (brif §6): tavan boyutta aşım ×2.5 / altı ×0.4,
+     * taban boyutta tersi, mesafe boyutunda düz katsayı (v1.json'da 1.0).
+     * skor() ve reason() AYNI katsayıyı kullanır — iki kopya ayrışmasın.
+     */
+    private function cezaKatsayisi(string $d, float $fark, array $penalty): float
+    {
+        return match (Rubric::type($d)) {
+            'tavan' => $fark > 0 ? $penalty['tavan_asim'] : $penalty['tavan_alti'],
+            'taban' => $fark < 0 ? $penalty['taban_alti'] : $penalty['taban_ustu'],
+            default => $penalty['mesafe'],
+        };
     }
 
     /**
@@ -241,11 +270,7 @@ class TourMatcher
                 continue;
             }
             $fark = $turDeger - ($kullanici[$d] ?? 50);
-            $katsayi = match (Rubric::type($d)) {
-                'tavan' => $fark > 0 ? $penalty['tavan_asim'] : $penalty['tavan_alti'],
-                'taban' => $fark < 0 ? $penalty['taban_alti'] : $penalty['taban_ustu'],
-                default => 1.0,
-            };
+            $katsayi = $this->cezaKatsayisi($d, $fark, $penalty);
             $farklar[$d] = ['fark' => $fark, 'ceza' => ($agirliklar[$d] ?? 0) * $katsayi * abs($fark)];
         }
         if ($farklar === []) {
@@ -270,33 +295,10 @@ class TourMatcher
         return $cumle;
     }
 
-    private const ORTUSME_METIN = [
-        'tempo' => 'Tempo', 'fiziksel' => 'Fiziksel seviye', 'kultur' => 'Kültür yoğunluğu',
-        'doga_sehir' => 'Doğa-şehir dengesi', 'adrenalin' => 'Heyecan dozu', 'gastronomi' => 'Gastronomi ağırlığı',
-        'sosyallik' => 'Grup yapısı', 'konfor' => 'Konfor seviyesi', 'yapilandirilmislik' => 'Program esnekliği',
-        'kalabaliklik' => 'Rota sakinliği',
-    ];
-
-    private const SAPMA_METIN = [
-        'tempo' => ['yuksek' => 'Program beklediğinden bir tık yoğun.', 'dusuk' => 'Program beklediğinden daha rahat.'],
-        'fiziksel' => ['yuksek' => 'Fiziksel olarak beklediğinden zorlayıcı.', 'dusuk' => 'Fiziksel olarak oldukça hafif.'],
-        'kultur' => ['yuksek' => 'Kültür programı beklediğinden yoğun.', 'dusuk' => 'Kültürel içerik beklediğinden az.'],
-        'doga_sehir' => ['yuksek' => 'Beklediğinden daha doğa ağırlıklı.', 'dusuk' => 'Beklediğinden daha şehir ağırlıklı.'],
-        'adrenalin' => ['yuksek' => 'Heyecan dozu beklediğinin üstünde.', 'dusuk' => 'Adrenalin kısmı beklediğinden sakin.'],
-        'gastronomi' => ['yuksek' => 'Yemek programı beklediğinden yoğun.', 'dusuk' => 'Gastronomi vurgusu beklediğinden az.'],
-        'sosyallik' => ['yuksek' => 'Grup beklediğinden kalabalık.', 'dusuk' => 'Beklediğinden daha bireysel bir program.'],
-        'konfor' => ['yuksek' => 'Konfor beklediğinin üstünde.', 'dusuk' => 'Konfor seviyesi beklediğinden bir tık sade.'],
-        'yapilandirilmislik' => ['yuksek' => 'Program beklediğinden planlı.', 'dusuk' => 'Program beklediğinden serbest.'],
-        'kalabaliklik' => ['yuksek' => 'Rota beklediğinden turistik.', 'dusuk' => 'Rota beklediğinden tenha.'],
-    ];
-
-    /**
-     * @param  int[]  $puanliTurIds  yalnız yayınlanabilir puanı olan turlar
-     * @return array{0: Collection<int, Tour>, 1: string[]}
-     */
     /**
      * @param  array<int, int>|null  $puanliTurIds  null = rubrik puanı ŞARTI YOK
      *                                              (profilsiz listeleme), [] = puanlı tur yok
+     * @return array{0: Collection<int, Tour>, 1: string[]}
      */
     private function hardFilter(array $baglam, array $rules, array $notlar, ?array $puanliTurIds): array
     {
@@ -420,7 +422,7 @@ class TourMatcher
         // yerine başka banttan %60'lık tur geliyordu — kullanıcı "neden bu geldi"
         // diye haklı olarak soruyordu. Artık yerine geçecek tur belirgin ölçüde
         // kötüyse çeşitlilik feda edilir, puan kazanır.
-        $gap = (float) ($rules['diversity_score_gap'] ?? 0);
+        $gap = (float) ($rules['diversity_score_gap'] ?? 15);
         $liste = $sirali->values();
 
         $secilen = collect();

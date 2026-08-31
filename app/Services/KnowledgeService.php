@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\KnowledgeChunk;
 use App\Services\AiSearch\QueryEmbeddingCache;
+use App\Support\Vector;
 use Illuminate\Support\Facades\Log;
 
 class KnowledgeService
@@ -19,7 +20,7 @@ class KnowledgeService
 
             // 2. Tüm vektörlü chunk'ları getir (Şu an sayı az olduğu için PHP ile dot product yapıyoruz)
             $chunks = KnowledgeChunk::whereNotNull('embedding')->get();
-            
+
             $results = [];
             foreach ($chunks as $chunk) {
                 $score = $this->cosineSimilarity($queryVector, $chunk->embedding);
@@ -36,8 +37,8 @@ class KnowledgeService
 
             return array_slice($results, 0, $limit);
 
-        } catch (\Exception $e) {
-            Log::error("[KnowledgeService] Arama hatası: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('[KnowledgeService] RAG bağlamı alınamadı', ['error' => $e->getMessage()]);
             return [];
         }
     }
@@ -60,29 +61,10 @@ class KnowledgeService
     }
 
     /**
-     * İki vektör arasındaki Cosine Similarity'yi hesaplar.
+     * İki vektör arasındaki Cosine Similarity'yi hesaplar (tek kaynak: Vector).
      */
     private function cosineSimilarity(array $vecA, array $vecB): float
     {
-        // Boyut uyuşmazlığı (model değişimi → eski embedding farklı boyutta):
-        // sessizce bozuk skor üretmek yerine 0 dön. Aksi halde $vecB[$i] tanımsız
-        // olur, PHP 8'de uyarı + yanlış benzerlik skoru çıkar.
-        if (count($vecA) !== count($vecB) || $vecA === []) {
-            return 0.0;
-        }
-
-        $dotProduct = 0;
-        $normA = 0;
-        $normB = 0;
-
-        foreach ($vecA as $i => $val) {
-            $dotProduct += $val * $vecB[$i];
-            $normA += $val * $val;
-            $normB += $vecB[$i] * $vecB[$i];
-        }
-
-        if ($normA == 0 || $normB == 0) return 0;
-
-        return $dotProduct / (sqrt($normA) * sqrt($normB));
+        return Vector::cosine($vecA, $vecB);
     }
 }

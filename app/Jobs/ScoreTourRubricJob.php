@@ -5,12 +5,8 @@ namespace App\Jobs;
 use App\Models\Tour;
 use App\Models\TourRubricScore;
 use App\Services\Matching\Rubric;
+use App\Support\AiJson;
 use App\Support\OpenAiChatParams;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -26,13 +22,8 @@ use OpenAI\Laravel\Facades\OpenAI;
  * - value null ⇒ boyut devre dışı; LLM'e boşluk DOLDURTULMAZ.
  * - input_hash: program değişince hash değişir → yeniden puanlama.
  */
-class ScoreTourRubricJob implements ShouldQueue
+class ScoreTourRubricJob extends AiQueueJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public array $backoff = [10, 30, 60];
-
     /** Tek job içinde iki ardışık LLM geçişi var — varsayılan 60 sn yetmez. */
     public int $timeout = 300;
 
@@ -49,6 +40,8 @@ class ScoreTourRubricJob implements ShouldQueue
             return;
         }
 
+        $yenidenKuyrukta = false;
+
         try {
             $input = self::sanitizedInput($tour);
             $hash = hash('sha256', Rubric::VERSION.'|'.$input);
@@ -64,90 +57,126 @@ class ScoreTourRubricJob implements ShouldQueue
             $pass1 = $this->scoreOnce($input);
             $pass2 = $this->scoreOnce($input);
 
-            // Brif §3.5: "fark 1'den büyükse O BOYUTU editör onayına düşür".
-            // Uyuşmazlık BOYUT düzeyinde ele alınır: ayrışan boyut null'a çekilir
-            // (eşleştirmede zaten devre dışı kalır), tur bu yüzden bloke edilmez.
-            // Tüm turu düşürmek katalogun tamamını kilitliyordu — 10 boyutta en az
-            // birinin oynaması pratikte kaçınılmaz.
-            $needsReview = false;
-            $puanli = 0;
-            $dogrulanmayan = 0;
-            $ayrisan = [];
-
-            foreach (Rubric::dimensions() as $d) {
-                $v1 = $pass1[$d]['value'] ?? null;
-                $v2 = $pass2[$d]['value'] ?? null;
-
-                $ayristiMi = (is_numeric($v1) && is_numeric($v2) && abs($v1 - $v2) > 1)
-                    || (is_numeric($v1) !== is_numeric($v2));
-
-                if ($ayristiMi) {
-                    $ayrisan[] = $d;
-                    $pass1[$d]['value'] = null;   // güvenilmez → eşleştirmeye girmez
-                    $pass1[$d]['confidence'] = 'none';
-                    $pass1[$d]['not'] = 'iki geçiş ayrıştı';
-
-                    continue;
-                }
-
-                if (is_numeric($v1)) {
-                    $puanli++;
-                    if (($pass1[$d]['evidence_verified'] ?? null) === false) {
-                        $dogrulanmayan++;
-                    }
-                }
-            }
-
-            // Tur düzeyinde inceleme YALNIZ sistemik kararsızlıkta: boyutların
-            // yarıdan fazlası ayrıştıysa bu turun verisine güvenilmez.
-            //
-            // ALINTI DOĞRULAMASI TURU BLOKLAMAZ: aynı hata iki kez yapıldı —
-            // model alıntıyı kırpıp/başka sözcüklerle verdiğinde bayrak düşüyor
-            // ve tüm katalog kilitleniyordu. Doğrulanamayan alıntı yalnız o
-            // boyutun kaydına işlenir (editör panelinde görünür), yayına engel
-            // değildir. Kural: BİR KONTROL BOYUTU ETKİLER, TURU DEĞİL.
-            if (count($ayrisan) > count(Rubric::dimensions()) / 2) {
-                $needsReview = true;
-            }
-
-            if ($dogrulanmayan > 0) {
-                Log::info('[TourRubric] Doğrulanamayan alıntı', [
-                    'tour_id' => $tour->id,
-                    'adet' => $dogrulanmayan,
-                    'puanli_boyut' => $puanli,
-                ]);
-            }
-
-            TourRubricScore::updateOrCreate(
-                ['tour_id' => $tour->id, 'rubric_version' => Rubric::VERSION],
-                [
-                    'input_hash' => $hash,
-                    'scores' => $pass1,
-                    'review_status' => $needsReview ? TourRubricScore::STATUS_NEEDS_REVIEW : TourRubricScore::STATUS_AUTO,
-                    'scored_at' => now(),
-                ]
-            );
+            $sonuc = $this->mutabakat($pass1, $pass2);
+            $needsReview = $this->kaydetVeIncelemeKarari($tour, $hash, $sonuc);
 
             // Puanlama sürerken tur düzenlendiyse (dispatch kilidi tutulduğu için
-            // observer yeniden kuyruğa alamaz) sonuç bayattır → taze girdiyle tekrar
+            // observer yeniden kuyruğa alamaz) sonuç bayattır → taze girdiyle tekrar.
+            // Kilit BIRAKILMAZ: bırakılırsa yeni job kuyrukta korumasız kalır ve
+            // observer + bu dal aynı turu iki kez kuyruğa alabilir. Kilit yalnız
+            // TAZELENİR (observer'daki Cache::add ile aynı anahtar + 600 sn TTL,
+            // bkz. TourObserver::dispatchRubricScoring): observer'ın dispatch anında
+            // aldığı kilidin kalan ömrü, bu job'ın kuyruk beklemesi + 300 sn koşusu
+            // + retry backoff'ları sonrasında yeni job'ın kuyruk beklemesini
+            // karşılamayabilir — taze 600 sn pencere bunu garanti eder.
             if (self::sanitizedInput($tour->fresh() ?? $tour) !== $input) {
-                Cache::forget(self::DISPATCH_LOCK_PREFIX.$this->tourId);
+                Cache::put(self::DISPATCH_LOCK_PREFIX.$this->tourId, 1, 600);
+                $yenidenKuyrukta = true;
                 self::dispatch($this->tourId);
             }
 
-            $nulls = array_keys(array_filter($pass1, fn ($s) => ! is_numeric($s['value'] ?? null)));
+            $nulls = array_keys(array_filter($sonuc['scores'], fn ($s) => ! is_numeric($s['value'] ?? null)));
             Log::info('[TourRubric] Tur puanlandı', [
                 'tour_id' => $tour->id,
                 'needs_review' => $needsReview,
                 'null_dimensions' => $nulls,
-                'ayrisan_boyutlar' => $ayrisan,   // iki geçişin uyuşmadığı boyutlar
+                'ayrisan_boyutlar' => $sonuc['ayrisan'],   // iki geçişin uyuşmadığı boyutlar
             ]);
         } catch (\Throwable $e) {
             Log::warning('[TourRubric] Puanlama hatası', ['tour_id' => $tour->id, 'error' => $e->getMessage()]);
             throw $e;
         } finally {
-            Cache::forget(self::DISPATCH_LOCK_PREFIX.$this->tourId);
+            // Yeniden dispatch edildiyse kilit BİLEREK tutulur (yukarıda tazelendi);
+            // burada silmek hem yeni job'ı korumasız bırakır hem de o sırada
+            // observer'ın almış olabileceği taze kilidi yok ederdi.
+            if (! $yenidenKuyrukta) {
+                Cache::forget(self::DISPATCH_LOCK_PREFIX.$this->tourId);
+            }
         }
+    }
+
+    /**
+     * İki geçişin boyut düzeyinde mutabakatı.
+     *
+     * Brif §3.5: "fark 1'den büyükse O BOYUTU editör onayına düşür".
+     * Uyuşmazlık BOYUT düzeyinde ele alınır: ayrışan boyut null'a çekilir
+     * (eşleştirmede zaten devre dışı kalır), tur bu yüzden bloke edilmez.
+     * Tüm turu düşürmek katalogun tamamını kilitliyordu — 10 boyutta en az
+     * birinin oynaması pratikte kaçınılmaz.
+     *
+     * @return array{scores: array, ayrisan: array<int, string>, puanli: int, dogrulanmayan: int}
+     */
+    private function mutabakat(array $pass1, array $pass2): array
+    {
+        $puanli = 0;
+        $dogrulanmayan = 0;
+        $ayrisan = [];
+
+        foreach (Rubric::dimensions() as $d) {
+            $v1 = $pass1[$d]['value'] ?? null;
+            $v2 = $pass2[$d]['value'] ?? null;
+
+            $ayristiMi = (is_numeric($v1) && is_numeric($v2) && abs($v1 - $v2) > 1)
+                || (is_numeric($v1) !== is_numeric($v2));
+
+            if ($ayristiMi) {
+                $ayrisan[] = $d;
+                $pass1[$d]['value'] = null;   // güvenilmez → eşleştirmeye girmez
+                $pass1[$d]['confidence'] = 'none';
+                $pass1[$d]['not'] = 'iki geçiş ayrıştı';
+
+                continue;
+            }
+
+            if (is_numeric($v1)) {
+                $puanli++;
+                if (($pass1[$d]['evidence_verified'] ?? null) === false) {
+                    $dogrulanmayan++;
+                }
+            }
+        }
+
+        return ['scores' => $pass1, 'ayrisan' => $ayrisan, 'puanli' => $puanli, 'dogrulanmayan' => $dogrulanmayan];
+    }
+
+    /**
+     * İnceleme kararı + kalıcılaştırma.
+     *
+     * Tur düzeyinde inceleme YALNIZ sistemik kararsızlıkta: boyutların
+     * yarıdan fazlası ayrıştıysa bu turun verisine güvenilmez.
+     *
+     * ALINTI DOĞRULAMASI TURU BLOKLAMAZ: aynı hata iki kez yapıldı —
+     * model alıntıyı kırpıp/başka sözcüklerle verdiğinde bayrak düşüyor
+     * ve tüm katalog kilitleniyordu. Doğrulanamayan alıntı yalnız o
+     * boyutun kaydına işlenir (editör panelinde görünür), yayına engel
+     * değildir. Kural: BİR KONTROL BOYUTU ETKİLER, TURU DEĞİL.
+     *
+     * @param  array{scores: array, ayrisan: array<int, string>, puanli: int, dogrulanmayan: int}  $sonuc
+     * @return bool needs_review kararı
+     */
+    private function kaydetVeIncelemeKarari(Tour $tour, string $hash, array $sonuc): bool
+    {
+        $needsReview = count($sonuc['ayrisan']) > count(Rubric::dimensions()) / 2;
+
+        if ($sonuc['dogrulanmayan'] > 0) {
+            Log::info('[TourRubric] Doğrulanamayan alıntı', [
+                'tour_id' => $tour->id,
+                'adet' => $sonuc['dogrulanmayan'],
+                'puanli_boyut' => $sonuc['puanli'],
+            ]);
+        }
+
+        TourRubricScore::updateOrCreate(
+            ['tour_id' => $tour->id, 'rubric_version' => Rubric::VERSION],
+            [
+                'input_hash' => $hash,
+                'scores' => $sonuc['scores'],
+                'review_status' => $needsReview ? TourRubricScore::STATUS_NEEDS_REVIEW : TourRubricScore::STATUS_AUTO,
+                'scored_at' => now(),
+            ]
+        );
+
+        return $needsReview;
     }
 
     /** @return array<string, array{value: int|null, confidence: string, evidence: string|null}> */
@@ -163,8 +192,9 @@ class ScoreTourRubricJob implements ShouldQueue
             0.0, // brif: temperature 0 (reasoning ailesinde otomatik atlanır)
         ));
 
-        $payload = json_decode($response->choices[0]->message->content ?? '', true);
-        $scores = $payload['scores'] ?? null;
+        // AiJson zarfı çözer; scores anahtarının dizi olması bu job'a özgü
+        // ek şart — ikisi de aynı istisnayla düşer (mevcut davranış).
+        $scores = AiJson::decode($response)['scores'] ?? null;
         if (! is_array($scores)) {
             throw new \RuntimeException('LLM JSON parse hatası');
         }
