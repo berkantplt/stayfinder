@@ -93,7 +93,11 @@
                                         <select name="visa[{{ $tour->id }}]"
                                                 style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:#fff;">
                                             @foreach($secenekler as $deger => $etiket)
-                                                <option value="{{ $deger }}" @selected($mevcut($tour) === $deger)>{{ $etiket }}</option>
+                                                {{-- (string) ZORUNLU: PHP dizide '1'/'0' anahtarlarını int'e
+                                                     çevirir, $mevcut() ise string döndürür — katı === hiçbir
+                                                     option'a selected basmaz, tarayıcı ilk seçeneği gösterir
+                                                     ve kayıtlı tur "belirtilmemiş" sanılır. --}}
+                                                <option value="{{ $deger }}" @selected($mevcut($tour) === (string) $deger)>{{ $etiket }}</option>
                                             @endforeach
                                         </select>
                                     </td>
