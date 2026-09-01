@@ -585,6 +585,7 @@ class AgencyCategoryLicensingTest extends TestCase
             'included' => 'Ulaşım',
             'excluded' => 'Kişisel harcamalar',
             'tour_url' => 'https://example.com/test-tur',
+            'requires_visa' => '0',
             'pricing_options' => [
                 [
                     'price' => '7500',

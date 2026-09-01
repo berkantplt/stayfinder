@@ -49,6 +49,7 @@ class TourGalleryTest extends TestCase
             'departure_city' => 'İstanbul',
             'duration_days' => 2,
             'currency' => 'TRY',
+            'requires_visa' => '0',
             'pricing_options' => [
                 ['price' => '5000', 'departure_dates' => [today()->addDays(15)->toDateString()]],
             ],

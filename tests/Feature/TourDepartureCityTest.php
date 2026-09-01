@@ -55,6 +55,7 @@ class TourDepartureCityTest extends TestCase
             'stop_cities' => ['Kırıkkale', 'Kayseri'],
             'duration_days' => 3,
             'currency' => 'TRY',
+            'requires_visa' => '0',
             'pricing_options' => [
                 ['price' => '7500', 'departure_dates' => [today()->addDays(20)->toDateString()]],
             ],

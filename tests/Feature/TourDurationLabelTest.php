@@ -116,6 +116,7 @@ class TourDurationLabelTest extends TestCase
             'duration_days' => 8,
             'duration_nights' => 7,
             'currency' => 'TRY',
+            'requires_visa' => '0',
             'pricing_options' => [[
                 'departure_dates' => [today()->addDays(20)->toDateString()],
                 'packages' => [[

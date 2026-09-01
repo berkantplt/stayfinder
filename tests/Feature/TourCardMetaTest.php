@@ -156,6 +156,7 @@ class TourCardMetaTest extends TestCase
             'duration_days' => 2,
             'transport_type' => 'otobus',
             'currency' => 'TRY',
+            'requires_visa' => '0',
             'pricing_options' => [[
                 'departure_dates' => [today()->addDays(20)->toDateString()],
                 'packages' => [[

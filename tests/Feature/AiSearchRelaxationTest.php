@@ -148,6 +148,7 @@ class AiSearchRelaxationTest extends TestCase
             'departure_city' => 'İstanbul',
             'duration_days' => 7,
             'currency' => 'EUR',
+            'requires_visa' => '0',
             'pricing_options' => [['price' => '899', 'departure_dates' => [today()->addDays(30)->toDateString()]]],
         ])->assertRedirect(route('agency.tours.index'));
 

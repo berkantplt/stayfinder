@@ -10,12 +10,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Vize alanı ÜÇ DURUMLU: vizeli / vizesiz / belirtilmemiş.
+ * Vize alanı ZORUNLU: vizeli / kapıda / vizesiz — üçünden biri seçilmeden
+ * tur KAYDEDİLEMEZ (2026-09-01 kullanıcı kararı).
  *
- * Bu ayrım bu projenin geçmişte düştüğü bir tuzağın karşılığı: kolon yıllarca
- * `default(false)` durduğu için "vizesiz" ile "girilmemiş" ayrılamıyordu ve
- * HomeController vize filtresi bu yüzden alanı kullanmayı reddediyordu. Aşağıdaki
- * testler üçüncü durumun sessizce false'a çökmesini engeller.
+ * Kolon hâlâ üç durumlu (null = belirtilmemiş) çünkü ESKİ kayıtlar ve admin
+ * toplu ekranı null taşıyabiliyor; ama acenta formundan null ÜRETİLEMEZ.
+ * Aşağıdaki testler iki şeyi birden mühürlüyor: (a) üç değer doğru kolonlara
+ * yazılıyor, (b) işaretsiz gövde sessizce "vizesiz"e çökmüyor — reddediliyor.
  */
 class TourVisaFieldTest extends TestCase
 {
@@ -98,22 +99,26 @@ class TourVisaFieldTest extends TestCase
         $this->assertTrue($tour->visa_on_arrival);
     }
 
-    public function test_hicbiri_isaretlenmezse_null_kalir(): void
+    public function test_hicbiri_isaretlenmezse_tur_kaydedilmez(): void
     {
-        // Asıl mesele bu: işaretsiz bırakmak "vizesiz" DEĞİL, "belirtilmemiş".
+        // Asıl mesele bu: işaretsiz gövde ("unknown") sessizce "vizesiz" ÜRETMEMELİ
+        // ve artık kaydı da geçmemeli — alan zorunlu.
         $this->actingAs($this->agencyUser)
-            ->post(route('agency.tours.store'), $this->tourPayload(['requires_visa' => 'unknown']));
+            ->post(route('agency.tours.store'), $this->tourPayload(['requires_visa' => 'unknown']))
+            ->assertSessionHasErrors('requires_visa');
 
-        $this->assertNull(Tour::latest('id')->first()->requires_visa);
+        $this->assertSame(0, Tour::count());
     }
 
-    public function test_alan_hic_gonderilmezse_null_kalir(): void
+    public function test_alan_hic_gonderilmezse_tur_kaydedilmez(): void
     {
-        // Eski form gövdesi (alan yok) sessizce "vizesiz" üretmemeli.
+        // Eski form gövdesi (alan hiç yok) da reddedilmeli — aksi hâlde zorunluluk
+        // yalnız tarayıcıda olur, gövdeyi elle kuran her istemci deler.
         $this->actingAs($this->agencyUser)
-            ->post(route('agency.tours.store'), $this->tourPayload());
+            ->post(route('agency.tours.store'), $this->tourPayload())
+            ->assertSessionHasErrors('requires_visa');
 
-        $this->assertNull(Tour::latest('id')->first()->requires_visa);
+        $this->assertSame(0, Tour::count());
     }
 
     public function test_gecersiz_deger_reddedilir(): void
@@ -123,7 +128,7 @@ class TourVisaFieldTest extends TestCase
             ->assertSessionHasErrors('requires_visa');
     }
 
-    public function test_duzenlemede_vize_temizlenebilir(): void
+    public function test_duzenlemede_vize_temizlenemez(): void
     {
         $this->actingAs($this->agencyUser)
             ->post(route('agency.tours.store'), $this->tourPayload(['requires_visa' => '1']));
@@ -131,11 +136,29 @@ class TourVisaFieldTest extends TestCase
         $tour = Tour::latest('id')->first();
         $this->assertTrue($tour->requires_visa);
 
-        // Acenta yanlış işaretlediyse geri alabilmeli — tek yönlü kapı olmamalı.
+        // Zorunluluk DÜZENLEMEDE de geçerli: yayındaki bir tur "belirtilmemiş"e
+        // geri döndürülemez, yoksa kapı tek kullanımlık olurdu.
         $this->actingAs($this->agencyUser)
-            ->put(route('agency.tours.update', $tour), $this->tourPayload(['requires_visa' => 'unknown']));
+            ->put(route('agency.tours.update', $tour), $this->tourPayload(['requires_visa' => 'unknown']))
+            ->assertSessionHasErrors('requires_visa');
 
-        $this->assertNull($tour->fresh()->requires_visa);
+        $this->assertTrue($tour->fresh()->requires_visa);
+    }
+
+    public function test_duzenlemede_vize_degistirilebilir(): void
+    {
+        $this->actingAs($this->agencyUser)
+            ->post(route('agency.tours.store'), $this->tourPayload(['requires_visa' => '1']));
+
+        $tour = Tour::latest('id')->first();
+
+        // Yanlış işaretleyen acenta DÜZELTEBİLMELİ — zorunluluk, değiştirilemezlik
+        // değil. Kapı yalnız "boş bırakma"ya kapalı.
+        $this->actingAs($this->agencyUser)
+            ->put(route('agency.tours.update', $tour), $this->tourPayload(['requires_visa' => '0']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertFalse($tour->fresh()->requires_visa);
     }
 
     public function test_formda_iki_kutucuk_render_edilir(): void

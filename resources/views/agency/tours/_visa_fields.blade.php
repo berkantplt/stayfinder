@@ -1,19 +1,27 @@
-{{-- Vize durumu — ÜÇ DURUMLU.
+{{-- Vize durumu — ZORUNLU (2026-09-01 kullanıcı kararı).
 
      Kutucuklar bilerek: tek boolean ile "vizesiz" ile "girilmemiş" ayrılamıyor
      ve kolon yıllarca default false durduğu için HomeController vize filtresi bu
-     alanı kullanmayı reddediyordu. Hiçbiri işaretsiz = belirtilmemiş (null).
+     alanı kullanmayı reddediyordu.
+
+     ARTIK BOŞ BIRAKILAMAZ: hiçbiri işaretsizse gizli input 'unknown' kalır ve
+     doğrulama turu REDDEDER (Agency\TourController: required|in:0,1,kapida).
+     Sebep: işaretsiz turlar vize filtresinde ve sohbet asistanında hiç
+     görünmüyordu — katalog sessizce eksiliyordu. 'unknown' değeri gizli input'ta
+     hâlâ üretiliyor çünkü işareti KALDIRMAK geçerli bir ara adım; kaydetmeye
+     kalkınca hata mesajı çıkar.
 
      "Kapıda vize" ayrı seçenek: yolcu için vizeli turdan bambaşka bir iş
      (konsolosluk randevusu/evrak yok, sınırda ödenip alınıyor). Vizeli'ye
      katlansaydı kullanıcıyı gereksiz yere caydırırdık.
 
-     Değer sözlüğü: '1' (vizeli) | 'kapida' | '0' (vizesiz) | 'unknown'. --}}
+     Değer sözlüğü: '1' (vizeli) | 'kapida' | '0' (vizesiz).
+     'unknown' yalnızca ARA DURUM — kaydedilemez. --}}
 @php
     $visaValue = $visaValue ?? 'unknown';
 @endphp
 <div class="form-group">
-    <label>Vize durumu</label>
+    <label>Vize durumu <span style="color:#dc2626;">*</span></label>
     <input type="hidden" name="requires_visa" value="{{ $visaValue }}" data-visa-hidden>
 
     <div class="visa-kutular" data-visa-grup>
@@ -31,9 +39,13 @@
         </label>
     </div>
 
+    @error('requires_visa')
+        <div style="font-size:12px;color:#dc2626;font-weight:600;margin-top:6px;">{{ $message }}</div>
+    @enderror
+
     <div style="font-size:11px;color:#94a3b8;margin-top:6px;">
-        Hiçbiri işaretsizse <strong>belirtilmemiş</strong> olarak kaydedilir — turda ve
-        karşılaştırmada vize satırı hiç görünmez. Yurt içi turlarda boş bırakabilirsin.
+        <strong>Zorunlu alan</strong> — üç seçenekten birini işaretlemeden tur kaydedilmez.
+        Yurt içi turlarda <strong>Vizesiz</strong> işaretleyin.
         URL'den içe aktarım bu alana <strong>dokunmaz</strong>; vize durumunu sen işaretlersin.
     </div>
 </div>

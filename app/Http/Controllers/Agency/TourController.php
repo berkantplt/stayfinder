@@ -110,10 +110,12 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
-            'requires_visa' => 'nullable|in:0,1,kapida,unknown',
+            'requires_visa' => 'required|in:0,1,kapida',
         ], [
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
+            'requires_visa.required' => 'Vize durumunu işaretleyin: Vizeli, Kapıda vize veya Vizesiz.',
+            'requires_visa.in' => 'Vize durumunu işaretleyin: Vizeli, Kapıda vize veya Vizesiz.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
         $this->ensureAgencyHasTourSlot($agency, (int) $validated['category_id']);
@@ -139,9 +141,13 @@ class TourController extends Controller
             $validated['is_international'] = $classified;
         }
 
-        // Vize DÖRT SEÇENEK, iki kolon: işaretsiz bırakmak "vizesiz" değil
-        // "belirtilmemiş"tir. "Kapıda" da bir vizedir (requires_visa=true), ama
-        // yolcu için işi bambaşka olduğundan ayrı bayrakla taşınır.
+        // Vize ÜÇ SEÇENEK, iki kolon. "Kapıda" da bir vizedir (requires_visa=true),
+        // ama yolcu için işi bambaşka olduğundan ayrı bayrakla taşınır.
+        //
+        // 2026-09-01'den beri alan ZORUNLU: "belirtilmemiş" (unknown) artık formdan
+        // kaydedilemiyor, doğrulama reddediyor. null yalnızca ESKİ kayıtlarda ve
+        // admin toplu ekranında kalabilir. default dalı bu yüzden ulaşılamaz durumda
+        // ama savunma amaçlı duruyor — silinirse geçersiz girdi sessizce true olur.
         [$validated['requires_visa'], $validated['visa_on_arrival']] = match ($request->input('requires_visa')) {
             '1' => [true, false],
             'kapida' => [true, true],
@@ -208,10 +214,12 @@ class TourController extends Controller
             'cancellation_policy' => 'nullable|string',
             'guide_info' => 'nullable|string',
             'frequency' => 'nullable|string|max:255',
-            'requires_visa' => 'nullable|in:0,1,kapida,unknown',
+            'requires_visa' => 'required|in:0,1,kapida',
         ], [
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
+            'requires_visa.required' => 'Vize durumunu işaretleyin: Vizeli, Kapıda vize veya Vizesiz.',
+            'requires_visa.in' => 'Vize durumunu işaretleyin: Vizeli, Kapıda vize veya Vizesiz.',
         ]);
         $this->ensureAgencyHasCategoryAccess($agency, (int) $validated['category_id']);
 
@@ -228,9 +236,13 @@ class TourController extends Controller
             $validated['is_international'] = $classified;
         }
 
-        // Vize DÖRT SEÇENEK, iki kolon: işaretsiz bırakmak "vizesiz" değil
-        // "belirtilmemiş"tir. "Kapıda" da bir vizedir (requires_visa=true), ama
-        // yolcu için işi bambaşka olduğundan ayrı bayrakla taşınır.
+        // Vize ÜÇ SEÇENEK, iki kolon. "Kapıda" da bir vizedir (requires_visa=true),
+        // ama yolcu için işi bambaşka olduğundan ayrı bayrakla taşınır.
+        //
+        // 2026-09-01'den beri alan ZORUNLU: "belirtilmemiş" (unknown) artık formdan
+        // kaydedilemiyor, doğrulama reddediyor. null yalnızca ESKİ kayıtlarda ve
+        // admin toplu ekranında kalabilir. default dalı bu yüzden ulaşılamaz durumda
+        // ama savunma amaçlı duruyor — silinirse geçersiz girdi sessizce true olur.
         [$validated['requires_visa'], $validated['visa_on_arrival']] = match ($request->input('requires_visa')) {
             '1' => [true, false],
             'kapida' => [true, true],

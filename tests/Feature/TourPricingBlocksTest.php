@@ -54,6 +54,7 @@ class TourPricingBlocksTest extends TestCase
             'departure_city' => 'İstanbul',
             'duration_days' => 4,
             'currency' => 'TRY',
+            'requires_visa' => '0',
             'pricing_options' => [
                 [
                     'departure_dates' => [$depart],
@@ -112,6 +113,7 @@ class TourPricingBlocksTest extends TestCase
                 'departure_city' => 'İstanbul',
                 'duration_days' => 5,
                 'currency' => 'TRY',
+                'requires_visa' => '0',
                 'pricing_options' => [
                     [
                         'departure_dates' => [$depart],
@@ -146,6 +148,7 @@ class TourPricingBlocksTest extends TestCase
                 'departure_city' => 'İzmir',
                 'duration_days' => 3,
                 'currency' => 'TRY',
+                'requires_visa' => '0',
                 'pricing_options' => [
                     [
                         'departure_dates' => [$depart],
@@ -176,6 +179,7 @@ class TourPricingBlocksTest extends TestCase
             'departure_city' => 'İstanbul',
             'duration_days' => 2,
             'currency' => 'TRY',
+            'requires_visa' => '0',
             'pricing_options' => [
                 [
                     'departure_dates' => [$depart],
@@ -220,6 +224,7 @@ class TourPricingBlocksTest extends TestCase
             'departure_city' => 'İstanbul',
             'duration_days' => 2,
             'currency' => 'TRY',
+            'requires_visa' => '0',
             'pricing_options' => [
                 ['price' => '7500', 'departure_dates' => [$depart]],
             ],
