@@ -19,7 +19,15 @@
     .dg-day-head { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; padding: 14px 20px; }
     .dg-day-head h3 { font-size: 16px; font-weight: 800; }
     .dg-day-head p { font-size: 13px; opacity: .85; margin-top: 2px; }
-    .dg-day-body { padding: 18px 20px; }
+    .dg-day-body { padding: 18px 20px; position: relative; }
+    /* Kapalı hâl: ilk birkaç satır görünür, altı karta doğru şeffaflaşır.
+       JS kapalıysa aşağıdaki <noscript> bu sınırı kaldırır — içerik saklı kalmaz. */
+    .dg-day-body.dg-kapali { max-height: 150px; overflow: hidden; }
+    .dg-day-body.dg-kapali::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 88px; background: linear-gradient(to bottom, rgba(255,255,255,0), var(--white) 82%); pointer-events: none; }
+    .dg-day-ac { width: 100%; border: 0; border-top: 1px solid var(--border); background: var(--white); color: var(--accent-dark); font-family: inherit; font-size: 13px; font-weight: 700; padding: 11px 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .15s; }
+    .dg-day-ac:hover { background: var(--bg); }
+    .dg-day-ac .dg-ok { transition: transform .2s; }
+    .dg-day-ac[aria-expanded="true"] .dg-ok { transform: rotate(180deg); }
     .dg-period { margin-bottom: 14px; }
     .dg-period-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--accent-dark); margin-bottom: 8px; }
     .dg-place { padding: 10px 12px; background: var(--bg); border-radius: var(--radius); margin-bottom: 8px; }
@@ -36,6 +44,7 @@
     .dg-tips li { font-size: 14px; color: var(--text-sec); line-height: 1.6; margin-bottom: 8px; padding-left: 4px; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
+<noscript><style>.dg-day-body.dg-kapali { max-height: none; } .dg-day-body.dg-kapali::after { display: none; } .dg-day-ac { display: none; }</style></noscript>
 
 <div class="container" style="padding-top:40px;padding-bottom:60px;">
     @include('partials.breadcrumb', ['items' => [
@@ -120,7 +129,7 @@
                         <h3>{{ $day['day'] }}. Gün — {{ $day['title'] }}</h3>
                         @if(!empty($day['theme']))<p>{{ $day['theme'] }}</p>@endif
                     </div>
-                    <div class="dg-day-body">
+                    <div class="dg-day-body dg-kapali" id="dg-gun-{{ $loop->index }}">
                         @foreach(['morning' => '🌅 Sabah', 'afternoon' => '☀️ Öğleden Sonra', 'evening' => '🌙 Akşam'] as $anahtar => $baslik)
                             @if(!empty($day[$anahtar]))
                                 <div class="dg-period">
@@ -151,6 +160,9 @@
                             <div class="dg-tip">💡 {{ $day['daily_tip'] }}</div>
                         @endif
                     </div>
+                    <button type="button" class="dg-day-ac" aria-expanded="false" aria-controls="dg-gun-{{ $loop->index }}">
+                        <span class="dg-ac-yazi">Günün tamamını gör</span><span class="dg-ok" aria-hidden="true">▾</span>
+                    </button>
                 </div>
             @endforeach
 
@@ -322,6 +334,27 @@
 
     const tekrarBtn = document.getElementById('dg-retry');
     if (tekrarBtn) tekrarBtn.addEventListener('click', function () { personalize({}, tekrarBtn); });
+
+    // ---- Gün kartları: kapalı gelir, kullanıcı açar. İçerik zaten sınırın
+    // altındaysa (kısa gün) düğme ölü buton olmasın diye kaldırılır.
+    document.querySelectorAll('.dg-day-ac').forEach(function (btn) {
+        const govde = document.getElementById(btn.getAttribute('aria-controls'));
+        if (!govde) { btn.remove(); return; }
+
+        if (govde.scrollHeight <= govde.clientHeight + 8) {
+            govde.classList.remove('dg-kapali');
+            btn.remove();
+            return;
+        }
+
+        btn.addEventListener('click', function () {
+            const acik = ! govde.classList.toggle('dg-kapali');
+            btn.setAttribute('aria-expanded', acik ? 'true' : 'false');
+            btn.querySelector('.dg-ac-yazi').textContent = acik ? 'Daha az göster' : 'Günün tamamını gör';
+            // Kapanırken kart ekranın dışında kalmasın (uzun günlerde sayfa zıplaması).
+            if (! acik) btn.scrollIntoView({ block: 'nearest' });
+        });
+    });
 })();
 </script>
 @endsection
