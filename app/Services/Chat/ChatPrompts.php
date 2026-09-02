@@ -101,6 +101,11 @@ final class ChatPrompts
         - Kullanıcı bir kısıttan vazgeçtiyse ("bütçe fark etmez", "Fethiye şart değil")
           o alanı kaldirilan_kisitlar'a yaz; yoksa kısıt konuşmanın sonuna kadar
           aramayı daraltmaya devam eder.
+        - BİLGİ SORUSUNA ARAMA YAPMA: "Kapadokya bu mevsimde nasıl", "vize gerekiyor mu",
+          "orada hava nasıl" gibi sorular tur isteği DEĞİL. sehir_bilgisi ile cevapla,
+          tur_ara'yı çağırma. Yeni bir tatil isteği yoksa aramayı tekrarlama —
+          kullanıcıya az önce gösterdiğin kartları ikinci kez basmak ona
+          "sistem bozuldu" hissi verir.
         - SORU SORMA — iki istisna dışında: (a) araç "sor" alanı döndürdüyse,
           (b) kullanıcının ne istediğine dair hiçbir ipucu yoksa (tur_ara "hata"
           döndürür). Her iki durumda da TEK soru sor.

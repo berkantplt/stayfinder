@@ -29,6 +29,28 @@ class ChatV2Controller extends Controller
 
     public function __construct(private readonly ChatAgent $agent) {}
 
+    /**
+     * Kart şeridi basılsın mı? Yalnız EN AZ BİR yeni tur varsa.
+     *
+     * Canlı şikayet: kullanıcı "Kapadokya bu mevsimde nasıl?" diye bilgi sordu,
+     * model buna da tur_ara çağırdı ve oturumdaki profil değişmediği için aynı
+     * turlar döndü — cevabın altına az önce gösterilen kartlar ikinci kez basıldı.
+     * Prompt kuralı bunu azaltır ama garanti etmez; tekrarı imkânsız kılan yer burası.
+     *
+     * @param  array<int, array<string, mixed>>  $turlar
+     * @param  array<int, int>  $oncekiIdler
+     */
+    private function yeniKartVar(array $turlar, array $oncekiIdler): bool
+    {
+        foreach ($turlar as $tur) {
+            if (! in_array((int) ($tur['id'] ?? 0), $oncekiIdler, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** SSE akışı. Ortam kurulumu + emit üretimi SseStream'de (nginx altında kazanılmış ayarlar). */
     public function stream(Request $request): StreamedResponse
     {
@@ -42,8 +64,11 @@ class ChatV2Controller extends Controller
         $oturum = (array) $request->session()->get(self::OTURUM_ANAHTARI, []);
         $gecmis = array_slice((array) ($oturum['gecmis'] ?? []), -self::GECMIS_LIMITI);
         $durum = ConversationState::fromArray($oturum['durum'] ?? null);
+        // handle() bu turda gösterilenleri durumun içine EKLEYECEK; "daha önce
+        // gösterilmiş" ölçüsünü almanın tek yeri burası, çağrıdan önce.
+        $oncekiIdler = $durum->gosterilenIdler();
 
-        return response()->stream(function () use ($request, $mesaj, $gecmis, $durum) {
+        return response()->stream(function () use ($request, $mesaj, $gecmis, $durum, $oncekiIdler) {
             $emit = SseStream::baslat();
 
             try {
@@ -57,7 +82,7 @@ class ChatV2Controller extends Controller
                     fn (string $metin) => $emit('faz', ['text' => $metin]),
                 );
 
-                if ($sonuc['turlar'] !== []) {
+                if ($sonuc['turlar'] !== [] && $this->yeniKartVar($sonuc['turlar'], $oncekiIdler)) {
                     // toplam: "diğerleri" butonunun kaç tur daha olduğunu bilmesi için
                     $toplam = 0;
                     foreach ($sonuc['iz'] as $adim) {

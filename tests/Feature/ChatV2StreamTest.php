@@ -118,6 +118,55 @@ class ChatV2StreamTest extends TestCase
         $this->assertStringContainsString('Sakin Koy Turu', $govde);
     }
 
+    /**
+     * Bilgi sorusuna da arama yapılırsa (model kuralı atlarsa) aynı kartlar
+     * cevabın altına ikinci kez basılıyordu — kullanıcı bunu arıza sanıyor.
+     */
+    public function test_ayni_turlar_ikinci_kez_kart_olarak_basilmaz(): void
+    {
+        $this->makeTour('Sakin Koy Turu');
+
+        $aramaArgumanlari = ['boyutlar' => ['tempo' => ['deger' => 20, 'kanit' => 'kafamı dinlemek istiyorum']]];
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', $aramaArgumanlari),
+            $this->textResponse('Sakin bir kaçamak buldum.'),
+            // İkinci tur: kullanıcı BİLGİ sordu ama model yine arama yaptı
+            $this->toolCallResponse('tur_ara', $aramaArgumanlari),
+            $this->textResponse('Kapadokya bu mevsimde serin ve sakin olur.'),
+        ]);
+
+        $ilk = $this->sse($this->post('/sohbet/akis', ['message' => 'kafamı dinlemek istiyorum']));
+        $this->assertStringContainsString('event: tours', $ilk);
+
+        $ikinci = $this->sse($this->post('/sohbet/akis', ['message' => 'kapadokya bu mevsimde nasıl']));
+
+        $this->assertStringNotContainsString('event: tours', $ikinci);
+        $this->assertStringContainsString('serin', $ikinci); // metin cevabı yine gelir
+    }
+
+    public function test_yeni_bir_tur_cikarsa_kartlar_yine_basilir(): void
+    {
+        $this->makeTour('Sakin Koy Turu');
+
+        $aramaArgumanlari = ['boyutlar' => ['tempo' => ['deger' => 20, 'kanit' => 'kafamı dinlemek istiyorum']]];
+
+        OpenAI::fake([
+            $this->toolCallResponse('tur_ara', $aramaArgumanlari),
+            $this->textResponse('Bir tur buldum.'),
+            $this->toolCallResponse('tur_ara', $aramaArgumanlari),
+            $this->textResponse('Bir tane daha çıktı.'),
+        ]);
+
+        $this->post('/sohbet/akis', ['message' => 'kafamı dinlemek istiyorum'])->streamedContent();
+
+        $this->makeTour('Yeni Koy Turu');
+        $ikinci = $this->sse($this->post('/sohbet/akis', ['message' => 'başka ne var']));
+
+        $this->assertStringContainsString('event: tours', $ikinci);
+        $this->assertStringContainsString('Yeni Koy Turu', $ikinci);
+    }
+
     /** Araçlar koşarken kullanıcı sessizlik görmemeli — faz olayı akmalı. */
     public function test_arac_kosarken_faz_olayi_akitilir(): void
     {
