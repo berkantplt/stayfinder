@@ -270,7 +270,19 @@ class ChatAgentTest extends TestCase
     }
 
     /** İkinci arama boş dönerse "bulamadım" metninin altında eski kartlar kalmamalı. */
-    public function test_bos_donen_ikinci_arama_eski_kartlari_temizler(): void
+    /**
+     * Kural 2026-09-02'de TERSİNE çevrildi.
+     *
+     * Eskiden boş dönen ikinci arama şeridi temizliyordu ("bulamadım" metninin
+     * altında eski kartlar kalmasın diye). Canlıda ters teptiği görüldü: model
+     * bir turda iki kez arıyor, ikincisi boş dönüyor ve kullanıcı turların adını
+     * metinde okuyup altında hiç kart göremiyordu — "sistem bozuldu" izlenimi.
+     *
+     * Yeni kural: şerit yalnız SONUÇ ÜRETEN aramayla tazelenir. Eski kuralın
+     * koruduğu durum bir İHTİMAL (model bulamadım der ve kartlar tutarsız
+     * görünür), yenisinin önlediği durum ise KESİN bir hataydı.
+     */
+    public function test_bos_donen_ikinci_arama_eski_kartlari_silmez(): void
     {
         $this->makeTour('Kapadokya Turu', ['destination' => 'Kapadokya']);
 
@@ -285,7 +297,8 @@ class ChatAgentTest extends TestCase
 
         $sonuc = app(ChatAgent::class)->handle('normal bir tempo olsun');
 
-        $this->assertSame([], $sonuc['turlar']);
+        $this->assertNotEmpty($sonuc['turlar']);
+        $this->assertSame('Kapadokya Turu', $sonuc['turlar'][0]['title']);
     }
 
     /** Hatalı tur_ara (boyut doldurulamadı) iyi kartları SİLMEMELİ. */

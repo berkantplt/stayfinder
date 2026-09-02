@@ -203,14 +203,23 @@ class ChatAgent
             $aracSonuclari[] = $sonuc;
             $iz[] = $this->izKaydi($ad, $args, $sonuc);
 
-            // Kartlar HER başarılı aramada tazelenir: daraltılmış ikinci arama
-            // boş dönerse "bulamadım" metninin altında eski kartlar kalmasın.
-            // Hatalı çağrı (boyut doldurulamadı) iyi kartları silmez.
+            // Kartlar SONUÇ ÜRETEN her aramayla tazelenir. Hatalı çağrı (boyut
+            // doldurulamadı) iyi kartları silmez.
+            //
+            // Boş sonuç şeridi SİLMEZ — önceki kural buydu ("daraltılmış ikinci
+            // arama boş dönerse eski kartlar kalmasın") ama canlıda ters tepti:
+            // model bir turda iki kez arıyor, ikincisi boş dönüyor ve kullanıcı
+            // turların adını metinde okuyup altında hiç kart göremiyordu. Bu
+            // kesin bir hata; eskisi ise ihtimal ("bulamadım" derken eski kartlar
+            // duruyor olabilir) — üstelik model o metni yazarken ilk aramanın
+            // sonucu da elinde, genelde onlardan söz ediyor.
             if ($ad === TurAra::name() && ! isset($sonuc['hata'])) {
-                // Yakın turlar şeride EKLENİR ama kartlarında uyum rozeti
-                // yoktur ve 'yakin' bayrağı taşırlar; arayüz onları ayrı
-                // çerçevede gösterir, model de metinde ayrı anlatır.
-                $turlar = array_merge($sonuc['turlar'] ?? [], $sonuc['yakin_turlar'] ?? []);
+                // Yakın turlar şeride EKLENİR ama 'yakin' bayrağı taşırlar;
+                // arayüz onları ayrı çerçevede gösterir, model de ayrı anlatır.
+                $yeniKartlar = array_merge($sonuc['turlar'] ?? [], $sonuc['yakin_turlar'] ?? []);
+                if ($yeniKartlar !== []) {
+                    $turlar = $yeniKartlar;
+                }
             }
 
             $messages[] = [

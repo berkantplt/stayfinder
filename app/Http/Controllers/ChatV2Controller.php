@@ -27,7 +27,29 @@ class ChatV2Controller extends Controller
     /** "Diğerleri" görünümünde toplam kaç tur gösterilir (chat'teki 5 dahil). */
     private const GENISLETILMIS_LIMIT = 20;
 
+    /** Basılan kart kimliği hafızası — oturum sınırsız büyümesin. */
+    private const BASILAN_KART_HAFIZASI = 60;
+
     public function __construct(private readonly ChatAgent $agent) {}
+
+    /**
+     * Basılan kart kimliklerini biriktirir (son N tanesi).
+     *
+     * @param  array<int, int>  $basilan
+     * @param  array<int, array<string, mixed>>  $turlar
+     * @return array<int, int>
+     */
+    private function basilanlaraEkle(array $basilan, array $turlar): array
+    {
+        foreach ($turlar as $tur) {
+            $id = (int) ($tur['id'] ?? 0);
+            if ($id > 0 && ! in_array($id, $basilan, true)) {
+                $basilan[] = $id;
+            }
+        }
+
+        return array_slice($basilan, -self::BASILAN_KART_HAFIZASI);
+    }
 
     /**
      * Kart şeridi basılsın mı? Yalnız EN AZ BİR yeni tur varsa.
@@ -64,11 +86,16 @@ class ChatV2Controller extends Controller
         $oturum = (array) $request->session()->get(self::OTURUM_ANAHTARI, []);
         $gecmis = array_slice((array) ($oturum['gecmis'] ?? []), -self::GECMIS_LIMITI);
         $durum = ConversationState::fromArray($oturum['durum'] ?? null);
-        // handle() bu turda gösterilenleri durumun içine EKLEYECEK; "daha önce
-        // gösterilmiş" ölçüsünü almanın tek yeri burası, çağrıdan önce.
-        $oncekiIdler = $durum->gosterilenIdler();
+        // Ölçü BASILAN kartlar, durumun gösterilen tur listesi DEĞİL: o liste
+        // araç sonucundan doluyor, yani modele dönen turu "kullanıcı gördü"
+        // sayıyor. Kart basılamadığı bir turdan sonra kapı sonsuza dek kapanıp
+        // sohbet bir daha hiç kart göstermiyordu.
+        $basilanIdler = array_values(array_filter(array_map(
+            'intval',
+            (array) ($oturum['basilan_kartlar'] ?? []),
+        )));
 
-        return response()->stream(function () use ($request, $mesaj, $gecmis, $durum, $oncekiIdler) {
+        return response()->stream(function () use ($request, $mesaj, $gecmis, $durum, $basilanIdler) {
             $emit = SseStream::baslat();
 
             try {
@@ -82,7 +109,7 @@ class ChatV2Controller extends Controller
                     fn (string $metin) => $emit('faz', ['text' => $metin]),
                 );
 
-                if ($sonuc['turlar'] !== [] && $this->yeniKartVar($sonuc['turlar'], $oncekiIdler)) {
+                if ($sonuc['turlar'] !== [] && $this->yeniKartVar($sonuc['turlar'], $basilanIdler)) {
                     // toplam: "diğerleri" butonunun kaç tur daha olduğunu bilmesi için
                     $toplam = 0;
                     foreach ($sonuc['iz'] as $adim) {
@@ -93,6 +120,8 @@ class ChatV2Controller extends Controller
                         'toplam' => $toplam,
                         'kalan' => max(0, min($toplam, self::GENISLETILMIS_LIMIT) - count($sonuc['turlar'])),
                     ]);
+
+                    $basilanIdler = $this->basilanlaraEkle($basilanIdler, $sonuc['turlar']);
                 }
 
                 // Oturuma yaz: kullanıcının GÖRDÜĞÜ metin geçmişe girer, yoksa
@@ -103,6 +132,7 @@ class ChatV2Controller extends Controller
                 $request->session()->put(self::OTURUM_ANAHTARI, [
                     'gecmis' => array_slice($gecmis, -self::GECMIS_LIMITI),
                     'durum' => $sonuc['durum']->toArray(),
+                    'basilan_kartlar' => $basilanIdler,
                 ]);
                 $request->session()->save();
 
@@ -129,7 +159,17 @@ class ChatV2Controller extends Controller
             return response()->json(['items' => [], 'not' => 'Önce bir tatil tarifi gerekiyor.']);
         }
 
-        return response()->json($turAra->genisletilmisListe($durum, self::GENISLETILMIS_LIMIT));
+        $sonuc = $turAra->genisletilmisListe($durum, self::GENISLETILMIS_LIMIT);
+
+        // Bu kartlar da ekrana basılıyor; kaydedilmezse sonraki turda "yeni"
+        // sayılıp ikinci kez basılırlardı.
+        $oturum['basilan_kartlar'] = $this->basilanlaraEkle(
+            array_map('intval', (array) ($oturum['basilan_kartlar'] ?? [])),
+            $sonuc['items'] ?? [],
+        );
+        $request->session()->put(self::OTURUM_ANAHTARI, $oturum);
+
+        return response()->json($sonuc);
     }
 
     /** Konuşmayı sıfırla (oturumluk hafızayı temizler). */
