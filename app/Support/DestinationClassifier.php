@@ -41,10 +41,41 @@ class DestinationClassifier
         'girne', 'lefkosa', 'malta', 'sicilya', 'sardinya', 'mallorca', 'ibiza',
         'kanarya', 'madeira', 'balkanlar', 'balkan', 'avrupa', 'uzakdogu', 'uzak dogu',
         'orta avrupa', 'benelux', 'iskandinavya', 'baltik',
+        // Kuzey: ÜLKE adları listedeydi ama şehir adları yoktu — "Rovaniemi"
+        // hiçbir kurala takılmayıp null dönüyordu, kolon varsayılanı da false
+        // olduğu için Lapland turu veritabanında "yurt içi" görünüyordu.
+        'rovaniemi', 'lapland', 'laponya', 'tromso', 'lofoten', 'bergen', 'stavanger',
+        'trondheim', 'reykjavik', 'izlanda', 'kuzey isiklari', 'kuzey isigi',
+        'riga', 'tallinn', 'vilnius', 'letonya', 'litvanya', 'estonya',
+        // Avrupa şehirleri (ülke adı geçmeyen turlar için)
+        'nice', 'marsilya', 'lyon', 'bordo', 'strazburg', 'cannes', 'monako',
+        'pisa', 'verona', 'siena', 'bologna', 'torino', 'cenova', 'palermo', 'como',
+        'bilbao', 'san sebastian', 'toledo', 'segovia', 'faro', 'algarve',
+        'dublin', 'edinburgh', 'glasgow', 'manchester', 'liverpool', 'oxford',
+        'brugge', 'gent', 'rotterdam', 'lahey', 'hamburg', 'frankfurt', 'koln',
+        'dusseldorf', 'stuttgart', 'dresden', 'leipzig', 'nurnberg',
+        'salzburg', 'innsbruck', 'hallstatt', 'graz', 'luzern', 'interlaken',
+        'zermatt', 'bern', 'basel', 'lugano', 'bratislava', 'ljubljana', 'bled',
+        'split', 'zadar', 'sibenik', 'dubrovnik', 'kotor', 'budva', 'ohrid',
+        'selanik', 'meteora', 'kavala',
+        // Kafkasya / Orta Asya / Orta Doğu şehirleri
+        'baku', 'tiflis', 'batum', 'kutaisi', 'erivan', 'semerkant', 'buhara',
+        'taskent', 'astana', 'petra', 'amman', 'beyrut', 'muscat', 'bahreyn', 'kuveyt',
+        // Afrika / Amerika / Uzak Doğu şehirleri
+        'marakes', 'kazablanka', 'kahire', 'luksor', 'asvan', 'sarm el seyh',
+        'hurgada', 'hurghada', 'marsa alam', 'nairobi', 'cape town', 'johannesburg',
+        'toronto', 'vancouver', 'orlando', 'washington', 'rio de janeiro',
+        'buenos aires', 'cusco', 'machu picchu', 'patagonya',
+        'seul', 'pekin', 'shanghai', 'sanghay', 'delhi', 'mumbai', 'goa',
+        'hawaii', 'honolulu', 'bora bora', 'tahiti', 'fiji', 'punta cana', 'cancun',
     ];
 
     /** Yurt içi bölge/tatil noktaları — 81 il TurkishCities'ten ayrıca kontrol edilir. */
     public const DOMESTIC_PLACES = [
+        // 'anadolu' tek başına yeter: "Doğu Anadolu", "İç Anadolu", "Güneydoğu
+        // Anadolu" hepsi kelime sınırlı eşleşmeyle buraya düşer. 'akdeniz'
+        // BİLEREK yok — "Akdeniz gemi turu" yurt dışı olabiliyor.
+        'anadolu', 'dogu anadolu', 'marmara', 'trakya', 'toroslar', 'nemrut',
         'kapadokya', 'ege', 'karadeniz', 'gap', 'guneydogu', 'ic anadolu', 'likya',
         'kusadasi', 'cesme', 'alacati', 'didim', 'alanya', 'side', 'kemer', 'belek',
         'bodrum', 'marmaris', 'fethiye', 'oludeniz', 'gocek', 'datca', 'kas', 'kalkan',

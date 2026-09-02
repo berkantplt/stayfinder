@@ -2,8 +2,10 @@
 
 namespace App\Services\Matching;
 
+use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Models\TourRubricScore;
+use App\Support\SeaHolidayDestinations;
 use Illuminate\Support\Collection;
 
 /**
@@ -23,6 +25,12 @@ use Illuminate\Support\Collection;
  */
 class TourMatcher
 {
+    /** @var array<string, bool> normalize şehir → deniz tatili yeri mi (istek ömrü) */
+    private array $denizOnbellek = [];
+
+    /** @var array<string, array|null> normalize şehir → climate_by_month */
+    private array $iklimOnbellek = [];
+
     private const ORTUSME_METIN = [
         'tempo' => 'Tempo', 'fiziksel' => 'Fiziksel seviye', 'kultur' => 'Kültür yoğunluğu',
         'doga_sehir' => 'Doğa-şehir dengesi', 'adrenalin' => 'Heyecan dozu', 'gastronomi' => 'Gastronomi ağırlığı',
@@ -306,7 +314,7 @@ class TourMatcher
             return [collect(), $notlar];
         }
 
-        $build = function (float $butceCarpan, float $gunCarpan, bool $referansHaric = true) use ($baglam, $puanliTurIds) {
+        $build = function (float $butceCarpan, float $gunCarpan, bool $referansHaric = true, bool $denizSarti = false) use ($baglam, $puanliTurIds) {
             $today = now()->toDateString();
             // Kolon kısıtı: embedding/search_text/description gibi ağır alanlar
             // eşleştirmede kullanılmaz — her istekte belleğe çekilmesinler.
@@ -383,6 +391,15 @@ class TourMatcher
                 }
             }
 
+            // Kıyas yeri bir DENİZ TATİLİ yeriyse aday turlar da öyle olmalı.
+            // Rubrikte deniz ekseni yok — Fethiye "doğa 80" olarak okunuyor ve
+            // Kapadokya da "doğa 80" olduğu için matematiksel olarak aynı şey
+            // sayılıyordu. Canlı şikayet: "fethiyede deniz var, Kapadokya ne alaka".
+            if ($denizSarti) {
+                $this->denizOnbelleginiDoldur($sonuc);
+                $sonuc = $sonuc->filter(fn (Tour $t) => $this->denizTatiliTuru($t))->values();
+            }
+
             // Kalkış şehri PHP tarafında elenir: SQL LOWER() ile PHP mb_strtolower
             // Türkçe 'İ' harfinde ayrışıyor (U+0130 → "i̇" iki kod noktası) ve
             // "İstanbul" araması hiçbir zaman eşleşmiyordu.
@@ -406,28 +423,40 @@ class TourMatcher
 
         $butceCarpan = 1.0;
         $gunCarpan = 1.0;
-        $adaylar = $build($butceCarpan, $gunCarpan);
+        $referansHaric = true;
+        // Şart kıyas yerinden TÜRETİLİR, modelden alınmaz: "deniz istiyorum"
+        // demek modelin işi değil, "Fethiye gibi" demek kullanıcının işi.
+        $denizSarti = ! empty($baglam['referans_yer'])
+            && SeaHolidayDestinations::matches((string) $baglam['referans_yer']);
+        $adaylar = $build($butceCarpan, $gunCarpan, $referansHaric, $denizSarti);
 
         // Brif §2: aday < 3 ise bütçe, sonra süre %20 gevşetilir ve AÇIKÇA söylenir
         if ($adaylar->count() < $rules['min_candidates'] && ! empty($baglam['butce_max_try'])) {
             $butceCarpan = 1 + $rules['relax_step'];
-            $adaylar = $build($butceCarpan, $gunCarpan);
+            $adaylar = $build($butceCarpan, $gunCarpan, $referansHaric, $denizSarti);
             $notlar[] = 'Bütçe kısıtını %20 gevşettim — birebir uyan yeterli tur yoktu.';
         }
         if ($adaylar->count() < $rules['min_candidates'] && (! empty($baglam['gun_min']) || ! empty($baglam['gun_max']))) {
             $butceCarpan = 1 + $rules['relax_step'];
             $gunCarpan = 1 + $rules['relax_step'];
-            $adaylar = $build($butceCarpan, $gunCarpan);
+            $adaylar = $build($butceCarpan, $gunCarpan, $referansHaric, $denizSarti);
             $notlar[] = 'Süre kısıtını %20 gevşettim.';
         }
 
-        // Kıyas dışlaması EN SON gevşer: sayı/tarih kısıtını esnetmek kullanıcının
-        // isteğini biraz büker, zaten gittiği yeri geri göstermek ise isteğini
-        // tersine çevirir. Gevşerse kullanıcıya açıkça söylenir.
+        // Kıyas dışlaması gevşer: "Fethiye'nin kendisi" hâlâ "Kapadokya"dan çok
+        // daha yakın bir cevap. Bu yüzden deniz şartından ÖNCE düşer.
         if ($adaylar->count() < $rules['min_candidates'] && ! empty($baglam['referans_yer'])) {
-            $adaylar = $build($butceCarpan, $gunCarpan, false);
+            $referansHaric = false;
+            $adaylar = $build($butceCarpan, $gunCarpan, $referansHaric, $denizSarti);
             $notlar[] = $baglam['referans_yer'].' dışında yeterli seçenek çıkmadı — '
                 .'oradaki turları da listeye kattım.';
+        }
+
+        // Deniz şartı EN SON düşer: kullanıcının istediği şeyin özü bu.
+        if ($adaylar->count() < $rules['min_candidates'] && $denizSarti) {
+            $adaylar = $build($butceCarpan, $gunCarpan, $referansHaric, false);
+            $notlar[] = 'Deniz tatili turlarında yeterli seçenek çıkmadı — '
+                .'kıyı dışı alternatifleri de kattım.';
         }
 
         return [$adaylar, $notlar];
@@ -578,6 +607,68 @@ class TourMatcher
         }
 
         return null;
+    }
+
+    /**
+     * Aday turların destinasyonlarını TEK sorguda deniz/iklim bilgisiyle doldurur.
+     *
+     * Beyaz liste kesin olanı verir; profildeki "beach" karakter etiketi listenin
+     * kapsamadığı yerleri ekler. Etiket coğrafyadan değil karakterden türediği
+     * için Antarktika gibi "kıyısı var ama deniz tatili değil" yerleri içeri
+     * almaz — listenin yanlış pozitif üretmeme özelliği burada da korunur.
+     */
+    private function denizOnbelleginiDoldur(Collection $turlar): void
+    {
+        $yeni = [];
+        foreach ($turlar as $tour) {
+            foreach (SeaHolidayDestinations::parts($tour->destination) as $parca) {
+                if (array_key_exists($parca, $this->denizOnbellek)) {
+                    continue;
+                }
+                $this->denizOnbellek[$parca] = SeaHolidayDestinations::matches($parca);
+                $yeni[] = $parca;
+            }
+        }
+
+        if ($yeni === []) {
+            return;
+        }
+
+        DestinationProfile::query()
+            ->whereIn('normalized_city', array_values(array_unique($yeni)))
+            ->get(['normalized_city', 'vibe_tags', 'climate_by_month'])
+            ->each(function (DestinationProfile $p) {
+                $anahtar = (string) $p->normalized_city;
+                if (in_array('beach', (array) $p->vibe_tags, true)) {
+                    $this->denizOnbellek[$anahtar] = true;
+                }
+                $this->iklimOnbellek[$anahtar] = $p->climate_by_month;
+            });
+    }
+
+    /**
+     * Tur deniz tatili turu mu? Çok şehirli destinasyonda parçalardan biri yeter.
+     *
+     * İklim kapısı: yer deniz yeri olsa da kalkış ayında denize girilmiyorsa
+     * sayılmaz (Ocak'ta Bodrum, "Fethiye tadında" bir cevap değil). Veri yoksa
+     * kapı UYGULANMAZ — "bilmiyoruz" ile "soğuk" karıştırılmaz.
+     */
+    private function denizTatiliTuru(Tour $tour): bool
+    {
+        $ay = $tour->departure_date?->month;
+
+        foreach (SeaHolidayDestinations::parts($tour->destination) as $parca) {
+            if (! ($this->denizOnbellek[$parca] ?? false)) {
+                continue;
+            }
+            if (SeaHolidayDestinations::ayDenizeUygunDegilMi($this->iklimOnbellek[$parca] ?? null, $ay)) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

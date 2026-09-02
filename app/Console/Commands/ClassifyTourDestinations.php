@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Tour;
-use App\Support\DestinationClassifier;
+use App\Services\DestinationOriginResolver;
 use Illuminate\Console\Command;
 
 /**
@@ -18,14 +18,14 @@ class ClassifyTourDestinations extends Command
 
     protected $description = 'Turların yurt içi/dışı bayrağını destinasyondan türetir (backfill).';
 
-    public function handle(): void
+    public function handle(DestinationOriginResolver $resolver): void
     {
         $changed = 0;
         $unknown = 0;
 
-        Tour::query()->orderBy('id')->chunkById(200, function ($tours) use (&$changed, &$unknown) {
+        Tour::query()->orderBy('id')->chunkById(200, function ($tours) use (&$changed, &$unknown, $resolver) {
             foreach ($tours as $tour) {
-                $classified = DestinationClassifier::isInternational($tour->destination);
+                $classified = $resolver->isInternational($tour->destination);
 
                 if ($classified === null) {
                     $unknown++;
