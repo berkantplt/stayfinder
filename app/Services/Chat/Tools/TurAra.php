@@ -73,9 +73,27 @@ class TurAra implements ChatTool
                                 'gun_max' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 60],
                                 'butce_max_try' => ['type' => 'number', 'minimum' => 0],
                                 'kalkis_sehri' => ['type' => 'string'],
-                                'destinasyon' => ['type' => 'string'],
+                                'destinasyon' => [
+                                    'type' => 'string',
+                                    'description' => 'Kullanıcının GİTMEK istediği yer. Daha önce gittiği ya da '
+                                        .'"... gibi / tarzında / benzeri" diye andığı yeri BURAYA YAZMA — '
+                                        .'burası sert filtredir, arama o şehre kilitlenir.',
+                                ],
+                                'referans_yer' => [
+                                    'type' => 'string',
+                                    'description' => 'Kullanıcının KIYAS için andığı yer: daha önce gidip beğendiği '
+                                        .'ya da "orası gibi olsun" dediği yer. Burası ARANMAZ, tersine sonuçlardan '
+                                        .'çıkarılır; kullanıcı zaten bildiği yeri değil benzerini istiyor.',
+                                ],
                                 'yurt_disi' => ['type' => 'boolean'],
                             ],
+                        ],
+                        'kaldirilan_kisitlar' => [
+                            'type' => 'array',
+                            'items' => ['type' => 'string', 'enum' => ConversationState::FILTRE_ANAHTARLARI],
+                            'description' => 'Kullanıcının bu mesajda VAZGEÇTİĞİ filtre alanları '
+                                .'("bütçe fark etmez", "Fethiye şart değil"). Yazılan alanlar hem bu aramadan '
+                                .'hem konuşma hafızasından silinir. Vazgeçilen yoksa boş bırak.',
                         ],
                     ],
                     'required' => ['boyutlar'],

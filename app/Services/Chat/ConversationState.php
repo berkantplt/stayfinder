@@ -22,9 +22,15 @@ use App\Services\Chat\Tools\TurDetay;
  */
 class ConversationState
 {
-    /** tur_ara filtre şemasındaki anahtarlar — dışındakiler yok sayılır. */
-    private const FILTRE_ANAHTARLARI = [
-        'aylar', 'gun_min', 'gun_max', 'butce_max_try', 'kalkis_sehri', 'destinasyon', 'yurt_disi',
+    /**
+     * tur_ara filtre şemasındaki anahtarlar — dışındakiler yok sayılır.
+     *
+     * public: tur_ara şemasındaki "kaldirilan_kisitlar" enum'u da bu listeden
+     * beslenir, iki yerde ayrı ayrı yazılırsa kaçınılmaz olarak ayrışırlar.
+     */
+    public const FILTRE_ANAHTARLARI = [
+        'aylar', 'gun_min', 'gun_max', 'butce_max_try', 'kalkis_sehri', 'destinasyon',
+        'referans_yer', 'yurt_disi',
     ];
 
     private const MAX_TUR_HAFIZASI = 12;
@@ -92,6 +98,16 @@ class ConversationState
     {
         if ($tool === TurAra::name()) {
             $this->kisitlar = array_merge($this->kisitlar, $this->temizFiltre((array) ($args['filtre'] ?? [])));
+
+            // Kısıtlar yalnız BİRİKİYORDU: boş değer temizFiltre'de düştüğü için
+            // model bir filtreyi kaldıramıyordu. Yanlış giren tek bir kısıt
+            // (ör. kıyas için anılan şehir destinasyon'a yazılırsa) konuşmanın
+            // sonuna kadar aramayı kilitliyordu — vazgeçme kanalı bu yüzden var.
+            foreach ((array) ($args['kaldirilan_kisitlar'] ?? []) as $anahtar) {
+                if (is_string($anahtar) && in_array($anahtar, self::FILTRE_ANAHTARLARI, true)) {
+                    unset($this->kisitlar[$anahtar]);
+                }
+            }
 
             foreach ((array) ($result['kabul_edilen_degerler'] ?? []) as $d => $v) {
                 if (is_string($d) && is_numeric($v)) {
@@ -192,12 +208,22 @@ class ConversationState
     {
         $satirlar = [];
 
-        if ($this->kisitlar !== []) {
+        $kisitlar = $this->kisitlar;
+        // Kıyas yeri ayrı satır: "referans_yer=Fethiye" diye kısıt listesinde
+        // durursa model onu gidilecek yer sanıp metinde Fethiye turu anlatıyor.
+        $referans = (string) ($kisitlar['referans_yer'] ?? '');
+        unset($kisitlar['referans_yer']);
+
+        if ($kisitlar !== []) {
             $parcalar = [];
-            foreach ($this->kisitlar as $k => $v) {
+            foreach ($kisitlar as $k => $v) {
                 $parcalar[] = $k.'='.(is_array($v) ? implode(',', $v) : (is_bool($v) ? ($v ? 'evet' : 'hayır') : $v));
             }
             $satirlar[] = 'Kullanıcının verdiği kısıtlar: '.implode(' · ', $parcalar);
+        }
+        if ($referans !== '') {
+            $satirlar[] = 'Kıyas için andığı yer: '.$referans.' — oraya gitmek İSTEMİYOR, '
+                .'benzerini arıyor; o yerin turları listeden çıkarılıyor.';
         }
         if ($this->degerler !== []) {
             $parcalar = [];

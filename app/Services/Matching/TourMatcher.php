@@ -306,7 +306,7 @@ class TourMatcher
             return [collect(), $notlar];
         }
 
-        $build = function (float $butceCarpan, float $gunCarpan) use ($baglam, $puanliTurIds) {
+        $build = function (float $butceCarpan, float $gunCarpan, bool $referansHaric = true) use ($baglam, $puanliTurIds) {
             $today = now()->toDateString();
             // Kolon kısıtı: embedding/search_text/description gibi ağır alanlar
             // eşleştirmede kullanılmaz — her istekte belleğe çekilmesinler.
@@ -370,6 +370,19 @@ class TourMatcher
                 }
             }
 
+            // Kıyas için anılan yer sonuçlardan ÇIKARILIR: kullanıcı "geçen sene
+            // Fethiye'ye gittik, benzerini öner" dediğinde Fethiye turlarını geri
+            // göstermek isteğin tam tersi. Aday sayısı düşerse çağıran taraf bu
+            // dışlamayı gevşetir (aşağıdaki gevşetme zinciri).
+            if ($referansHaric && ! empty($baglam['referans_yer'])) {
+                $referans = self::normalizeTr((string) $baglam['referans_yer']);
+                if ($referans !== '') {
+                    $sonuc = $sonuc->reject(
+                        fn (Tour $t) => str_contains(self::normalizeTr((string) $t->destination), $referans)
+                    )->values();
+                }
+            }
+
             // Kalkış şehri PHP tarafında elenir: SQL LOWER() ile PHP mb_strtolower
             // Türkçe 'İ' harfinde ayrışıyor (U+0130 → "i̇" iki kod noktası) ve
             // "İstanbul" araması hiçbir zaman eşleşmiyordu.
@@ -391,16 +404,30 @@ class TourMatcher
             return $sonuc;
         };
 
-        $adaylar = $build(1.0, 1.0);
+        $butceCarpan = 1.0;
+        $gunCarpan = 1.0;
+        $adaylar = $build($butceCarpan, $gunCarpan);
 
         // Brif §2: aday < 3 ise bütçe, sonra süre %20 gevşetilir ve AÇIKÇA söylenir
         if ($adaylar->count() < $rules['min_candidates'] && ! empty($baglam['butce_max_try'])) {
-            $adaylar = $build(1 + $rules['relax_step'], 1.0);
+            $butceCarpan = 1 + $rules['relax_step'];
+            $adaylar = $build($butceCarpan, $gunCarpan);
             $notlar[] = 'Bütçe kısıtını %20 gevşettim — birebir uyan yeterli tur yoktu.';
         }
         if ($adaylar->count() < $rules['min_candidates'] && (! empty($baglam['gun_min']) || ! empty($baglam['gun_max']))) {
-            $adaylar = $build(1 + $rules['relax_step'], 1 + $rules['relax_step']);
+            $butceCarpan = 1 + $rules['relax_step'];
+            $gunCarpan = 1 + $rules['relax_step'];
+            $adaylar = $build($butceCarpan, $gunCarpan);
             $notlar[] = 'Süre kısıtını %20 gevşettim.';
+        }
+
+        // Kıyas dışlaması EN SON gevşer: sayı/tarih kısıtını esnetmek kullanıcının
+        // isteğini biraz büker, zaten gittiği yeri geri göstermek ise isteğini
+        // tersine çevirir. Gevşerse kullanıcıya açıkça söylenir.
+        if ($adaylar->count() < $rules['min_candidates'] && ! empty($baglam['referans_yer'])) {
+            $adaylar = $build($butceCarpan, $gunCarpan, false);
+            $notlar[] = $baglam['referans_yer'].' dışında yeterli seçenek çıkmadı — '
+                .'oradaki turları da listeye kattım.';
         }
 
         return [$adaylar, $notlar];

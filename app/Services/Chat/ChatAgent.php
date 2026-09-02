@@ -35,6 +35,7 @@ class ChatAgent
         SehirBilgisi $sehirBilgisi,
         EnvanterOzeti $envanterOzeti,
         private readonly ResponseValidator $validator,
+        private readonly ReferenceDestinationDetector $referansTespiti,
     ) {
         $this->tools = [
             TurAra::name() => $turAra,
@@ -190,6 +191,13 @@ class ChatAgent
                 $faz(self::FAZ_METINLERI[$ad]);
             }
 
+            // Filtre hazırlığı runTool'dan ÖNCE: absorb da aynı düzeltilmiş
+            // filtreyi görsün. Aksi halde modelin ham filtresi hafızaya yazılır,
+            // düzeltilen kısıt bir sonraki turda geri gelirdi.
+            if ($ad === TurAra::name()) {
+                $args = $this->turAraArgumanlari($args, $transkript, $durum);
+            }
+
             $sonuc = $this->runTool($ad, $args, $transkript, $durum);
             $durum->absorb($ad, $args, $sonuc);
             $aracSonuclari[] = $sonuc;
@@ -211,6 +219,46 @@ class ChatAgent
                 'content' => json_encode($sonuc, JSON_UNESCAPED_UNICODE),
             ];
         }
+    }
+
+    /**
+     * tur_ara argümanlarını arama ÖNCESİ düzeltir.
+     *
+     * Üç iş: (1) oturumdaki kısıtları taşı — model tekrar geçirmeyi unutursa
+     * arama sert filtresiz koşmasın, (2) kullanıcının vazgeçtiği kısıtları
+     * düşür, (3) kıyas için anılan yeri destinasyon'dan referans_yer'e taşı.
+     *
+     * Kıyas taşıması "kaldirilan_kisitlar"a da yazılır: absorb() kısıtları
+     * BİRLEŞTİRDİĞİ için, yalnız filtreden silmek yetmez — hafızadaki eski
+     * destinasyon olduğu yerde kalır ve bir sonraki turda geri gelirdi.
+     *
+     * @param  array<string, mixed>  $args
+     * @return array<string, mixed>
+     */
+    private function turAraArgumanlari(array $args, string $transkript, ConversationState $durum): array
+    {
+        $filtre = array_merge($durum->varsayilanFiltre(), (array) ($args['filtre'] ?? []));
+
+        $kaldirilan = array_values(array_filter(
+            (array) ($args['kaldirilan_kisitlar'] ?? []),
+            fn ($a) => is_string($a),
+        ));
+        foreach ($kaldirilan as $anahtar) {
+            unset($filtre[$anahtar]);
+        }
+
+        $duzeltilmis = $this->referansTespiti->apply($filtre, $transkript);
+
+        foreach (array_keys($filtre) as $anahtar) {
+            if (! array_key_exists($anahtar, $duzeltilmis) && ! in_array($anahtar, $kaldirilan, true)) {
+                $kaldirilan[] = $anahtar;
+            }
+        }
+
+        $args['filtre'] = $duzeltilmis;
+        $args['kaldirilan_kisitlar'] = $kaldirilan;
+
+        return $args;
     }
 
     /**
@@ -240,9 +288,10 @@ class ChatAgent
         if ($ad === TurAra::name()) {
             // Kanıt doğrulaması sunucu tarafında: transkripti MODEL vermez, biz ekleriz
             $args['transkript'] = $transkript;
-            // Daha önce verilen kısıtlar otomatik uygulanır — model tekrar
-            // geçirmeyi unutursa arama sert filtresiz koşmasın
-            $args['filtre'] = array_merge($durum->varsayilanFiltre(), (array) ($args['filtre'] ?? []));
+            // Filtre araclariCalistir'da hazırlandı (birleştirme + vazgeçilenler
+            // + kıyas ayrımı); burada yeniden hazırlanmaz — oturum kısıtları
+            // ikinci kez birleşse silinen destinasyon geri gelirdi.
+            $args['filtre'] = is_array($args['filtre'] ?? null) ? $args['filtre'] : [];
         }
 
         try {

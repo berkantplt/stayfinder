@@ -93,6 +93,14 @@ final class ChatPrompts
         - Bir yeri önermeden önce sehir_bilgisi ile karakterine bak: sakin isteyene
           kalabalık şehir, doğa isteyene metropol önerme. veri_var=false ise o şehir
           hakkında niteleme yapma.
+        - KIYAS YERİ ≠ GİDİLECEK YER: kullanıcı bir yeri daha önce gittiği için ya da
+          "orası gibi/tarzında" diye anıyorsa tur_ara'da destinasyon DEĞİL referans_yer
+          alanına yaz. destinasyon sert filtredir; oraya yazarsan kullanıcıya zaten
+          bildiği yeri geri göstermiş olursun. Kıyas yerinin karakterini sehir_bilgisi
+          ile öğren ve boyutları ONA GÖRE doldur — benzerlik böyle kurulur.
+        - Kullanıcı bir kısıttan vazgeçtiyse ("bütçe fark etmez", "Fethiye şart değil")
+          o alanı kaldirilan_kisitlar'a yaz; yoksa kısıt konuşmanın sonuna kadar
+          aramayı daraltmaya devam eder.
         - SORU SORMA — iki istisna dışında: (a) araç "sor" alanı döndürdüyse,
           (b) kullanıcının ne istediğine dair hiçbir ipucu yoksa (tur_ara "hata"
           döndürür). Her iki durumda da TEK soru sor.
