@@ -883,7 +883,6 @@
                 imgBox: 'position:relative; width:100%; height:140px; background:#1e293b; flex-shrink:0;',
                 imgFallback: 'linear-gradient(135deg,#0f172a,#134e4a)',
                 gradient: 'linear-gradient(to top, rgba(15,23,42,0.8), transparent)',
-                badge: 'position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); padding:4px 10px; border-radius:12px; font-size:10px; font-weight:800; color:#34d399; z-index:2;',
                 content: 'padding:14px; display:flex; flex-direction:column; flex:1;',
                 dest: 'font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;',
                 title: 'font-size:14px; font-weight:800; margin-top:4px; color:#f8fafc; line-height:1.4;',
@@ -910,7 +909,6 @@
                 imgBox: 'position:relative; width:100%; height:120px; background:#f1f5f9; flex-shrink:0;',
                 imgFallback: 'linear-gradient(135deg,#eef2ff,#ecfdf5)',
                 gradient: null,
-                badge: 'position:absolute; top:8px; right:8px; background:rgba(255,255,255,0.92); padding:3px 9px; border-radius:10px; font-size:11px; font-weight:700; color:#0f766e; z-index:2;',
                 content: 'padding:12px; display:flex; flex-direction:column; flex:1;',
                 dest: 'font-size:11px; color:#6366f1; font-weight:700; text-transform:uppercase;',
                 title: 'font-size:14px; font-weight:700; margin-top:4px; color:#0f172a; line-height:1.3;',
@@ -1053,23 +1051,10 @@
                 imgBox.appendChild(img);
             }
 
-            // Uyum rozeti: skor gerçekten varsa göster — yoksa uydurma yüzde yazılmaz
-            var rawScore = (typeof tour.compatibility_score === 'number') ? tour.compatibility_score
-                : (typeof tour.similarity === 'number' ? tour.similarity : null);
-            if (rawScore != null) {
-                var badge = document.createElement('div');
-                badge.style.cssText = T.badge;
-                badge.textContent = '%' + Math.round(Math.max(0, Math.min(1, rawScore)) * 100) + ' Uyumlu';
-                imgBox.appendChild(badge);
-            } else if (tour.yakin) {
-                // Eşiği geçemeyen "en yakın" turlar: yüzde YAZILMAZ (ortada
-                // ölçülmüş bir uyum yok) ama kart sessizce iyi tur gibi de
-                // durmasın — dürüst etiket rozetin yerini alır.
-                var yakinEtiket = document.createElement('div');
-                yakinEtiket.style.cssText = T.badge.replace(/color:#[0-9a-f]+;/i, 'color:#fbbf24;');
-                yakinEtiket.textContent = 'Tam uymuyor';
-                imgBox.appendChild(yakinEtiket);
-            }
+            // Uyum etiketleri (yüzde rozeti + "Tam uymuyor") KALDIRILDI: görselin
+            // üstündeki bu tür yargı etiketleri, gerçekte iyi olan bir öneriyi de
+            // kullanıcının gözünde kötü gösteriyordu. Eşik altı turlar zaten
+            // sohbet metninde ayrıca çerçeveleniyor.
 
             if (T.gradient) {
                 var gradient = document.createElement('div');
