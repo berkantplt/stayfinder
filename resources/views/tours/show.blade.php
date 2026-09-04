@@ -204,9 +204,6 @@
                         ->filter(fn($date) => $date->departure_date && $date->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
                         ->sortBy('departure_date')
                         ->values();
-                    $allDates = $tour->dates
-                        ->sortBy('departure_date')
-                        ->values();
 
                     // Kampanya aktifken tarih kartlarında da indirimli fiyat göster
                     $activeCampaignForDates = $tour->activeCampaign;
@@ -235,7 +232,23 @@
                             . '</span>';
                     };
 
-                    $hasPricingBlocks = is_array($tour->pricing_blocks) && count($tour->pricing_blocks);
+                    // Geçmiş tarihler artık soldurulmuyor, hiç basılmıyor: paket fiyat
+                    // bloklarından kalkışı geçmiş tarihler ayıklanır; tarihi (ya da paketi)
+                    // kalmayan blok gizlenir, hepsi geçmişse bölüm hiç açılmaz.
+                    $pricingBlocks = collect(is_array($tour->pricing_blocks) ? $tour->pricing_blocks : [])
+                        ->map(function ($block) {
+                            $block['dates'] = collect($block['dates'] ?? [])
+                                ->map(fn ($d) => \Illuminate\Support\Carbon::parse($d))
+                                ->filter(fn ($d) => $d->greaterThanOrEqualTo(now()->startOfDay()))
+                                ->sort()
+                                ->values();
+
+                            return $block;
+                        })
+                        ->filter(fn ($block) => $block['dates']->count()
+                            && count(array_filter((array) ($block['packages'] ?? []), 'is_array')))
+                        ->values();
+                    $hasPricingBlocks = $pricingBlocks->count() > 0;
 
                     $detailSections = [
                         ['🚌', 'Kalkış / Biniş Noktaları', $tour->departure_points],
@@ -247,7 +260,9 @@
 
                     // Sekmeler: içeriği boş olan sekme hiç gösterilmez
                     $hasProgram = is_array($tour->itinerary) && count($tour->itinerary);
-                    $hasPrices  = $hasPricingBlocks || $upcomingDates->count() || $allDates->count() || $tour->departure_date || $priceData->count() >= 2;
+                    $hasPrices  = $hasPricingBlocks || $upcomingDates->count()
+                        || ($tour->departure_date && $tour->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
+                        || $priceData->count() >= 2;
                     $hasGeneral = trim((string) $tour->description) !== ''
                         || collect($detailSections)->contains(fn ($s) => trim((string) $s[2]) !== '')
                         || trim((string) $tour->frequency) !== '';
@@ -334,24 +349,7 @@
                             @endforeach
                         </div>
                     </div>
-                    @elseif($allDates->count())
-                    <div style="margin-bottom:20px;">
-                        <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">📅 Tur Tarihleri</div>
-                        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                            @foreach($allDates as $date)
-                            <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;{{ $date->departure_date->isPast() ? 'opacity:0.7;' : '' }}">
-                                <span style="font-weight:600;">{{ $date->departure_date->format('d-m-Y') }}</span>
-                                <span style="color:var(--text-muted);margin:0 3px;">→</span>
-                                <span style="font-weight:600;">{{ $date->return_date->format('d-m-Y') }}</span>
-                                {!! $datePriceRenderer($date) !!}
-                                @if($date->label)
-                                    <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
-                                @endif
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @elseif($tour->departure_date)
+                    @elseif($tour->departure_date && $tour->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
                     <div style="margin-bottom:16px;">
                         <span class="badge badge-accent">📅 {{ $tour->departure_date->format('d-m-Y') }} — {{ $tour->return_date?->format('d-m-Y') }}</span>
                     </div>
@@ -363,12 +361,9 @@
                         @php $roomTypeLabels = \App\Models\Tour::ROOM_TYPES; $priceCurrency = $tour->currency_symbol; @endphp
                         <div style="margin-bottom:24px;">
                             <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">💰 Tarih ve Paket Fiyatları</div>
-                            @foreach($tour->pricing_blocks as $block)
+                            @foreach($pricingBlocks as $block)
                                 @php
-                                    $blockDates = collect($block['dates'] ?? [])
-                                        ->map(fn ($d) => \Illuminate\Support\Carbon::parse($d))
-                                        ->sort()
-                                        ->values();
+                                    $blockDates = $block['dates']; // yukarıda geçmişi ayıklandı + sıralandı
                                     $packages = array_values(array_filter((array) ($block['packages'] ?? []), 'is_array'));
                                     // Bu blokta veri girilmiş oda/yaş tiplerini ROOM_TYPES sırasında topla
                                     $activeTypes = [];
@@ -389,7 +384,7 @@
                                         <span style="color:var(--accent);">📅</span>
                                         @foreach($blockDates as $bd)
                                             @php $bdReturn = $bd->copy()->addDays(max(1, (int) $tour->duration_days) - 1); @endphp
-                                            <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;{{ $bd->isPast() ? 'opacity:0.6;' : '' }}">{{ $bd->format('d-m-Y') }} → {{ $bdReturn->format('d-m-Y') }}</span>
+                                            <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;">{{ $bd->format('d-m-Y') }} → {{ $bdReturn->format('d-m-Y') }}</span>
                                         @endforeach
                                         <span style="color:var(--text-muted);font-size:12px;font-weight:500;margin-left:auto;">fiyatları gör ▾</span>
                                     </summary>
