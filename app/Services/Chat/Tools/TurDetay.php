@@ -4,6 +4,7 @@ namespace App\Services\Chat\Tools;
 
 use App\Models\Tour;
 use App\Services\AiSearch\DestinationProfileService;
+use App\Support\VisaStatus;
 use Illuminate\Support\Str;
 
 /**
@@ -33,7 +34,7 @@ class TurDetay implements ChatTool
             'function' => [
                 'name' => self::name(),
                 'description' => 'Bir turun tüm detayını getirir: gün gün program, konaklama, '
-                    .'fiyata dahil/hariç, iptal koşulu, kalkış tarihleri ve noktaları, vize durumu. '
+                    .'fiyata dahil/hariç, iptal koşulu, kalkış tarihleri ve noktaları, acentanın vize beyanı. '
                     .'Kullanıcı bir tur hakkında soru sorduğunda ("neler dahil", "hangi otel", '
                     .'"iptal edebilir miyim") bu aracı çağır. Buradan dönmeyen hiçbir detayı söyleme.',
                 'parameters' => [
@@ -67,7 +68,11 @@ class TurDetay implements ChatTool
             ])->values()->all();
 
         $campaign = $tour->active_campaign;
-        $visa = $this->profiles->get((string) $tour->destination)['requires_visa_for_tr'] ?? null;
+        // Vize KAYNAĞI acentanın beyanı (tours.requires_visa), şehir profili
+        // DEĞİL: DestinationProfile.requires_visa_for_tr LLM dünya bilgisi ve
+        // hatalı olduğu doğrulandı (Yunanistan "vize gerekmiyor" dönüyor).
+        // Kıyas ekranı da aynı kolonu okuyor — iki yüzey çelişmesin.
+        $vize = VisaStatus::turKodu($tour);
 
         // Çok şehirli rotada her şehrin KENDİ profili — tek şehir tüm rotanın
         // karakteri gibi sunulmasın
@@ -88,8 +93,11 @@ class TurDetay implements ChatTool
             'tur_karakteri' => $tour->character_summary,
             'tempo' => $tour->pace_score !== null ? (float) $tour->pace_score : null,
             'sehir_profilleri' => $sehirProfilleri,
-            'vize_gerekir_mi' => $visa,
-            'vize_notu' => $visa === null ? null : 'Yalnız gereklilik bilgisi var; belge/ücret/randevu detayı için acentaya yönlendir.',
+            'vize' => $vize,
+            'vize_etiketi' => VisaStatus::etiket($vize),
+            'vize_notu' => $vize === null
+                ? 'Bu turun vize durumu beyan edilmemiş — vizeli ya da vizesiz DEME, acentanın netleştireceğini söyle.'
+                : 'Yalnız gereklilik bilgisi var; belge/ücret/randevu detayı için acentaya yönlendir.',
             'kalkis_tarihleri' => $dates,
             'kalkis_noktalari' => $tour->departure_points ? Str::limit(strip_tags((string) $tour->departure_points), 400) : null,
             'konaklama' => $tour->hotel_info ? Str::limit(strip_tags((string) $tour->hotel_info), 600) : null,

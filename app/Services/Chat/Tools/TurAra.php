@@ -7,6 +7,7 @@ use App\Services\Chat\ConversationState;
 use App\Services\Chat\LlmProfileBuilder;
 use App\Services\Matching\Rubric;
 use App\Services\Matching\TourMatcher;
+use App\Support\VisaStatus;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -86,6 +87,16 @@ class TurAra implements ChatTool
                                         .'çıkarılır; kullanıcı zaten bildiği yeri değil benzerini istiyor.',
                                 ],
                                 'yurt_disi' => ['type' => 'boolean'],
+                                'vize' => [
+                                    'type' => 'string',
+                                    'enum' => VisaStatus::DEGERLER,
+                                    'description' => 'Kullanıcının vize tercihi. "vizesiz" = hiç vize istemiyor, '
+                                        .'"kapida" = kapıda/varışta alınan vizeye razı, "vizeli" = konsolosluktan '
+                                        .'vize alınan turlar. KAPIDA VİZE AYRIDIR: "vizesiz istiyorum" diyene '
+                                        .'kapıda vizeli tur verilmez. Vize durumu beyan edilmemiş turlar hiçbir '
+                                        .'değerde listeye girmez. Vize sözü YURT DIŞINI ima eder — '
+                                        .'yurt_disi\'yi ayrıca yazmana gerek yok.',
+                                ],
                             ],
                         ],
                         'kaldirilan_kisitlar' => [
@@ -244,10 +255,17 @@ class TurAra implements ChatTool
      * Bu varken soru sormak, cevabı bilerek geri çevirmek olur.
      *
      * yurt_disi tek başına sayılmaz: "yurt dışı olsun" hâlâ yüzlerce turu
-     * kapsıyor, daraltıcı değil.
+     * kapsıyor, daraltıcı değil. Vize SAYILIR: "vizesiz" katalogun büyük
+     * bölümünü eler ve kullanıcının verdiği en somut karardır — canlı şikayet:
+     * "ilk defa yurt dışına çıkıcam vizesiz tur öner" mesajına tur yerine soru
+     * döndü, çünkü vize hiçbir kutuya yazılamıyordu.
      */
     private function somutKisitVarMi(array $baglam): bool
     {
+        if (VisaStatus::gecerliMi($baglam['vize'] ?? null)) {
+            return true;
+        }
+
         foreach (['destinasyon', 'kalkis_sehri'] as $anahtar) {
             if (trim((string) ($baglam[$anahtar] ?? '')) !== '') {
                 return true;

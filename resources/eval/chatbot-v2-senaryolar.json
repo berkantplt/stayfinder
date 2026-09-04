@@ -1,7 +1,7 @@
 {
   "_readme": "Chatbot v2 altın konuşma seti. Her model/prompt değişikliğinden sonra koşulur; geçmeyen sürüm yayınlanmaz. Assert'ler yalnız metinde değil ARAÇ ÇAĞRI DİZİSİNDE de yapılmalı (hangi araç, hangi parametre).",
   "version": "v1",
-  "senaryo_sayisi": 24,
+  "senaryo_sayisi": 26,
   "senaryolar": [
     {
       "no": 1,
@@ -296,6 +296,17 @@
       "beklenen_davranis": "1) İlk mesajda envanter_ozeti veya tur_ara ile katalogda ne olduğuna bakar; soru soracaksa tek soru sorar. 2) \"deniz-güneş\" tek kelimelik olsa da boyut olarak kullanılır ve tur_ara açılır. 3) \"yurt içi\" sert filtreye (yurt_disi=false) yazılır. 4) En geç \"kanka öner işte bişeyler\" mesajında somut tur kartları gösterir — o noktada soru sormaz. 5) \"Tarif ettiğin şey tam da ...\" teşhis cümlesi konuşma boyunca en fazla bir kez geçer.",
       "basarisizlik_isareti": "Dört mesaj boyunca hiç tur kartı göstermeden soru sormaya devam ederse, VEYA aynı teşhis cümlesini birden fazla mesajda tekrarlarsa, VEYA \"elimde sadece ... var\" gibi eksik raporlayıp aramayı hiç açmazsa.",
       "hangi_madde": "Madde 8 (soruyla boğmama) + kanıt disiplini alt sınırı (tek kelimelik alıntı)"
+    },
+    {
+      "no": 26,
+      "ad": "İlk yurt dışı: \"vizesiz tur öner\"",
+      "kullanici_mesajlari": [
+        "ilk defa yurt dışına çıkıcam vizesiz tur öner",
+        "kapıda vize de olur aslında"
+      ],
+      "beklenen_davranis": "1) İLK mesajda tur_ara'yı çağırır ve filtre.vize=\"vizesiz\" gönderir; kart basar. Soru sorarsa bile kartlardan SONRA ve tek soru sorar. 2) Gösterilen turların hepsi vizesizdir (kart 'vize' alanı 'vizesiz'). 3) İkinci mesajdan sonra filtre.vize=\"kapida\" ile arar ya da iki kümeyi ayırarak sunar; kapıda vizeyi 'vizesiz' diye anlatmaz.",
+      "basarisizlik_isareti": "İlk mesajda tek bir tur bile göstermeyip soru sorarsa; VEYA vize filtresini hiç göndermeyip vizeli/beyanı olmayan tur listelerse; VEYA bir turun vize durumunu araç çıktısındaki 'vize' alanı yerine kendi dünya bilgisinden söylerse (ör. beyan yokken 'burası vizesiz' derse); VEYA kapıda vizeli turu vizesiz gibi sunarsa.",
+      "hangi_madde": "Madde 8 (soruyla boğmama) + Madde 4 (dürüstlük sınırı içinde pazarlama)"
     }
   ]
 }

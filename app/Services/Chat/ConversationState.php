@@ -5,6 +5,7 @@ namespace App\Services\Chat;
 use App\Services\Chat\Tools\SehirBilgisi;
 use App\Services\Chat\Tools\TurAra;
 use App\Services\Chat\Tools\TurDetay;
+use App\Support\VisaStatus;
 
 /**
  * Oturumluk yapısal hafıza (karar 2: kalıcı profil YOK).
@@ -30,7 +31,7 @@ class ConversationState
      */
     public const FILTRE_ANAHTARLARI = [
         'aylar', 'gun_min', 'gun_max', 'butce_max_try', 'kalkis_sehri', 'destinasyon',
-        'referans_yer', 'yurt_disi',
+        'referans_yer', 'yurt_disi', 'vize',
     ];
 
     private const MAX_TUR_HAFIZASI = 12;
@@ -170,6 +171,9 @@ class ConversationState
                 'gun_min', 'gun_max' => max(1, min(60, (int) $v)),
                 'butce_max_try' => max(0.0, (float) $v),
                 'yurt_disi' => (bool) $v,
+                // Beyaz liste: modelden gelen tanınmayan kod hafızaya yazılmaz,
+                // yoksa geçersiz bir vize kodu konuşmanın sonuna kadar taşınır
+                'vize' => VisaStatus::gecerliMi($v) ? (string) $v : '',
                 default => mb_substr(trim((string) $v), 0, 60, 'UTF-8'),
             };
             if ($temiz[$k] === [] || $temiz[$k] === '') {

@@ -6,6 +6,8 @@ use App\Models\Agency;
 use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Models\TourRubricScore;
+use App\Services\Chat\ChatPrompts;
+use App\Services\Chat\ConversationState;
 use App\Services\Chat\LlmProfileBuilder;
 use App\Services\Chat\Tools\EnvanterOzeti;
 use App\Services\Chat\Tools\SehirBilgisi;
@@ -13,6 +15,7 @@ use App\Services\Chat\Tools\TurAra;
 use App\Services\Chat\Tools\TurDetay;
 use App\Services\Matching\Rubric;
 use App\Support\OpenAiChatParams;
+use App\Support\VisaStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use OpenAI\Laravel\Facades\OpenAI;
 use Tests\TestCase;
@@ -268,6 +271,166 @@ class ChatToolsTest extends TestCase
         $this->assertNotContains('Ankara Turu', $basliklar);
     }
 
+    // ---- TurAra: vize ----
+
+    /** Vize üç değerlidir ve KAPIDA AYRIDIR: "vizesiz" isteyene kapıda vizeli
+     *  tur verilemez. Beyan edilmemiş tur da hiçbir yönde listeye girmez. */
+    public function test_tur_ara_vizesiz_filtresi_kapidayi_ve_beyansizi_eler(): void
+    {
+        $yurtDisi = ['is_international' => true];
+        $this->makeTour('Vizesiz Tur', [], $yurtDisi + ['requires_visa' => false, 'visa_on_arrival' => false]);
+        $this->makeTour('Kapıda Vize Turu', [], $yurtDisi + ['requires_visa' => true, 'visa_on_arrival' => true]);
+        $this->makeTour('Vizeli Tur', [], $yurtDisi + ['requires_visa' => true, 'visa_on_arrival' => false]);
+        $this->makeTour('Beyansız Tur', [], $yurtDisi + ['requires_visa' => null, 'visa_on_arrival' => null]);
+
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            'filtre' => ['vize' => VisaStatus::VIZESIZ],
+        ]);
+
+        $this->assertSame(['Vizesiz Tur'], array_column($sonuc['turlar'], 'title'));
+    }
+
+    public function test_tur_ara_kapida_vize_ayri_bir_deger(): void
+    {
+        $this->makeTour('Kapıda Vize Turu', [], [
+            'requires_visa' => true, 'visa_on_arrival' => true, 'is_international' => true,
+        ]);
+        $this->makeTour('Vizeli Tur', [], [
+            'requires_visa' => true, 'visa_on_arrival' => false, 'is_international' => true,
+        ]);
+
+        $kapida = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            'filtre' => ['vize' => VisaStatus::KAPIDA],
+        ]);
+        $vizeli = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            'filtre' => ['vize' => VisaStatus::VIZELI],
+        ]);
+
+        $this->assertSame(['Kapıda Vize Turu'], array_column($kapida['turlar'], 'title'));
+        $this->assertSame(['Vizeli Tur'], array_column($vizeli['turlar'], 'title'));
+    }
+
+    /** Eski kayıtta visa_on_arrival boş kalmış olabilir; kıyas ekranı bunu
+     *  "Vize gerekiyor" diye okuyor, arama da öyle okumalı. */
+    public function test_tur_ara_vizeli_dalinda_kapida_bayragi_bos_kayit_da_gelir(): void
+    {
+        $this->makeTour('Eski Vizeli Tur', [], [
+            'requires_visa' => true, 'visa_on_arrival' => null, 'is_international' => true,
+        ]);
+
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            'filtre' => ['vize' => VisaStatus::VIZELI],
+        ]);
+
+        $this->assertSame(['Eski Vizeli Tur'], array_column($sonuc['turlar'], 'title'));
+    }
+
+    /** CANLI ŞİKAYET: "ilk defa yurt dışına çıkıcam vizesiz tur öner" ilk
+     *  mesajda tur yerine SORU alıyordu — vize hiçbir kutuya yazılamadığı için
+     *  elde somut kısıt yok sayılıyordu. Vize tek başına arama yapmaya yeter. */
+    public function test_vizesiz_istegi_tek_basina_tur_listeler(): void
+    {
+        $this->makeTour('Vizesiz Yurt Dışı Turu', [], [
+            'requires_visa' => false, 'visa_on_arrival' => false, 'is_international' => true,
+        ]);
+        $this->makeTour('Vizeli Yurt Dışı Turu', [], [
+            'requires_visa' => true, 'visa_on_arrival' => false, 'is_international' => true,
+        ]);
+
+        // Boyut YOK: kullanıcı tatil tarzından hiç söz etmedi
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => [],
+            'filtre' => ['vize' => VisaStatus::VIZESIZ, 'yurt_disi' => true],
+            'transkript' => 'ilk defa yurt dışına çıkıcam vizesiz tur öner',
+        ]);
+
+        $this->assertArrayNotHasKey('hata', $sonuc);
+        $this->assertTrue($sonuc['profilsiz_liste']);
+        $this->assertSame(['Vizesiz Yurt Dışı Turu'], array_column($sonuc['turlar'], 'title'));
+        // "önce kartları göster" dalı: soru sordurtan metin DEĞİL
+        $this->assertSame(ChatPrompts::TUR_ARA_PROFILSIZ_NOT_KISITLI, $sonuc['not']);
+    }
+
+    /** Yurt içi turların HEPSİ vizesiz: vize filtresi yurt dışını ima etmezse
+     *  "vizesiz tur öner" isteğine Kapadokya/Antalya turları dolar. */
+    public function test_vize_filtresi_yurt_disini_ima_eder(): void
+    {
+        $this->makeTour('Yurt İçi Vizesiz Tur', [], [
+            'requires_visa' => false, 'visa_on_arrival' => false, 'is_international' => false,
+        ]);
+        $this->makeTour('Yurt Dışı Vizesiz Tur', [], [
+            'requires_visa' => false, 'visa_on_arrival' => false, 'is_international' => true,
+        ]);
+
+        // Kullanıcı "yurt dışı" kelimesini HİÇ kurmadı, yalnız "vizesiz" dedi
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            'filtre' => ['vize' => VisaStatus::VIZESIZ],
+        ]);
+
+        $this->assertSame(['Yurt Dışı Vizesiz Tur'], array_column($sonuc['turlar'], 'title'));
+    }
+
+    /** Model yanlışlıkla yurt_disi=false yazarsa iki filtre çelişip listeyi
+     *  BOŞALTMAMALI — yurt içi + vizeli diye bir tur yok, vize kazanır. */
+    public function test_vize_celisen_yurt_disi_bayragini_yener(): void
+    {
+        $this->makeTour('Yurt Dışı Vizesiz Tur', [], [
+            'requires_visa' => false, 'visa_on_arrival' => false, 'is_international' => true,
+        ]);
+
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            'filtre' => ['vize' => VisaStatus::VIZESIZ, 'yurt_disi' => false],
+        ]);
+
+        $this->assertSame(['Yurt Dışı Vizesiz Tur'], array_column($sonuc['turlar'], 'title'));
+    }
+
+    /** Kartta vize durumu olmazsa model turun vizesini kendi dünya bilgisinden
+     *  söyler; doğrulayıcı da metindeki bu iddiayı denetlemiyor. */
+    public function test_tur_ara_karti_vize_durumunu_tasir(): void
+    {
+        $this->makeTour('Kapıda Vize Turu', [], [
+            'requires_visa' => true, 'visa_on_arrival' => true, 'is_international' => true,
+        ]);
+
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+        ]);
+
+        $this->assertSame(VisaStatus::KAPIDA, $sonuc['turlar'][0]['vize']);
+    }
+
+    /** Model uydurma bir kod gönderirse arama BOŞALMAMALI (fail-open). */
+    public function test_tur_ara_taninmayan_vize_kodunu_yok_sayar(): void
+    {
+        $this->makeTour('Vizesiz Tur', [], ['requires_visa' => false, 'visa_on_arrival' => false]);
+
+        $sonuc = app(TurAra::class)->run([
+            'boyutlar' => ['tempo' => ['deger' => 50, 'kanit' => 'normal bir tempo olsun']],
+            'filtre' => ['vize' => 'belki'],
+        ]);
+
+        $this->assertSame(['Vizesiz Tur'], array_column($sonuc['turlar'], 'title'));
+    }
+
+    /** Vize kısıtı konuşma boyunca taşınmalı; geçersiz kod hafızaya girmemeli. */
+    public function test_vize_kisiti_hafizada_beyaz_listeden_gecer(): void
+    {
+        $durum = ConversationState::fromArray([]);
+        $durum->absorb(TurAra::name(), ['filtre' => ['vize' => VisaStatus::VIZESIZ]], ['turlar' => []]);
+        $this->assertSame(VisaStatus::VIZESIZ, $durum->varsayilanFiltre()['vize']);
+
+        $bozuk = ConversationState::fromArray([]);
+        $bozuk->absorb(TurAra::name(), ['filtre' => ['vize' => 'belki']], ['turlar' => []]);
+        $this->assertArrayNotHasKey('vize', $bozuk->varsayilanFiltre());
+    }
+
     // ---- SehirBilgisi ----
 
     public function test_sehir_bilgisi_zenginlesmemis_profilde_veri_var_false(): void
@@ -310,15 +473,18 @@ class ChatToolsTest extends TestCase
 
     // ---- TurDetay ----
 
-    public function test_tur_detay_veri_dondurur_ve_vize_notu_ekler(): void
+    /** Vize KAYNAĞI acentanın beyanı; şehir profilindeki alan LLM dünya bilgisi
+     *  ve hatalı olduğu doğrulandı (kıyas ekranıyla aynı duruş). */
+    public function test_tur_detay_vizeyi_sehir_profilinden_degil_tur_beyanindan_okur(): void
     {
         DestinationProfile::create([
             'city' => 'Roma', 'normalized_city' => DestinationProfile::normalize('Roma'),
             'crowd_score' => 0.9, 'liveliness_score' => 0.7, 'source' => DestinationProfile::SOURCE_LLM,
-            'requires_visa_for_tr' => true,
+            'requires_visa_for_tr' => false, // profil "vize yok" diyor — acenta aksini beyan etti
         ]);
         $tour = $this->makeTour('Roma Turu', [], [
             'destination' => 'Roma',
+            'requires_visa' => true, 'visa_on_arrival' => true,
             'included' => 'Uçak bileti, otel',
             'cancellation_policy' => '15 gün öncesine kadar ücretsiz',
             'itinerary' => [['title' => 'Varış', 'content' => 'Havalimanı karşılama']],
@@ -327,10 +493,22 @@ class ChatToolsTest extends TestCase
         $sonuc = app(TurDetay::class)->run(['tur_id' => $tour->id]);
 
         $this->assertSame('Roma Turu', $sonuc['baslik']);
-        $this->assertTrue($sonuc['vize_gerekir_mi']);
+        $this->assertSame(VisaStatus::KAPIDA, $sonuc['vize']);
+        $this->assertSame('Kapıda vize', $sonuc['vize_etiketi']);
         $this->assertNotNull($sonuc['vize_notu']); // prosedür anlatma, acentaya yönlendir
         $this->assertStringContainsString('otel', $sonuc['fiyata_dahil']);
         $this->assertSame(1, $sonuc['gun_gun_program'][0]['gun']);
+    }
+
+    /** Beyan yoksa "vizesiz" diye OKUNMAZ: model hüküm vermemeli. */
+    public function test_tur_detay_beyansiz_turda_vizeyi_bos_dondurur(): void
+    {
+        $tour = $this->makeTour('Beyansız Tur', [], ['requires_visa' => null, 'visa_on_arrival' => null]);
+
+        $sonuc = app(TurDetay::class)->run(['tur_id' => $tour->id]);
+
+        $this->assertNull($sonuc['vize']);
+        $this->assertStringContainsString('DEME', $sonuc['vize_notu']); // modele açık talimat
     }
 
     public function test_tur_detay_pasif_turda_bulunamadi_dondurur(): void

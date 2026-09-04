@@ -6,6 +6,7 @@ use App\Models\DestinationProfile;
 use App\Models\Tour;
 use App\Models\TourRubricScore;
 use App\Support\SeaHolidayDestinations;
+use App\Support\VisaStatus;
 use Illuminate\Support\Collection;
 
 /**
@@ -321,8 +322,12 @@ class TourMatcher
             $q = Tour::query()
                 // slug ŞART: rota anahtarı artık slug (route('tours.show', $tour)).
                 // Seçilmezse kart URL'i üretilirken UrlGenerationException atar.
+                // requires_visa/visa_on_arrival kart için ŞART: seçilmezse
+                // VisaStatus::turKodu() her turda null okur ve vize durumu
+                // sessizce "beyan edilmemiş" görünür.
                 ->select(['id', 'slug', 'agency_id', 'title', 'destination', 'price', 'currency', 'price_try',
-                    'duration_days', 'duration_nights', 'image', 'departure_date', 'departure_points', 'is_active'])
+                    'duration_days', 'duration_nights', 'image', 'departure_date', 'departure_points', 'is_active',
+                    'requires_visa', 'visa_on_arrival'])
                 ->with('agency:id,name,is_active')
                 // null: profilsiz listeleme — rubrik puanı aranmaz. Bu liste zaten
                 // puanı KULLANMIYOR (kalkış tarihine göre sıralanıyor); puan şartı
@@ -361,8 +366,22 @@ class TourMatcher
             if (! empty($baglam['butce_max_try'])) {
                 $q->where('price_try', '<=', ((float) $baglam['butce_max_try']) * $butceCarpan);
             }
-            if (isset($baglam['yurt_disi']) && $baglam['yurt_disi'] !== null) {
-                $q->where('is_international', (bool) $baglam['yurt_disi']);
+            // VİZE SÖZÜ YURT DIŞINI İMA EDER. Yurt içi turların hepsi vizesiz
+            // olduğu için "vizesiz tur öner" isteğine Kapadokya/Antalya turları
+            // doluyordu — kullanıcı "yurt dışı" kelimesini hiç kurmasa da vize
+            // demek yurt dışı demek. Model yurt_disi=false yazsa bile vize
+            // kazanır: aksi halde iki filtre çelişip listeyi boşaltırdı
+            // (yurt içi + vizeli diye bir tur yok).
+            $vize = VisaStatus::gecerliMi($baglam['vize'] ?? null) ? $baglam['vize'] : null;
+            $yurtDisi = $vize !== null ? true : ($baglam['yurt_disi'] ?? null);
+            if ($yurtDisi !== null) {
+                $q->where('is_international', (bool) $yurtDisi);
+            }
+            // Vize SERT filtredir: "vizesiz istiyorum" diyene vizeli tur
+            // gösterilemez. Kaynak turun kendi beyanı; beyan edilmemiş
+            // (requires_visa = null) turlar hiçbir yönde listeye girmez.
+            if ($vize !== null) {
+                VisaStatus::filtrele($q, $vize);
             }
 
             $sonuc = $q->get();
@@ -708,6 +727,11 @@ class TourMatcher
             'over_budget' => $overBudget,
             // Profilsiz listede rubrik nesnesi yüklenmez; gerekçe de üretilemez
             'reason' => $tour->rubric ? $this->reason($tour->rubric, $profil['degerler'], $profil['agirliklar']) : '',
+            // Vize durumu KARTA da yazılır: model turu anlatırken vizeyi kendi
+            // dünya bilgisinden değil acentanın beyanından söylesin. null =
+            // beyan yok; doğrulayıcı bu alanı denetlemediği için prompt'ta da
+            // "boşsa hüküm verme" kuralı var.
+            'vize' => VisaStatus::turKodu($tour),
             'next_departure' => optional($tour->departure_date)->format('Y-m-d'),
             'flex_date' => null,
         ];

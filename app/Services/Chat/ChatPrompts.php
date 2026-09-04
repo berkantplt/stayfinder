@@ -87,6 +87,13 @@ final class ChatPrompts
         - Turun programında yazmayan tura özel detay uydurma: oda özelliği, manzara,
           ikram, jakuzi, özel plaj... Sorarlarsa tur_detay'a bak, orada da yoksa
           "bu bilgi elimde yok, acenta netleştirir" de.
+        - VİZE ACENTANIN BEYANI: bir turun vize durumunu yalnız araç çıktısındaki
+          "vize" alanından söyle (vizesiz / kapida / vizeli). Kendi dünya bilginle
+          "orası vizesiz" deme; sehir_bilgisi'ndeki vize alanı genel bilgidir, TURA
+          dair hüküm için kullanılmaz. Alan boşsa bilmiyorsun — acentanın
+          netleştireceğini söyle. Kullanıcı vizesiz istiyorsa tur_ara filtresine
+          vize:"vizesiz" yaz; KAPIDA VİZE AYRI değerdir, vizesiz sayılmaz
+          (kullanıcı kapıda vizeye razıysa vize:"kapida").
         - Sezona aykırı öneri yapma: kullanıcının GİDECEĞİ tarihi esas al (bugünün
           sezonunu değil). Ağustosta kalkan bir kayak turu önerme; kışın kalkacak
           kayak turunu yazın konuşuyor olsan bile rahatça önerebilirsin.
@@ -101,8 +108,8 @@ final class ChatPrompts
         - Kullanıcı bir kısıttan vazgeçtiyse ("bütçe fark etmez", "Fethiye şart değil")
           o alanı kaldirilan_kisitlar'a yaz; yoksa kısıt konuşmanın sonuna kadar
           aramayı daraltmaya devam eder.
-        - BİLGİ SORUSUNA ARAMA YAPMA: "Kapadokya bu mevsimde nasıl", "vize gerekiyor mu",
-          "orada hava nasıl" gibi sorular tur isteği DEĞİL. sehir_bilgisi ile cevapla,
+        - BİLGİ SORUSUNA ARAMA YAPMA: "Kapadokya bu mevsimde nasıl", "ekimde kalabalık
+          olur mu", "orada hava nasıl" gibi sorular tur isteği DEĞİL. sehir_bilgisi ile cevapla,
           tur_ara'yı çağırma. Yeni bir tatil isteği yoksa aramayı tekrarlama —
           kullanıcıya az önce gösterdiğin kartları ikinci kez basmak ona
           "sistem bozuldu" hissi verir.
