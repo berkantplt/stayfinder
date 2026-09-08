@@ -85,6 +85,58 @@ class Tour extends Model
     ];
 
     /**
+     * Açıklamanın ekrana basılabilir güvenli hâli.
+     *
+     * description DIŞ KAYNAKLI: içe aktarımda LLM'in sayfadan çıkardığı metin ham
+     * HTML'iyle saklanıyor (TourUrlImporter) ve acenta formunda doğrulama yalnızca
+     * 'nullable|string'. Bu yüzden {{ }} ile basıldığında ekranda "<p>...</p>"
+     * yazısı görünüyordu (76 turun 41'i).
+     *
+     * İzlenen yol projenin arka uçtaki yerleşik kuralıyla aynı (TourSchema,
+     * TourObserver, ScoreTourRubricJob — hepsi strip_tags): ETİKETLERİ RENDER ETME,
+     * AT. Beyaz liste bilerek kullanılmadı; strip_tags izinli bıraktığı etiketin
+     * ÖZNİTELİKLERİNİ temizlemez ('<p>' izinliyse '<p onclick=...>' de geçer).
+     *
+     * Çıktı tümüyle e() ile kaçırılır; DOM'a giren tek etiket nl2br'ın <br>'ıdır.
+     * Düz metin isteyen yerler (meta, JSON-LD) description_text kullanmalı.
+     */
+    public function getDescriptionTextAttribute(): string
+    {
+        $ham = (string) ($this->description ?? '');
+
+        if (trim($ham) === '') {
+            return '';
+        }
+
+        // Blok sonlarını satır sonuna çevir — paragraf yapısı korunsun ve
+        // "</p><p>" sınırında kelimeler birbirine yapışmasın.
+        $metin = preg_replace(
+            '#<\s*(?:br\s*/?|/\s*(?:p|div|li|h[1-6]|tr))\s*>#iu',
+            "\n",
+            $ham
+        ) ?? $ham;
+
+        $metin = strip_tags($metin);                       // kalan HER etiket gider
+        $metin = html_entity_decode($metin, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $metin = preg_replace('/[ \t]+/u', ' ', $metin) ?? $metin;
+        $metin = preg_replace("/[ \t]*\n[ \t]*/u", "\n", $metin) ?? $metin;
+        $metin = preg_replace("/\n{3,}/u", "\n\n", $metin) ?? $metin;
+
+        return trim($metin);
+    }
+
+    /**
+     * Ekrana basılacak hâli: description_text + satır sonları <br>'a çevrilmiş.
+     * Önce kaçır, sonra <br> ekle — sıra bu, tersi XSS açar.
+     */
+    public function getDescriptionHtmlAttribute(): string
+    {
+        $metin = $this->description_text;
+
+        return $metin === '' ? '' : nl2br(e($metin), false);
+    }
+
+    /**
      * Süre etiketi: Türk tur sayfalarının standardı "7 gece 8 gün".
      *
      * duration_nights boşsa gün-1'e düşer — mevcut turların çoğunda gece bilgisi

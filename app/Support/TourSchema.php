@@ -470,7 +470,10 @@ class TourSchema
 
     private static function description(Tour $tour): ?string
     {
-        $text = trim(strip_tags((string) $tour->description));
+        // strip_tags "</p><p>" sınırında kelimeleri birleştiriyordu (41 turun
+        // 27'sinde). description_text bu sınırı satır sonuna çevirdiği için
+        // kelimeler ayrı kalıyor; JSON-LD tek satır istediği için boşluğa indirilir.
+        $text = trim(preg_replace('/\s+/u', ' ', $tour->description_text) ?? '');
 
         return $text !== '' ? Str::limit($text, 300) : null;
     }

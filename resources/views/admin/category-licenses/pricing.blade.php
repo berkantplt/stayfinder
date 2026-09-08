@@ -53,7 +53,7 @@
             <div class="stat-card" style="padding:24px;max-width:94%;margin:0 auto;">
                 <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:18px;">Fiyat ve Talep Tablosu</h2>
                 <div style="overflow-x:auto;">
-                    <table class="table" style="width:100%;text-align:left;">
+                    <div class="table-wrap"><table class="table" style="width:100%;text-align:left;">
                         <thead>
                             <tr>
                                 <th>Kategori</th>
@@ -102,7 +102,7 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
             </div>
         </div>

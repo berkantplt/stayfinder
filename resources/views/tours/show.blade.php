@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', $tour->title . ' — turXtur')
-@section('description', \Illuminate\Support\Str::limit(strip_tags($tour->description), 150))
+@section('description', \Illuminate\Support\Str::limit(preg_replace('/\s+/u', ' ', $tour->description_text), 150))
 @if($tour->image)
     @section('og_image', url($tour->image))
 @endif
@@ -263,7 +263,7 @@
                     $hasPrices  = $hasPricingBlocks || $upcomingDates->count()
                         || ($tour->departure_date && $tour->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
                         || $priceData->count() >= 2;
-                    $hasGeneral = trim((string) $tour->description) !== ''
+                    $hasGeneral = $tour->description_text !== ''
                         || collect($detailSections)->contains(fn ($s) => trim((string) $s[2]) !== '')
                         || trim((string) $tour->frequency) !== '';
 
@@ -479,8 +479,11 @@
                 {{-- Sekme: Genel Bilgiler --}}
                 @if($hasGeneral)
                 <div class="tour-tab-panel" data-tab-panel="genel" @if($defaultTab !== 'genel') hidden @endif>
-                    @if($tour->description)
-                        <p style="color:var(--text-sec);line-height:1.8;margin-bottom:24px;font-size:15px;">{{ $tour->description }}</p>
+                    {{-- description_html: etiketler atılmış + e() ile kaçırılmış metin,
+                         satır sonları <br>. Bunu {{ }} ile basmaya geri dönme —
+                         ekranda "<p>" yazısı görünür (bkz. bulgu B1). --}}
+                    @if($tour->description_html)
+                        <p style="color:var(--text-sec);line-height:1.8;margin-bottom:24px;font-size:15px;">{!! $tour->description_html !!}</p>
                     @endif
 
                     @foreach($detailSections as [$icon, $heading, $body])

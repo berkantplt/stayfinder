@@ -1222,7 +1222,11 @@
         .ybadge.show { display:inline-block; }
         .ycount { margin-left:6px; font-size:12.5px; color:#475569; font-weight:700; white-space:nowrap; flex-shrink:0; }
         .ycount b { color:var(--accent); }
-        .ysort { border:1px solid #eef2f6; background:#fff; border-radius:100px; padding:9px 12px; font-size:12.5px; font-weight:700; color:#475569; cursor:pointer; font-family:inherit; outline:none; flex-shrink:0; box-shadow:0 6px 14px -8px rgba(15,23,42,.35); }
+        .ysort { border:1px solid #eef2f6; background:#fff; border-radius:100px; padding:9px 30px 9px 14px; font-size:12.5px; font-weight:700; color:#475569; cursor:pointer; font-family:inherit; outline:none; flex-shrink:0; box-shadow:0 6px 14px -8px rgba(15,23,42,.35);
+    /* Serit hap dilinde; isletim sistemi oku yerine kendi chevron'umuz */
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 11px center; background-size:13px 13px; }
         .yreset { border:none; background:none; color:#64748b; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline; font-family:inherit; flex-shrink:0; }
         .ychips { display:none; gap:5px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
         .ychips.show { display:flex; }

@@ -47,7 +47,7 @@
                 </div>
                 <div style="min-width:160px;">
                     <label style="font-size:12px;color:#475569;font-weight:600;">Kaynak</label>
-                    <select name="source" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;">
+                    <select name="source" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;background-color:#fff;">
                         <option value="">Hepsi</option>
                         <option value="llm" {{ request('source') === 'llm' ? 'selected' : '' }}>LLM</option>
                         <option value="manual" {{ request('source') === 'manual' ? 'selected' : '' }}>Manuel</option>

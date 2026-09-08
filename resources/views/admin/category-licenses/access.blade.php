@@ -53,7 +53,7 @@
                         </div>
                     @else
                         <div style="overflow-x:auto;">
-                            <table class="table" style="width:100%;text-align:left;">
+                            <div class="table-wrap"><table class="table" style="width:100%;text-align:left;">
                                 <thead>
                                     <tr>
                                         <th>Acenta</th>
@@ -100,7 +100,7 @@
                                         </tr>
                                     @endforeach
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
                     @endif
                 </div>

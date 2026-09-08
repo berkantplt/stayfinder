@@ -40,7 +40,7 @@
 
             {{-- Talep geçmişi --}}
             <div style="background:#fff;border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;">
-                <table class="table" style="margin:0;border:none;">
+                <div class="table-wrap"><table class="table" style="margin:0;border:none;">
                     <thead><tr><th>Talep</th><th>Durum</th><th>Sonuç</th><th>Tarih</th></tr></thead>
                     <tbody>
                         @forelse($requests as $req)
@@ -73,7 +73,7 @@
                         <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:24px;">Henüz talebiniz yok.</td></tr>
                         @endforelse
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
     </div>

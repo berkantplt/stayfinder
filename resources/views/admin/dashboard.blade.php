@@ -19,9 +19,9 @@
             .stat-card-link { text-decoration:none; color:inherit; display:block; transition:all 0.25s ease; }
             .stat-card-link:hover .stat-card { transform:translateY(-3px); box-shadow:0 14px 30px -8px rgba(0,0,0,0.12) !important; }
             .stat-card-link .stat-card { cursor:pointer; }
-            .stat-card-link .stat-card div[style*="font-size:13px"] { white-space:nowrap; font-size:12px !important; }
+            .stat-card-link .stat-card div[style*="font-size:13px"] { font-size:12px !important; }
         </style>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px;">
+        <div class="panel-grid-4" style="margin-bottom:32px;">
             <a href="{{ route('admin.agencies') }}" class="stat-card-link">
                 <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
@@ -72,7 +72,7 @@
 
 
         {{-- Charts --}}
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:32px;">
+        <div class="panel-grid-yan" style="margin-bottom:32px;">
             <div class="stat-card" style="padding:24px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px;">
                     <span style="font-size:16px;">📈</span>
@@ -97,7 +97,7 @@
         <div class="stat-card" style="padding:24px;">
             <h2 style="font-size:18px;font-weight:700;margin-bottom:20px;color:#0f172a;">Acenta Bazlı Tur Sayıları</h2>
             <div style="overflow-x:auto;">
-                <table class="table" style="width:100%;text-align:left;">
+                <div class="table-wrap"><table class="table" style="width:100%;text-align:left;">
                     <thead><tr><th style="padding-left:0;">Acenta</th><th>Tur Sayısı</th><th>Durum</th></tr></thead>
                     <tbody>
                         @foreach($agencies as $a)
@@ -112,7 +112,7 @@
                         </tr>
                         @endforeach
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
         </div>

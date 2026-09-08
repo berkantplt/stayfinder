@@ -28,7 +28,7 @@
 
         <div class="stat-card" style="padding:24px;max-width:94%;margin-left:auto;margin-right:auto;">
             <div style="overflow-x:auto;">
-                <table class="table" style="width:100%;text-align:left;">
+                <div class="table-wrap"><table class="table" style="width:100%;text-align:left;">
                     <thead>
                         <tr>
                             <th style="padding-left:0;">Tur</th>
@@ -68,7 +68,7 @@
                         <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:40px;">Henüz tur eklemediniz.</td></tr>
                         @endforelse
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
 

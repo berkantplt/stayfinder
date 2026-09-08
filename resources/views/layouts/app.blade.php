@@ -52,6 +52,28 @@
         :root {
             --white:#fff; --bg:#f8fafc; --text:#0f172a; --text-sec:#475569; --text-muted:#94a3b8;
             --accent:#0d9488; --accent-dark:#0f766e; --accent-light:#ccfbf1; --accent-bg:rgba(13,148,136,0.06);
+            /* METIN/DUGME icin erisilebilir esler. --accent (3,74:1) AA'yi gecmiyor;
+               dekoratif dolgu/kenarlik/gradient icin oldugu gibi kalir. */
+            --accent-ink:#0f766e;   /* beyaz uzerinde 5,47:1 */
+            --accent-deep:#115e59;  /* hover; beyaz uzerinde 7,58:1 */
+            --text-meta:#64748b;    /* beyaz uzerinde 4,76:1 (--text-muted 2,56:1) */
+
+            /* ── Yigin olcegi ──
+               Once kod tabaninda 1 ile 9999 arasi ~20 seviye vardi ve her yeni
+               sabit oge "bir oncekinden buyuk sayi" yazilarak ekleniyordu. */
+            --z-yerel:20; --z-sticky-nav:100; --z-yan-panel:1000;
+            --z-tabbar:1500; --z-tepsi:1600; --z-fab:1700;
+            --z-ortu:1990; --z-panel:2000; --z-banner:2500; --z-modal:3000;
+
+            /* ── Dip katman geometrisi ──
+               Sayfanin dibinde dort sabit oge var (sohbet balonu, karsilastirma
+               tepsisi, mobil sekme bari, cerez bandi) ve hicbiri kendine yer
+               ayirmiyordu; footer'in son satiri altlarinda kaliyordu. */
+            --tabbar-h:0px;      /* mobilde asagida ezilir */
+            --fab-h:52px;        /* sohbet balonu yuksekligi */
+            --tepsi-h:58px;      /* karsilastirma tepsisi */
+            --dip-kenar:24px;    /* ekran kenarindan mesafe */
+            --dip-aralik:12px;   /* katmanlar arasi nefes */
             --green:#059669; --green-bg:#d1fae5; --green-text:#065f46;
             --border:#e2e8f0; --border-light:#f1f5f9;
             --shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
@@ -59,7 +81,70 @@
             --shadow-lg:0 10px 25px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
             --radius:12px; --radius-lg:16px;
             --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+            /* Klavye odagi (WCAG 2.4.7 / 2.4.11). Acik zeminde 5,47:1. */
+            --odak-halka:#0f766e;
+            --odak-golge:rgba(255,255,255,.95);
         }
+
+        /* ── Klavye odagi ──
+           Once: kod tabaninda 42 adet outline:none vardi, karsiliginda TEK bir
+           :focus-visible kurali (partials/mega-menu.blade.php). 406 odaklanabilir
+           ogenin 397'si tarayici varsayilanina birakilmisti.
+           :focus DEGIL :focus-visible: fareyle tiklamada halka cikmaz. */
+        a:focus-visible,
+        button:focus-visible,
+        summary:focus-visible,
+        [tabindex]:focus-visible,
+        [role="button"]:focus-visible,
+        .btn:focus-visible {
+            outline:2px solid var(--odak-halka);
+            outline-offset:2px;
+        }
+
+        /* Gorsel uzerinde duran ogeler: duz halka fotografa denk gelince
+           kayboluyor, ice beyaz bir ayirici ekleniyor.
+           transition:none SART — .card'da transition:all .3s var, halkasiz
+           gecen 0,3 saniye boyunca odak gorunmez kaliyordu. */
+        .card:focus-visible,
+        .m-fav:focus-visible {
+            outline:2px solid var(--odak-halka);
+            outline-offset:2px;
+            box-shadow:0 0 0 2px var(--odak-golge);
+            transition:none;
+        }
+
+        /* auth/* ve admin/* altindaki form alanlari style="...outline:none..."
+           tasiyor; satir ici bildirim her seciciyi yener, tek cikis yolu
+           !important. Kapsam bilerek input/select/textarea ile sinirli — boylece
+           mega-menu.blade.php'deki .mega-trigger:focus-visible kurali korunuyor. */
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline:2px solid var(--odak-halka) !important;
+            outline-offset:2px !important;
+        }
+
+        /* Tarih girdisi istisnasi: Chrome'da odak ic (shadow DOM) parcaya gittigi
+           icin host oge :focus-visible ile eslesmiyor — klavyeyle gezen kullanici
+           halkayi goremiyordu. Metin girisi oldugu icin :focus kullanmak dogru;
+           fareyle tiklamada da halka gostermek bu tur alanlarda beklenen davranis. */
+        input[type="date"]:focus,
+        input[type="time"]:focus,
+        input[type="datetime-local"]:focus {
+            outline:2px solid var(--odak-halka) !important;
+            outline-offset:2px !important;
+        }
+
+        /* Koyu zeminler: footer govdesi, panel kenar cubugu, sohbet paneli ve
+           karsilastirma tepsisi. #5eead4 / #0a1622 = 12,34:1 */
+        .ftr,
+        .panel-sidebar-module,
+        #cv2-panel,
+        #compare-bar {
+            --odak-halka:#5eead4;
+            --odak-golge:rgba(3,26,23,.9);
+        }
+
         body { font-family:var(--font); background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
         a { color:inherit; text-decoration:none; }
         img { max-width:100%; }
@@ -76,18 +161,18 @@
         .nav-links-left { grid-column:1; grid-row:1; justify-self:end; margin-right:36px; }
         .nav-links-right { grid-column:3; grid-row:1; justify-self:start; margin-left:36px; }
         .nav-back { grid-column:1; grid-row:1; justify-self:start; display:inline-flex; align-items:center; gap:7px; height:38px; padding:0 15px; border:1px solid #cbd5e1; border-radius:100px; background:var(--white); color:#0f172a; font-family:var(--font); font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap; }
-        .nav-back:hover { background:#f8fafc; border-color:#94a3b8; color:var(--accent); }
+        .nav-back:hover { background:#f8fafc; border-color:#94a3b8; color:var(--accent-ink); }
         .nav-bell-mobile { display:none; grid-column:3; grid-row:1; justify-self:end; position:relative; font-size:20px; text-decoration:none; align-items:center; }
         .nav-links a:not(.nav-btn) { color:#475569; font-weight:600; font-size:14.5px; transition:all 0.2s; display:flex; align-items:center; gap:6px; letter-spacing:0.1px; padding:6px 0; border-bottom:2px solid transparent; }
-        .nav-links a:not(.nav-btn):hover { color:var(--accent); }
-        .nav-links a.nav-active:not(.nav-btn) { color:var(--accent); border-bottom-color:var(--accent); }
+        .nav-links a:not(.nav-btn):hover { color:var(--accent-ink); }
+        .nav-links a.nav-active:not(.nav-btn) { color:var(--accent-ink); border-bottom-color:var(--accent); }
         
         .nav-profile { display:flex; align-items:center; gap:8px; color:#64748b; font-size:14.5px; font-weight:500; padding:0 16px; border-left:1px solid #e2e8f0; height:24px; margin-left:4px; }
         
         .nav-btn { display:inline-flex; align-items:center; justify-content:center; padding:0 20px; height:40px; border-radius:10px; font-size:14.5px; font-weight:600; border:1px solid #cbd5e1; background:var(--white); color:#0f172a; cursor:pointer; transition:all 0.2s; flex-shrink:0; white-space:nowrap; text-decoration:none; }
         .nav-btn:hover { background:#f8fafc; border-color:#94a3b8; }
-        .nav-btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-        .nav-btn-primary:hover { background:var(--accent-dark); color:#fff; border-color:var(--accent-dark); transform:translateY(-1px); box-shadow:0 6px 14px -4px rgba(13,148,136,0.4); }
+        .nav-btn-primary { background:var(--accent-ink); color:#fff; border-color:var(--accent-ink); }
+        .nav-btn-primary:hover { background:var(--accent-deep); color:#fff; border-color:var(--accent-deep); transform:translateY(-1px); box-shadow:0 6px 14px -4px rgba(13,148,136,0.4); }
         
         .nav-profile { display:flex; align-items:center; gap:8px; color:#64748b; font-size:14px; font-weight:600; padding:0 16px; border-left:1px solid #e2e8f0; height:24px; margin-left:4px; }
         .nav-logout-btn { background:none; border:none; color:#ef4444; font-family:var(--font); font-size:14px; font-weight:700; cursor:pointer; padding:6px 12px; border-radius:8px; transition:all 0.2s; }
@@ -134,7 +219,7 @@
             border-bottom:1px solid var(--border-light);
         }
         .mobile-nav a:last-child { border-bottom:none; }
-        .mobile-nav a:hover { color:var(--accent); }
+        .mobile-nav a:hover { color:var(--accent-ink); }
         .mobile-nav .mobile-auth { display:flex; gap:10px; margin-top:8px; padding-top:8px; }
         /* Çekmece perdesi: yalnız mobilde, çekmece açıkken görünür (bkz. #mobileNav.open ~) */
         #mobileNavBack { display:none; position:fixed; inset:0; z-index:1990; background:rgba(4,24,21,.45); }
@@ -148,9 +233,10 @@
             .grid-4 { grid-template-columns:repeat(2,1fr); }
             .grid-3 { grid-template-columns:repeat(2,1fr); }
         }
-        @media(max-width: 640px) {
-            .grid-2, .grid-3, .grid-4 { grid-template-columns:1fr; }
-        }
+        /* NOT: eski @media(max-width:640px) .grid-* blogu buradaydi ve OLU kuraldi —
+           asagidaki @media(max-width:768px) blogu kaynakta daha sonra geldigi icin
+           onu eziyordu. Sonuc: 481-640px arasinda .grid-4 1 yerine 2 sutun
+           basiyordu. Kural dosyanin sonuna, 768 blogundan SONRAYA tasindi. */
 
         /* ── Cards ── */
         .card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:all .25s ease; }
@@ -163,7 +249,7 @@
         .m-fav, .m-rating, .m-drop-badge { display:none; }
         .card-body { padding:16px; }
         .card-title { font-size:15px; font-weight:700; margin-bottom:4px; line-height:1.3; }
-        .card-meta { font-size:13px; color:var(--text-muted); }
+        .card-meta { font-size:13px; color:var(--text-meta); }
 
         /* ── Badges ── */
         .badge { display:inline-flex; align-items:center; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; }
@@ -172,10 +258,10 @@
 
         /* ── Buttons ── */
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 24px; border-radius:12px; font-family:var(--font); font-size:14px; font-weight:600; cursor:pointer; border:none; transition:all .25s cubic-bezier(0.4, 0, 0.2, 1); text-align:center; white-space:nowrap; }
-        .btn-primary { background:var(--accent); color:white; box-shadow:0 2px 4px rgba(13,148,136,0.1); }
-        .btn-primary:hover { background:var(--accent-dark); transform:translateY(-1px); box-shadow:0 6px 16px rgba(13,148,136,.35); }
+        .btn-primary { background:var(--accent-ink); color:white; box-shadow:0 2px 4px rgba(13,148,136,0.1); }
+        .btn-primary:hover { background:var(--accent-deep); transform:translateY(-1px); box-shadow:0 6px 16px rgba(13,148,136,.35); }
         .btn-outline { background:var(--white); border:1.5px solid var(--border); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,0.02); }
-        .btn-outline:hover { border-color:var(--accent); color:var(--accent); background:#f8fafc; }
+        .btn-outline:hover { border-color:var(--accent); color:var(--accent-ink); background:#f8fafc; }
         .btn-danger { background:#ef4444; color:white; box-shadow:0 2px 4px rgba(239,68,68,0.1); }
         .btn-danger:hover { background:#dc2626; transform:translateY(-1px); box-shadow:0 6px 16px rgba(220,38,38,0.3); }
         .btn-sm { padding:8px 16px; font-size:13px; border-radius:10px; }
@@ -192,6 +278,48 @@
             border-color:var(--accent); box-shadow:0 0 0 3px rgba(13,148,136,.1);
         }
         .form-group textarea { resize:vertical; min-height:80px; }
+
+        /* ── Form kontrolleri: sistemin icine alinmis select ve tarih ──
+           Once: 41 select'in 40'i isletim sisteminin kendi okunu ciziyordu,
+           cunku hicbir yerde appearance:none yoktu. 13 tarih girdisi de
+           tarayicinin gri takvim glifini gosteriyordu.
+           .field-select / .field-date siniflari markup'i degistirmeden
+           .form-group icindekilere de uygulanir (asagidaki delegasyon). */
+        .field-select,
+        .form-group select {
+            appearance:none; -webkit-appearance:none; -moz-appearance:none;
+            /* Chevron: currentColor kullanamayacagimiz icin --text-sec sabitlendi */
+            background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-repeat:no-repeat;
+            background-position:right 12px center;
+            background-size:16px 16px;
+            padding-right:36px;
+        }
+        /* Ok, metnin uzerine binmesin diye dar select'lerde de yer ayrilir */
+        .field-select { padding-right:36px; }
+
+        .field-date,
+        .form-group input[type="date"] {
+            position:relative;
+        }
+        /* Tarayicinin gri takvim glifi yerine marka rengine yakin bir ikon */
+        .field-date::-webkit-calendar-picker-indicator,
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+            /* Yalnız ikon şeridi: tüm girdiyi kaplarsa gün/ay segmentine tıklanamıyor */
+            opacity:0; position:absolute; right:6px; top:0; bottom:0; width:28px; cursor:pointer;
+        }
+        .field-date,
+        .form-group input[type="date"] {
+            background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>");
+            background-repeat:no-repeat;
+            background-position:right 11px center;
+            background-size:16px 16px;
+            padding-right:38px;
+        }
+        /* Firefox yerli takvim düğmesini gizleyemiyor; çift ikon olmasın diye özel ikon düşer */
+        @supports not selector(::-webkit-calendar-picker-indicator) {
+            .field-date, .form-group input[type="date"] { background-image:none; padding-right:14px; }
+        }
         .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 
         /* ── Alerts ── */
@@ -202,19 +330,19 @@
         /* ── Price ── */
         .price-tag { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
         .price-tag.cheapest { color:var(--green); }
-        .price-sm { font-size:13px; color:var(--text-muted); }
+        .price-sm { font-size:13px; color:var(--text-meta); }
 
         /* ── Table ── */
         .table { width:100%; border-collapse:collapse; }
         .table th, .table td { padding:12px 16px; text-align:left; border-bottom:1px solid var(--border-light); }
-        .table th { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .table th { font-size:12px; font-weight:600; color:var(--text-meta); text-transform:uppercase; letter-spacing:.5px; }
         .table tr:hover { background:var(--accent-bg); }
 
         /* ── Section ── */
         .section { padding:32px 0; }
         .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
         .section-header h2 { font-size:20px; font-weight:700; }
-        .section-header a { font-size:14px; font-weight:600; color:var(--accent); }
+        .section-header a { font-size:14px; font-weight:600; color:var(--accent-ink); }
 
         /* ── Page details ── */
         .detail-grid { display:grid; grid-template-columns:1.3fr 1fr; gap:32px; }
@@ -289,8 +417,8 @@
             padding:8px 14px; border:1px solid var(--border); border-radius:8px;
             font-size:14px; color:var(--text-sec); transition:all .2s; display:inline-block; background:var(--white);
         }
-        .pagination-wrapper .page-link:hover { border-color:var(--accent); color:var(--accent); }
-        .pagination-wrapper .page-link.active { background:var(--accent); border-color:var(--accent); color:white; }
+        .pagination-wrapper .page-link:hover { border-color:var(--accent); color:var(--accent-ink); }
+        .pagination-wrapper .page-link.active { background:var(--accent-ink); border-color:var(--accent-ink); color:white; }
 
         /* Laravel default pagination (nav > span/a) */
         nav[role="navigation"] { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:4px; margin-top:24px; }
@@ -304,9 +432,9 @@
             font-size:14px; color:var(--text-sec); background:var(--white);
             transition:all .2s; line-height:1;
         }
-        nav[role="navigation"] a:hover { border-color:var(--accent); color:var(--accent); }
+        nav[role="navigation"] a:hover { border-color:var(--accent); color:var(--accent-ink); }
         nav[role="navigation"] span[aria-current="page"] > span {
-            background:var(--accent); border-color:var(--accent); color:white; font-weight:600;
+            background:var(--accent-ink); border-color:var(--accent-ink); color:white; font-weight:600;
         }
         nav[role="navigation"] span.cursor-default > span {
             color:var(--text-muted); border-color:var(--border-light); background:var(--bg);
@@ -356,7 +484,7 @@
             background: rgba(255, 255, 255, 0.9) !important;
             backdrop-filter: blur(12px);
         }
-        body.panel-layout-active .table th { background:transparent; border-bottom:1px solid #f1f5f9; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700; color:#94a3b8; padding:20px 24px; }
+        body.panel-layout-active .table th { background:transparent; border-bottom:1px solid #f1f5f9; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700; color:var(--text-meta); padding:20px 24px; }
         body.panel-layout-active .table td { padding:20px 24px; border-bottom:1px solid #f8fafc; vertical-align:middle; transition:background 0.2s;}
         body.panel-layout-active .table tr:hover td { background: #f8fafc; }
         body.panel-layout-active h1 { color:#0f172a; letter-spacing:-0.5px; }
@@ -369,10 +497,56 @@
         body.panel-layout-active .panel-sidebar-module ~ div > .section > .stat-card,
         body.panel-layout-active .panel-sidebar-module ~ div > .section > div[style*="grid"],
         body.panel-layout-active .panel-sidebar-module ~ div > .card,
+        body.panel-layout-active .panel-sidebar-module ~ div > [class*="panel-grid"],
+        body.panel-layout-active .panel-sidebar-module ~ .section > [class*="panel-grid"],
+        body.panel-layout-active .panel-sidebar-module ~ div > .section > [class*="panel-grid"],
         body.panel-layout-active .panel-sidebar-module ~ div .section > .card {
             max-width: 94%; margin-left: auto; margin-right: auto;
         }
 
+        /* ── Panel ızgaraları: satır içi grid'lerin yerine (medya sorgusuz 56 satır içi
+           grid vardı; 320px sabit sütun 768'de bile taşıyordu). auto-fit ile kendi
+           kendine kırılır, yan sütun 900 altında alta iner. ── */
+        .panel-grid-2  { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:24px; }
+        .panel-grid-4  { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:16px; }
+        .panel-grid-yan{ display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:32px; }
+        .panel-grid-ic { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:8px; }
+        @media(max-width:900px){ .panel-grid-yan { grid-template-columns:minmax(0,1fr); } }
+        /* Tablolar overflow:hidden kartın içinde kırpılıyordu (375'te 968px tablo);
+           sarmalayıcı yatay kaydırır, hücre kırılmaz. */
+        .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        .table-wrap > .table { min-width:640px; }
+
+        /* ══ Panel: tablet ve telefon ══
+           Canlıda ölçüldü: 1024'te belge 1264px (yatay taşma), 768'de mobil .m-head +
+           masaüstü .nav-inner aynı anda (iki logo), 375'te küçültülmüş masaüstü. Sebep:
+           yukarıdaki panel kuralları mobil bloğun dışında ve daha özgül. İki kademe:
+           ≤1024 dar kenar çubuğu (başlık masaüstü, sticky), ≤768 çekmece + .m-head. */
+        @media(max-width:1024px){
+            body.panel-layout-active { padding-top:0; }
+            body.panel-layout-active .nav { position:sticky; top:0; z-index:var(--z-sticky-nav); padding:0 16px; }
+            .panel-sidebar-module { width:220px !important; padding:20px 12px !important; }
+            .panel-sidebar-module + div, .panel-sidebar-module + .section,
+            .panel-sidebar-module ~ div, .panel-sidebar-module ~ .section {
+                margin-left:220px !important; width:calc(100% - 220px) !important; padding:24px !important; min-height:0;
+            }
+        }
+        @media(max-width:768px){
+            body.panel-layout-active .nav { height:auto; padding:0; display:block; }
+            body.panel-layout-active .nav .nav-inner { display:none !important; } /* 457'yi geri alır — tek başlık: .m-head */
+            .panel-sidebar-module {
+                top:0 !important; bottom:0 !important; z-index:var(--z-panel) !important;
+                width:min(300px, 86vw) !important;
+                transform:translateX(-100%); transition:transform .25s ease;
+            }
+            .panel-sidebar-module.acik { transform:none; }
+            body.panel-menu-acik #mobileNavBack { display:block; } /* perdeyi yeniden kullan */
+            .panel-sidebar-module + div, .panel-sidebar-module + .section,
+            .panel-sidebar-module ~ div, .panel-sidebar-module ~ .section {
+                margin-left:0 !important; width:100% !important; padding:16px !important;
+            }
+        }
+        @media(prefers-reduced-motion:reduce){ .panel-sidebar-module { transition:none; } }
         body.panel-layout-active footer { display:none !important; }
 
         /* ── Responsive ── */
@@ -440,15 +614,24 @@
             .m-tabbar { display:grid; position:fixed; bottom:0; left:0; right:0; z-index:1500; background:rgba(255,255,255,.94); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-top:1px solid rgba(15,36,33,.08); grid-template-columns:repeat(5,1fr); padding:8px 2px calc(10px + env(safe-area-inset-bottom)); }
             .m-tabbar a { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; font-weight:600; color:#8a9a95; text-decoration:none; font-family:'Manrope',var(--font); letter-spacing:-.2px; }
             .m-tabbar a svg { width:22px; height:22px; }
-            .m-tabbar a.active { color:var(--accent); font-weight:800; }
+            .m-tabbar a.active { color:var(--accent-ink); font-weight:800; }
             .m-tabbar a.active svg { fill:rgba(13,148,136,.13); }
-            body { padding-bottom:80px; }
-            body.panel-layout-active { padding-bottom:0; }
+            /* Ozel ozellikler bir SECICI icinde olmak zorunda — medya sorgusunun
+               govdesine dogrudan yazilirsa gecersiz sayilip yok sayilir. */
+            :root {
+                /* Olculen gercek yukseklik 59px (8+22+3+15+10 + 1px ust kenarlik);
+                   60px 1px nefes payi birakiyor. */
+                --tabbar-h:calc(60px + env(safe-area-inset-bottom));
+                --fab-h:54px;
+                --dip-kenar:12px;
+            }
+            body { padding-bottom:calc(var(--tabbar-h) + var(--dip-aralik)); }
+            body.panel-layout-active { padding-bottom:0; --tabbar-h:0px; } /* sekme barı bu sayfalarda basılmıyor */
             body.panel-layout-active .m-trust { display:none; }
-            #compare-bar { bottom:92px !important; }
+            /* #compare-bar konumu asagidaki 'Dip katman' blogunda, token'la */
 
             /* ===== Tur kartı mobil parçaları (tour_grid partial'ı — her sayfada) ===== */
-            .m-drop-badge { display:inline-flex; position:absolute; top:8px; left:8px; z-index:2; background:#0d9488; color:#fff; font-family:'Manrope',var(--font); font-size:8.8px; font-weight:800; letter-spacing:-.1px; padding:4px 8px; border-radius:100px; }
+            .m-drop-badge { display:inline-flex; position:absolute; top:8px; left:8px; z-index:2; background:var(--accent-ink); color:#fff; font-family:'Manrope',var(--font); font-size:8.8px; font-weight:800; letter-spacing:-.1px; padding:4px 8px; border-radius:100px; }
             .m-fav { display:flex; position:absolute; top:7px; right:7px; z-index:3; width:28px; height:28px; padding:0; align-items:center; justify-content:center; border:none; border-radius:50%; background:rgba(255,255,255,.92); color:#0f2421; cursor:pointer; box-shadow:0 2px 8px rgba(4,24,21,.14); }
             .m-fav.on { color:#e0563a; }
             .m-fav.on svg { fill:currentColor; }
@@ -491,19 +674,125 @@
         @media (prefers-reduced-motion: reduce) {
             ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
         }
-        @media(max-width:480px) {
+        /* Tek sutun esigi. Bu blok kaynakta @media(max-width:768px)'ten SONRA
+           oldugu icin onu eziyor — kural yeri tesadufi degil, sart. */
+        @media(max-width:640px) {
             .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
+        }
+        /* .ftr-grid kendi esiginde kaliyor: 281. satirdaki @media(max-width:1100px)
+           icinde 1fr 1fr veriliyor, bu kural onu ancak burada (sonda) ezebiliyor. */
+        @media(max-width:480px) {
             .ftr-grid { grid-template-columns:1fr; }
+        }
+
+        /* ══ Dip katman ══
+           Sabit ogeler tek bir olcuye bagli: her biri bir oncekinin ustune
+           istifleniyor, footer da altlarinda kalmasin diye dip bosluk aliyor.
+
+           #cv2 ve #compare-bar satir ici stille geliyor, bu yuzden !important
+           sart. #cv2 SURUKLENEBILIR (konum localStorage'da); surukleninde
+           .cv2-tasindi sinifi ekleniyor ve kural tumuyle cekiliyor. */
+        /* z-index her durumda token'dan; sürüklenince yalnız konum kuralı çekilir */
+        #cv2 { z-index:var(--z-fab) !important; }
+        #cv2:not(.cv2-tasindi) {
+            bottom:calc(var(--tabbar-h) + var(--dip-kenar)) !important;
+        }
+        /* Sohbet paneli acikken balon mobil cekmecenin de ustune cikmali */
+        #cv2.cv2-acik { z-index:var(--z-panel) !important; }
+
+        #compare-bar {
+            bottom:calc(var(--tabbar-h) + var(--dip-kenar)) !important;
+            z-index:var(--z-tepsi) !important;
+        }
+        /* Tepsi acikken balon onun ustune tasinsin — dar ekranda yan yana
+           sigmiyorlar (tepsi max-width:calc(100vw - 24px)). */
+        body.tepsi-acik #cv2:not(.cv2-tasindi) {
+            bottom:calc(var(--tabbar-h) + var(--dip-kenar) + var(--tepsi-h) + var(--dip-aralik)) !important;
+        }
+
+        /* Sohbet balonu basılmayan sayfalarda (bayrak kapalı, admin, acenta) dip boşluğu da yok */
+        body.fab-yok { --fab-h:0px; }
+
+        /* Cerez bandi sekme barinin ustunde bitsin, sekmeler tiklanabilir kalsin */
+        #cerez-banner { bottom:var(--tabbar-h) !important; z-index:var(--z-banner) !important; }
+
+        /* Footer'in son satiri (.ftr-made / sosyal ikonlar) balon ve tepsinin
+           altinda kaliyordu: olculen ortusme %45 ve %100. */
+        .ftr-main { padding-bottom:calc(26px + var(--fab-h) + var(--dip-aralik)); }
+        body.tepsi-acik .ftr-main {
+            padding-bottom:calc(26px + var(--fab-h) + var(--tepsi-h) + var(--dip-aralik) * 2);
         }
 
         @yield('styles')
     </style>
+    <script>
+    /* ── Kirik gorsel yedegi ──
+       Once: 36 <img>'in yalniz 2'sinde hata kancasi vardi ve ikisi farkli
+       davraniyordu. Gorsel yuklenmeyince tarayici alt metnini kutuya sigdirmaya
+       calisip kart govdesine tasiriyordu.
+
+       DIKKAT: 'error' olayi BUBBLE ETMEZ. Ucuncu argumanin true (yakalama fazi)
+       olmasi ZORUNLU — false ile hicbir sey yakalanmaz. Sadelestirmeye kalkma. */
+    (function () {
+        var YEDEK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
+            '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+            '<stop offset="0" stop-color="#0f766e"/><stop offset="1" stop-color="#134e4a"/>' +
+            '</linearGradient></defs>' +
+            '<rect width="400" height="300" fill="url(#g)"/>' +
+            '<text x="200" y="158" text-anchor="middle" font-family="Inter,Arial,sans-serif" ' +
+            'font-size="34" font-weight="800" fill="#5eead4" letter-spacing="-1">tur<tspan fill="#ffffff">X</tspan>tur</text>' +
+            '</svg>'
+        );
+
+        function yedekle(img) {
+            // Bayrak yerine kaynağa bak: src'si JS ile döngüsel değişen görseller (hikâye)
+            // her yeni hatada yeniden yedeklenir; YEDEK'in kendisi asla yeniden işlenmez.
+            if (img.hasAttribute('data-yedek-atla') || img.getAttribute('src') === YEDEK) return;
+            // src="" olan gorseller (home.blade.php hikaye gorselleri) JS ile
+            // sonradan dolduruluyor; onlari yedege cevirme.
+            var src = img.getAttribute('src');
+            if (!src) return;
+            img.src = YEDEK;
+        }
+
+        document.addEventListener('error', function (e) {
+            var t = e.target;
+            if (t && t.tagName === 'IMG') yedekle(t);
+        }, true);
+
+        // Dinleyici kurulmadan once onbellekten aninda hata veren gorseller
+        document.addEventListener('DOMContentLoaded', function () {
+            var imgs = document.images;
+            for (var i = 0; i < imgs.length; i++) {
+                if (imgs[i].complete && imgs[i].naturalWidth === 0) yedekle(imgs[i]);
+            }
+        });
+    })();
+    /* Hamburger: panel sayfasında site çekmecesi (#mobileNav) yerine panel kenar
+       çubuğunu açar; diğer sayfalarda eski davranış. Perde ikisini de kapatır. */
+    window.mobilMenuToggle = function () {
+        if (document.body.classList.contains('panel-layout-active')) {
+            var acik = document.body.classList.toggle('panel-menu-acik');
+            var sb = document.querySelector('.panel-sidebar-module');
+            if (sb) sb.classList.toggle('acik', acik);
+        } else {
+            document.getElementById('mobileNav').classList.toggle('open');
+        }
+    };
+    window.mobilMenuKapat = function () {
+        document.getElementById('mobileNav').classList.remove('open');
+        document.body.classList.remove('panel-menu-acik');
+        var sb = document.querySelector('.panel-sidebar-module');
+        if (sb) sb.classList.remove('acik');
+    };
+    </script>
     @stack('head')
 </head>
 {{-- 'acenta', 'acenta/*': çıplak 'acenta*' herkese açık /acentalar/... profilini de
      yakalayıp sayfayı panel moduna sokuyordu (masaüstü nav mobilde geri açılıyor,
      alt sekme barı kayboluyordu). --}}
-<body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta', 'acenta/*') ? 'panel-layout-active' : '' }} {{ request()->routeIs('home') ? 'm-hero-head' : '' }}">
+<body class="{{ request()->is('admin*') || request()->is('agency*') || request()->is('acenta', 'acenta/*') ? 'panel-layout-active' : '' }} {{ request()->routeIs('home') ? 'm-hero-head' : '' }} {{ \App\Support\ChatV2Visibility::visible(request()) ? '' : 'fab-yok' }}">
     {{-- Ana sayfada menü hero'nun üstünde yüzen beyaz hap olur (nav-float);
          diğer sayfalarda klasik beyaz sticky şerit kalır. --}}
     <nav class="nav {{ request()->routeIs('home') ? 'nav-float' : '' }}">
@@ -529,7 +818,7 @@
                     </button>
                 @endunless
                 <button type="button" class="m-head-btn" aria-label="Menü"
-                    onclick="document.getElementById('mobileNav').classList.toggle('open')">
+                    onclick="mobilMenuToggle()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 </button>
             </div>
@@ -556,7 +845,7 @@
                     Geri
                 </button>
             @endunless
-            <button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">☰</button>
+            <button class="mobile-menu-btn" onclick="mobilMenuToggle()">☰</button>
 
             {{-- Sol grup: gezinme --}}
             <div class="nav-links nav-links-left">
@@ -665,7 +954,7 @@
                 </div>
             @endauth
         </div>
-        <div id="mobileNavBack" onclick="document.getElementById('mobileNav').classList.remove('open')"></div>
+        <div id="mobileNavBack" onclick="mobilMenuKapat()"></div>
     </nav>
 
     <main>
@@ -1047,6 +1336,7 @@
                 img.alt = title;
                 img.loading = 'lazy';
                 img.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;';
+                img.dataset.yedekAtla = '';  // kendi yedegi var (asagidaki 🌍 kutusu)
                 img.onerror = function () { this.remove(); };
                 imgBox.appendChild(img);
             }
@@ -1172,10 +1462,10 @@
             return theme === 'dark' ? {
                 card: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)', text: '#fff',
                 sub: 'rgba(255,255,255,0.6)', chipBg: 'rgba(255,255,255,0.08)',
-                chipSel: 'rgba(45,212,191,0.25)', accent: '#2dd4bf', track: 'rgba(255,255,255,0.15)'
+                chipSel: 'rgba(45,212,191,0.25)', accent: '#2dd4bf', accentInk: '#0f172a', track: 'rgba(255,255,255,0.15)'
             } : {
                 card: '#fff', border: '#e2e8f0', text: '#0f172a', sub: '#64748b',
-                chipBg: '#f1f5f9', chipSel: '#ccfbf1', accent: '#0d9488', track: '#e2e8f0'
+                chipBg: '#f1f5f9', chipSel: '#ccfbf1', accent: '#0f766e', accentInk: '#fff', track: '#e2e8f0'
             };
         }
 
@@ -1247,7 +1537,7 @@
                 back.type = 'button';
                 back.style.visibility = stepIdx === 0 ? 'hidden' : 'visible';
                 back.onclick = () => { stepIdx = Math.max(0, stepIdx - 1); render(); };
-                const next = el('button', 'border:1px solid ' + P.border + '; background:' + (nextEnabled ? P.accent : P.chipBg) + '; color:' + (nextEnabled ? '#0f172a' : P.sub) + '; border-radius:999px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer;', nextLabel || 'Devam →');
+                const next = el('button', 'border:1px solid ' + P.border + '; background:' + (nextEnabled ? P.accent : P.chipBg) + '; color:' + (nextEnabled ? P.accentInk : P.sub) + '; border-radius:999px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer;', nextLabel || 'Devam →');
                 next.type = 'button';
                 next.disabled = !nextEnabled;
                 next.onclick = onNext;
@@ -1524,6 +1814,8 @@
                 const countEl = document.getElementById('compare-count');
                 if (countEl) countEl.innerText = comparedTours.length;
                 bar.style.display = comparedTours.length > 0 ? 'block' : 'none';
+                // Dip katman istiflemesi icin: balon tepsinin ustune cikacak
+                document.body.classList.toggle('tepsi-acik', comparedTours.length > 0);
             }
             document.querySelectorAll('.compare-toggle').forEach(btn => {
                 const id = parseInt(btn.dataset.tourId);
@@ -1744,6 +2036,8 @@
 
         function konumUygula() {
             if (!konum) return;
+            // Kullanici balonu tasidi: dip katman kurali artik gecerli degil
+            kap.classList.add('cv2-tasindi');
             const r = trigger.getBoundingClientRect();
             const x = konum.kenar === 'sol' ? KENAR : window.innerWidth - r.width - KENAR;
             const gezinti = Math.max(window.innerHeight - r.height - KENAR * 2, 0);
@@ -1766,6 +2060,9 @@
             if (!sur.tasindi) {
                 if (Math.abs(e.clientX - sur.x0) < ESIK && Math.abs(e.clientY - sur.y0) < ESIK) return;
                 sur.tasindi = true;
+                // Dip katman kuralı (!important bottom) sürükleme başlar başlamaz çekilmeli,
+                // yoksa inline bottom:auto yenilir ve kutu ekran dibine kadar uzar.
+                kap.classList.add('cv2-tasindi');
                 kap.classList.add('cv2-suruklenirken');
                 if (acikMi()) togglePanel(false);            // sürüklerken panel açık kalmasın
             }

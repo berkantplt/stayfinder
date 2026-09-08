@@ -46,7 +46,7 @@
                     </div>
                 @else
                     <div style="overflow-x:auto;">
-                        <table class="table" style="width:100%;text-align:left;">
+                        <div class="table-wrap"><table class="table" style="width:100%;text-align:left;">
                             <thead>
                                 <tr>
                                     <th>Sipariş No</th>
@@ -76,7 +76,7 @@
                                     </tr>
                                 @endforeach
                             </tbody>
-                        </table>
+                        </table></div>
                     </div>
 
                     <div style="margin-top:24px;">

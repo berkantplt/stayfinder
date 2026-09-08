@@ -37,7 +37,7 @@
                     </div>
                     <div style="width:180px;">
                         <label style="font-size:13px;color:#475569;display:block;margin-bottom:4px;">Durum</label>
-                        <select name="durum" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:#fff;">
+                        <select name="durum" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background-color:#fff;">
                             <option value="eksik" @selected($durum === 'eksik')>Eksik olanlar</option>
                             <option value="dolu" @selected($durum === 'dolu')>Dolu olanlar</option>
                             <option value="tumu" @selected($durum === 'tumu')>Tümü</option>

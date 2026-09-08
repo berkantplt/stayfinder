@@ -20,7 +20,7 @@
         @endif
 
         <div class="card" style="overflow:visible;">
-            <table class="table">
+            <div class="table-wrap"><table class="table">
                 <thead>
                     <tr>
                         <th>Başlık</th>
@@ -57,7 +57,7 @@
                     <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:32px;">Henüz blog yazısı yok.</td></tr>
                     @endforelse
                 </tbody>
-            </table>
+            </table></div>
         </div>
         <div class="pagination-wrapper">{{ $posts->links() }}</div>
     </div>

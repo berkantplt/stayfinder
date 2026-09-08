@@ -49,8 +49,15 @@
                 <div style="flex:1;min-width:0;">
                     <div style="font-size:15px;font-weight:700;">{{ $tour->title }}</div>
                     <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">📍 {{ $tour->destination }} · {{ $tour->duration_label }}</div>
-                    @if($tour->departure_date)
-                        <div style="font-size:12px;color:var(--text-muted);">📅 {{ $tour->departure_date->format('d-m-Y') }}</div>
+                    {{-- İlk GELECEK kalkış; yoksa satır hiç basılmaz. tours/index.blade.php
+                         ile aynı kural — burada eksik olduğu için profil aylar önce
+                         geçmiş kalkışları tarihli listeliyordu. --}}
+                    @php
+                        $kartTarihi = $tour->dates->first(fn ($d) => $d->departure_date?->gte(now()->startOfDay()))?->departure_date
+                            ?? ($tour->departure_date?->gte(now()->startOfDay()) ? $tour->departure_date : null);
+                    @endphp
+                    @if($kartTarihi)
+                        <div style="font-size:12px;color:var(--text-muted);">📅 {{ $kartTarihi->format('d-m-Y') }}</div>
                     @endif
                 </div>
                 <div style="text-align:right;flex-shrink:0;">

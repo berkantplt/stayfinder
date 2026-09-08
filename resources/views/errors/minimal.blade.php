@@ -42,6 +42,12 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(94,234,212,.25); }
         .brand { margin-bottom: 32px; font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
         .brand span { color: #5eead4; }
+        /* Bu dosya app layout'a bagli DEGIL (kendine yeter), odak kurali
+           ayrica gerekiyor. Zemin #0c332e oldugu icin halka acik turkuaz. */
+        a:focus-visible, button:focus-visible, .btn:focus-visible {
+            outline: 2px solid #5eead4;
+            outline-offset: 3px;
+        }
     </style>
 </head>
 <body>

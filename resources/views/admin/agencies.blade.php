@@ -46,7 +46,7 @@
                 </div>
                 <div class="form-group" style="width:200px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Durum</label>
-                    <select name="status" style="background:#f8fafc;border:1px solid #e2e8f0;padding:11px 16px;border-radius:12px;width:100%;font-size:15px;outline:none;transition:border-color 0.2s;">
+                    <select name="status" style="background-color:#f8fafc;border:1px solid #e2e8f0;padding:11px 36px 11px 16px;border-radius:12px;width:100%;font-size:15px;outline:none;transition:border-color 0.2s;">
                         <option value="">Tümü</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Sadece Aktifler</option>
                         <option value="passive" {{ request('status') === 'passive' ? 'selected' : '' }}>Sadece Pasifler</option>
@@ -54,7 +54,7 @@
                 </div>
                 <div class="form-group" style="width:210px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Onay Durumu</label>
-                    <select name="approval_status" style="background:#f8fafc;border:1px solid #e2e8f0;padding:11px 16px;border-radius:12px;width:100%;font-size:15px;outline:none;transition:border-color 0.2s;">
+                    <select name="approval_status" style="background-color:#f8fafc;border:1px solid #e2e8f0;padding:11px 36px 11px 16px;border-radius:12px;width:100%;font-size:15px;outline:none;transition:border-color 0.2s;">
                         <option value="">Tümü</option>
                         <option value="pending" {{ request('approval_status') === 'pending' ? 'selected' : '' }}>Onay Bekleyenler</option>
                         <option value="approved" {{ request('approval_status') === 'approved' ? 'selected' : '' }}>Onaylılar</option>
@@ -81,7 +81,7 @@
                 </div>
             @else
                 <div class="card" style="padding:0;overflow:hidden;">
-                    <table class="table">
+                    <div class="table-wrap"><table class="table">
                         <thead><tr><th>Acenta</th><th>E-posta</th><th>Telefon</th><th>Aktif Tur</th><th>Kategori Yetkisi</th><th>Onay</th><th>Durum</th><th>İşlem</th></tr></thead>
                         <tbody>
                             @foreach($agencies as $a)
@@ -129,7 +129,7 @@
                             </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
                 
                 <div style="margin-top:24px;">

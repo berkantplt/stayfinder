@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:28px;">
+        <div class="panel-grid-yan">
             {{-- Left: Tour details --}}
             <div>
                 @if($tour->image)
@@ -53,7 +53,7 @@
                 @endif
 
                 {{-- Info Cards --}}
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+                <div class="panel-grid-2" style="margin-bottom:20px;">
                     <div class="stat-card" style="padding:16px;">
                         <div style="font-size:12px;color:#94a3b8;margin-bottom:2px;">Destinasyon</div>
                         <div style="font-weight:600;color:#0f172a;">📍 {{ $tour->destination }}</div>
@@ -76,7 +76,7 @@
                     <form method="POST" action="{{ route('agency.tours.dates.store', $tour) }}" style="background:var(--accent-bg);border-radius:var(--radius);padding:14px;margin-bottom:16px;">
                         @csrf
                         <div style="font-size:13px;font-weight:600;margin-bottom:10px;">+ Yeni Tarih Ekle</div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end;">
+                        <div class="panel-grid-2" style="align-items:end;">
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;">Kalkış Tarihi *</label>
                                 <input type="date" name="departure_date" required>
@@ -155,10 +155,10 @@
                     @endif
                 </div>
 
-                @if($tour->description)
+                @if($tour->description_html)
                 <div class="stat-card" style="padding:20px;margin-bottom:16px;">
                     <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Açıklama</h3>
-                    <p style="color:var(--text-sec);line-height:1.8;font-size:14px;">{{ $tour->description }}</p>
+                    <p style="color:var(--text-sec);line-height:1.8;font-size:14px;">{!! $tour->description_html !!}</p>
                 </div>
                 @endif
 

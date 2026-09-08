@@ -22,7 +22,7 @@
             </div>
 
             {{-- Metrik sekmeleri --}}
-            <div style="max-width:94%;margin:0 auto 16px;display:flex;gap:8px;">
+            <div style="max-width:94%;margin:0 auto 16px;display:flex;flex-wrap:wrap;gap:8px;">
                 @foreach(['clicks' => 'Tıklama', 'views' => 'Görüntülenme'] as $key => $label)
                     <a href="{{ route('admin.traffic', $baseParams + ['metric' => $key]) }}"
                        style="padding:9px 18px;border-radius:999px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid {{ $metric === $key ? 'transparent' : '#e2e8f0' }};background:{{ $metric === $key ? ($key === 'clicks' ? '#ec4899' : '#8b5cf6') : '#fff' }};color:{{ $metric === $key ? '#fff' : '#475569' }};">
@@ -43,7 +43,7 @@
 
                     <div class="form-group" style="width:160px;margin-bottom:0;">
                         <label style="font-size:13px;color:#475569;">Tarih Aralığı</label>
-                        <select name="range" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                        <select name="range" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background-color:#fff;">
                             @foreach($ranges as $value => $label)
                                 <option value="{{ $value }}" {{ $range === (string) $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
@@ -52,7 +52,7 @@
 
                     <div class="form-group" style="width:180px;margin-bottom:0;">
                         <label style="font-size:13px;color:#475569;">Acenta</label>
-                        <select name="agency_id" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                        <select name="agency_id" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background-color:#fff;">
                             <option value="">Tümü</option>
                             @foreach($agencies as $agency)
                                 <option value="{{ $agency->id }}" {{ $agencyId === $agency->id ? 'selected' : '' }}>{{ $agency->name }}</option>
@@ -70,7 +70,7 @@
             </div>
 
             {{-- Özet kartları --}}
-            <div style="max-width:94%;margin:0 auto 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+            <div class="panel-grid-4" style="max-width:94%;margin:0 auto 24px;">
                 <div class="stat-card" style="padding:20px;">
                     <div style="font-size:24px;font-weight:800;color:#ec4899;">{{ number_format($totals['clicks']) }}</div>
                     <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Tıklama</div>
@@ -111,7 +111,7 @@
                     </div>
                 @else
                     <div class="card" style="padding:0;overflow:hidden;margin:0;">
-                        <table class="table" style="margin:0;border:none;">
+                        <div class="table-wrap"><table class="table" style="margin:0;border:none;">
                             <thead>
                                 <tr>
                                     <th>Tur</th>
@@ -143,7 +143,7 @@
                                     </tr>
                                 @endforeach
                             </tbody>
-                        </table>
+                        </table></div>
                     </div>
 
                     <div style="margin-top:16px;">{{ $tours->links() }}</div>

@@ -58,6 +58,7 @@
             img.alt = '';
             img.loading = 'lazy';
             img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;';
+            img.dataset.yedekAtla = '';  // acentaya 'bu URL bozuk' sinyali veriyor, yedek basilmamali
             img.onerror = function () { cell.style.background = '#fee2e2'; img.style.display = 'none'; };
             cell.appendChild(img);
 

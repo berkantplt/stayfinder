@@ -28,10 +28,10 @@
             </div>
             <form method="POST" action="{{ route('agency.campaigns.store') }}">
                 @csrf
-                <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px;">
+                <div class="panel-grid-2">
                     <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:13px;color:#475569;">Hedef Tur <span style="color:#ef4444">*</span></label>
-                        <select name="tour_id" required style="padding:14px;background:#f8fafc;">
+                        <select name="tour_id" required style="padding:14px 36px 14px 14px;background-color:#f8fafc;">
                             <option value="">Tur Seçin</option>
                             @foreach($tours as $tour)
                                 <option value="{{ $tour->id }}">{{ $tour->title }} ({{ $tour->formatted_price }})</option>
@@ -46,7 +46,7 @@
                         <label style="font-size:13px;color:#475569;">Kampanya Etiketi (Adı) <span style="color:#ef4444">*</span></label>
                         <input type="text" name="label" required placeholder="Ör: Erken Rezervasyon İndirimi" value="{{ old('label') }}" style="padding:14px;background:#f8fafc;">
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div class="panel-grid-ic" style="gap:16px;">
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Başlangıç <span style="color:#ef4444">*</span></label>
                             <input type="datetime-local" name="starts_at" required style="padding:14px;background:#f8fafc;">

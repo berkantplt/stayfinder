@@ -23,10 +23,10 @@
                     @csrf
                     @method('PUT')
 
-                    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px;">
+                    <div class="panel-grid-2">
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Hedef Tur <span style="color:#ef4444">*</span></label>
-                            <select name="tour_id" required style="padding:14px;background:#f8fafc;">
+                            <select name="tour_id" required style="padding:14px 36px 14px 14px;background-color:#f8fafc;">
                                 @foreach($tours as $tour)
                                     <option value="{{ $tour->id }}" {{ old('tour_id', $campaign->tour_id) == $tour->id ? 'selected' : '' }}>
                                         {{ $tour->title }} ({{ $tour->formatted_price }})
@@ -46,7 +46,7 @@
                                 value="{{ old('label', $campaign->label) }}"
                                 style="padding:14px;background:#f8fafc;">
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="panel-grid-ic" style="gap:16px;">
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:13px;color:#475569;">Başlangıç <span style="color:#ef4444">*</span></label>
                                 <input type="datetime-local" name="starts_at" required

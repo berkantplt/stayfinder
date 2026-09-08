@@ -42,7 +42,7 @@
             <a href="{{ route('admin.traffic', ['metric' => 'views']) }}" style="font-size:13px; color:var(--accent); font-weight:600; text-decoration:none;">Trafik sayfasında incele →</a>
         </div>
         <div style="padding:20px;">
-            <table class="table">
+            <div class="table-wrap"><table class="table">
                 <thead>
                     <tr>
                         <th>TUR ADI</th>
@@ -64,7 +64,7 @@
                     <tr><td colspan="3" style="text-align:center;">Veri bulunamadı.</td></tr>
                     @endforelse
                 </tbody>
-            </table>
+            </table></div>
         </div>
     </div>
 

@@ -59,7 +59,7 @@
                 @if($recentClicks->isEmpty())
                     <div style="padding:32px;text-align:center;color:#64748b;">Kayıtlı tıklama yok.</div>
                 @else
-                    <table class="table" style="margin:0;border:none;">
+                    <div class="table-wrap"><table class="table" style="margin:0;border:none;">
                         <thead><tr><th>Zaman</th><th>IP (maskeli)</th></tr></thead>
                         <tbody>
                             @foreach($recentClicks as $click)
@@ -71,7 +71,7 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 @endif
             </div>
 

@@ -29,7 +29,7 @@
                             <img src="{{ $agency->logo }}" alt="Logo" id="logoPreview" style="width:96px;height:96px;border-radius:16px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
                         @else
                             <div id="logoPlaceholder" style="width:96px;height:96px;background:linear-gradient(135deg,#10b981,#059669);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 4px 12px rgba(16,185,129,0.3);">🏢</div>
-                            <img id="logoPreview" style="display:none;width:96px;height:96px;border-radius:16px;object-fit:cover;">
+                            <img id="logoPreview" alt="Seçilen logo önizlemesi" style="display:none;width:96px;height:96px;border-radius:16px;object-fit:cover;">
                         @endif
                     </div>
                     <label class="btn btn-outline btn-sm" style="cursor:pointer;">

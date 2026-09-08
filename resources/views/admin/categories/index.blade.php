@@ -7,7 +7,7 @@
         @include('partials.admin-sidebar')
 
         <div class="section" style="padding:0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;max-width:94%;margin-left:auto;margin-right:auto;">
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px;max-width:94%;margin-left:auto;margin-right:auto;">
                 <h1 style="font-size:24px;font-weight:700;">📂 Alt Kategori Yönetimi</h1>
                 <a href="{{ route('admin.categories.parents') }}" class="btn btn-outline btn-sm">🗂️ Üst Kategori Yönetimi</a>
             </div>
@@ -40,7 +40,7 @@
                 <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">+ Yeni Alt Kategori Ekle</h3>
                 <form method="POST" action="{{ route('admin.categories.store') }}">
                     @csrf
-                    <div style="display:grid;grid-template-columns:repeat({{ 5 + ($categoryLicensingReady ? 1 : 0) + ($extraSlotReady ? 1 : 0) }}, 1fr);gap:12px;align-items:end;">
+                    <div class="panel-grid-ic" style="gap:12px;align-items:end;">
                         <div class="form-group" style="margin:0;">
                             <label>Ad *</label>
                             <input type="text" name="name" required placeholder="Kültür Turları">
@@ -81,7 +81,7 @@
 
             {{-- Alt kategoriler tablosu --}}
             <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;max-width:94%;margin-left:auto;margin-right:auto;">
-                <table class="table" style="margin:0;border:none;">
+                <div class="table-wrap"><table class="table" style="margin:0;border:none;">
                     <thead><tr><th>İkon & Ad</th><th>Üst Kategori</th>@if($categoryLicensingReady)<th>Aylık Ücret</th>@endif @if($extraSlotReady)<th>Ekstra Tur</th>@endif <th>Sıralama</th><th>Durum</th><th>İşlemler</th></tr></thead>
                     <tbody>
                         @forelse($categories as $category)
@@ -138,7 +138,7 @@
                         <tr><td colspan="{{ 5 + ($categoryLicensingReady ? 1 : 0) + ($extraSlotReady ? 1 : 0) }}" style="text-align:center;color:var(--text-muted);padding:24px;">Henüz alt kategori yok.</td></tr>
                         @endforelse
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
         </div>
@@ -173,7 +173,7 @@
                     @endforeach
                 </select>
             </div>
-            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">
+            <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:24px;">
                 <button type="button" class="btn btn-outline" onclick="closeEditModal()">İptal</button>
                 <button type="submit" class="btn btn-primary">Kaydet</button>
             </div>

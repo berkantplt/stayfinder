@@ -53,10 +53,10 @@
     @once
         @push('head')
             <style>
-                .breadcrumb { font-size:13px; color:var(--text-muted); margin-bottom:18px; }
+                .breadcrumb { font-size:13px; color:var(--text-meta); margin-bottom:18px; }
                 .breadcrumb ol { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
                 .breadcrumb li { display:flex; align-items:center; gap:6px; min-width:0; }
-                .breadcrumb a { color:var(--accent); }
+                .breadcrumb a { color:var(--accent-ink); }
                 .breadcrumb a:hover { text-decoration:underline; }
                 .breadcrumb [aria-current="page"] { color:var(--text-sec); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:min(60vw, 420px); }
                 .breadcrumb-sep { color:var(--text-muted); }

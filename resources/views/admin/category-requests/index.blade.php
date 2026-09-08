@@ -82,7 +82,7 @@
             {{-- Son sonuçlananlar --}}
             <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;max-width:94%;margin-left:auto;margin-right:auto;">Son Sonuçlananlar</h2>
             <div style="background:#fff;border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;max-width:94%;margin:0 auto;">
-                <table class="table" style="margin:0;border:none;">
+                <div class="table-wrap"><table class="table" style="margin:0;border:none;">
                     <thead><tr><th>Talep</th><th>Acenta</th><th>Durum</th><th>Sonuç</th><th>Karar</th></tr></thead>
                     <tbody>
                         @forelse($recentRequests as $req)
@@ -109,7 +109,7 @@
                         <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Henüz sonuçlanmış talep yok.</td></tr>
                         @endforelse
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
     </div>

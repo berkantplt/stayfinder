@@ -71,7 +71,7 @@
                 @forelse($favorites->take(5) as $tour)
                 <a href="{{ route('tours.show', $tour) }}" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);">
                     @if($tour->image)
-                        <img src="{{ $tour->image }}" style="width:56px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">
+                        <img src="{{ $tour->image }}" alt="{{ $tour->title }}" style="width:56px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">
                     @else
                         <div style="width:56px;height:40px;background:var(--accent-bg);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">🏖️</div>
                     @endif

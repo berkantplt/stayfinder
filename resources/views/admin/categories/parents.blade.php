@@ -28,7 +28,7 @@
                 <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">+ Yeni Üst Kategori Ekle</h3>
                 <form method="POST" action="{{ route('admin.categories.parents.store') }}">
                     @csrf
-                    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;align-items:end;">
+                    <div class="panel-grid-ic" style="gap:12px;align-items:end;">
                         <div class="form-group" style="margin:0;">
                             <label>Üst Kategori Adı *</label>
                             <input type="text" name="name" required placeholder="Yurt Dışı Turlar">
@@ -48,7 +48,7 @@
 
             {{-- Üst kategoriler tablosu --}}
             <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;max-width:94%;margin-left:auto;margin-right:auto;">
-                <table class="table" style="margin:0;border:none;">
+                <div class="table-wrap"><table class="table" style="margin:0;border:none;">
                     <thead><tr><th>İkon & Ad</th><th>Alt Kategori</th><th>Sıralama</th><th>Durum</th><th>İşlemler</th></tr></thead>
                     <tbody>
                         @forelse($parentCategories as $category)
@@ -92,7 +92,7 @@
                         <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Henüz üst kategori yok.</td></tr>
                         @endforelse
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
         </div>

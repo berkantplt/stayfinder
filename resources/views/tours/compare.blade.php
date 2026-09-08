@@ -170,9 +170,11 @@
 
     /* Başlık hücresi = tur kimliği */
     .kiyas-kolon { background:var(--white); padding:0 !important; position:relative; z-index:0; }
-    .kiyas-gorsel-sarmal { position:relative; }
-    .kiyas-gorsel { width:100%; height:150px; object-fit:cover; display:block; border-radius:17px 17px 0 0; }
-    .kiyas-gorsel-bos { width:100%; height:150px; background:linear-gradient(135deg,#e0f2fe,#f0fdf4);
+    /* Yukseklik ve yuvarlatma SARMALAYICIDA: gorsel kirilinca alt metni
+       kutudan tasip ✕ dugmesinin alanini dolduruyordu. */
+    .kiyas-gorsel-sarmal { position:relative; height:150px; overflow:hidden; border-radius:17px 17px 0 0; }
+    .kiyas-gorsel { width:100%; height:100%; object-fit:cover; display:block; }
+    .kiyas-gorsel-bos { width:100%; height:100%; background:linear-gradient(135deg,#e0f2fe,#f0fdf4);
         display:flex; align-items:center; justify-content:center; font-size:40px; border-radius:17px 17px 0 0; }
     .kiyas-kolon-govde { padding:16px 18px 4px; }
     .kiyas-kolon-govde h2 { font-size:16px; font-weight:800; line-height:1.4; margin:0 0 8px;
@@ -269,7 +271,7 @@
         .kiyas-ikon { width:15px; height:15px; }
         .kiyas-slot-hucre { padding:10px !important; }
         .kiyas-slot { min-height:150px; }
-        .kiyas-gorsel, .kiyas-gorsel-bos { height:118px; }
+        .kiyas-gorsel-sarmal { height:118px; }  /* yukseklik artik sarmalayicida */
         .kiyas-kolon-govde { padding:12px 13px 4px; }
         .kiyas-fiyat { font-size:20px; }
         .kiyas-deger, .kiyas-maddeler { font-size:13px; }

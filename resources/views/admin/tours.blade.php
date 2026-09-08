@@ -20,7 +20,7 @@
 
                 <div class="form-group" style="width:140px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Durum</label>
-                    <select name="status" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                    <select name="status" style="width:100%;padding:10px 36px 10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background-color:#fff;">
                         <option value="all">Tümü</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
                         <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Pasif</option>
@@ -29,7 +29,7 @@
                 
                 <div class="form-group" style="width:160px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Acenta</label>
-                    <select name="agency_id" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                    <select name="agency_id" style="width:100%;padding:10px 36px 10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background-color:#fff;">
                         <option value="">Tümü</option>
                         @foreach($agencies as $agency)
                             <option value="{{ $agency->id }}" {{ request('agency_id') == $agency->id ? 'selected' : '' }}>{{ $agency->name }}</option>
@@ -39,7 +39,7 @@
 
                 <div class="form-group" style="width:160px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Destinasyon</label>
-                    <select name="destination" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                    <select name="destination" style="width:100%;padding:10px 36px 10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background-color:#fff;">
                         <option value="">Tümü</option>
                         @foreach($destinations as $dest)
                             <option value="{{ $dest['city'] }}" {{ request('destination') === $dest['city'] ? 'selected' : '' }}>{{ $dest['city'] }} ({{ $dest['count'] }})</option>
@@ -64,7 +64,7 @@
 
                 <div class="form-group" style="width:150px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Trafik</label>
-                    <select name="traffic" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                    <select name="traffic" style="width:100%;padding:10px 36px 10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background-color:#fff;">
                         <option value="">Tümü</option>
                         <option value="clicked" {{ request('traffic') === 'clicked' ? 'selected' : '' }}>Tıklanmışlar</option>
                         <option value="viewed" {{ request('traffic') === 'viewed' ? 'selected' : '' }}>Görüntülenmişler</option>
@@ -73,7 +73,7 @@
 
                 <div class="form-group" style="width:170px;margin-bottom:0;">
                     <label style="font-size:13px;color:#475569;">Sıralama</label>
-                    <select name="sort" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                    <select name="sort" style="width:100%;padding:10px 36px 10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;outline:none;background-color:#fff;">
                         <option value="newest" {{ request('sort') === 'newest' ? 'selected' : '' }}>En Yeni</option>
                         <option value="date" {{ request('sort') === 'date' ? 'selected' : '' }}>Tarih (Yakın)</option>
                         <option value="price_asc" {{ request('sort') === 'price_asc' ? 'selected' : '' }}>Fiyat (Artan)</option>
@@ -104,7 +104,7 @@
                 </div>
             @else
                 <div class="card" style="padding:0;overflow:hidden;margin:0;">
-                    <table class="table" style="margin:0;border:none;">
+                    <div class="table-wrap"><table class="table" style="margin:0;border:none;">
                         <thead><tr><th>Tur</th><th>Acenta</th><th>Destinasyon</th><th>Süre</th><th>Fiyat</th><th>Tarih</th><th style="text-align:right;">Tıklama</th><th style="text-align:right;">Görüntülenme</th><th>Durum</th></tr></thead>
                         <tbody>
                             @foreach($tours as $tour)
@@ -127,7 +127,7 @@
                             </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
 
                 <div style="margin-top:16px;">{{ $tours->links() }}</div>

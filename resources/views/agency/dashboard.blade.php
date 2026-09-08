@@ -17,7 +17,7 @@
                 <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">{{ $agency->name }}</h1>
                 <div style="font-size:13px;color:#64748b;">{{ $agency->email }} · {{ $agency->phone }}</div>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
                 <a href="{{ route('agency.profile') }}" class="btn btn-outline btn-sm">⚙️ Profil</a>
                 <a href="{{ route('agency.tours.index') }}" class="btn btn-outline btn-sm">Turlarım →</a>
                 <a href="{{ route('agency.stats') }}" class="btn btn-outline btn-sm">📊 İstatistik</a>
@@ -34,49 +34,33 @@
             .stat-card-link { text-decoration:none; color:inherit; display:block; transition:all 0.25s ease; }
             .stat-card-link:hover .stat-card { transform:translateY(-3px); box-shadow:0 14px 30px -8px rgba(0,0,0,0.12) !important; }
             .stat-card-link .stat-card { cursor:pointer; }
-            .stat-card-link .stat-card div[style*="font-size:13px"] { white-space:nowrap; }
         </style>
+        {{-- Dört kart AYNI ölçü (tıklama): renk anlam taşımadığı için tek renk.
+             Semantik renk (yeşil/sarı/kırmızı) yalnız iyi/uyarı/kritik durumlar için. --}}
+        @php
+            $tiklamaKartlari = [
+                ['Bugünkü Tıklama', $todayClicks, 'ring1'],
+                ['Son 7 Gün',       $weekClicks,  'ring2'],
+                ['Son 30 Gün',      $monthClicks, 'ring3'],
+                ['Toplam Tıklama',  $totalClicks, 'ring4'],
+            ];
+        @endphp
         <div class="grid-4" style="margin-bottom:32px;">
+            @foreach($tiklamaKartlari as [$etiket, $deger, $halkaId])
             <a href="{{ route('agency.stats') }}" class="stat-card-link">
-                <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-size:24px;font-weight:800;color:#10b981;">{{ $todayClicks }}</div>
-                        <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Bugünkü Tıklama</div>
+                <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                    <div style="min-width:0;">
+                        <div style="font-size:24px;font-weight:800;color:var(--accent-ink);">{{ $deger }}</div>
+                        <div style="font-size:13px;color:var(--text-meta);font-weight:600;margin-top:2px;">{{ $etiket }}</div>
                     </div>
-                    <div style="width:48px;height:48px;"><canvas id="ring1"></canvas></div>
+                    <div style="width:48px;height:48px;flex:none;"><canvas id="{{ $halkaId }}"></canvas></div>
                 </div>
             </a>
-            <a href="{{ route('agency.stats') }}" class="stat-card-link">
-                <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-size:24px;font-weight:800;color:#3b82f6;">{{ $weekClicks }}</div>
-                        <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Son 7 Gün</div>
-                    </div>
-                    <div style="width:48px;height:48px;"><canvas id="ring2"></canvas></div>
-                </div>
-            </a>
-            <a href="{{ route('agency.stats') }}" class="stat-card-link">
-                <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-size:24px;font-weight:800;color:#059669;">{{ $monthClicks }}</div>
-                        <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Son 30 Gün</div>
-                    </div>
-                    <div style="width:48px;height:48px;"><canvas id="ring3"></canvas></div>
-                </div>
-            </a>
-            <a href="{{ route('agency.stats') }}" class="stat-card-link">
-                <div class="stat-card" style="padding:20px;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-size:24px;font-weight:800;color:#f59e0b;">{{ $totalClicks }}</div>
-                        <div style="font-size:13px;color:#64748b;font-weight:600;margin-top:2px;">Toplam Tıklama</div>
-                    </div>
-                    <div style="width:48px;height:48px;"><canvas id="ring4"></canvas></div>
-                </div>
-            </a>
+            @endforeach
         </div>
 
         {{-- Charts Row --}}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;">
+        <div class="panel-grid-2" style="margin-bottom:32px;">
             <div class="stat-card" style="padding:24px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px;">
                     <span style="font-size:16px;">📈</span>
@@ -97,12 +81,12 @@
             </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:32px;">
+        <div class="panel-grid-yan">
             {{-- Left: Tours with clicks --}}
             <div class="stat-card" style="padding:24px;">
                 <h2 style="font-size:18px;font-weight:700;margin-bottom:20px;color:#0f172a;">Tur Bazlı Tıklamalar</h2>
                 <div style="overflow-x:auto;">
-                    <table class="table" style="width:100%;text-align:left;">
+                    <div class="table-wrap"><table class="table" style="width:100%;text-align:left;">
                         <thead>
                             <tr><th style="padding-left:0;">Tur</th><th>Destinasyon</th><th>Fiyat</th><th>Tıklama</th><th>Durum</th></tr>
                         </thead>
@@ -123,7 +107,7 @@
                             </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
             </div>
 
@@ -166,7 +150,7 @@
                     @endif
 
                     <div style="margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;">
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;">
+                        <div class="panel-grid-ic" style="text-align:center;">
                             <div>
                                 <div style="font-size:22px;font-weight:800;color:#10b981;">{{ $agency->activeTours->count() }}</div>
                                 <div style="font-size:12px;color:#94a3b8;font-weight:500;">Aktif Tur</div>
@@ -263,10 +247,10 @@ function renderRing(id, hexColor, fillPercent) {
     });
 }
 
-renderRing('ring1', '#10b981', {{ $totalClicks > 0 ? round($todayClicks / max($totalClicks, 1) * 100) : 0 }});
-renderRing('ring2', '#3b82f6', {{ $totalClicks > 0 ? round($weekClicks / max($totalClicks, 1) * 100) : 0 }});
-renderRing('ring3', '#059669', {{ $totalClicks > 0 ? round($monthClicks / max($totalClicks, 1) * 100) : 0 }});
-renderRing('ring4', '#f59e0b', 100);
+renderRing('ring1', '#0f766e', {{ $totalClicks > 0 ? round($todayClicks / max($totalClicks, 1) * 100) : 0 }});
+renderRing('ring2', '#0f766e', {{ $totalClicks > 0 ? round($weekClicks / max($totalClicks, 1) * 100) : 0 }});
+renderRing('ring3', '#0f766e', {{ $totalClicks > 0 ? round($monthClicks / max($totalClicks, 1) * 100) : 0 }});
+renderRing('ring4', '#0f766e', 100);
 
 // Premium Line Chart
 const dailyCtx = document.getElementById('dailyChart').getContext('2d');

@@ -33,6 +33,9 @@ class AgencyController extends Controller
             'activeTours',
             $agency->tours()
                 ->active()
+                // Kart üstündeki kalkış tarihi: ilk GELECEK kalkışı bulmak için
+                // dates gerekiyor. Eager load olmazsa tur başına ayrı sorgu açılır.
+                ->with('dates')
                 ->orderBy('price')
                 ->get()
         );

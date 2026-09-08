@@ -119,7 +119,7 @@
                         <div style="display:flex;gap:15px;overflow-x:auto;padding-bottom:10px;">
                             @forelse($city->images as $image)
                             <div style="flex-shrink:0;width:100px;position:relative;">
-                                <img src="{{ asset('storage/' . $image->image_path) }}" style="width:100px;height:160px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;">
+                                <img src="{{ asset('storage/' . $image->image_path) }}" alt="Öne çıkan şehir görseli" style="width:100px;height:160px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;">
                                 <form action="{{ route('admin.featured_cities.destroy_image', $image) }}" method="POST" style="position:absolute;top:5px;right:5px;">
                                     @csrf @method('DELETE')
                                     <button type="submit" style="background:#ef4444;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.2);" onclick="return confirm('Görsel silinsin mi?')">✕</button>

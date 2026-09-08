@@ -26,7 +26,16 @@
 .filter-group { margin-bottom:20px; }
 .filter-label { font-size:13px; font-weight:700; color:#475569; display:block; margin-bottom:8px; }
 .filter-input, .filter-select { width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:10px; font-size:14px; outline:none; font-family:inherit; background:#f8fafc; transition:all 0.2s; }
-.filter-input:focus, .filter-select:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(13,116,144,0.1); }
+/* Yerel ok/takvim glifi yerine sistemin ikonlari (layouts/app.blade.php) */
+.filter-select { appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; background-size:16px 16px; padding-right:36px; }
+.filter-input[type="date"]::-webkit-calendar-picker-indicator { opacity:0; position:absolute; right:6px; top:0; bottom:0; width:28px; cursor:pointer; } /* yalnız ikon şeridi */
+@supports not selector(::-webkit-calendar-picker-indicator) { .filter-input[type="date"] { background-image:none; padding-right:14px; } }
+.filter-input[type="date"] { position:relative;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>");
+    background-repeat:no-repeat; background-position:right 11px center; background-size:16px 16px; padding-right:38px; }
+.filter-input:focus, .filter-select:focus { border-color:var(--accent); background-color:#fff; box-shadow:0 0 0 3px rgba(13,116,144,0.1); }
 .filter-radio { display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; padding:6px 0; color:#334155; }
 .filter-radio:hover { color:var(--accent); }
 .filter-radio input[type="radio"] { accent-color:var(--accent); width:16px; height:16px; margin:0; cursor:pointer; }
@@ -235,7 +244,7 @@
             <div style="font-size:14px;color:#475569;font-weight:500;"><strong id="toursTotal">{{ $tours->total() }}</strong> tur bulundu</div>
             <div style="display:flex;align-items:center;gap:12px;">
                 <label style="font-size:13px;color:#475569;font-weight:600;">Sıralama:</label>
-                <select name="sort" form="filter-form" class="filter-select" style="padding:8px 16px;width:auto;background:transparent;">
+                <select name="sort" form="filter-form" class="filter-select" style="padding:8px 34px 8px 16px;width:auto;background-color:transparent;">
                     <option value="price_asc" {{ request('sort') == 'price_asc' ? 'selected' : '' }}>Fiyat (Artan)</option>
                     <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>Fiyat (Azalan)</option>
                     <option value="popular" {{ request('sort') == 'popular' ? 'selected' : '' }}>En Popüler</option>

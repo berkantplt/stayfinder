@@ -33,7 +33,7 @@
 
                 <div class="card">
                     <div style="overflow-x:auto;">
-                        <table class="table">
+                        <div class="table-wrap"><table class="table">
                             <thead>
                                 <tr>
                                     <th>KOD</th>
@@ -87,7 +87,7 @@
                                     </tr>
                                 @endforelse
                             </tbody>
-                        </table>
+                        </table></div>
                     </div>
                 </div>
             </div>
