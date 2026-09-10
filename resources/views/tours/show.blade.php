@@ -96,6 +96,7 @@
         #priceCard .p-ctas { flex-basis:100%; flex-direction:row !important; gap:6px !important; margin-top:8px; }
         #priceCard .p-ctas .btn { width:auto !important; padding:9px 8px; font-size:13px; }
         #priceCard .p-rez { flex-basis:100%; font-size:11.5px !important; margin-top:8px !important; }
+        #priceCard .p-sinyal { flex-basis:100%; margin:2px 0 4px !important; font-size:11.5px !important; }
         #priceCard .p-agency { flex-basis:100%; margin:4px 0 0 !important; }
         #priceCard .p-go { flex:1.6; }
         #priceCard .p-call { flex:1; }
@@ -876,6 +877,12 @@
                         <div class="p-price" style="margin:12px 0 4px;">
                             <span class="price-tag cheapest" style="font-size:32px;">{{ $tour->formatted_price }}</span>
                             <span class="price-sm"> / kişi başı</span>
+                        </div>
+                    @endif
+                    {{-- Fiyat sinyali: grafiğe gömülü eğilim tek satırda; veri yetmiyorsa iddia yok --}}
+                    @if($priceSignal)
+                        <div class="p-sinyal" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px;font-size:12.5px;color:var(--text-meta);">
+                            <span style="display:inline-flex;align-items:center;gap:5px;color:#065f46;font-weight:600;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/></svg> {{ $priceSignal }}</span>
                         </div>
                     @endif
                     <div class="p-agency" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
