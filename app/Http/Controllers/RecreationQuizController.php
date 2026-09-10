@@ -75,6 +75,11 @@ class RecreationQuizController extends Controller
             'quiz_version' => QuizEvaluator::QUIZ_VERSION,
             'rubric_version' => Rubric::VERSION,
             'at' => now()->toIso8601String(),
+            // /turlar "Sana uygun" sıralaması için (oturum ömrü; DB'ye yazılmaz)
+            'profil' => [
+                'degerler' => $profil['degerler'] ?? [],
+                'agirliklar' => $profil['agirliklar'] ?? [],
+            ],
         ]);
 
         return response()->json([

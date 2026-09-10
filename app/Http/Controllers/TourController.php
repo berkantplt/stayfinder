@@ -8,7 +8,10 @@ use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\Destination;
 use App\Models\Tour;
+use App\Models\TourRubricScore;
 use App\Models\TourView;
+use App\Services\Matching\Rubric;
+use App\Services\Matching\TourMatcher;
 use App\Support\DestinationFilter;
 use App\Support\PriceDrops;
 use App\Support\TourListFilter;
@@ -17,7 +20,9 @@ use App\Support\TourComparison;
 use App\Support\TurkishCities;
 use App\Support\TurkishMonths;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class TourController extends Controller
@@ -64,20 +69,32 @@ class TourController extends Controller
         // Sort
         $sort = $request->input('sort', 'price_asc');
 
-        if (in_array($sort, ['popular', 'reviews'])) {
-            $query->withCount(['clicks', 'views', 'reviews']);
+        // "Sana uygun": tatil karakteri testi oturumda çözülmüşse (profil session'da)
+        // LLM'siz rubrik puanıyla sıralama + kartta gerekçe. Test yoksa seçenek yok.
+        $quizProfil = session('recreation_quiz_result.profil');
+        $uygunSiralamaVar = is_array($quizProfil) && ! empty($quizProfil['agirliklar']);
+        if ($sort === 'uygun' && ! $uygunSiralamaVar) {
+            $sort = 'price_asc';
         }
 
-        match ($sort) {
-            'price_desc' => $query->orderByDesc('price_try'),
-            'date' => $query->orderBy('departure_date'),
-            'newest' => $query->orderByDesc('created_at'),
-            'popular' => $query->orderByRaw('(clicks_count + views_count) DESC')->orderByDesc('reviews_count'),
-            'reviews' => $query->orderByDesc('reviews_count')->orderByDesc('id'),
-            default => $query->orderBy('price_try'),
-        };
+        if ($sort === 'uygun') {
+            $tours = $this->siralaUygun($query, $filtreParams, $quizProfil, $request);
+        } else {
+            if (in_array($sort, ['popular', 'reviews'])) {
+                $query->withCount(['clicks', 'views', 'reviews']);
+            }
 
-        $tours = $query->paginate(12)->withQueryString();
+            match ($sort) {
+                'price_desc' => $query->orderByDesc('price_try'),
+                'date' => $query->orderBy('departure_date'),
+                'newest' => $query->orderByDesc('created_at'),
+                'popular' => $query->orderByRaw('(clicks_count + views_count) DESC')->orderByDesc('reviews_count'),
+                'reviews' => $query->orderByDesc('reviews_count')->orderByDesc('id'),
+                default => $query->orderBy('price_try'),
+            };
+
+            $tours = $query->paginate(12)->withQueryString();
+        }
 
         // Kart rozeti: son 30 gündeki fiyat düşüşü (ana sayfayla ortak hesap)
         $tourDrops = PriceDrops::last30Days($tours->pluck('id'));
@@ -117,7 +134,7 @@ class TourController extends Controller
         $activeDestination = $request->filled('destination') ? (string) $request->destination : null;
 
         return view('tours.index', compact(
-            'tours', 'tourDrops', 'relaxations', 'departureCity', 'departureDefaulted', 'destinations', 'agencies', 'categories', 'departureCities',
+            'tours', 'tourDrops', 'relaxations', 'departureCity', 'departureDefaulted', 'uygunSiralamaVar', 'destinations', 'agencies', 'categories', 'departureCities',
             'activeCategory', 'activeDestination'
         ));
     }
@@ -270,6 +287,54 @@ class TourController extends Controller
             'tour', 'otherOffers', 'cheaperOffer', 'similarTours', 'reviews', 'avgRating', 'userReview',
             'priceLabels', 'priceData', 'priceSignal', 'priceUpdatedAt', 'agencyCoupon', 'aiContext'
         ));
+    }
+
+    /**
+     * "Sana uygun" sıralaması: filtrelenmiş kümenin tümü rubrik puanıyla sıralanır
+     * (puanı olmayan tur sona), sayfa dilimi ilişkileriyle yüklenir, karta puan ve
+     * gerekçe eklenir. Hesap PHP'de: rubrik puanları önceden üretilmiş, LLM yok.
+     */
+    private function siralaUygun(Builder $query, array $filtreParams, array $profil, Request $request): LengthAwarePaginator
+    {
+        $idSorgu = Tour::query()->active()->whereHas('agency', fn ($q) => $q->active());
+        TourListFilter::apply($idSorgu, $filtreParams);
+        $ids = $idSorgu->pluck('tours.id');
+
+        $scores = TourRubricScore::whereIn('tour_id', $ids)
+            ->where('rubric_version', Rubric::VERSION)
+            ->where('review_status', '!=', TourRubricScore::STATUS_NEEDS_REVIEW)
+            ->get()
+            ->keyBy('tour_id');
+        $matcher = app(TourMatcher::class);
+        $degerler = $profil['degerler'] ?? [];
+        $agirliklar = $profil['agirliklar'] ?? [];
+
+        $puan = [];
+        $neden = [];
+        foreach ($ids as $id) {
+            $rubricScore = $scores->get($id);
+            $skor = $rubricScore ? $matcher->skor($rubricScore, $degerler, $agirliklar) : null;
+            $puan[$id] = $skor ?? -1;
+            if ($rubricScore && $skor !== null) {
+                $neden[$id] = $matcher->reason($rubricScore, $degerler, $agirliklar);
+            }
+        }
+
+        $sirali = $ids->sort(fn ($a, $b) => ($puan[$b] <=> $puan[$a]) ?: ($a <=> $b))->values();
+        $perPage = 12;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $sayfaIds = $sirali->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $items = (clone $query)->reorder()->whereIn('tours.id', $sayfaIds)->get()
+            ->sortBy(fn ($t) => array_search($t->id, $sayfaIds->all(), true))
+            ->values();
+        foreach ($items as $t) {
+            $t->match_score = max(0, $puan[$t->id]);
+            $t->match_reason = $neden[$t->id] ?? null;
+        }
+
+        return (new LengthAwarePaginator($items, $sirali->count(), $perPage, $page, ['path' => $request->url()]))
+            ->appends($request->query());
     }
 
     /**

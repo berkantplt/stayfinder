@@ -274,6 +274,9 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;background:var(--white);padding:12px 20px;border-radius:12px;border:1px solid #e2e8f0;">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:#475569;font-weight:500;">
                 <span><strong id="toursTotal">{{ $tours->total() }}</strong> tur bulundu</span>
+                @if(request('sort') == 'uygun' && ($uygunSiralamaVar ?? false))
+                    <span class="m-chip" style="padding:5px 10px;font-size:12px;cursor:default;">Tatil karakterine göre sıralandı</span>
+                @endif
                 @if($departureDefaulted ?? false)
                     {{-- Profil şehri varsayılan olarak uygulandı; görünür ve tek dokunuşla kalkar --}}
                     <a href="{{ route('tours.index') }}?departure_city=" class="m-chip m-chip-on" style="text-decoration:none;padding:5px 10px;font-size:12px;" title="Profilindeki şehir; kaldırmak için tıkla">{{ $departureCity }}'dan kalkış (profilin) ✕</a>
@@ -283,6 +286,10 @@
             <div style="display:flex;align-items:center;gap:12px;">
                 <label style="font-size:13px;color:#475569;font-weight:600;">Sıralama:</label>
                 <select name="sort" form="filter-form" class="filter-select" style="padding:8px 34px 8px 16px;width:auto;background-color:transparent;">
+                    @if($uygunSiralamaVar ?? false)
+                        {{-- Tatil karakteri testi çözülmüş: rubrik puanıyla sıralama (LLM yok) --}}
+                        <option value="uygun" {{ request('sort') == 'uygun' ? 'selected' : '' }}>Sana uygun</option>
+                    @endif
                     <option value="price_asc" {{ request('sort') == 'price_asc' ? 'selected' : '' }}>Fiyat (Artan)</option>
                     <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>Fiyat (Azalan)</option>
                     <option value="popular" {{ request('sort') == 'popular' ? 'selected' : '' }}>En Popüler</option>
@@ -326,6 +333,13 @@
                     @endif
                     <div class="card-title" style="font-size:16px;margin-bottom:8px;line-height:1.4;">{{ $tour->title }}</div>
                     <div style="margin-bottom:12px;">@include('partials.tour_card_agency', ['tour' => $tour])</div>
+                    @if(!empty($tour->match_reason))
+                        {{-- "Neden sana uygun": şablon tabanlı gerekçe (TourMatcher::reason), yalnız sana uygun sıralamasında --}}
+                        <div class="card-neden" style="display:flex;gap:6px;align-items:flex-start;margin:-6px 0 10px;font-size:12px;line-height:1.4;color:var(--accent-deep);">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:2px;"><path d="M5 12l4 4L19 6"/></svg>
+                            <span>{{ $tour->match_reason }}</span>
+                        </div>
+                    @endif
                     
                     <div style="margin-top:auto;">
                         <div class="card-meta" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
