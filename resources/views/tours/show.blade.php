@@ -702,18 +702,62 @@
                         @endforeach
                     </section>
                 @endif
+
+                {{-- Dahil olan/olmayanlar sol sütunda: kenar çubuğu yalnız yapışkan fiyat
+                     bloğunu taşır (viewport'tan uzun kenar çubuğu yapışamıyordu) --}}
+                {{-- Dahil olan/olmayan kutuları: kapalıyken ilk ~3 satır görünür,
+                     devamı beyaza kaybolur (.inc-body::after degradesi); başlığa
+                     basınca tamamı açılır. Liste önizlemeye zaten sığıyorsa
+                     soldurma + ok gizlenir (bkz. scripts'teki inc-box ölçümü). --}}
+                @if($tour->included)
+                    <div class="inc-box">
+                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
+                            <h3>✅ Dahil Olanlar</h3>
+                        </button>
+                        <div class="inc-body">
+                            <ul style="list-style:none;margin-top:10px;">
+                                @foreach(explode("\n", $tour->included) as $item)
+                                    @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
+                                    @if($line !== '')
+                                        <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        </div>
+                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
+                            <span class="inc-caret" aria-hidden="true">▾</span>
+                        </button>
+                    </div>
+                @endif
+
+                @if($tour->excluded)
+                    <div class="inc-box">
+                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
+                            <h3>❌ Dahil Olmayanlar</h3>
+                        </button>
+                        <div class="inc-body">
+                            <ul style="list-style:none;margin-top:10px;">
+                                @foreach(explode("\n", $tour->excluded) as $item)
+                                    @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
+                                    @if($line !== '')
+                                        <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        </div>
+                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
+                            <span class="inc-caret" aria-hidden="true">▾</span>
+                        </button>
+                    </div>
+                @endif
             </div>
 
             {{-- Right: Pricing & Agency --}}
             <div class="detail-sidebar">
+                {{-- Yapışkan blok: fiyat kartı + karşılaştır + diğer acentalar. Kenar çubuğu
+                     satır yüksekliğine uzar (align-self:stretch), blok içinde yapışır. --}}
+                <div class="detail-sticky">
 
-
-                {{-- Compare button --}}
-                <div style="margin-bottom:16px;">
-                    <button type="button" class="compare-toggle" data-tour-id="{{ $tour->id }}" onclick="window.toggleCompare({{ $tour->id }})" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);color:var(--text-sec);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;">
-                        + Karşılaştır
-                    </button>
-                </div>
 
                 {{-- Main Price Card --}}
                 @php $campaign = $tour->activeCampaign; @endphp
@@ -792,51 +836,12 @@
                     <div class="p-rez" style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:12.5px;color:var(--text-meta);line-height:1.4;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Rezervasyon acentanın sitesinde tamamlanır. turXtur ödeme almaz.</div>
                 </div>
 
-                {{-- Dahil olan/olmayan kutuları: kapalıyken ilk ~3 satır görünür,
-                     devamı beyaza kaybolur (.inc-body::after degradesi); başlığa
-                     basınca tamamı açılır. Liste önizlemeye zaten sığıyorsa
-                     soldurma + ok gizlenir (bkz. scripts'teki inc-box ölçümü). --}}
-                @if($tour->included)
-                    <div class="inc-box">
-                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
-                            <h3>✅ Dahil Olanlar</h3>
-                        </button>
-                        <div class="inc-body">
-                            <ul style="list-style:none;margin-top:10px;">
-                                @foreach(explode("\n", $tour->included) as $item)
-                                    @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
-                                    @if($line !== '')
-                                        <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
-                                    @endif
-                                @endforeach
-                            </ul>
-                        </div>
-                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
-                            <span class="inc-caret" aria-hidden="true">▾</span>
-                        </button>
-                    </div>
-                @endif
-
-                @if($tour->excluded)
-                    <div class="inc-box">
-                        <button type="button" class="inc-head" aria-expanded="false" onclick="window.incToggle(this)">
-                            <h3>❌ Dahil Olmayanlar</h3>
-                        </button>
-                        <div class="inc-body">
-                            <ul style="list-style:none;margin-top:10px;">
-                                @foreach(explode("\n", $tour->excluded) as $item)
-                                    @php $line = ltrim(trim($item), "•-*–— \t"); @endphp
-                                    @if($line !== '')
-                                        <li style="padding:4px 0;color:var(--text-sec);font-size:14px;">• {{ $line }}</li>
-                                    @endif
-                                @endforeach
-                            </ul>
-                        </div>
-                        <button type="button" class="inc-more" aria-expanded="false" aria-label="Devamını göster" onclick="window.incToggle(this)">
-                            <span class="inc-caret" aria-hidden="true">▾</span>
-                        </button>
-                    </div>
-                @endif
+                {{-- Compare button --}}
+                <div style="margin-bottom:16px;">
+                    <button type="button" class="compare-toggle" data-tour-id="{{ $tour->id }}" onclick="window.toggleCompare({{ $tour->id }})" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);color:var(--text-sec);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;">
+                        + Karşılaştır
+                    </button>
+                </div>
 
                 {{-- Other Agencies --}}
                 @if($otherOffers->count())
@@ -865,10 +870,12 @@
                     </div>
                 </div>
                 @endif
+                </div>{{-- /.detail-sticky --}}
             </div>
         </div>
     </div>
 </div>
+
 {{-- Mobil yapışkan CTA şeridi: fiyat kartı ekranın üstünden çıkınca belirir
      (body.cta-acik, gözlemci aşağıdaki betikte). Dip katman token'ı --cta-h ile
      sohbet balonu ve karşılaştırma tepsisi şeridin üstüne çıkar; sekme barı altta

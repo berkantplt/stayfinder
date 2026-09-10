@@ -350,7 +350,10 @@
         /* Grid kolonu, içindeki en geniş kırılmaz öğe kadar genişlemesin
            (mobilde tarih kutuları sayfayı yana taşırıyordu) */
         .detail-grid > div { min-width:0; }
-        .detail-sidebar { position:sticky; top:80px; align-self:start; }
+        /* Kenar çubuğunun tamamı viewport'tan uzun olduğu için yapışması işe yaramıyordu;
+           yalnız fiyat bloğu (.detail-sticky) yapışır, kenar çubuğu satır boyunca uzar. */
+        .detail-sidebar { align-self:stretch; }
+        .detail-sticky { position:sticky; top:84px; }
 
         /* ── Footer (CTA bandı + dalga + koyu gövde tasarımı) ── */
         .ftr { margin-top:56px; padding:0 14px 14px; }
@@ -588,7 +591,7 @@
             .mobile-nav .mobile-auth { margin-top:auto; padding-top:16px; gap:8px; }
             .mobile-nav .mobile-auth a { text-align:center; }
             .detail-grid { grid-template-columns:1fr; }
-            .detail-sidebar { position:static; }
+            .detail-sidebar, .detail-sticky { position:static; }
             .section { padding:24px 0; }
             .card-img { height:140px; }
 
