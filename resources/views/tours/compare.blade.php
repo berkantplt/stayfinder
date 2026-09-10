@@ -208,7 +208,9 @@
     .kiyas-eski-satir { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:5px; }
     .kiyas-eski { text-decoration:line-through; color:var(--text-muted); font-size:13px; }
     .kiyas-indirim-chip { font-size:11.5px; font-weight:700; padding:3px 8px; border-radius:7px;
-        background:var(--green-bg); color:var(--green-text); }
+        background:var(--warm-bg); color:var(--warm-ink); }
+    /* İndirim rozeti sıcak renk; "en ucuz" yeşil kalır */
+    .kiyas-rozet-indirim { background:var(--warm); box-shadow:0 4px 10px -4px rgba(194,65,12,.6); }
     .kiyas-try { font-size:12px; color:var(--text-muted); margin-top:4px; }
     .kiyas-gunluk { font-size:12.5px; color:var(--text-sec); margin-top:6px; }
     .kiyas-fark { font-size:12.5px; font-weight:700; color:#b45309; margin-top:6px; }
@@ -355,7 +357,7 @@
                         <th class="kiyas-kolon" data-kiyas-tur="{{ $tour->id }}">
                             <div class="kiyas-gorsel-sarmal">
                                 @if($f['indirimYuzde'])
-                                    <span class="kiyas-kose-rozet">%{{ $f['indirimYuzde'] }} İNDİRİM</span>
+                                    <span class="kiyas-kose-rozet kiyas-rozet-indirim">%{{ $f['indirimYuzde'] }} İNDİRİM</span>
                                 @elseif($f['enUcuz'])
                                     <span class="kiyas-kose-rozet">EN UCUZ</span>
                                 @endif

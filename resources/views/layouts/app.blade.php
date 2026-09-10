@@ -76,6 +76,9 @@
             --dip-kenar:24px;    /* ekran kenarindan mesafe */
             --dip-aralik:12px;   /* katmanlar arasi nefes */
             --green:#059669; --green-bg:#d1fae5; --green-text:#065f46;
+            /* Sicak vurgu YALNIZ kampanya/indirim icin (fiyat koyu kalir, her fiyat
+               sicak olursa indirim sinyali olur). --warm beyaz uzerinde 5,0:1. */
+            --warm:#c2410c; --warm-bg:#fff1ec; --warm-ink:#9a3412;
             --border:#e2e8f0; --border-light:#f1f5f9;
             --shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
             --shadow-md:0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05);
@@ -250,7 +253,7 @@
         /* Kart üstü parçalar (kalp, puan, düşüş rozeti) masaüstünde de basılır — eskiden
            işaretleme gidip CSS ile gizleniyordu, masaüstü kullanıcı listeden favori
            ekleyemiyordu. Mobil ölçüleri ≤768 bloğunda ezilir. */
-        .m-drop-badge { display:inline-flex; position:absolute; top:10px; left:10px; z-index:2; background:var(--accent-ink); color:#fff; font-family:'Manrope',var(--font); font-size:10.5px; font-weight:800; letter-spacing:-.1px; padding:5px 10px; border-radius:100px; }
+        .m-drop-badge { display:inline-flex; position:absolute; top:10px; left:10px; z-index:2; background:var(--warm); color:#fff; font-family:'Manrope',var(--font); font-size:10.5px; font-weight:800; letter-spacing:-.1px; padding:5px 10px; border-radius:100px; }
         .m-fav { display:flex; position:absolute; top:10px; right:10px; z-index:3; width:32px; height:32px; padding:0; align-items:center; justify-content:center; border:none; border-radius:50%; background:rgba(255,255,255,.92); color:#0f2421; cursor:pointer; box-shadow:0 2px 8px rgba(4,24,21,.14); }
         .m-fav.on { color:#e0563a; }
         .m-fav.on svg { fill:currentColor; }
@@ -270,6 +273,7 @@
         /* ── Badges ── */
         .badge { display:inline-flex; align-items:center; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; }
         .badge-green { background:var(--green-bg); color:var(--green-text); }
+        .badge-warm { background:var(--warm-bg); color:var(--warm-ink); }
         .badge-accent { background:var(--accent-bg); color:var(--accent-dark); }
 
         /* ── Buttons ── */
@@ -654,7 +658,7 @@
             /* #compare-bar konumu asagidaki 'Dip katman' blogunda, token'la */
 
             /* ===== Tur kartı mobil parçaları (tour_grid partial'ı — her sayfada) ===== */
-            .m-drop-badge { display:inline-flex; position:absolute; top:8px; left:8px; z-index:2; background:var(--accent-ink); color:#fff; font-family:'Manrope',var(--font); font-size:8.8px; font-weight:800; letter-spacing:-.1px; padding:4px 8px; border-radius:100px; }
+            .m-drop-badge { display:inline-flex; position:absolute; top:8px; left:8px; z-index:2; background:var(--warm); color:#fff; font-family:'Manrope',var(--font); font-size:8.8px; font-weight:800; letter-spacing:-.1px; padding:4px 8px; border-radius:100px; }
             .m-fav { display:flex; position:absolute; top:7px; right:7px; z-index:3; width:28px; height:28px; padding:0; align-items:center; justify-content:center; border:none; border-radius:50%; background:rgba(255,255,255,.92); color:#0f2421; cursor:pointer; box-shadow:0 2px 8px rgba(4,24,21,.14); }
             .m-fav.on { color:#e0563a; }
             .m-fav.on svg { fill:currentColor; }

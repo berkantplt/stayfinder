@@ -833,7 +833,7 @@
                     @if($campaign)
                         {{-- Campaign active --}}
                         <div class="p-badge" style="margin-bottom:6px;">
-                            <span class="badge badge-green">🏷️ {{ $campaign->label }}</span>
+                            <span class="badge badge-warm">🏷️ {{ $campaign->label }}</span>
                         </div>
                         <div class="p-price" style="margin:10px 0 4px;">
                             <span style="text-decoration:line-through;color:var(--text-muted);font-size:16px;">{{ $tour->formatted_price }}</span>
