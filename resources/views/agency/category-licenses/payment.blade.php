@@ -11,7 +11,7 @@
                     <div>
                         <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">Güvenli Ödeme</h1>
                         <div style="font-size:14px;color:#64748b;margin-top:4px;">
-                            Sipariş No: <strong>{{ $order->order_number }}</strong> • Tutar: <strong>{{ number_format((float) $order->subtotal, 2, ',', '.') }} TL</strong>
+                            Sipariş No: <strong>{{ $order->order_number }}</strong> • Tutar: <strong>{{ number_format((float) $order->subtotal, 0, ",", ".") }} TL</strong>
                         </div>
                     </div>
                     <a href="{{ route('agency.category-licenses.checkout-form') }}" class="btn btn-outline">Geri</a>

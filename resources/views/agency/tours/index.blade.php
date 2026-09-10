@@ -21,7 +21,7 @@
         @unless($canCreateTours)
             <div class="alert alert-error" style="max-width:94%;margin-left:auto;margin-right:auto;">
                 Henüz aktif kategori yetkiniz yok. Yeni tur paylaşmak için
-                <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkilendirme Merkezi</a>
+                <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkileri sayfası</a>
                 üzerinden kategori ekleyin.
             </div>
         @endunless

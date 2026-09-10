@@ -239,7 +239,7 @@
                     @unless($canCreateTours)
                         <div class="alert alert-error" style="margin-bottom: 24px;">
                             Tur paylaşabilmek için önce en az 1 kategori için aylık yetki satın almalısınız.
-                            <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkilendirme Merkezi</a>
+                            <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkileri sayfası</a>
                         </div>
                     @endunless
 
@@ -275,7 +275,7 @@
                                     if (!info) { hint.style.display = 'none'; return; }
                                     const remaining = Math.max(0, info.limit - info.used);
                                     hint.textContent = remaining === 0
-                                        ? 'Bu kategorideki tur ekleme hakkınız doldu (' + info.used + '/' + info.limit + ') — Kategori Yetkilendirme Merkezi\'nden ekstra tur hakkı satın alabilirsiniz.'
+                                        ? 'Bu kategorideki tur ekleme hakkınız doldu (' + info.used + '/' + info.limit + ') — Kategori Yetkileri sayfası\'nden ekstra tur hakkı satın alabilirsiniz.'
                                         : 'Bu kategorideki tur hakkınız: ' + info.used + '/' + info.limit + ' (' + remaining + ' hak kaldı)';
                                     hint.style.color = remaining === 0 ? '#dc2626' : 'var(--text-muted)';
                                     hint.style.display = '';
@@ -436,7 +436,7 @@
                 @else
                     <div style="text-align:center;padding:32px 16px;">
                         <div style="font-size:15px;color:#475569;margin-bottom:16px;">Önce kategori yetkisi satın alın, ardından bu alandan tur paylaşın.</div>
-                        <a href="{{ route('agency.category-licenses.index') }}" class="btn btn-primary">Kategori Yetkilendirme Merkezi</a>
+                        <a href="{{ route('agency.category-licenses.index') }}" class="btn btn-primary">Kategori Yetkileri</a>
                     </div>
                     </div>
                 @endif

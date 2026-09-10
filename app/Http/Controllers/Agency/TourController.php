@@ -565,7 +565,7 @@ class TourController extends Controller
         }
 
         throw ValidationException::withMessages([
-            'category_id' => 'Bu kategoride tur yayınlamak için önce Kategori Yetkilendirme Merkezi üzerinden aylık yetki satın almalısınız.',
+            'category_id' => 'Bu kategoride tur yayınlamak için önce Kategori Yetkileri sayfasından aylık yetki satın almalısınız.',
         ]);
     }
 
@@ -590,7 +590,7 @@ class TourController extends Controller
 
         throw ValidationException::withMessages([
             'category_id' => sprintf(
-                'Bu kategorideki tur ekleme hakkınız doldu (%d/%d). Kategori Yetkilendirme Merkezi üzerinden bu kategori için ekstra tur hakkı satın alabilirsiniz.',
+                'Bu kategorideki tur ekleme hakkınız doldu (%d/%d). Kategori Yetkileri sayfasından bu kategori için ekstra tur hakkı satın alabilirsiniz.',
                 $used,
                 $limit
             ),

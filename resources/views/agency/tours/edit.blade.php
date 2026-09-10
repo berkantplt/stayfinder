@@ -239,7 +239,7 @@
                     @unless($currentCategoryAccessible)
                         <div class="alert alert-error" style="margin-bottom: 24px;">
                             Bu turun mevcut kategorisi için aktif yetkiniz kalmamış görünüyor. Güncelleyebilmek için yetkili bir kategori seçin veya
-                            <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkilendirme Merkezi</a>
+                            <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkileri sayfası</a>
                             üzerinden yeni kategori yetkisi alın.
                         </div>
                     @endunless
