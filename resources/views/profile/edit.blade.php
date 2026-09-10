@@ -64,7 +64,14 @@
                     </div>
                     <div class="form-group">
                         <label>Şehir</label>
-                        <input type="text" name="city" value="{{ old('city', $user->city) }}" placeholder="İstanbul">
+                        {{-- Listeden seçim: tur listesinde "Nereden" kutusu bu şehirle dolu gelir --}}
+                        <select name="city">
+                            <option value="">Seçilmedi</option>
+                            @foreach(\App\Support\TurkishCities::all() as $sehir)
+                                <option value="{{ $sehir }}" @selected(old('city', $user->city) === $sehir)>{{ $sehir }}</option>
+                            @endforeach
+                        </select>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Tur listesi bu şehirden kalkan turlarla açılır; tek dokunuşla kaldırılabilir.</div>
                     </div>
                 </div>
                 <div class="form-group">

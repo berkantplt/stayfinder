@@ -151,7 +151,7 @@
                     <select name="departure_city" class="filter-select" data-searchable>
                         <option value="">Fark etmez</option>
                         @foreach($departureCities as $city)
-                            <option value="{{ $city }}" {{ request('departure_city') == $city ? 'selected' : '' }}>{{ $city }}</option>
+                            <option value="{{ $city }}" {{ ($departureCity ?? null) === $city ? 'selected' : '' }}>{{ $city }}</option>
                         @endforeach
                     </select>
                     <div style="font-size:11px;color:#94a3b8;margin-top:6px;">Bu şehirden kalkan veya yolcu alan turlar.</div>
@@ -223,7 +223,7 @@
             $mActive = array_filter([
                 'q' => request('q'),
                 'destination' => request('destination'),
-                'departure_city' => request('departure_city'),
+                'departure_city' => $departureCity ?? null,
                 'agency_id' => request('agency_id'),
                 'dates' => request('date_start') || request('date_end') ? true : null,
                 'days' => request('min_days') || request('max_days') ? true : null,
@@ -244,8 +244,8 @@
             @if(request('destination'))
                 <button type="button" class="m-chip m-chip-on" onclick="mChipClear('destination')">{{ request('destination') }} ✕</button>
             @endif
-            @if(request('departure_city'))
-                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('departure_city')">🚌 {{ request('departure_city') }} ✕</button>
+            @if($departureCity ?? null)
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('departure_city')">{{ $departureCity }}'dan kalkış{{ ($departureDefaulted ?? false) ? ' (profilin)' : '' }} ✕</button>
             @endif
             @if($mAgencyName)
                 <button type="button" class="m-chip m-chip-on" onclick="mChipClear('agency_id')">{{ \Illuminate\Support\Str::limit($mAgencyName, 16) }} ✕</button>
@@ -271,7 +271,14 @@
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;background:var(--white);padding:12px 20px;border-radius:12px;border:1px solid #e2e8f0;">
-            <div style="font-size:14px;color:#475569;font-weight:500;"><strong id="toursTotal">{{ $tours->total() }}</strong> tur bulundu</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:#475569;font-weight:500;">
+                <span><strong id="toursTotal">{{ $tours->total() }}</strong> tur bulundu</span>
+                @if($departureDefaulted ?? false)
+                    {{-- Profil şehri varsayılan olarak uygulandı; görünür ve tek dokunuşla kalkar --}}
+                    <a href="{{ route('tours.index') }}?departure_city=" class="m-chip m-chip-on" style="text-decoration:none;padding:5px 10px;font-size:12px;" title="Profilindeki şehir; kaldırmak için tıkla">{{ $departureCity }}'dan kalkış (profilin) ✕</a>
+                    <script>window.__depVarsayilan = true;</script>
+                @endif
+            </div>
             <div style="display:flex;align-items:center;gap:12px;">
                 <label style="font-size:13px;color:#475569;font-weight:600;">Sıralama:</label>
                 <select name="sort" form="filter-form" class="filter-select" style="padding:8px 34px 8px 16px;width:auto;background-color:transparent;">
@@ -481,6 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 params.append(key, value);
             }
         }
+        // Profil şehri varsayılanı kaldırıldıysa boş departure_city taşınır (sunucu has() ile anlar)
+        if (window.__depVarsayilan && !params.has('departure_city')) params.append('departure_city', '');
         
         // Append extra params from delegation (like sort)
         for (const [key, value] of Object.entries(extraParams)) {
@@ -552,6 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const [key, value] of new FormData(form).entries()) {
             if (value && value !== 'all') params.append(key, value);
         }
+        if (window.__depVarsayilan && !params.has('departure_city')) params.append('departure_city', '');
         url.search = params.toString();
         return url;
     }

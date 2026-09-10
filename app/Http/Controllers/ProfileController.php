@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Review;
 use App\Models\TourView;
+use App\Support\TurkishCities;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -35,7 +37,8 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
-            'city' => 'nullable|string|max:100',
+            // Şehir listeden: kalkış filtresiyle eşleşmesi için serbest metin değil
+            'city' => ['nullable', 'string', 'max:100', Rule::in(TurkishCities::all())],
             'bio' => 'nullable|string|max:500',
             'birth_date' => 'nullable|date|before:today',
             'avatar_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',

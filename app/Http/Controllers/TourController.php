@@ -45,6 +45,20 @@ class TourController extends Controller
 
         // Filtre dili tek yerde: gevşetme sayımı ve kayıtlı arama aynı sınıfı kullanır
         $filtreParams = $request->query();
+
+        // Kalkış şehrim varsayılanı: üyenin profil şehri, yalnız filtresiz girişte
+        // (page/sort dışında parametre yokken). Çip ?departure_city= (boş) gönderir,
+        // has() true olduğu için varsayılan uygulanmaz; AJAX da bu bayrağı taşır.
+        $departureDefaulted = false;
+        $profilSehri = auth()->user()?->city;
+        if (! $request->has('departure_city') && $profilSehri && in_array($profilSehri, TurkishCities::all(), true)
+            && empty(array_diff_key($filtreParams, array_flip(['page', 'sort'])))) {
+            $filtreParams['departure_city'] = $profilSehri;
+            $departureDefaulted = true;
+        }
+        $departureCity = isset($filtreParams['departure_city']) && is_string($filtreParams['departure_city']) && $filtreParams['departure_city'] !== ''
+            ? $filtreParams['departure_city'] : null;
+
         TourListFilter::apply($query, $filtreParams);
 
         // Sort
@@ -103,7 +117,7 @@ class TourController extends Controller
         $activeDestination = $request->filled('destination') ? (string) $request->destination : null;
 
         return view('tours.index', compact(
-            'tours', 'tourDrops', 'relaxations', 'destinations', 'agencies', 'categories', 'departureCities',
+            'tours', 'tourDrops', 'relaxations', 'departureCity', 'departureDefaulted', 'destinations', 'agencies', 'categories', 'departureCities',
             'activeCategory', 'activeDestination'
         ));
     }
