@@ -17,7 +17,8 @@ class FavoriteController extends Controller
             $user->favoriteTours()->detach($tour->id);
             $message = 'Favorilerden çıkarıldı.';
         } else {
-            $user->favoriteTours()->attach($tour->id);
+            // Eklendiği andaki fiyat + birim: favoriler sayfası "eklediğinden beri %N düştü" der
+            $user->favoriteTours()->attach($tour->id, ['price_at_save' => $tour->price, 'currency_at_save' => $tour->currency]);
             $message = 'Favorilere eklendi!';
         }
 

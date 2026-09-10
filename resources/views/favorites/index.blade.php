@@ -31,6 +31,13 @@
                         <div class="card-title">{{ $tour->title }}</div>
                         <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_label }}</div>
                     @include('partials.tour_card_meta', ['tour' => $tour])
+                        @php
+                            // Eklendiği andaki fiyatla kıyas: yalnız aynı para biriminde (kur oynaması
+                            // düşüş sanılmasın); eski favorilerde anlık görüntü yok, satır basılmaz.
+                            $baslangic = $tour->pivot?->price_at_save;
+                            $ayniBirim = $baslangic !== null && $tour->pivot->currency_at_save === $tour->currency && (float) $baslangic > 0;
+                            $fark = $ayniBirim ? (int) round(((float) $tour->price - (float) $baslangic) / (float) $baslangic * 100) : null;
+                        @endphp
                         <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;">
                             <div>
                                 <span class="price-tag" style="font-size:18px;">{{ $tour->formatted_price }}</span>
@@ -38,6 +45,12 @@
                             </div>
                             <span class="badge badge-accent">📍 {{ $tour->destination }}</span>
                         </div>
+                        @if($fark !== null)
+                            <div class="fav-fark" style="margin-top:6px;font-size:12.5px;font-weight:600;color:{{ $fark < 0 ? '#065f46' : ($fark > 0 ? 'var(--warm-ink)' : 'var(--text-meta)') }};">
+                                @if($fark < 0) ↓ %{{ abs($fark) }} düştü @elseif($fark > 0) ↑ %{{ $fark }} arttı @else Aynı fiyat @endif
+                                <span style="font-weight:500;color:var(--text-meta);">· eklediğinde {{ number_format((float) $baslangic, 0, ',', '.') }} {{ $tour->currency_symbol }} (başlangıç fiyatı)</span>
+                            </div>
+                        @endif
                     </div>
                 </a>
                 

@@ -62,7 +62,9 @@ class User extends Authenticatable
 
     public function favoriteTours()
     {
-        return $this->belongsToMany(Tour::class, 'favorites')->withTimestamps();
+        return $this->belongsToMany(Tour::class, 'favorites')
+            ->withPivot(['price_at_save', 'currency_at_save'])
+            ->withTimestamps();
     }
 
     public function hasFavorited(Tour $tour): bool

@@ -51,7 +51,7 @@ final class LoginReturn
             return true;
         }
 
-        $user->favoriteTours()->attach($tour->id);
+        $user->favoriteTours()->attach($tour->id, ['price_at_save' => $tour->price, 'currency_at_save' => $tour->currency]);
 
         return true;
     }
