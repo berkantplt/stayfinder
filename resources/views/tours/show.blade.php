@@ -138,6 +138,9 @@
         .detail-grid .card, .detail-grid > div > div[style*="border-radius"] { border-radius:16px !important; }
     }
 
+    /* Oda tipi sütununda en ucuz paket: yeşil vurgu (tabloda tek "en ucuz" yok) */
+    .pricing-table td.pkg-min .pkg-price-val { display:inline-block; background:#d1fae5; border-radius:8px; padding:2px 8px; box-shadow:inset 0 0 0 1px #a7f3d0; }
+
     /* Mobil: tarih/paket fiyat tablosu dikey karta dönüşür — yatay kaydırma kalkar.
        Tablo hücrelerinin inline style'ları var, bu yüzden ezmeler !important. */
     @media(max-width:640px) {
@@ -482,9 +485,9 @@
                         <div style="display:flex;flex-wrap:wrap;gap:8px;">
                             @foreach($upcomingDates as $date)
                             <div style="background:var(--accent-bg);border-radius:var(--radius);padding:8px 14px;font-size:13px;">
-                                <span style="font-weight:600;">{{ $date->departure_date->format('d-m-Y') }}</span>
+                                <span style="font-weight:600;">{{ $date->departure_date->locale('tr')->isoFormat('D MMM YYYY, ddd') }}</span>
                                 <span style="color:var(--text-muted);margin:0 3px;">→</span>
-                                <span style="font-weight:600;">{{ $date->return_date->format('d-m-Y') }}</span>
+                                <span style="font-weight:600;">{{ $date->return_date?->locale('tr')->isoFormat('D MMM, ddd') }}</span>
                                 {!! $datePriceRenderer($date) !!}
                                 @if($date->label)
                                     <span class="badge badge-accent" style="font-size:10px;margin-left:4px;">{{ $date->label }}</span>
@@ -495,7 +498,7 @@
                     </div>
                     @elseif($tour->departure_date && $tour->departure_date->greaterThanOrEqualTo(now()->startOfDay()))
                     <div style="margin-bottom:16px;">
-                        <span class="badge badge-accent">📅 {{ $tour->departure_date->format('d-m-Y') }} — {{ $tour->return_date?->format('d-m-Y') }}</span>
+                        <span class="badge badge-accent">📅 {{ $tour->departure_date->locale('tr')->isoFormat('D MMM YYYY, ddd') }} — {{ $tour->return_date?->locale('tr')->isoFormat('D MMM, ddd') }}</span>
                     </div>
                     @endif
                     @endif
@@ -528,7 +531,7 @@
                                         <span style="color:var(--accent);">📅</span>
                                         @foreach($blockDates as $bd)
                                             @php $bdReturn = $bd->copy()->addDays(max(1, (int) $tour->duration_days) - 1); @endphp
-                                            <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;">{{ $bd->format('d-m-Y') }} → {{ $bdReturn->format('d-m-Y') }}</span>
+                                            <span style="background:var(--accent-bg);border-radius:999px;padding:2px 10px;font-size:12px;">{{ $bd->locale('tr')->isoFormat('D MMM, ddd') }} → {{ $bdReturn->locale('tr')->isoFormat('D MMM, ddd') }}</span>
                                         @endforeach
                                         <span style="color:var(--text-muted);font-size:12px;font-weight:500;margin-left:auto;">fiyatları gör ▾</span>
                                     </summary>
@@ -542,6 +545,20 @@
                                                     @endforeach
                                                 </tr>
                                             </thead>
+                                            @php
+                                                // Sütun (oda tipi) başına en ucuz hücre: "en ucuz" tabloda tek değil,
+                                                // her oda tipinde ayrı — farklı oda tipleri birbiriyle kıyaslanmaz.
+                                                $minByType = [];
+                                                foreach ($activeTypes as $type) {
+                                                    $degerler = [];
+                                                    foreach ($packages as $pkg) {
+                                                        $cell = $pkg['prices'][$type] ?? null;
+                                                        $v = is_array($cell) ? ($cell['new'] ?? $cell['old'] ?? null) : null;
+                                                        if ($v !== null) { $degerler[] = (float) $v; }
+                                                    }
+                                                    $minByType[$type] = count($degerler) > 1 ? min($degerler) : null;
+                                                }
+                                            @endphp
                                             <tbody>
                                                 @foreach($packages as $pkg)
                                                     <tr style="border-top:1px solid var(--border);">
@@ -552,8 +569,10 @@
                                                                 $old = is_array($cell) ? ($cell['old'] ?? null) : null;
                                                                 $new = is_array($cell) ? ($cell['new'] ?? null) : null;
                                                                 $note = is_array($cell) ? trim((string) ($cell['note'] ?? '')) : '';
+                                                                $hucreDeger = $new ?? $old;
+                                                                $enUcuz = $hucreDeger !== null && $minByType[$type] !== null && (float) $hucreDeger <= $minByType[$type];
                                                             @endphp
-                                                            <td class="pkg-price" data-label="{{ $roomTypeLabels[$type] }}" style="padding:10px 12px;text-align:right;white-space:nowrap;">
+                                                            <td class="pkg-price {{ $enUcuz ? 'pkg-min' : '' }}" data-label="{{ $roomTypeLabels[$type] }}" style="padding:10px 12px;text-align:right;white-space:nowrap;" @if($enUcuz) title="Bu oda tipinde en ucuz paket" @endif>
                                                                 <span class="pkg-price-val">
                                                                 @if($old !== null && $new !== null && (float) $old > (float) $new)
                                                                     <s style="color:#94a3b8;font-size:12px;">{{ number_format((float) $old, 0, ',', '.') }}</s>
