@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Agency;
 use App\Models\AiSearchLog;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourView;
@@ -273,6 +274,12 @@ class TourController extends Controller
             ? $reviews->firstWhere('user_id', auth()->id())
             : null;
 
+        // Kupon köprüsü: acentanın (yoksa turXtur'ın genel) alınabilir kuponu fiyat
+        // kartında görünür. Kuponda tur/paket kapsamı yok; oran, asgari tutar ve son gün
+        // gösterilir, fiyattan düşülmez (rezervasyon acentanın sitesinde).
+        $agencyCoupon = Coupon::available()->where('agency_id', $tour->agency_id)->orderByDesc('discount_value')->first()
+            ?? Coupon::available()->whereNull('agency_id')->orderByDesc('discount_value')->first();
+
         // Price history (last 30 days)
         $priceHistory = $tour->priceHistories()
             ->where('recorded_at', '>=', now()->subDays(30))
@@ -299,7 +306,7 @@ class TourController extends Controller
 
         return view('tours.show', compact(
             'tour', 'otherOffers', 'cheaperOffer', 'similarTours', 'reviews', 'avgRating', 'userReview',
-            'priceLabels', 'priceData', 'priceSignal', 'priceUpdatedAt', 'aiContext'
+            'priceLabels', 'priceData', 'priceSignal', 'priceUpdatedAt', 'agencyCoupon', 'aiContext'
         ));
     }
 

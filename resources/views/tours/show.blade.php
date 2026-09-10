@@ -97,6 +97,7 @@
         #priceCard .p-ctas .btn { width:auto !important; padding:9px 8px; font-size:13px; }
         #priceCard .p-rez { flex-basis:100%; font-size:11.5px !important; margin-top:8px !important; }
         #priceCard .p-sinyal { flex-basis:100%; margin:2px 0 4px !important; font-size:11.5px !important; }
+        #priceCard .p-kupon { flex-basis:100%; font-size:11.5px !important; margin:6px 0 4px !important; }
         #priceCard .p-agency { flex-basis:100%; margin:4px 0 0 !important; }
         #priceCard .p-go { flex:1.6; }
         #priceCard .p-call { flex:1; }
@@ -898,6 +899,14 @@
                             <span class="badge badge-accent p-onay" style="font-size:11px;padding:3px 8px;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg> Onaylı acenta</span>
                         @endif
                     </div>
+                    @if($agencyCoupon)
+                        {{-- Kupon köprüsü: kod "Kuponlarım"da alınır; ziyaretçi girişe gider (dönüş adresli) --}}
+                        <div class="p-kupon" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--accent-bg);border:1px solid var(--accent-light);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12.5px;color:var(--accent-deep);line-height:1.4;">
+                            <span style="display:inline-flex;color:var(--accent-ink);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 0 2-2V5h14v2a2 2 0 0 0 0 4v2a2 2 0 0 0 0 4v2H5v-2a2 2 0 0 0-2-2z"/><path d="M13 5v14"/></svg></span>
+                            <span style="flex:1;min-width:0;">{{ $agencyCoupon->agency_id ? 'Bu acentada' : 'turXtur\'da' }} <b>{{ $agencyCoupon->formatted_discount }}</b> kupon var{{ $agencyCoupon->min_purchase_amount ? ', min. '.number_format((float) $agencyCoupon->min_purchase_amount, 0, ',', '.').' ₺' : '' }}{{ $agencyCoupon->expires_at ? ', '.$agencyCoupon->expires_at->locale('tr')->isoFormat('D MMM').'\'e kadar' : '' }}</span>
+                            <a href="{{ auth()->check() ? route('customer.coupons.index') : route('login', ['next' => route('customer.coupons.index', absolute: false)]) }}" style="font-weight:700;white-space:nowrap;color:var(--accent-ink);">{{ auth()->check() ? 'Kuponu al →' : 'Giriş yap, kodu gör →' }}</a>
+                        </div>
+                    @endif
                     <div class="p-ctas" style="display:flex;flex-direction:column;gap:10px;">
                         @php $mainUrl = $tour->tour_url ?: $tour->agency->website_url; @endphp
                         @if($mainUrl)
