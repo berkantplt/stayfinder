@@ -31,7 +31,7 @@
 <h3>4. Rezervasyonu acenta üzerinden yaparsınız</h3>
 <p>
     <strong>turXtur üzerinden rezervasyon yapılmaz ve ödeme alınmaz.</strong>
-    "Tura Git" bağlantısı sizi turu düzenleyen acentanın kendi sitesine yönlendirir.
+    "Acentada İncele" bağlantısı sizi turu düzenleyen acentanın kendi sitesine yönlendirir.
     Sözleşme sizinle acenta arasında kurulur; ödeme, iptal ve iade işlemleri acentanın
     koşullarına tabidir.
 </p>

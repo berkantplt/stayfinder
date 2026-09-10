@@ -34,6 +34,8 @@
         #priceCard .p-agency a { font-size:13px !important; }
         #priceCard .p-ctas { flex-basis:100%; flex-direction:row !important; gap:6px !important; margin-top:8px; }
         #priceCard .p-ctas .btn { width:auto !important; padding:9px 8px; font-size:13px; }
+        #priceCard .p-rez { flex-basis:100%; font-size:11.5px !important; margin-top:8px !important; }
+        #priceCard .p-agency { flex-basis:100%; margin:4px 0 0 !important; }
         #priceCard .p-go { flex:1.6; }
         #priceCard .p-call { flex:1; }
         #priceCard .p-mail { flex:0.7; min-width:96px; padding:9px 0 !important; font-size:18px !important; }
@@ -681,13 +683,17 @@
                             <span class="price-sm"> / kişi başı</span>
                         </div>
                     @endif
-                    <div class="p-agency" style="margin-bottom:16px;">
-                        <a href="{{ route('agencies.show', $tour->agency) }}" style="color:var(--accent);font-weight:600;font-size:15px;">{{ $tour->agency->name }}</a>
+                    <div class="p-agency" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <a href="{{ route('agencies.show', $tour->agency) }}" style="color:var(--accent-ink);font-weight:600;font-size:15px;">{{ $tour->agency->name }}</a>
+                        {{-- Onay verisi Agency.approval_status: eski (null) ve onaylı acentalar rozet alır --}}
+                        @if($tour->agency->isApproved())
+                            <span class="badge badge-accent p-onay" style="font-size:11px;padding:3px 8px;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg> Onaylı acenta</span>
+                        @endif
                     </div>
                     <div class="p-ctas" style="display:flex;flex-direction:column;gap:10px;">
                         @php $mainUrl = $tour->tour_url ?: $tour->agency->website_url; @endphp
                         @if($mainUrl)
-                            <a href="{{ route('tour.redirect', $tour) }}" target="_blank" class="btn btn-primary p-go" style="width:100%;">🌐 Tura Git →</a>
+                            <a href="{{ route('tour.redirect', $tour) }}" target="_blank" rel="noopener" class="btn btn-primary p-go" style="width:100%;">Acentada İncele <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg></a>
                         @endif
                         @if($tour->agency->phone)
                             <a href="tel:{{ preg_replace('/\s+/', '', $tour->agency->phone) }}" class="btn btn-outline p-call" style="width:100%;">📞 <span class="p-tel-full">{{ $tour->agency->phone }}</span><span class="p-tel-short">Ara</span></a>
@@ -696,6 +702,8 @@
                             <a href="mailto:{{ $tour->agency->email }}" class="btn btn-outline p-mail" style="width:100%;">✉️<span class="p-mail-text"> E-posta Gönder</span></a>
                         @endif
                     </div>
+                    {{-- Çıkış beklentisi: düğme müşteriyi acentanın sitesine götürür, sürpriz olmasın --}}
+                    <div class="p-rez" style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:12.5px;color:var(--text-meta);line-height:1.4;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Rezervasyon acentanın sitesinde tamamlanır. turXtur ödeme almaz.</div>
                 </div>
 
                 {{-- Dahil olan/olmayan kutuları: kapalıyken ilk ~3 satır görünür,
@@ -763,7 +771,7 @@
                                 <div class="price-tag" style="font-size:16px;">{{ $offer->formatted_price }}</div>
                                 @php $offerUrl = $offer->tour_url ?: $offer->agency->website_url; @endphp
                                 @if($offerUrl)
-                                    <a href="{{ route('tour.redirect', $offer) }}" target="_blank" style="font-size:12px;color:var(--accent);font-weight:600;">Tura Git →</a>
+                                    <a href="{{ route('tour.redirect', $offer) }}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent-ink);font-weight:600;">Acentada İncele →</a>
                                 @endif
                             </div>
                         </div>

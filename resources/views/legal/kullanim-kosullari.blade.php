@@ -15,7 +15,7 @@
 
 <ul>
     <li>tur düzenlemez, satmaz ve tur bedelini tahsil etmez;</li>
-    <li>rezervasyon işlemi yapmaz — "Tura Git" bağlantısı sizi ilgili acentanın kendi sitesine yönlendirir;</li>
+    <li>rezervasyon işlemi yapmaz — "Acentada İncele" bağlantısı sizi ilgili acentanın kendi sitesine yönlendirir;</li>
     <li>tur sözleşmesinin tarafı değildir. Sözleşme <strong>sizinle acenta arasında</strong> kurulur.</li>
 </ul>
 
