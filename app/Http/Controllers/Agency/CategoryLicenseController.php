@@ -25,7 +25,20 @@ class CategoryLicenseController extends Controller
     /** Ekstra tur hakkı sepeti: [category_id => adet]. */
     private const SLOT_CART_SESSION_KEY = 'agency_category_slot_cart';
 
+    /**
+     * Yenileme sepeti: [category_id => sepete eklendiği andaki expires_at (Y-m-d)].
+     * Bitiş tarihi sonradan değişmişse (yenileme zaten yapılmış) kalem kendini
+     * sepetten düşürür — callback oturumu temizleyemese bile çifte ödeme olmaz.
+     */
+    private const RENEWAL_CART_SESSION_KEY = 'agency_category_renewal_cart';
+
     private const MAX_SLOTS_PER_CHECKOUT = 10;
+
+    /** Bitişe bu kadar gün kala kart sarı ("bitmek üzere") olur. */
+    private const EXPIRY_SOON_DAYS = 7;
+
+    /** Bitişe bu kadar gün kala kart kırmızı ("son günler") olur. */
+    private const EXPIRY_CRITICAL_DAYS = 3;
 
     public function __construct(
         private readonly IyzicoService $iyzico,
@@ -170,6 +183,11 @@ class CategoryLicenseController extends Controller
         return view('agency.category-licenses.orders', compact('agency', 'orders'));
     }
 
+    /**
+     * Sepete kategori ekler. Acentanın o kategoride aktif aboneliği varsa
+     * kalem YENİLEME olur: ödeme sonrası mevcut bitiş tarihine 1 ay eklenir,
+     * kalan günler yanmaz (CategoryOrderFinalizer uzatma semantiği).
+     */
     public function addToCart(Request $request)
     {
         if ($response = $this->guardSchema($request)) {
@@ -192,8 +210,25 @@ class CategoryLicenseController extends Controller
             return $this->cartError($request, 'Üst kategoriler satın alınamaz. Lütfen bir alt kategori seçin.');
         }
 
-        if ($agency->hasCategoryAccess($category)) {
-            return $this->cartError($request, $category->name.' kategorisi zaten aktif yetkileriniz arasında.');
+        $subscription = $agency->activeCategorySubscriptions()
+            ->where('category_id', $category->id)
+            ->first();
+
+        if ($subscription !== null) {
+            if ($subscription->expires_at === null) {
+                return $this->cartError($request, $category->name.' kategorisi zaten aktif yetkileriniz arasında.');
+            }
+
+            $renewals = $this->renewalCartEntries();
+            $renewals[$category->id] = $subscription->expires_at->toDateString();
+            session([self::RENEWAL_CART_SESSION_KEY => $renewals]);
+            session([self::CART_SESSION_KEY => $this->cartCategoryIds()->reject(fn ($id) => $id === $category->id)->values()->all()]);
+
+            return $this->cartSuccess(
+                $request,
+                $agency,
+                $category->name.' yenileme olarak sepete eklendi. Ödeme sonrası yeni bitiş: '.$subscription->expires_at->copy()->addMonth()->format('d.m.Y').'.'
+            );
         }
 
         $cartCategoryIds = $this->cartCategoryIds()
@@ -203,6 +238,7 @@ class CategoryLicenseController extends Controller
             ->all();
 
         session([self::CART_SESSION_KEY => $cartCategoryIds]);
+        $this->forgetRenewalEntry($category->id);
 
         return $this->cartSuccess($request, $agency, $category->name.' sepetinize eklendi.');
     }
@@ -219,14 +255,14 @@ class CategoryLicenseController extends Controller
             ->all();
 
         session([self::CART_SESSION_KEY => $cartCategoryIds]);
+        $this->forgetRenewalEntry($category->id);
 
         return $this->cartSuccess($request, $this->currentAgency(), $category->name.' sepetten çıkarıldı.');
     }
 
     /**
      * Aktif abonelikli bir kategoriye +1 ekstra tur hakkı (aynı kategoriye
-     * tekrar basıldıkça adet artar). Hak tek seferlik ödenir, abonelik
-     * kesintisiz sürdükçe geçerlidir.
+     * tekrar basıldıkça adet artar). Hak, abonelik kesintisiz sürdükçe geçerlidir.
      */
     public function addSlotToCart(Request $request)
     {
@@ -340,7 +376,7 @@ class CategoryLicenseController extends Controller
         // kullanıcıyı "açıldı" mesajıyla yanıltıp aboneliği sessizce
         // düşürmemek için manuel yenilemeye yönlendir.
         if ($subscription->expires_at !== null && $subscription->expires_at->lessThanOrEqualTo(today())) {
-            return back()->with('success', $categoryName.' aboneliğinde otomatik yenileme tekrar açıldı. Ancak abonelik BUGÜN sona eriyor ve günün otomatik çekim saati geçmiş olabilir — süre kaybetmemek için kategoriyi sepetten manuel yenilemenizi öneririz.');
+            return back()->with('success', $categoryName.' aboneliğinde otomatik yenileme tekrar açıldı. Ancak abonelik BUGÜN sona eriyor ve günün otomatik çekim saati geçmiş olabilir — süre kaybetmemek için kartın üstündeki "Şimdi Yenile" ile bugün ödeme yapmanızı öneririz.');
         }
 
         return back()->with('success', $categoryName.' aboneliğinde otomatik yenileme tekrar açıldı.');
@@ -505,10 +541,12 @@ class CategoryLicenseController extends Controller
                 ]);
 
                 foreach ($cartCategories as $category) {
+                    // Yenileme de lisans kalemidir (finalize category_id ile uzatır);
+                    // ad anlık görüntüsüne not düşülür ki geçmişte ayırt edilsin.
                     AgencyCategoryOrderItem::create([
                         'order_id' => $order->id,
                         'category_id' => $category->id,
-                        'category_name' => $category->name,
+                        'category_name' => $category->name.($category->cart_renewal ? ' (yenileme)' : ''),
                         'unit_price' => $category->monthly_price,
                         'billing_cycle' => 'monthly',
                     ] + ($slotSchemaReady ? ['item_type' => AgencyCategoryOrderItem::TYPE_LICENSE] : []));
@@ -534,7 +572,7 @@ class CategoryLicenseController extends Controller
 
             $basketItems = $cartCategories->map(fn (Category $category) => [
                 'id' => $category->id,
-                'name' => $category->name,
+                'name' => $category->name.($category->cart_renewal ? ' — Yenileme' : ''),
                 'category' => optional($category->parent)->name ?? 'Kategori Yetkisi',
                 'price' => $category->monthly_price,
             ])->values()->all();
@@ -619,8 +657,7 @@ class CategoryLicenseController extends Controller
             $checkout = $this->iyzico->retrieveCheckoutForm($token, (string) $order->id);
 
             if ($this->finalizer->settleFromCheckout($order, $checkout) === 'paid') {
-                session()->forget(self::CART_SESSION_KEY);
-                session()->forget(self::SLOT_CART_SESSION_KEY);
+                $this->forgetAllCarts();
             }
         } catch (Throwable $e) {
             Log::error('iyzico callback retrieve failed', [
@@ -734,10 +771,11 @@ class CategoryLicenseController extends Controller
 
         $items = $cartCategories
             ->map(fn (Category $category) => [
-                'key' => 'license-'.$category->id,
-                'type' => 'license',
+                'key' => ($category->cart_renewal ? 'renewal-' : 'license-').$category->id,
+                'type' => $category->cart_renewal ? 'renewal' : 'license',
                 'id' => $category->id,
-                'name' => trim(($category->icon ? $category->icon.' ' : '').$category->name),
+                'name' => trim(($category->icon ? $category->icon.' ' : '').$category->name)
+                    .($category->cart_renewal ? ' — Yenileme' : ''),
                 'price_label' => number_format((float) $category->monthly_price, 0, ',', '.').' TL / ay',
                 'remove_url' => route('agency.category-licenses.cart.remove', $category),
             ] + ($slotSchemaReady ? [
@@ -778,24 +816,107 @@ class CategoryLicenseController extends Controller
             ->values();
     }
 
+    /** @return array<int, string> [category_id => expires_at Y-m-d] */
+    private function renewalCartEntries(): array
+    {
+        return collect(session(self::RENEWAL_CART_SESSION_KEY, []))
+            ->mapWithKeys(fn ($date, $id) => [(int) $id => (string) $date])
+            ->filter(fn ($date, $id) => $id > 0 && $date !== '')
+            ->all();
+    }
+
+    private function forgetRenewalEntry(int $categoryId): void
+    {
+        $renewals = $this->renewalCartEntries();
+        unset($renewals[$categoryId]);
+        session([self::RENEWAL_CART_SESSION_KEY => $renewals]);
+    }
+
+    private function forgetAllCarts(): void
+    {
+        session()->forget(self::CART_SESSION_KEY);
+        session()->forget(self::SLOT_CART_SESSION_KEY);
+        session()->forget(self::RENEWAL_CART_SESSION_KEY);
+    }
+
+    /** Yalnız bu siparişte ödenen kategorileri sepetten düşürür (yeni sepet bozulmaz). */
+    private function forgetCartEntriesForOrder(AgencyCategoryOrder $order): void
+    {
+        $paidCategoryIds = $order->items->pluck('category_id')->filter()->map(fn ($id) => (int) $id)->unique();
+
+        if ($paidCategoryIds->isEmpty()) {
+            return;
+        }
+
+        session([self::CART_SESSION_KEY => $this->cartCategoryIds()->reject(fn ($id) => $paidCategoryIds->contains($id))->values()->all()]);
+
+        $renewals = $this->renewalCartEntries();
+        $slotCart = $this->slotCartQuantities();
+        foreach ($paidCategoryIds as $categoryId) {
+            unset($renewals[$categoryId], $slotCart[$categoryId]);
+        }
+        session([self::RENEWAL_CART_SESSION_KEY => $renewals]);
+        session([self::SLOT_CART_SESSION_KEY => $slotCart]);
+    }
+
     /**
+     * Sepetteki lisans + yenileme kalemlerini kategori modeli olarak döndürür.
+     * Modele geçici alanlar eklenir (kaydedilmez): cart_renewal, renewal_from, renewal_to.
+     *
      * @return Collection<int, Category>
      */
     private function resolveCartCategoriesFor(Agency $agency)
     {
-        $cartIds = $this->cartCategoryIds();
+        $licenseIds = $this->cartCategoryIds();
+        $renewals = $this->renewalCartEntries();
+        $allIds = $licenseIds->merge(array_keys($renewals))->unique()->values();
 
-        if ($cartIds->isEmpty()) {
+        if ($allIds->isEmpty()) {
             return collect();
         }
 
+        $activeSubscriptions = $agency->activeCategorySubscriptions()->get()->keyBy('category_id');
+
         return Category::active()
-            ->whereIn('id', $cartIds->all())
+            ->whereIn('id', $allIds->all())
             ->whereNotNull('parent_id') // üst kategoriler satılmaz
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
-            ->reject(fn (Category $category) => $agency->hasCategoryAccess($category))
+            ->map(function (Category $category) use ($agency, $renewals, $activeSubscriptions) {
+                $subscription = $activeSubscriptions->get($category->id);
+
+                if (array_key_exists($category->id, $renewals)) {
+                    // Bitiş tarihi eklenirkenkinden farklıysa yenileme zaten
+                    // yapılmıştır (callback oturumu temizleyememiş olabilir) — düş.
+                    if ($subscription && $subscription->expires_at && $subscription->expires_at->toDateString() !== $renewals[$category->id]) {
+                        return null;
+                    }
+
+                    if ($subscription && $subscription->expires_at) {
+                        $category->cart_renewal = true;
+                        $category->renewal_from = $subscription->expires_at;
+                        $category->renewal_to = $subscription->expires_at->copy()->addMonth();
+
+                        return $category;
+                    }
+
+                    // Abonelik bu arada dolmuş: normal satın alma olarak sürer.
+                    $category->cart_renewal = false;
+
+                    return $category;
+                }
+
+                // Erişimi zaten olan kategori sepette bayat kalemdir (ödeme sonrası).
+                if ($subscription !== null || $agency->legacy_category_access) {
+                    return null;
+                }
+
+                $category->cart_renewal = false;
+
+                return $category;
+            })
+            ->filter()
             ->values();
     }
 
@@ -832,6 +953,7 @@ class CategoryLicenseController extends Controller
             ->pluck('category_id')
             ->map(fn ($id) => (int) $id)
             ->merge($this->cartCategoryIds())
+            ->merge(array_keys($this->renewalCartEntries()))
             ->unique()
             ->all();
 

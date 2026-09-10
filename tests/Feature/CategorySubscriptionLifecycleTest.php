@@ -121,7 +121,7 @@ class CategorySubscriptionLifecycleTest extends TestCase
 
         $payload = (new CategorySubscriptionExpiringNotification($subscription))->toArray($this->agencyUser);
 
-        $this->assertSame(route('agency.category-licenses.index'), $payload['url']);
+        $this->assertSame(route('agency.category-licenses.index').'#abonelik-'.$subscription->id, $payload['url']);
         $this->assertStringContainsString('Gemi Turları', $payload['message']);
         $this->assertStringContainsString('3 gün', $payload['message']);
     }

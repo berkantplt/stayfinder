@@ -28,7 +28,7 @@ class CategorySubscriptionExpiringNotification extends Notification
             'category_id' => $this->subscription->category_id,
             'title' => 'Kategori Yetkiniz Doluyor',
             'message' => "{$categoryName} kategorisi yetkiniz {$expiresAt->format('d.m.Y')} tarihinde (".max(0, $daysLeft).' gün sonra) sona eriyor. Yenilemezseniz bu kategorideki turlarınız yayından kalkacak.',
-            'url' => route('agency.category-licenses.index'),
+            'url' => route('agency.category-licenses.index').'#abonelik-'.$this->subscription->id,
             'icon' => '⏳',
         ];
     }
