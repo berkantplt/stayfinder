@@ -190,6 +190,10 @@
                      mobilde galeri fotoğrafının üstünde yuvarlak düğmeler (CSS). --}}
                 <div class="p-actions" id="pActions">
                     <button type="button" class="p-act" id="pShare" data-url="{{ $shareUrl }}" data-title="{{ $tour->title }}" aria-label="Paylaş"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span>Paylaş</span></button>
+                    @php $isFav = auth()->check() && auth()->user()->hasFavorited($tour); @endphp
+                    {{-- Ziyaretçi de görür: tıklayınca girişe gider (data-login), üye için AJAX --}}
+                    <button type="button" class="p-act p-fav {{ $isFav ? 'on' : '' }}" id="pFav" data-tour="{{ $tour->id }}"
+                        data-login="{{ auth()->check() ? '' : route('login') }}" aria-pressed="{{ $isFav ? 'true' : 'false' }}" aria-label="Favorilere ekle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg><span class="p-fav-text">{{ $isFav ? 'Favoride' : 'Favorilere ekle' }}</span></button>
                 </div>
 
                 {{-- AI danışman barı: aramadan gelen kullanıcı bağlamını kaybetmesin --}}
@@ -655,16 +659,6 @@
             <div class="detail-sidebar">
 
 
-                @auth
-                @php $isFav = auth()->user()->hasFavorited($tour); @endphp
-                <form method="POST" action="{{ route('favorites.toggle', $tour) }}" style="margin-bottom:12px;">
-                    @csrf
-                    <button type="submit" style="width:100%;padding:11px;border:1.5px solid {{ $isFav ? '#ef4444' : 'var(--border)' }};border-radius:10px;background:{{ $isFav ? '#fef2f2' : 'var(--white)' }};color:{{ $isFav ? '#ef4444' : 'var(--text-sec)' }};font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;">
-                        {{ $isFav ? '❤️ Favorilerden Çıkar' : '🤍 Favorilere Ekle' }}
-                    </button>
-                </form>
-                @endauth
-
                 {{-- Compare button --}}
                 <div style="margin-bottom:16px;">
                     <button type="button" class="compare-toggle" data-tour-id="{{ $tour->id }}" onclick="window.toggleCompare({{ $tour->id }})" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);color:var(--text-sec);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;">
@@ -925,6 +919,36 @@ window.pToast = function (mesaj) {
         }
         try { await navigator.clipboard.writeText(url); window.pToast('Bağlantı kopyalandı.'); }
         catch (e) { window.prompt('Bağlantıyı kopyala', url); }
+    });
+})();
+
+// Favori: sayfa yenilenmeden (AJAX) ekle/çıkar; baloncuk tek kanala göre dürüst
+// yazıldı — bugün yalnız site içi bildirim var, e-posta yok. Ziyaretçi girişe gider.
+(function () {
+    var btn = document.getElementById('pFav');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+        if (btn.dataset.login) { window.location.href = btn.dataset.login; return; }
+        if (btn.dataset.busy) return;
+        btn.dataset.busy = '1';
+        fetch(@json(url('/favoriler')) + '/' + btn.dataset.tour, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        }).then(function (r) { if (!r.ok) throw new Error('favori'); return r.json(); })
+        .then(function (d) {
+            btn.classList.toggle('on', d.favorited);
+            btn.setAttribute('aria-pressed', d.favorited ? 'true' : 'false');
+            btn.querySelector('.p-fav-text').textContent = d.favorited ? 'Favoride' : 'Favorilere ekle';
+            window.pToast(d.favorited
+                ? 'Favorilere eklendi. Fiyat değişikliklerini bildirimlerinden takip edebilirsin.'
+                : 'Favorilerden çıkarıldı.');
+        })
+        .catch(function () { window.pToast('Olmadı, tekrar dener misin?'); })
+        .finally(function () { delete btn.dataset.busy; });
     });
 })();
 
