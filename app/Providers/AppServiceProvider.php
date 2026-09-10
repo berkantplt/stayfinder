@@ -11,6 +11,7 @@ use App\Observers\PostObserver;
 use App\Observers\TourDateObserver;
 use App\Services\Payment\IyzicoService;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -34,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
         // Uygulama locale'i değiştirilmiyor: lang/ klasörü yok, APP_LOCALE=tr
         // yapmak doğrulama mesajlarını Türkçeleştirmezken davranış değiştirirdi.
         Carbon::setLocale('tr');
+
+        // Sayfalama: Laravel'ın Tailwind şablonu projede Tailwind olmadığı için
+        // mobil+masaüstü bloğunu birlikte ve İngilizce basıyordu — tek Türkçe şablon.
+        Paginator::defaultView('pagination::turxtur');
+        Paginator::defaultSimpleView('pagination::turxtur-basit');
 
         // RAG bilgi tabanını canlı tut: Post/Destination değişikliklerinde
         // KnowledgeChunk update + embedding job dispatch.
