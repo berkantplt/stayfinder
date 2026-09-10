@@ -48,6 +48,9 @@
         <form method="POST" action="{{ route('register.post') }}" id="register-form">
             @csrf
             <input type="hidden" name="account_type" id="account_type" value="{{ $selectedType }}">
+            {{-- Bağlam (giriş sayfasıyla aynı): kayıt sonrası aynı tura dönüş + bekleyen favori --}}
+            <input type="hidden" name="next" value="{{ \App\Support\LoginReturn::safePath(request('next')) }}">
+            <input type="hidden" name="favori" value="{{ ctype_digit((string) request('favori')) ? request('favori') : '' }}">
 
             <div id="agency-fields" style="display:{{ $selectedType === 'agency' ? 'block' : 'none' }};">
                 <div style="padding:14px 16px;border-radius:16px;background:#f0fdfa;border:1px solid #99f6e4;color:#0f766e;font-size:13px;line-height:1.6;margin-bottom:20px;">

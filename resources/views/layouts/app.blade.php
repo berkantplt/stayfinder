@@ -829,10 +829,10 @@
             </div>
             <a href="{{ route('home') }}" class="m-head-logo" aria-label="turXtur">@include('partials.logo', ['height' => 26, 'light' => request()->routeIs('home')])</a>
             <div class="m-head-right">
-                <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="m-head-ico" aria-label="Favorilerim">
+                <a href="{{ auth()->check() ? route('favorites.index') : route('login', ['next' => '/favorilerim']) }}" class="m-head-ico" aria-label="Favorilerim">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>
                 </a>
-                <a href="{{ auth()->check() ? route('notifications.index') : route('login') }}" class="m-head-ico" aria-label="Bildirimler">
+                <a href="{{ auth()->check() ? route('notifications.index') : route('login', ['next' => '/bildirimler']) }}" class="m-head-ico" aria-label="Bildirimler">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>
                     @auth @if($unreadCount > 0)<span class="m-head-dot"></span>@endif @endauth
                 </a>
@@ -2290,7 +2290,12 @@
             if (!btn) return;
             e.preventDefault();
             e.stopPropagation();
-            if (!LOGGED_IN) { window.location.href = LOGIN_URL; return; }
+            // Ziyaretçi: girişe dönüş adresi ve bekleyen favori ile gider (giriş sonrası tamamlanır)
+            if (!LOGGED_IN) {
+                window.location.href = LOGIN_URL + '?next=' + encodeURIComponent(location.pathname + location.search)
+                    + '&favori=' + encodeURIComponent(btn.dataset.tour);
+                return;
+            }
             var acik = btn.classList.toggle('on');
             btn.setAttribute('aria-pressed', acik ? 'true' : 'false');
             fetch(FAV_BASE + '/' + btn.dataset.tour, {

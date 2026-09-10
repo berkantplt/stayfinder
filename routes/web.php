@@ -30,6 +30,7 @@ use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DiscoveryGuideController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
+use App\Support\LoginReturn;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -199,7 +200,8 @@ Route::post('/giris', function (Request $request) {
             return redirect()->route('agency.dashboard');
         }
 
-        return redirect()->route('home');
+        // Ziyaretçi: bekleyen favori tamamlanır, geldiği tura dönülür (bkz. LoginReturn)
+        return LoginReturn::redirectAfter($user, $request);
     }
 
     return back()->withErrors(['email' => 'Geçersiz e-posta veya şifre.']);
@@ -283,7 +285,8 @@ Route::post('/kayit', function (Request $request) {
 
     Auth::login($user);
 
-    return redirect()->route('home')->with('success', 'Hoş geldiniz!');
+    // Kalpten gelen ziyaretçi kayıt olunca da favorisi eklenir ve tura döner
+    return LoginReturn::redirectAfter($user, $request, 'Hoş geldiniz!');
 })->middleware('throttle:register')->name('register.post');
 
 Route::post('/cikis', function () {

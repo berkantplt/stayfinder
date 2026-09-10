@@ -26,6 +26,9 @@
 
         <form method="POST" action="{{ route('login.post') }}">
             @csrf
+            {{-- Bağlam: kalpten gelen ziyaretçi girişten sonra aynı tura döner, favorisi eklenir --}}
+            <input type="hidden" name="next" value="{{ \App\Support\LoginReturn::safePath(request('next')) }}">
+            <input type="hidden" name="favori" value="{{ ctype_digit((string) request('favori')) ? request('favori') : '' }}">
             <div class="form-group" style="margin-bottom:20px;">
                 <label style="font-size:14px;font-weight:600;color:#334155;margin-bottom:8px;display:block;">E-posta</label>
                 <input type="email" name="email" value="{{ old('email') }}" required autofocus style="width:100%;padding:14px 16px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:15px;outline:none;transition:all 0.2s;">
@@ -42,7 +45,7 @@
         </div>
 
         <div style="text-align:center;margin-top:28px;font-size:14px;color:#475569;">
-            Hesabınız yok mu? <a href="{{ route('register') }}" style="color:var(--accent);font-weight:700;">Kayıt Ol</a>
+            Hesabınız yok mu? <a href="{{ route('register', array_filter(['next' => \App\Support\LoginReturn::safePath(request('next')), 'favori' => ctype_digit((string) request('favori')) ? request('favori') : null])) }}" style="color:var(--accent);font-weight:700;">Kayıt Ol</a>
         </div>
 
         <div style="text-align:center;margin-top:10px;font-size:14px;color:#475569;">

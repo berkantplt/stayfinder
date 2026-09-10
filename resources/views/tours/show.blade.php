@@ -193,7 +193,7 @@
                     @php $isFav = auth()->check() && auth()->user()->hasFavorited($tour); @endphp
                     {{-- Ziyaretçi de görür: tıklayınca girişe gider (data-login), üye için AJAX --}}
                     <button type="button" class="p-act p-fav {{ $isFav ? 'on' : '' }}" id="pFav" data-tour="{{ $tour->id }}"
-                        data-login="{{ auth()->check() ? '' : route('login') }}" aria-pressed="{{ $isFav ? 'true' : 'false' }}" aria-label="Favorilere ekle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg><span class="p-fav-text">{{ $isFav ? 'Favoride' : 'Favorilere ekle' }}</span></button>
+                        data-login="{{ auth()->check() ? '' : route('login', ['next' => request()->getRequestUri(), 'favori' => $tour->id]) }}" aria-pressed="{{ $isFav ? 'true' : 'false' }}" aria-label="Favorilere ekle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg><span class="p-fav-text">{{ $isFav ? 'Favoride' : 'Favorilere ekle' }}</span></button>
                 </div>
 
                 {{-- AI danışman barı: aramadan gelen kullanıcı bağlamını kaybetmesin --}}
