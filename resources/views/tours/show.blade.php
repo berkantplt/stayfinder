@@ -22,6 +22,7 @@
     }
     .tour-tab-panel[hidden] { display:none; }
 
+    .m-cta { display:none; }
     /* Mobil kompakt fiyat kartı: tek satır fiyat + acenta, ince buton üçlüsü */
     .p-tel-short { display:none; }
     @media(max-width:768px) {
@@ -44,6 +45,21 @@
         #priceCard #campaign-countdown { flex-basis:100%; margin:6px 0 0 !important; padding:6px 10px !important; }
         #priceCard #campaign-countdown div:last-child { font-size:14px !important; }
         #mPriceSlot:not(:empty) { margin-bottom:4px; }
+
+        /* ===== Yapışkan CTA şeridi (yalnız mobil, yalnız fiyat kartı ekrandan çıkınca) ===== */
+        body.cta-acik .m-cta { display:flex; }
+        .m-cta { position:fixed; left:0; right:0; bottom:var(--tabbar-h); z-index:var(--z-tepsi); align-items:center; gap:10px; padding:10px 16px; background:var(--white); border-top:1px solid var(--border); box-shadow:0 -6px 18px rgba(15,23,42,.08); }
+        .m-cta-fiyat { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+        .m-cta-satir { display:flex; align-items:baseline; gap:5px; }
+        .m-cta-tutar { font-family:'Space Grotesk',var(--font); font-size:20px; font-weight:700; color:var(--accent); letter-spacing:-.5px; white-space:nowrap; }
+        .m-cta-kisi { font-size:11px; color:var(--text-meta); }
+        .m-cta-acenta { display:flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--accent-ink); white-space:nowrap; overflow:hidden; }
+        .m-cta-git { height:44px; padding:0 16px !important; font-size:14px !important; flex:none; }
+        .m-cta-tel { width:44px; height:44px; padding:0 !important; border-radius:12px; flex:none; }
+        @media (prefers-reduced-motion:no-preference) {
+            .m-cta { animation:m-cta-in .2s ease; }
+            @keyframes m-cta-in { from { transform:translateY(100%); } to { transform:none; } }
+        }
 
         /* ===== Mobil tasarım dili (turXtur Mobil 3) ===== */
         /* Galeri kenardan kenara, altı yuvarlatılmış — uygulama kalıbı */
@@ -783,6 +799,25 @@
         </div>
     </div>
 </div>
+{{-- Mobil yapışkan CTA şeridi: fiyat kartı ekranın üstünden çıkınca belirir
+     (body.cta-acik, gözlemci aşağıdaki betikte). Dip katman token'ı --cta-h ile
+     sohbet balonu ve karşılaştırma tepsisi şeridin üstüne çıkar; sekme barı altta
+     kalır. $campaign ve $mainUrl yukarıdaki fiyat kartı bloğunda tanımlı. --}}
+<div class="m-cta" id="mCta" aria-hidden="true">
+    <div class="m-cta-fiyat">
+        <div class="m-cta-satir">
+            <span class="m-cta-tutar">{{ $campaign ? $campaign->formatted_discount_price : $tour->formatted_price }}</span>
+            <span class="m-cta-kisi">/ kişi</span>
+        </div>
+        <div class="m-cta-acenta">{{ $tour->agency->name }}@if($tour->agency->isApproved()) <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg> Onaylı@endif</div>
+    </div>
+    @if($mainUrl)
+        <a href="{{ route('tour.redirect', $tour) }}" target="_blank" rel="noopener" class="btn btn-primary m-cta-git">Acentada İncele <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg></a>
+    @endif
+    @if($tour->agency->phone)
+        <a href="tel:{{ preg_replace('/\s+/', '', $tour->agency->phone) }}" class="btn btn-outline m-cta-tel" aria-label="Acentayı ara"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.6a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.8.3 1.7.6 2.6.7a2 2 0 0 1 1.7 2z"/></svg></a>
+    @endif
+</div>
 @endsection
 
 @push('scripts')
@@ -835,6 +870,29 @@ document.querySelectorAll('.inc-box .inc-body, .prog-day .prog-day-body').forEac
         var h = (location.hash || '').replace('#', '');
         if (h) activate(h, false);
     });
+})();
+
+// Yapışkan CTA şeridi: fiyat kartı (mobilde başlığın altında) ekranın ÜSTÜNDEN
+// çıkınca body.cta-acik; kart görünürken ya da henüz aşağıdayken şerit yok.
+// Kaydırma dinleyicisi yerine IntersectionObserver: ucuz ve titremesiz. Kart
+// placePriceCard ile yuvalar arasında taşınsa da gözlem elemana bağlı, sürer.
+(function () {
+    var card = document.getElementById('priceCard');
+    var bar = document.getElementById('mCta');
+    if (!card || !bar || !('IntersectionObserver' in window)) return;
+    var mobil = window.matchMedia('(max-width:768px)');
+    var gecti = false;
+    function uygula() {
+        var acik = mobil.matches && gecti;
+        document.body.classList.toggle('cta-acik', acik);
+        bar.setAttribute('aria-hidden', acik ? 'false' : 'true');
+    }
+    new IntersectionObserver(function (entries) {
+        var e = entries[0];
+        gecti = !e.isIntersecting && e.boundingClientRect.top < 0;
+        uygula();
+    }, { threshold: 0 }).observe(card);
+    if (mobil.addEventListener) mobil.addEventListener('change', uygula);
 })();
 
 // Fiyat kartı: mobilde başlığın altına, masaüstünde sidebar'a (tek DOM, iki yuva)

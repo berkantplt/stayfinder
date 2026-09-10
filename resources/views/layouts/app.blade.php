@@ -72,6 +72,7 @@
             --tabbar-h:0px;      /* mobilde asagida ezilir */
             --fab-h:52px;        /* sohbet balonu yuksekligi */
             --tepsi-h:58px;      /* karsilastirma tepsisi */
+            --cta-h:0px;         /* mobil yapiskan CTA seridi (tur detayi); acikken 64px */
             --dip-kenar:24px;    /* ekran kenarindan mesafe */
             --dip-aralik:12px;   /* katmanlar arasi nefes */
             --green:#059669; --green-bg:#d1fae5; --green-text:#065f46;
@@ -627,7 +628,9 @@
                 --fab-h:54px;
                 --dip-kenar:12px;
             }
-            body { padding-bottom:calc(var(--tabbar-h) + var(--dip-aralik)); }
+            body { padding-bottom:calc(var(--tabbar-h) + var(--cta-h) + var(--dip-aralik)); }
+            /* Tur detayindaki yapiskan CTA seridi acikken dip katman 64px yukari kayar */
+            body.cta-acik { --cta-h:64px; }
             body.panel-layout-active { padding-bottom:0; --tabbar-h:0px; } /* sekme barı bu sayfalarda basılmıyor */
             body.panel-layout-active .m-trust { display:none; }
             /* #compare-bar konumu asagidaki 'Dip katman' blogunda, token'la */
@@ -697,19 +700,19 @@
         /* z-index her durumda token'dan; sürüklenince yalnız konum kuralı çekilir */
         #cv2 { z-index:var(--z-fab) !important; }
         #cv2:not(.cv2-tasindi) {
-            bottom:calc(var(--tabbar-h) + var(--dip-kenar)) !important;
+            bottom:calc(var(--tabbar-h) + var(--cta-h) + var(--dip-kenar)) !important;
         }
         /* Sohbet paneli acikken balon mobil cekmecenin de ustune cikmali */
         #cv2.cv2-acik { z-index:var(--z-panel) !important; }
 
         #compare-bar {
-            bottom:calc(var(--tabbar-h) + var(--dip-kenar)) !important;
+            bottom:calc(var(--tabbar-h) + var(--cta-h) + var(--dip-kenar)) !important;
             z-index:var(--z-tepsi) !important;
         }
         /* Tepsi acikken balon onun ustune tasinsin — dar ekranda yan yana
            sigmiyorlar (tepsi max-width:calc(100vw - 24px)). */
         body.tepsi-acik #cv2:not(.cv2-tasindi) {
-            bottom:calc(var(--tabbar-h) + var(--dip-kenar) + var(--tepsi-h) + var(--dip-aralik)) !important;
+            bottom:calc(var(--tabbar-h) + var(--cta-h) + var(--dip-kenar) + var(--tepsi-h) + var(--dip-aralik)) !important;
         }
 
         /* Sohbet balonu basılmayan sayfalarda (bayrak kapalı, admin, acenta) dip boşluğu da yok */
@@ -720,9 +723,9 @@
 
         /* Footer'in son satiri (.ftr-made / sosyal ikonlar) balon ve tepsinin
            altinda kaliyordu: olculen ortusme %45 ve %100. */
-        .ftr-main { padding-bottom:calc(26px + var(--fab-h) + var(--dip-aralik)); }
+        .ftr-main { padding-bottom:calc(26px + var(--fab-h) + var(--cta-h) + var(--dip-aralik)); }
         body.tepsi-acik .ftr-main {
-            padding-bottom:calc(26px + var(--fab-h) + var(--tepsi-h) + var(--dip-aralik) * 2);
+            padding-bottom:calc(26px + var(--fab-h) + var(--cta-h) + var(--tepsi-h) + var(--dip-aralik) * 2);
         }
 
         @yield('styles')
