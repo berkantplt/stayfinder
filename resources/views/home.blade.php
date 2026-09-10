@@ -100,12 +100,10 @@
                             </span>
                             <span class="hsf-body">
                                 <label for="heroDate">Ne zaman?</label>
-                                {{-- type=text ile "Tarih seçin" yazısı görünür; odaklanınca
-                                     gerçek tarih girdisine döner (JS kapalıysa metin olarak
-                                     gönderilir, sunucu tarafı zaten doğruluyor). --}}
-                                <input type="text" name="date_start" id="heroDate" placeholder="Tarih seçin"
-                                       onfocus="this.type='date'; try { this.showPicker && this.showPicker(); } catch (e) {}"
-                                       onblur="if(!this.value) this.type='text';">
+                                {{-- Türkçe takvim (flatpickr, sayfa sonundaki push): yerleşik tarih
+                                     kutusu tarayıcı diline göre mm/dd/yyyy yazıyordu. Kullanıcı
+                                     gg.aa.yyyy görür, sunucuya Y-m-d gider; JS kapalıysa düz metin. --}}
+                                <input type="text" name="date_start" id="heroDate" class="js-tarih" placeholder="Tarih seçin" autocomplete="off">
                             </span>
                             <span class="hsf-caret" aria-hidden="true">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -2142,5 +2140,19 @@ window.prevStory = prevStory;
     });
 
 })();
+</script>
+@endpush
+
+@push('head')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+@endpush
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/tr.min.js"></script>
+<script>
+// Türkçe takvim: her tarayıcıda gg.aa.yyyy; sunucuya Y-m-d gider.
+if (window.flatpickr) {
+    flatpickr('#heroDate', { locale: 'tr', dateFormat: 'Y-m-d', altInput: true, altFormat: 'd.m.Y', disableMobile: true, minDate: 'today' });
+}
 </script>
 @endpush

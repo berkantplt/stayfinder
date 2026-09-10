@@ -32,7 +32,7 @@
     background-repeat:no-repeat; background-position:right 12px center; background-size:16px 16px; padding-right:36px; }
 .filter-input[type="date"]::-webkit-calendar-picker-indicator { opacity:0; position:absolute; right:6px; top:0; bottom:0; width:28px; cursor:pointer; } /* yalnız ikon şeridi */
 @supports not selector(::-webkit-calendar-picker-indicator) { .filter-input[type="date"] { background-image:none; padding-right:14px; } }
-.filter-input[type="date"] { position:relative;
+.filter-input[type="date"], .filter-input.js-tarih { position:relative;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>");
     background-repeat:no-repeat; background-position:right 11px center; background-size:16px 16px; padding-right:38px; }
 .filter-input:focus, .filter-select:focus { border-color:var(--accent); background-color:#fff; box-shadow:0 0 0 3px rgba(13,116,144,0.1); }
@@ -140,8 +140,9 @@
                 <div class="filter-group">
                     <label class="filter-label">Tarih Aralığı</label>
                     <div style="display:flex;flex-direction:column;gap:8px;">
-                        <input type="date" name="date_start" value="{{ request('date_start') }}" class="filter-input" placeholder="Başlangıç" title="Başlangıç Tarihi">
-                        <input type="date" name="date_end" value="{{ request('date_end') }}" class="filter-input" placeholder="Bitiş" title="Bitiş Tarihi">
+                        {{-- Türkçe takvim (flatpickr): yerleşik kutu tarayıcı diline göre yazıyordu --}}
+                        <input type="text" name="date_start" value="{{ request('date_start') }}" class="filter-input js-tarih" placeholder="Başlangıç" title="Başlangıç Tarihi" autocomplete="off">
+                        <input type="text" name="date_end" value="{{ request('date_end') }}" class="filter-input js-tarih" placeholder="Bitiş" title="Bitiş Tarihi" autocomplete="off">
                     </div>
                 </div>
 
@@ -439,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('input', function(e) {
         // İsimsiz alanlar (aranabilir select'in arama kutusu) otomatik-submit etmez
-        if(!e.target.name || e.target.name === 'q' || e.target.type === 'number' || e.target.type === 'date') return;
+        if(!e.target.name || e.target.name === 'q' || e.target.type === 'number' || e.target.type === 'date' || e.target.classList.contains('js-tarih')) return;
         autoSubmit();
     });
 
@@ -449,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     form.addEventListener('change', function(e) {
-        if(e.target.type === 'date' || e.target.type === 'number' || e.target.type === 'radio') {
+        if(e.target.type === 'date' || e.target.type === 'number' || e.target.type === 'radio' || e.target.classList.contains('js-tarih')) {
             autoSubmit();
         }
     });
@@ -603,6 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.mSheetClear = function() {
         form.querySelectorAll('input[type="text"], input[type="date"], input[type="number"], input[type="hidden"]').forEach(el => { el.value = ''; });
+        form.querySelectorAll('.js-tarih').forEach(el => { if (el._flatpickr) el._flatpickr.clear(); });
         form.querySelectorAll('select').forEach(el => {
             el.value = '';
             // Aranabilir combobox'ın görünen etiketi senkron kalsın
@@ -618,6 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const fields = form.querySelectorAll('[name="' + name + '"]');
             fields.forEach(el => {
                 if (el.type === 'radio') { el.checked = el.value === ''; }
+                else if (el._flatpickr) { el._flatpickr.clear(); }
                 else { el.value = ''; }
             });
         });
@@ -635,3 +638,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+
+@push('head')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+@endpush
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/tr.min.js"></script>
+<script>
+// Türkçe takvim: her tarayıcıda gg.aa.yyyy; sunucuya Y-m-d gider. altInput'un sınıfı
+// aslından kopyalanır (filter-input js-tarih), takvim ikonu CSS'i ona da uygulanır.
+if (window.flatpickr) {
+    flatpickr('.js-tarih', { locale: 'tr', dateFormat: 'Y-m-d', altInput: true, altFormat: 'd.m.Y', disableMobile: true, minDate: 'today' });
+}
+</script>
+@endpush
