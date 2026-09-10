@@ -73,10 +73,10 @@
                 Birçok acenta, tek arama
             </span>
             <h1 class="hero-title">
-                Hayalindeki turu<br><span>en uygun fiyatla</span> bul
+                Aynı turu<br><span>farklı acentalarda</span> karşılaştır
             </h1>
             <p class="hero-sub">
-                Yüzlerce acentanın turlarını karşılaştır,<br>sana en uygun fiyatı kolayca bul.
+                Fiyatları, tarihleri ve tur programlarını<br>tek ekranda incele.
             </p>
             {{-- Search bar --}}
             <form action="{{ route('tours.index') }}" method="GET" class="hero-search-shell">
@@ -705,11 +705,11 @@
     <div class="hero-trust">
         <div class="hero-trust-item">
             <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg></span>
-            <div><b>Güvenilir acentalar</b><span>Onaylı yüzlerce acenta</span></div>
+            <div><b>{{ $tourCount }} güncel tur</b><span>Onaylı acentalardan</span></div>
         </div>
         <div class="hero-trust-item">
             <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.3l-8 8a2 2 0 0 1-2.9 0l-6-6a2 2 0 0 1-.6-1.4V4.5A1.5 1.5 0 0 1 4.5 3h8.4a2 2 0 0 1 1.4.6l6.2 6.2a1.8 1.8 0 0 1 0 2.5z"/><circle cx="8" cy="8" r="1.4"/></svg></span>
-            <div><b>En iyi fiyatlar</b><span>Karşılaştır, avantajı yakala</span></div>
+            <div><b>Doğrulanmış acentalar</b><span>Yayın öncesi admin onayı</span></div>
         </div>
         <div class="hero-trust-item">
             <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L15.5 10"/></svg></span>
@@ -732,8 +732,8 @@
             <div class="m-hero-veil"></div>
 
             <div class="m-hero-body">
-                <h2 class="m-hero-title">Hayalindeki turu<br><span>en uygun<br>fiyatla bul</span></h2>
-                <p class="m-hero-sub">Yüzlerce turu karşılaştır,<br>sana en uygun fiyatı kolayca bul.</p>
+                <h2 class="m-hero-title">Aynı turu<br><span>farklı acentalarda<br>karşılaştır</span></h2>
+                <p class="m-hero-sub">Fiyat, tarih ve programı<br>tek ekranda incele.</p>
             </div>
 
             {{-- Katman 2: hero'yu sayfa zeminine bağlayan dalga — kullanıcının verdiği
@@ -796,7 +796,7 @@
             </div>
             <div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.3l-8 8a2 2 0 0 1-2.9 0l-6-6a2 2 0 0 1-.6-1.4V4.5A1.5 1.5 0 0 1 4.5 3h8.4a2 2 0 0 1 1.4.6l6.2 6.2a1.8 1.8 0 0 1 0 2.5z"/><circle cx="8" cy="8" r="1.3"/></svg>
-                <b>En İyi Fiyatlar</b><span>Avantajlı fırsatlar</span>
+                <b>{{ $tourCount }} Tur</b><span>Onaylı acentalardan</span>
             </div>
             <div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.4 2.4 4.6-4.9"/></svg>
