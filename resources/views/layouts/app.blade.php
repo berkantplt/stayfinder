@@ -548,6 +548,8 @@
         }
         @media(prefers-reduced-motion:reduce){ .panel-sidebar-module { transition:none; } }
         body.panel-layout-active footer { display:none !important; }
+        /* Karşılaştırma tepsisi site özelliği: panel sayfalarında basılmaz (mobilde dibi örtüyordu) */
+        body.panel-layout-active #compare-bar { display:none !important; }
 
         /* ── Responsive ── */
         @media(max-width:768px) {
@@ -1810,6 +1812,11 @@
         const comparePageUrl = @json(route('tours.compare'));
         function updateCompareUI() {
             const bar = document.getElementById('compare-bar');
+            // Panel sayfalarında tepsi basılmaz; localStorage'daki seçim sitede sürer.
+            if (document.body.classList.contains('panel-layout-active')) {
+                if (bar) bar.style.display = 'none';
+                return;
+            }
             if (bar) {
                 const countEl = document.getElementById('compare-count');
                 if (countEl) countEl.innerText = comparedTours.length;
