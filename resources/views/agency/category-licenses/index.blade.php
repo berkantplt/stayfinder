@@ -1,17 +1,97 @@
 @extends('layouts.app')
-@section('title', 'Kategori Yetkilendirme Merkezi — Acenta Paneli')
+@section('title', 'Kategori Yetkileri — Acenta Paneli')
+
+@section('styles')
+<style>
+    /* KYM sayfa stilleri: renkler layout token'larından; sarı/kırmızı/mor
+       durum renkleri için token yok, yalnız burada sınıf olarak tanımlı. */
+    .kym-baslik { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+    .kym-baslik h1 { font-size:26px; font-weight:800; letter-spacing:-0.5px; color:var(--text); }
+    .kym-baslik .alt { font-size:14px; color:var(--text-meta); margin-top:4px; }
+    .kym-bolum { display:flex; flex-direction:column; gap:24px; }
+    .kym-bolum-baslik { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .kym-bolum-baslik h2 { font-size:18px; font-weight:700; color:var(--text); }
+    .kym-bolum-baslik .not { font-size:13px; color:var(--text-meta); }
+    .kym-izgara { display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:14px; }
+    .kym-kart { border:1px solid var(--border); border-radius:16px; padding:16px; background:var(--white); min-width:0; }
+    .kym-kart .ad { font-size:15px; font-weight:700; color:var(--text); overflow-wrap:anywhere; }
+    .kym-kart .ust { font-size:12px; color:var(--text-meta); margin-top:3px; }
+    .kym-kart .aciklama { font-size:13px; color:var(--text-sec); margin-top:8px; line-height:1.55; }
+    .kym-kart .fiyat { font-size:18px; font-weight:800; color:var(--text); white-space:nowrap; }
+    .kym-kart .meta { font-size:12px; color:var(--text-meta); margin-top:8px; line-height:1.5; }
+    .kym-kpi .etiket { font-size:13px; color:var(--text-meta); font-weight:600; }
+    .kym-kpi-izgara { grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); } /* 375'te 2 sütun: 4 kart üst üste yığılmasın */
+    .kym-kpi .deger { font-size:24px; font-weight:800; color:var(--text); margin-top:6px; letter-spacing:-0.5px; overflow-wrap:anywhere; }
+    .kym-kpi .deger.tarih { font-size:20px; white-space:nowrap; overflow-wrap:normal; }
+    .kym-kpi .alt { font-size:12.5px; color:var(--text-meta); margin-top:6px; line-height:1.45; }
+    .kym-kpi.sari .deger { color:#b45309; }
+    .kym-kpi.kirmizi .deger { color:#b91c1c; }
+    .kym-rozet-sari { background:#fef3c7; color:#92400e; }
+    .kym-rozet-kirmizi { background:#fee2e2; color:#991b1b; }
+    .kym-rozet-mor { background:#f3e8ff; color:#6b21a8; }
+    .kym-rozet-gri { background:var(--border-light); color:var(--text-meta); }
+    .kym-abonelik { display:flex; flex-direction:column; gap:10px; scroll-margin-top:90px; }
+    .kym-abonelik[data-yakin="soon"] { border-color:#fcd34d; }
+    .kym-abonelik[data-yakin="critical"] { border-color:#fca5a5; }
+    .kym-abonelik[data-iptal="1"] { border-style:dashed; }
+    .kym-abonelik .satir { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .kym-abonelik .bilgi { font-size:12.5px; color:var(--text-sec); line-height:1.5; }
+    .kym-abonelik .bilgi strong { color:var(--text); }
+    .kym-cubuk { height:6px; background:var(--border-light); border-radius:99px; overflow:hidden; margin-top:6px; }
+    .kym-cubuk > span { display:block; height:100%; background:var(--accent-ink); border-radius:99px; }
+    .kym-cubuk.dolu > span { background:#dc2626; }
+    .kym-eylemler { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:2px; }
+    .kym-eylemler form { margin:0; }
+    .kym-eylemler .btn-sm { padding:6px 12px; font-size:12.5px; }
+    .kym-eylemler .ipucu { font-size:11.5px; color:var(--text-meta); }
+    .kym-azalt { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px; color:var(--text-meta); }
+    .kym-azalt input[type="number"] { width:60px; margin:0; padding:5px 8px; font-size:12.5px; border:1px solid var(--border); border-radius:8px; }
+    .kym-yenileme { font-size:12px; color:var(--text-meta); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .kym-filtre { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; }
+    .kym-arama { flex:1 1 200px; min-width:0; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:var(--white); }
+    .kym-hap { border:1px solid var(--border); background:var(--white); border-radius:99px; padding:6px 12px; font-size:12.5px; font-weight:600; color:var(--text-sec); cursor:pointer; font-family:inherit; }
+    .kym-hap.aktif { background:var(--accent-ink); border-color:var(--accent-ink); color:#fff; }
+    .kym-grup-baslik { font-size:12px; text-transform:uppercase; letter-spacing:.6px; font-weight:700; color:var(--text-meta); margin:20px 0 10px; }
+    .kym-grup:first-of-type .kym-grup-baslik { margin-top:0; }
+    .kym-bos { padding:20px; border:1px dashed #cbd5e1; border-radius:16px; background:var(--bg); color:var(--text-sec); font-size:13.5px; line-height:1.55; }
+    .kym-sepet-kalem { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; padding:8px 0; border-bottom:1px solid var(--border-light); }
+    .kym-sepet-kalem .ad { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); font-weight:600; }
+    .kym-sepet-kalem .fiyat { color:var(--text-meta); white-space:nowrap; font-size:12px; }
+    .kym-sil { background:none; border:0; color:var(--text-muted); cursor:pointer; font-size:18px; line-height:1; padding:0 4px; font-family:inherit; }
+    .kym-sil:hover { color:#b91c1c; }
+    .kym-yan-kart h2 { font-size:15px; font-weight:700; color:var(--text); }
+    .kym-siparis { border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:var(--white); }
+    .kym-siparis .no { font-weight:700; font-size:12.5px; color:var(--text); overflow-wrap:anywhere; }
+    .kym-siparis .tarih { font-size:11.5px; color:var(--text-meta); margin-top:3px; }
+    .kym-siparis .tutar { font-size:14px; font-weight:800; color:var(--text); white-space:nowrap; }
+    .kym-eslesme-yok { display:none; }
+</style>
+@endsection
 
 @section('content')
+@php
+    $cartEmpty = $cartItems->isEmpty() && $slotCartItems->isEmpty();
+    $isLegacy = (bool) $agency->legacy_category_access;
+    $fiyat = fn ($tutar) => number_format((float) $tutar, 0, ',', '.');
+@endphp
 <div class="container">
     <div>
         @include('partials.agency-sidebar')
         <div class="section" style="padding:24px 0 0 0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:94%;margin:0 auto 24px;">
+            <div class="kym-baslik" style="max-width:94%;margin-left:auto;margin-right:auto;">
                 <div>
-                    <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">Kategori Yetkilendirme Merkezi</h1>
-                    <div style="font-size:14px;color:#64748b;margin-top:4px;">Kategori bazlı aylık yetki satın alın, sadece açık kategorilerde tur yayınlayın.</div>
+                    <h1>Kategori Yetkileri</h1>
+                    <div class="alt">Kategori bazlı aylık yetki satın alın, sadece açık kategorilerde tur yayınlayın.</div>
                 </div>
-                <a href="{{ route('agency.tours.create') }}" class="btn btn-outline">Tur Oluştur</a>
+                {{-- Ana eylem duruma bağlı: sepet doluysa ödeme, hiç yetki yoksa kategori seçimi, aksi halde tur oluşturma --}}
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <a href="{{ route('agency.category-licenses.checkout-form') }}" class="btn btn-primary" data-cta-odeme style="{{ $cartEmpty ? 'display:none;' : '' }}">Ödemeye Geç</a>
+                    @if(! $isLegacy && $licensedCategories->isEmpty())
+                        <a href="#satin-alinabilir" class="btn btn-primary" data-cta-varsayilan style="{{ $cartEmpty ? '' : 'display:none;' }}">Kategori Seç</a>
+                    @else
+                        <a href="{{ route('agency.tours.create') }}" class="btn btn-outline" data-cta-varsayilan style="{{ $cartEmpty ? '' : 'display:none;' }}">Tur Oluştur</a>
+                    @endif
+                </div>
             </div>
 
             @if(session('success'))
@@ -26,75 +106,105 @@
 
             <div id="cart-flash" role="status" aria-live="polite" style="max-width:94%;margin:0 auto 24px;display:none;"></div>
 
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:94%;margin:0 auto 24px;">
-                <div class="stat-card" style="padding:20px;">
-                    <div style="font-size:13px;color:#64748b;font-weight:600;">Aktif Yetki</div>
-                    <div style="font-size:28px;font-weight:800;color:#0f172a;margin-top:6px;">{{ $licensedCategories->count() }}</div>
-                    <div style="font-size:13px;color:#94a3b8;margin-top:6px;">Şu anda tur açabileceğiniz kategori sayısı</div>
+            {{-- KPI şeridi: acentanın karar vermesi için gereken sayılar --}}
+            <div class="panel-grid-4 kym-kpi-izgara" style="margin-bottom:24px;">
+                <div class="stat-card kym-kpi">
+                    <div class="etiket">Aktif Yetki</div>
+                    <div class="deger">{{ $summary->active_count }}</div>
+                    <div class="alt">{{ $isLegacy ? 'Tüm alt kategoriler açık · geçiş erişimi' : 'Şu anda tur açabileceğiniz kategori sayısı' }}</div>
                 </div>
-                <div class="stat-card" style="padding:20px;">
-                    <div style="font-size:13px;color:#64748b;font-weight:600;">Sepet Toplamı</div>
-                    <div data-cart-total-stat style="font-size:28px;font-weight:800;color:#0f172a;margin-top:6px;">{{ number_format($cartTotal, 0, ',', '.') }} TL</div>
-                    <div style="font-size:13px;color:#94a3b8;margin-top:6px;">Bu ay için satın alma özeti</div>
-                </div>
-                <div class="stat-card" style="padding:20px;">
-                    <div style="font-size:13px;color:#64748b;font-weight:600;">Faturalama Modeli</div>
-                    <div style="font-size:22px;font-weight:800;color:#0f172a;margin-top:6px;">Aylık</div>
-                    <div style="font-size:13px;color:#94a3b8;margin-top:6px;">
-                        {{ $autoRenewEnabled ? 'Kayıtlı kartla otomatik yenileme; dilediğinizde iptal' : 'Kategori bazlı yenileme döngüsü' }}
+                @if($isLegacy)
+                    <div class="stat-card kym-kpi">
+                        <div class="etiket">Erişim Süresi</div>
+                        <div class="deger">Süresiz</div>
+                        <div class="alt">Geçiş erişiminde bitiş tarihi yok</div>
                     </div>
-                </div>
+                    <div class="stat-card kym-kpi">
+                        <div class="etiket">Aylık Maliyet</div>
+                        <div class="deger">Ücretsiz</div>
+                        <div class="alt">Kayıtlı turlarınız için ücret alınmaz</div>
+                    </div>
+                    <div class="stat-card kym-kpi">
+                        <div class="etiket">Tur Hakkı</div>
+                        <div class="deger">Limitsiz</div>
+                        <div class="alt">Kategori başına tur sınırı uygulanmaz</div>
+                    </div>
+                @else
+                    @php $nearest = $summary->nearest; @endphp
+                    <div class="stat-card kym-kpi {{ $nearest ? ($nearest->urgency === 'critical' ? 'kirmizi' : ($nearest->urgency === 'soon' ? 'sari' : '')) : '' }}">
+                        <div class="etiket">En Yakın Bitiş</div>
+                        <div class="deger tarih">{{ $nearest ? $nearest->expires_at?->format('d.m.Y') : '—' }}</div>
+                        <div class="alt">
+                            @if($nearest)
+                                {{ $nearest->category->name }} · {{ $nearest->days_left }} gün kaldı
+                                @if($summary->expiring_count > 1)
+                                    · {{ $summary->expiring_count }} kategori bitmek üzere
+                                @endif
+                            @else
+                                Henüz aktif abonelik yok
+                            @endif
+                        </div>
+                    </div>
+                    <div class="stat-card kym-kpi">
+                        <div class="etiket">Aylık Toplam</div>
+                        <div class="deger">{{ $fiyat($summary->monthly_total) }} TL</div>
+                        <div class="alt">{{ $autoRenewEnabled ? 'Kategori ücretleri + ekstra haklar, her ay' : 'Aktif kategori ücretlerinin toplamı' }}</div>
+                    </div>
+                    <div class="stat-card kym-kpi {{ $summary->full_slot_count > 0 ? 'kirmizi' : '' }}">
+                        <div class="etiket">Hakkı Dolu Kategori</div>
+                        <div class="deger">{{ $summary->full_slot_count }}</div>
+                        <div class="alt">{{ $summary->full_slot_count > 0 ? 'Bu kategorilere yeni tur için ekstra hak alın' : 'Tüm kategorilerde boş tur hakkı var' }}</div>
+                    </div>
+                @endif
             </div>
 
-            @if($agency->legacy_category_access)
+            @if($isLegacy)
                 <div class="alert alert-success" style="max-width:94%;margin:0 auto 24px;">
-                    Bu acenta geçiş kapsamına alındı. Kayıtlı turların etkilenmemesi için tüm aktif kategoriler satın alınmış gibi tanımlandı.
+                    Bu acenta geçiş kapsamına alındı. Kayıtlı turların etkilenmemesi için tüm aktif alt kategoriler satın alınmış gibi tanımlandı.
                 </div>
             @endif
 
-            {{-- Sol sütun geniş: yetki tablosundaki "+ Ekstra Hak" kolonu kaydırmasız sığsın --}}
-            <div style="display:grid;grid-template-columns:minmax(0,2.5fr) minmax(240px,0.72fr);gap:20px;max-width:94%;margin:0 auto;">
-                <div style="display:flex;flex-direction:column;gap:24px;">
-                    <div class="stat-card" style="padding:24px;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;">
-                            <h2 style="font-size:18px;font-weight:700;color:#0f172a;">Satın Alınabilir Kategoriler</h2>
-                            <div style="font-size:13px;color:#64748b;">Varsayılan aylık ücret kategori bazlıdır.</div>
+            <div class="panel-grid-yan">
+                <div class="kym-bolum">
+                    <div class="stat-card" id="satin-alinabilir" style="padding:24px;">
+                        <div class="kym-bolum-baslik">
+                            <h2>Satın Alınabilir Kategoriler</h2>
+                            <div class="not">Aylık ücret kategori bazlıdır.</div>
                         </div>
 
-                        @if($agency->legacy_category_access)
-                            <div style="padding:20px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;">
-                                Geçiş erişimi nedeniyle yeni kategori satın alımı gerekmiyor. Tüm aktif kategoriler hesabınızda açık görünüyor.
+                        @if($isLegacy)
+                            <div class="kym-bos">
+                                Geçiş erişimi nedeniyle yeni kategori satın alımı gerekmiyor. Tüm aktif alt kategoriler hesabınızda açık görünüyor.
                             </div>
                         @elseif($availableCategories->isEmpty())
-                            <div style="padding:20px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;">
+                            <div class="kym-bos">
                                 Satın alınabilir açık kategori kalmadı. Aktif yetkileriniz tüm kullanılabilir kategorileri kapsıyor.
                             </div>
                         @else
-                            <div data-all-in-cart-note style="padding:20px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;{{ $availableCategories->count() === $cartCategoryIds->count() ? '' : 'display:none;' }}">
+                            <div class="kym-bos" data-all-in-cart-note style="{{ $availableCategories->count() === $cartCategoryIds->count() ? '' : 'display:none;' }}">
                                 Satın alınabilir tüm kategoriler sepetinizde. Ödemeye geçebilirsiniz.
                             </div>
-                            <div data-purchasable-grid style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;">
+                            <div class="kym-izgara" data-purchasable-grid>
                                 @foreach($availableCategories as $category)
-                                    <div data-category-card="{{ $category->id }}" style="border:1px solid #e2e8f0;border-radius:18px;padding:18px;background:#fff;{{ $cartCategoryIds->contains($category->id) ? 'display:none;' : '' }}">
+                                    <div class="kym-kart" data-category-card="{{ $category->id }}" style="{{ $cartCategoryIds->contains($category->id) ? 'display:none;' : '' }}">
                                         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-                                            <div>
-                                                <div style="font-size:16px;font-weight:700;color:#0f172a;">{{ $category->icon }} {{ $category->name }}</div>
-                                                <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
-                                                    {{ $category->parent?->name ? 'Üst kategori: ' . $category->parent->name : 'Ana kategori' }}
-                                                </div>
+                                            <div style="min-width:0;">
+                                                <div class="ad">{{ $category->icon }} {{ $category->name }}</div>
+                                                <div class="ust">{{ $category->parent?->name ? 'Üst kategori: '.$category->parent->name : 'Ana kategori' }}</div>
                                                 @if($category->description)
-                                                    <div style="font-size:13px;color:#475569;margin-top:10px;line-height:1.6;">{{ \Illuminate\Support\Str::limit($category->description, 110) }}</div>
+                                                    <div class="aciklama">{{ \Illuminate\Support\Str::limit($category->description, 110) }}</div>
                                                 @endif
                                             </div>
-                                            <div style="font-size:18px;font-weight:800;color:#0f172a;white-space:nowrap;">{{ number_format((float) $category->monthly_price, 0, ',', '.') }} TL</div>
+                                            <div class="fiyat">{{ $fiyat($category->monthly_price) }} TL</div>
                                         </div>
-                                        <div style="font-size:12px;color:#94a3b8;margin-top:6px;">
+                                        <div class="meta">
                                             Aylık yetki bedeli
                                             @if($slotSchemaReady)
-                                                · {{ \App\Support\CategoryLicensing::BASE_TOUR_ALLOWANCE }} tur ekleme hakkı dahil
+                                                · {{ \App\Support\CategoryLicensing::BASE_TOUR_ALLOWANCE }} tur hakkı dahil
+                                                · ekstra hak {{ $fiyat($category->extra_tour_price) }} TL{{ $autoRenewEnabled ? ' / ay' : '' }}
                                             @endif
                                         </div>
-                                        <form method="POST" action="{{ route('agency.category-licenses.cart.add') }}" data-cart-form style="margin-top:16px;">
+                                        <form method="POST" action="{{ route('agency.category-licenses.cart.add') }}" data-cart-form style="margin-top:14px;">
                                             @csrf
                                             <input type="hidden" name="category_id" value="{{ $category->id }}">
                                             <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Sepete Ekle</button>
@@ -105,140 +215,214 @@
                         @endif
                     </div>
 
-                    <div class="stat-card" style="padding:24px;">
-                        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:20px;">Aktif Kategori Yetkileri</h2>
+                    <div class="stat-card" id="aktif-yetkiler" style="padding:24px;">
+                        <div class="kym-bolum-baslik">
+                            <h2>Aktif Kategori Yetkileri <span class="badge kym-rozet-gri" style="margin-left:6px;">{{ $licensedCategories->count() }}</span></h2>
+                            @if(! $isLegacy && $licensedCategories->isNotEmpty())
+                                <div class="not">Bitişi en yakın olan önce listelenir.</div>
+                            @endif
+                        </div>
 
                         @if($licensedCategories->isEmpty())
-                            <div style="padding:20px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;">
-                                Henüz aktif kategori yetkiniz yok.
+                            <div class="kym-bos">
+                                Henüz aktif kategori yetkiniz yok. Yukarıdaki listeden kategori seçip sepete ekleyin; ödeme sonrası o kategoride tur yayınlayabilirsiniz.
                             </div>
                         @else
-                            <div style="overflow-x:auto;">
-                                <div class="table-wrap"><table class="table" style="width:100%;text-align:left;">
-                                    <thead>
-                                        <tr>
-                                            <th>Kategori</th>
-                                            <th>Aylık Ücret</th>
-                                            @if($slotSchemaReady)
-                                                <th>Tur Hakkı</th>
-                                            @endif
-                                            <th>Başlangıç</th>
-                                            <th>Durum</th>
-                                            @if($slotSchemaReady && ! $agency->legacy_category_access)
-                                                <th>Ekstra Hak</th>
-                                            @endif
-                                            @if($autoRenewEnabled && ! $agency->legacy_category_access)
-                                                <th>Yenileme</th>
-                                            @endif
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($licensedCategories as $license)
-                                            <tr>
-                                                <td>
-                                                    <div style="font-weight:700;color:#0f172a;">{{ $license->category->icon }} {{ $license->category->name }}</div>
-                                                    @if($license->category->parent)
-                                                        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">{{ $license->category->parent->name }}</div>
-                                                    @endif
-                                                </td>
-                                                <td>{{ number_format((float) $license->monthly_price, 0, ',', '.') }} TL</td>
-                                                @if($slotSchemaReady)
-                                                    <td>
-                                                        @if($license->tour_limit === null)
-                                                            <span class="badge badge-green">Limitsiz</span>
-                                                        @else
-                                                            <div style="font-weight:700;color:{{ $license->used_slots >= $license->tour_limit ? '#dc2626' : '#0f172a' }};">
-                                                                {{ $license->used_slots }}/{{ $license->tour_limit }}
-                                                            </div>
-                                                            @if($license->extra_slots > 0)
-                                                                <div style="font-size:11px;color:#94a3b8;margin-top:2px;">{{ $license->extra_slots }} ekstra hak dahil</div>
-                                                            @endif
-                                                        @endif
-                                                    </td>
-                                                @endif
-                                                <td>{{ $license->started_at?->format('d.m.Y') ?? '—' }}</td>
-                                                <td>
+                            @if($licensedCategories->count() > 3)
+                                <div class="kym-filtre" data-abonelik-filtre>
+                                    <input type="search" class="kym-arama" data-abonelik-arama placeholder="Kategori ara…" aria-label="Aktif yetkilerde ara">
+                                    @if(! $isLegacy)
+                                        <button type="button" class="kym-hap aktif" data-filtre="tumu">Tümü</button>
+                                        <button type="button" class="kym-hap" data-filtre="yakin">Bitmek üzere ({{ $summary->expiring_count }})</button>
+                                        @if($slotSchemaReady)
+                                            <button type="button" class="kym-hap" data-filtre="dolu">Hakkı dolu ({{ $summary->full_slot_count }})</button>
+                                        @endif
+                                        @if($autoRenewEnabled)
+                                            <button type="button" class="kym-hap" data-filtre="iptal">İptal edildi ({{ $summary->cancelled_count }})</button>
+                                        @endif
+                                    @endif
+                                </div>
+                            @endif
+
+                            <div class="kym-bos kym-eslesme-yok" data-eslesme-yok>Aramanızla eşleşen yetki bulunamadı.</div>
+
+                            @foreach($licensedGroups as $group)
+                                <div class="kym-grup" data-grup>
+                                    <div class="kym-grup-baslik">{{ $group->parent?->icon }} {{ $group->parent?->name ?? 'Diğer' }}</div>
+                                    <div class="kym-izgara">
+                                        @foreach($group->items as $license)
+                                            @php
+                                                $sub = $license->subscription;
+                                                $aramaMetni = mb_strtolower($license->category->name.' '.($group->parent?->name ?? ''), 'UTF-8');
+                                            @endphp
+                                            <div class="kym-kart kym-abonelik"
+                                                 @if($sub) id="abonelik-{{ $sub->id }}" @endif
+                                                 data-subscription-card="{{ $license->category->id }}"
+                                                 data-ara="{{ $aramaMetni }}"
+                                                 data-yakin="{{ $license->urgency }}"
+                                                 data-dolu="{{ $license->slots_full ? 1 : 0 }}"
+                                                 data-iptal="{{ $license->cancelled ? 1 : 0 }}">
+                                                <div class="satir">
+                                                    <div style="min-width:0;">
+                                                        <div class="ad">{{ $license->category->icon }} {{ $license->category->name }}</div>
+                                                    </div>
                                                     @if($license->source === 'legacy')
-                                                        <span class="badge badge-green">Geçiş Erişimi</span>
+                                                        <span class="badge badge-green" style="white-space:nowrap;">Geçiş erişimi</span>
+                                                    @elseif($license->cancelled)
+                                                        <span class="badge kym-rozet-kirmizi" style="white-space:nowrap;">İptal edildi</span>
+                                                    @elseif($license->urgency === 'critical')
+                                                        <span class="badge kym-rozet-kirmizi" style="white-space:nowrap;">Son {{ max(0, $license->days_left) }} gün</span>
+                                                    @elseif($license->urgency === 'soon')
+                                                        <span class="badge kym-rozet-sari" style="white-space:nowrap;">{{ $license->days_left }} gün kaldı</span>
                                                     @else
-                                                        <span class="badge badge-green">Aktif · {{ $license->expires_at?->format('d.m.Y') }}</span>
+                                                        <span class="badge badge-green" style="white-space:nowrap;">Aktif</span>
                                                     @endif
-                                                </td>
-                                                @if($slotSchemaReady && ! $agency->legacy_category_access)
-                                                    <td>
-                                                        <form method="POST" action="{{ route('agency.category-licenses.cart.add-slot') }}" data-cart-form>
+                                                </div>
+
+                                                <div class="bilgi">
+                                                    @if($license->source === 'legacy')
+                                                        Süresiz · ücretsiz geçiş erişimi
+                                                    @else
+                                                        <strong>{{ $license->expires_at?->format('d.m.Y') }}</strong> tarihinde {{ $license->cancelled ? 'sona erecek' : 'bitiyor' }}
+                                                        · {{ $license->days_left }} gün
+                                                        · {{ $fiyat($license->monthly_price) }} TL / ay
+                                                    @endif
+                                                </div>
+
+                                                @if($slotSchemaReady)
+                                                    <div class="bilgi">
+                                                        @if($license->tour_limit === null)
+                                                            Tur hakkı: <strong>Limitsiz</strong> · {{ $license->used_slots }} tur kayıtlı
+                                                        @else
+                                                            Tur hakkı: <strong style="{{ $license->slots_full ? 'color:#b91c1c;' : '' }}">{{ $license->used_slots }}/{{ $license->tour_limit }}</strong>
+                                                            @if($license->extra_slots > 0)
+                                                                · {{ $license->extra_slots }} ekstra hak dahil
+                                                            @endif
+                                                            @if($license->slots_full)
+                                                                · <span style="color:#b91c1c;font-weight:600;">Hak doldu</span>
+                                                            @endif
+                                                            <div class="kym-cubuk {{ $license->slots_full ? 'dolu' : '' }}" aria-hidden="true">
+                                                                <span style="width:{{ min(100, (int) round($license->used_slots / max(1, $license->tour_limit) * 100)) }}%;"></span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+
+                                                @if($license->source !== 'legacy')
+                                                    <div class="kym-eylemler">
+                                                        <form method="POST" action="{{ route('agency.category-licenses.cart.add') }}" data-cart-form data-renew-form style="{{ $license->in_cart_renewal ? 'display:none;' : '' }}">
                                                             @csrf
                                                             <input type="hidden" name="category_id" value="{{ $license->category->id }}">
-                                                            <button type="submit" class="btn btn-outline btn-sm" style="white-space:nowrap;">+ Ekstra Hak</button>
+                                                            <button type="submit" class="btn btn-primary btn-sm" title="Bitiş tarihine 1 ay eklenir, kalan günler yanmaz">Şimdi Yenile</button>
                                                         </form>
-                                                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">{{ number_format((float) $license->category->extra_tour_price, 0, ',', '.') }} TL / hak{{ $autoRenewEnabled ? ' / ay' : '' }}</div>
-                                                        @if($autoRenewEnabled && $license->subscription && $license->extra_slots > 0)
-                                                            @if($license->next_extra_slots !== null)
-                                                                <div style="font-size:11px;color:#b45309;margin-top:6px;">Yeni dönem: {{ $license->next_extra_slots }} hak</div>
-                                                                <form method="POST" action="{{ route('agency.category-licenses.subscription.slot-plan', $license->subscription) }}" style="margin-top:2px;">
+                                                        <span class="badge badge-green" data-renew-in-cart style="{{ $license->in_cart_renewal ? '' : 'display:none;' }}">Yenileme sepette ✓</span>
+
+                                                        @if($slotSchemaReady && ! $license->cancelled)
+                                                            <form method="POST" action="{{ route('agency.category-licenses.cart.add-slot') }}" data-cart-form>
+                                                                @csrf
+                                                                <input type="hidden" name="category_id" value="{{ $license->category->id }}">
+                                                                <button type="submit" class="btn btn-outline btn-sm">+ Ekstra Hak</button>
+                                                            </form>
+                                                            <span class="ipucu">{{ $fiyat($license->category->extra_tour_price) }} TL / hak{{ $autoRenewEnabled ? ' / ay' : '' }}</span>
+                                                        @endif
+
+                                                        @if($autoRenewEnabled && $sub)
+                                                            @if($license->cancelled)
+                                                                <form method="POST" action="{{ route('agency.category-licenses.subscription.resume', $sub) }}">
                                                                     @csrf
-                                                                    <input type="hidden" name="keep" value="{{ $license->extra_slots }}">
-                                                                    <button type="submit" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;">Azaltmayı geri al</button>
+                                                                    <button type="submit" class="btn btn-outline btn-sm">Yenilemeyi Aç</button>
                                                                 </form>
                                                             @else
-                                                                <form method="POST" action="{{ route('agency.category-licenses.subscription.slot-plan', $license->subscription) }}" style="display:flex;gap:4px;align-items:center;margin-top:6px;">
+                                                                <form method="POST" action="{{ route('agency.category-licenses.subscription.cancel', $sub) }}" onsubmit="return confirm('Abonelik iptal edilsin mi? Dönem sonuna kadar kullanmaya devam edersiniz; dönem sonunda otomatik çekim yapılmaz ve turlarınız yayından kalkar.');">
                                                                     @csrf
-                                                                    <input type="number" name="keep" min="0" max="{{ $license->extra_slots }}" value="{{ $license->extra_slots }}" style="width:56px;margin:0;padding:4px 6px;font-size:12px;" title="Yeni dönemde kalacak ekstra hak">
-                                                                    <button type="submit" class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;white-space:nowrap;">Azalt</button>
+                                                                    <button type="submit" class="btn btn-outline btn-sm" style="color:#b91c1c;border-color:#fecaca;">İptal Et</button>
                                                                 </form>
                                                             @endif
                                                         @endif
-                                                    </td>
-                                                @endif
-                                                @if($autoRenewEnabled && ! $agency->legacy_category_access)
-                                                    <td>
-                                                        @if($license->subscription === null)
-                                                            <span style="color:#94a3b8;">—</span>
-                                                        @elseif($license->cancelled)
-                                                            <span class="badge" style="background:#fef2f2;color:#991b1b;white-space:nowrap;">İptal edildi</span>
-                                                            <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">{{ $license->expires_at?->format('d.m.Y') }} tarihinde sona erecek, çekim yapılmayacak</div>
-                                                            <form method="POST" action="{{ route('agency.category-licenses.subscription.resume', $license->subscription) }}" style="margin-top:6px;">
-                                                                @csrf
-                                                                <button type="submit" class="btn btn-outline btn-sm" style="white-space:nowrap;">Yenilemeyi Aç</button>
-                                                            </form>
-                                                        @else
-                                                            <span class="badge badge-green" style="white-space:nowrap;">Otomatik</span>
-                                                            <div style="font-size:11px;color:#94a3b8;margin-top:4px;white-space:nowrap;">
-                                                                {{ $storedCard ? 'Yenilemede '.$storedCard->displayLabel().' kullanılır' : 'Kayıtlı kart yok — ödemede saklayın' }}
+                                                    </div>
+
+                                                    @if($autoRenewEnabled && $sub && $license->extra_slots > 0 && ! $license->cancelled)
+                                                        @if($license->next_extra_slots !== null)
+                                                            <div class="kym-azalt">
+                                                                <span style="color:#b45309;font-weight:600;">Yeni dönemde {{ $license->next_extra_slots }} ekstra hak kalacak.</span>
+                                                                <form method="POST" action="{{ route('agency.category-licenses.subscription.slot-plan', $sub) }}" style="margin:0;">
+                                                                    @csrf
+                                                                    <input type="hidden" name="keep" value="{{ $license->extra_slots }}">
+                                                                    <button type="submit" class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11.5px;">Azaltmayı geri al</button>
+                                                                </form>
                                                             </div>
-                                                            <form method="POST" action="{{ route('agency.category-licenses.subscription.cancel', $license->subscription) }}" style="margin-top:6px;" onsubmit="return confirm('Abonelik iptal edilsin mi? Dönem sonuna kadar kullanmaya devam edersiniz; dönem sonunda otomatik çekim yapılmaz ve turlarınız yayından kalkar.');">
+                                                        @else
+                                                            <form method="POST" action="{{ route('agency.category-licenses.subscription.slot-plan', $sub) }}" class="kym-azalt">
                                                                 @csrf
-                                                                <button type="submit" class="btn btn-outline btn-sm" style="color:#b91c1c;border-color:#fecaca;white-space:nowrap;">İptal Et</button>
+                                                                <label for="hak-plani-{{ $sub->id }}">Yeni dönemde kalacak ekstra hak:</label>
+                                                                <input type="number" id="hak-plani-{{ $sub->id }}" name="keep" min="0" max="{{ $license->extra_slots }}" value="{{ $license->extra_slots }}">
+                                                                <button type="submit" class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11.5px;">Azalt</button>
                                                             </form>
                                                         @endif
-                                                    </td>
+                                                    @endif
+
+                                                    @if($autoRenewEnabled && $sub)
+                                                        <div class="kym-yenileme">
+                                                            @if($license->cancelled)
+                                                                Dönem sonunda kapanır, kartınızdan çekim yapılmaz.
+                                                            @elseif($storedCard)
+                                                                <span class="badge badge-green" style="padding:2px 8px;">Otomatik yenileme</span> {{ $storedCard->displayLabel() }} ile
+                                                            @else
+                                                                <span class="badge kym-rozet-sari" style="padding:2px 8px;">Kart bekleniyor</span>
+                                                                <a href="#yenileme-karti" style="color:var(--accent-ink);font-weight:600;">Otomatik yenileme için kart saklayın</a>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                 @endif
-                                            </tr>
+                                            </div>
                                         @endforeach
-                                    </tbody>
-                                </table></div>
-                            </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         @endif
                     </div>
                 </div>
 
-                <div style="display:flex;flex-direction:column;gap:16px;">
-                    {{-- Sepet burada yalnız ÖZET: kalemler ayrı ekranda (cart.show) --}}
-                    <div class="stat-card" style="padding:16px;">
-                        @php($cartEmpty = $cartItems->isEmpty() && $slotCartItems->isEmpty())
+                <div class="kym-bolum" style="gap:16px;">
+                    {{-- Sepet özeti: kalem adları burada, kaldırma XHR ile; tam ekran ayrı sayfada (cart.show) --}}
+                    <div class="stat-card kym-yan-kart" style="padding:16px;">
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-                            <h2 style="font-size:15px;font-weight:700;color:#0f172a;">Sepet</h2>
-                            <span class="badge" data-cart-count>{{ $cartItems->count() + $slotCartItems->count() }} kalem</span>
+                            <h2>Sepet</h2>
+                            <span class="badge kym-rozet-gri" data-cart-count>{{ $cartItems->count() + $slotCartItems->count() }} kalem</span>
                         </div>
 
-                        <div data-cart-empty style="padding:14px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#475569;font-size:13px;{{ $cartEmpty ? '' : 'display:none;' }}">
+                        <div class="kym-bos" data-cart-empty style="padding:14px;{{ $cartEmpty ? '' : 'display:none;' }}">
                             Sepetiniz boş. Satın alınabilir kategorilerden seçim yapın.
                         </div>
 
                         <div data-cart-body style="{{ $cartEmpty ? 'display:none;' : '' }}">
-                            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#475569;">
+                            <div data-cart-items>
+                                @foreach($cartItems as $category)
+                                    <div class="kym-sepet-kalem">
+                                        <span class="ad" title="{{ $category->name }}">{{ $category->icon }} {{ $category->name }}{{ $category->cart_renewal ? ' — Yenileme' : '' }}</span>
+                                        <span class="fiyat">{{ $fiyat($category->monthly_price) }} TL / ay</span>
+                                        <form method="POST" action="{{ route('agency.category-licenses.cart.remove', $category) }}" data-cart-form style="margin:0;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="kym-sil" aria-label="{{ $category->name }} sepetten kaldır">×</button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                                @foreach($slotCartItems as $slotItem)
+                                    <div class="kym-sepet-kalem">
+                                        <span class="ad" title="{{ $slotItem->category->name }}">{{ $slotItem->category->name }} — Ekstra Tur Hakkı{{ $slotItem->quantity > 1 ? ' ×'.$slotItem->quantity : '' }}</span>
+                                        <span class="fiyat">{{ $fiyat($slotItem->line_total) }} TL{{ $autoRenewEnabled ? ' / ay' : '' }}</span>
+                                        <form method="POST" action="{{ route('agency.category-licenses.cart.remove-slot', $slotItem->category) }}" data-cart-form style="margin:0;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="kym-sil" aria-label="{{ $slotItem->category->name }} ekstra hakkı sepetten kaldır">×</button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text-sec);margin-top:12px;">
                                 <span>İlk dönem toplamı</span>
-                                <strong data-cart-total style="font-size:18px;color:#0f172a;">{{ number_format($cartTotal, 0, ',', '.') }} TL</strong>
+                                <strong data-cart-total style="font-size:18px;color:var(--text);">{{ $fiyat($cartTotal) }} TL</strong>
                             </div>
                             <a href="{{ route('agency.category-licenses.cart.show') }}" class="btn btn-outline" style="width:100%;justify-content:center;margin-top:12px;">
                                 Sepeti Görüntüle
@@ -249,48 +433,56 @@
                         </div>
                     </div>
 
-                    @if($autoRenewEnabled && ! $agency->legacy_category_access)
-                        <div class="stat-card" style="padding:16px;">
-                            <h2 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:12px;">Otomatik Yenileme Kartı</h2>
+                    @if($autoRenewEnabled && ! $isLegacy)
+                        <div class="stat-card kym-yan-kart" id="yenileme-karti" style="padding:16px;scroll-margin-top:90px;">
+                            <h2 style="margin-bottom:12px;">Otomatik Yenileme Kartı</h2>
                             @if($storedCard)
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;background:#fff;">
-                                    <div>
-                                        <div style="font-weight:700;font-size:13px;color:#0f172a;">💳 {{ $storedCard->displayLabel() }}</div>
-                                        <div style="font-size:12px;color:#94a3b8;margin-top:3px;">Abonelik yenilemelerinde bu kart kullanılır</div>
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--white);">
+                                    <div style="min-width:0;">
+                                        <div style="font-weight:700;font-size:13px;color:var(--text);">💳 {{ $storedCard->displayLabel() }}</div>
+                                        <div style="font-size:12px;color:var(--text-meta);margin-top:3px;">Abonelik yenilemelerinde bu kart kullanılır</div>
                                     </div>
-                                    <form method="POST" action="{{ route('agency.category-licenses.stored-card.delete') }}" onsubmit="return confirm('Kayıtlı kart silinsin mi? Kart olmadan abonelikler otomatik yenilenemez.');">
+                                    <form method="POST" action="{{ route('agency.category-licenses.stored-card.delete') }}" onsubmit="return confirm('Kayıtlı kart silinsin mi? Kart olmadan abonelikler otomatik yenilenemez.');" style="margin:0;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-outline btn-sm">Kartı Sil</button>
                                     </form>
                                 </div>
                             @else
-                                <div style="padding:16px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#475569;font-size:13px;line-height:1.6;">
-                                    Kayıtlı kartınız yok. Bir sonraki ödemede iyzico formundaki <strong>"Kartımı sakla"</strong> seçeneğini işaretlerseniz abonelikleriniz her ay otomatik yenilenir; dilediğinizde iptal edebilirsiniz.
+                                <div class="kym-bos" style="padding:14px;border-color:#fcd34d;background:#fffbeb;color:#92400e;">
+                                    <strong>Kayıtlı kartınız yok;</strong> abonelikleriniz dönem sonunda otomatik yenilenemez. Bir sonraki ödemede iyzico formundaki <strong>"Kartımı sakla"</strong> seçeneğini işaretlerseniz her ay otomatik yenilenir; dilediğinizde iptal edebilirsiniz.
                                 </div>
                             @endif
                         </div>
                     @endif
 
-                    {{-- Satın alımlar burada yalnız ÖZET: tam liste ayrı ekranda (orders) --}}
-                    <div class="stat-card" style="padding:16px;">
-                        <h2 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:12px;">Son Satın Alımlar</h2>
+                    {{-- Satın alımlar burada yalnız ÖZET (yalnız ödenmiş siparişler): tam liste ayrı ekranda --}}
+                    <div class="stat-card kym-yan-kart" style="padding:16px;">
+                        <h2 style="margin-bottom:12px;">Son Satın Alım</h2>
 
                         @if($lastOrder === null)
-                            <div style="padding:14px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#475569;font-size:13px;">
-                                Henüz kategori satın alımı yapılmadı.
+                            <div class="kym-bos" style="padding:14px;">
+                                Henüz ödenmiş kategori satın alımı yok.
                             </div>
                         @else
-                            <div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;background:#fff;">
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-                                    <div>
-                                        <div style="font-weight:700;font-size:12.5px;color:#0f172a;">{{ $lastOrder->order_number }}</div>
-                                        <div style="font-size:11.5px;color:#94a3b8;margin-top:3px;">{{ $lastOrder->purchased_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                            @php $manuel = $lastOrder->payment_provider === \App\Models\AgencyCategoryOrder::PROVIDER_MANUAL; @endphp
+                            <div class="kym-siparis">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                                    <div style="min-width:0;">
+                                        <div class="no">{{ $lastOrder->order_number }}</div>
+                                        <div class="tarih">{{ $lastOrder->purchased_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                                        <div style="margin-top:6px;">
+                                            @if($manuel)
+                                                <span class="badge kym-rozet-mor">Yönetici tanımladı</span>
+                                            @else
+                                                <span class="badge badge-green">Ödendi</span>
+                                            @endif
+                                        </div>
                                     </div>
-                                    <div style="font-size:14px;font-weight:800;color:#0f172a;white-space:nowrap;">{{ number_format((float) $lastOrder->subtotal, 0, ',', '.') }} TL</div>
+                                    <div class="tutar">{{ $manuel ? 'Ücretsiz' : $fiyat($lastOrder->subtotal).' TL' }}</div>
                                 </div>
                             </div>
-                            <div style="font-size:11.5px;color:#94a3b8;margin-top:8px;">Toplam {{ $ordersCount }} sipariş</div>
+                            <div style="font-size:11.5px;color:var(--text-meta);margin-top:8px;">Toplam {{ $paidOrdersCount }} ödenmiş sipariş</div>
                             <a href="{{ route('agency.category-licenses.orders') }}" class="btn btn-outline" style="width:100%;justify-content:center;margin-top:10px;">
                                 Satın Alımları Görüntüle
                             </a>
@@ -311,9 +503,11 @@
     const cartCount = document.querySelector('[data-cart-count]');
     const cartEmpty = document.querySelector('[data-cart-empty]');
     const cartBody = document.querySelector('[data-cart-body]');
+    const cartItems = document.querySelector('[data-cart-items]');
     const cartTotal = document.querySelector('[data-cart-total]');
-    const cartTotalStat = document.querySelector('[data-cart-total-stat]');
     const allInCartNote = document.querySelector('[data-all-in-cart-note]');
+    const ctaOdeme = document.querySelector('[data-cta-odeme]');
+    const ctaVarsayilan = document.querySelector('[data-cta-varsayilan]');
 
     let flashTimer = null;
 
@@ -332,21 +526,36 @@
         flashTimer = setTimeout(() => { flashBox.style.display = 'none'; }, 4000);
     }
 
+    function renderCartItems(items) {
+        if (!cartItems) return;
+        cartItems.innerHTML = items.map((item) => `
+            <div class="kym-sepet-kalem">
+                <span class="ad" title="${esc(item.name)}">${esc(item.name)}</span>
+                <span class="fiyat">${esc(item.price_label)}</span>
+                <form method="POST" action="${esc(item.remove_url)}" data-cart-form style="margin:0;">
+                    <input type="hidden" name="_token" value="${esc(csrfToken)}">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="kym-sil" aria-label="${esc(item.name)} sepetten kaldır">×</button>
+                </form>
+            </div>`).join('');
+    }
+
     function renderCart(data) {
-        // Sepet ana sayfada yalnız ÖZET: sayaç + toplam güncellenir, kalem
-        // listesi ayrı ekranda (Sepeti Görüntüle) yaşar.
         const items = Array.isArray(data.items) ? data.items : [];
-        // Kategori kartlarını yalnızca LİSANS kalemleri gizler — ekstra tur
-        // hakkı kalemi, zaten lisanslı kategoriye aittir (kartı listede yok).
+        // Satın alınabilir kartları yalnız LİSANS kalemleri gizler; yenileme
+        // kalemi abonelik kartını "sepette" durumuna alır.
         const inCart = new Set(items.filter((item) => item.type === 'license').map((item) => String(item.id)));
+        const renewing = new Set(items.filter((item) => item.type === 'renewal').map((item) => String(item.id)));
 
         if (cartCount) cartCount.textContent = `${data.count} kalem`;
         if (cartTotal) cartTotal.textContent = `${data.total_label} TL`;
-        if (cartTotalStat) cartTotalStat.textContent = `${data.total_label} TL`;
+        renderCartItems(items);
 
         const empty = items.length === 0;
         if (cartBody) cartBody.style.display = empty ? 'none' : '';
         if (cartEmpty) cartEmpty.style.display = empty ? '' : 'none';
+        if (ctaOdeme) ctaOdeme.style.display = empty ? 'none' : '';
+        if (ctaVarsayilan) ctaVarsayilan.style.display = empty ? '' : 'none';
 
         let visibleCards = 0;
         document.querySelectorAll('[data-category-card]').forEach((card) => {
@@ -354,8 +563,15 @@
             card.style.display = hidden ? 'none' : '';
             if (!hidden) visibleCards += 1;
         });
-
         if (allInCartNote) allInCartNote.style.display = visibleCards === 0 ? '' : 'none';
+
+        document.querySelectorAll('[data-subscription-card]').forEach((card) => {
+            const inRenewal = renewing.has(card.getAttribute('data-subscription-card'));
+            const form = card.querySelector('[data-renew-form]');
+            const badge = card.querySelector('[data-renew-in-cart]');
+            if (form) form.style.display = inRenewal ? 'none' : '';
+            if (badge) badge.style.display = inRenewal ? '' : 'none';
+        });
     }
 
     async function submitCartForm(form) {
@@ -366,7 +582,7 @@
         form.dataset.busy = '1';
         if (button) {
             button.disabled = true;
-            button.textContent = 'İşleniyor…';
+            if (!button.classList.contains('kym-sil')) button.textContent = 'İşleniyor…';
         }
 
         try {
@@ -396,18 +612,55 @@
             form.dataset.busy = '0';
             if (button) {
                 button.disabled = false;
-                button.textContent = originalLabel;
+                if (!button.classList.contains('kym-sil')) button.textContent = originalLabel;
             }
         }
     }
 
-    // Sepetteki satırlar JS ile yeniden basıldığı için olay dinleyici document seviyesinde.
+    // Sepet satırları JS ile yeniden basıldığı için olay dinleyici document seviyesinde.
     document.addEventListener('submit', function (event) {
         const form = event.target.closest('form[data-cart-form]');
         if (!form) return;
         event.preventDefault();
         submitCartForm(form);
     });
+
+    // ── Aktif yetkilerde arama + filtre (istemci tarafı) ──
+    const filtreKutusu = document.querySelector('[data-abonelik-filtre]');
+    if (filtreKutusu) {
+        const arama = filtreKutusu.querySelector('[data-abonelik-arama]');
+        const haplar = filtreKutusu.querySelectorAll('[data-filtre]');
+        const eslesmeYok = document.querySelector('[data-eslesme-yok]');
+        let aktifFiltre = 'tumu';
+
+        function uygula() {
+            const q = (arama?.value || '').trim().toLocaleLowerCase('tr');
+            let toplamGorunen = 0;
+            document.querySelectorAll('[data-grup]').forEach((grup) => {
+                let gorunen = 0;
+                grup.querySelectorAll('[data-subscription-card]').forEach((card) => {
+                    const metinUyar = q === '' || (card.getAttribute('data-ara') || '').includes(q);
+                    let filtreUyar = true;
+                    if (aktifFiltre === 'yakin') filtreUyar = card.getAttribute('data-yakin') !== 'ok';
+                    if (aktifFiltre === 'dolu') filtreUyar = card.getAttribute('data-dolu') === '1';
+                    if (aktifFiltre === 'iptal') filtreUyar = card.getAttribute('data-iptal') === '1';
+                    const goster = metinUyar && filtreUyar;
+                    card.style.display = goster ? '' : 'none';
+                    if (goster) gorunen += 1;
+                });
+                grup.style.display = gorunen > 0 ? '' : 'none';
+                toplamGorunen += gorunen;
+            });
+            if (eslesmeYok) eslesmeYok.style.display = toplamGorunen === 0 ? '' : 'none';
+        }
+
+        arama?.addEventListener('input', uygula);
+        haplar.forEach((hap) => hap.addEventListener('click', () => {
+            aktifFiltre = hap.getAttribute('data-filtre') || 'tumu';
+            haplar.forEach((h) => h.classList.toggle('aktif', h === hap));
+            uygula();
+        }));
+    }
 })();
 </script>
 @endpush
