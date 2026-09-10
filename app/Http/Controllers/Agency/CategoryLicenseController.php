@@ -58,18 +58,22 @@ class CategoryLicenseController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Üst kategoriler satılmaz ve yetki değildir: listeler yalnız alt
+        // kategorilerle kurulur (geçiş erişimli acentada da).
+        $childCategories = $categories
+            ->filter(fn (Category $category) => $category->parent_id !== null)
+            ->values();
+
         $licensedCategoryIds = $agency->accessibleCategoryIds();
 
         // Sepettekiler de listede kalır; JS sepete eklendikçe kartı gizler/geri gösterir.
         $availableCategories = $agency->legacy_category_access
             ? collect()
-            : $categories
-                ->whereNotIn('id', $licensedCategoryIds)
-                ->filter(fn (Category $category) => $category->parent_id !== null) // üst kategoriler satılmaz
-                ->values();
+            : $childCategories->whereNotIn('id', $licensedCategoryIds)->values();
 
         $cartItems = $this->resolveCartCategoriesFor($agency);
-        $cartCategoryIds = $cartItems->pluck('id');
+        $cartCategoryIds = $cartItems->reject(fn (Category $category) => $category->cart_renewal)->pluck('id')->values();
+        $renewalCategoryIds = $cartItems->filter(fn (Category $category) => $category->cart_renewal)->pluck('id')->values();
         $slotCartItems = $this->resolveSlotCartFor($agency);
         $slotSchemaReady = CategoryLicensing::slotSchemaReady();
         $autoRenewEnabled = CategoryLicensing::autoRenewEnabled();
@@ -83,12 +87,12 @@ class CategoryLicenseController extends Controller
             ->pluck('used_count', 'category_id');
 
         $licensedCategories = $agency->legacy_category_access
-            ? $categories->map(function (Category $category) use ($agency, $usedSlotsByCategory) {
+            ? $childCategories->map(function (Category $category) use ($usedSlotsByCategory) {
                 return (object) [
                     'subscription' => null,
                     'category' => $category,
-                    'monthly_price' => $category->monthly_price,
-                    'started_at' => $agency->created_at,
+                    'monthly_price' => null, // geçiş erişimi ücretsiz
+                    'started_at' => null,
                     'expires_at' => null,
                     'source' => 'legacy',
                     'tour_limit' => null, // legacy = limitsiz
@@ -96,13 +100,26 @@ class CategoryLicenseController extends Controller
                     'extra_slots' => 0,
                     'cancelled' => false,
                     'next_extra_slots' => null,
+                    'days_left' => null,
+                    'urgency' => 'ok',
+                    'slots_full' => false,
+                    'in_cart_renewal' => false,
+                    'monthly_cost' => 0.0,
                 ];
             })
             : $agency->activeCategorySubscriptions()
                 ->with('category.parent')
                 ->orderBy('expires_at')
                 ->get()
-                ->map(function (AgencyCategorySubscription $subscription) use ($usedSlotsByCategory, $slotSchemaReady, $autoRenewEnabled) {
+                ->filter(fn (AgencyCategorySubscription $subscription) => $subscription->category !== null)
+                ->map(function (AgencyCategorySubscription $subscription) use ($usedSlotsByCategory, $slotSchemaReady, $autoRenewEnabled, $renewalCategoryIds) {
+                    $extraSlots = $slotSchemaReady ? (int) $subscription->extra_tour_slots : 0;
+                    $tourLimit = $slotSchemaReady ? CategoryLicensing::BASE_TOUR_ALLOWANCE + $extraSlots : null;
+                    $usedSlots = (int) ($usedSlotsByCategory[$subscription->category_id] ?? 0);
+                    $daysLeft = $subscription->expires_at
+                        ? (int) today()->diffInDays($subscription->expires_at, false)
+                        : null;
+
                     return (object) [
                         'subscription' => $subscription,
                         'category' => $subscription->category,
@@ -110,19 +127,52 @@ class CategoryLicenseController extends Controller
                         'started_at' => $subscription->started_at,
                         'expires_at' => $subscription->expires_at,
                         'source' => 'purchase',
-                        'tour_limit' => $slotSchemaReady
-                            ? CategoryLicensing::BASE_TOUR_ALLOWANCE + (int) $subscription->extra_tour_slots
-                            : null,
-                        'used_slots' => (int) ($usedSlotsByCategory[$subscription->category_id] ?? 0),
-                        'extra_slots' => $slotSchemaReady ? (int) $subscription->extra_tour_slots : 0,
+                        'tour_limit' => $tourLimit,
+                        'used_slots' => $usedSlots,
+                        'extra_slots' => $extraSlots,
                         'cancelled' => $autoRenewEnabled && $subscription->isCancelled(),
                         'next_extra_slots' => $autoRenewEnabled ? $subscription->next_extra_tour_slots : null,
+                        'days_left' => $daysLeft,
+                        'urgency' => $this->urgencyFor($daysLeft),
+                        'slots_full' => $tourLimit !== null && $usedSlots >= $tourLimit,
+                        'in_cart_renewal' => $renewalCategoryIds->contains($subscription->category_id),
+                        // Otomatik yenileme açıkken ekstra haklar da aylık ücretlendirilir
+                        'monthly_cost' => (float) $subscription->monthly_price
+                            + ($autoRenewEnabled ? $extraSlots * (float) ($subscription->category->extra_tour_price ?? 0) : 0.0),
                     ];
-                });
+                })
+                ->values();
 
-        // Listeler ayrı ekranlara taşındı: ana sayfada yalnız özet + yönlendirme
-        $lastOrder = $agency->categoryOrders()->orderByDesc('purchased_at')->first();
-        $ordersCount = $agency->categoryOrders()->count();
+        // Üst kategoriye göre gruplar: grup sırası üst kategorinin sırası, grup
+        // içinde bitişi en yakın olan önce (bitmek üzere olan gözden kaçmasın).
+        $licensedGroups = $licensedCategories
+            ->groupBy(fn ($license) => (int) ($license->category->parent_id ?? 0))
+            ->map(fn (Collection $items) => (object) [
+                'parent' => $items->first()->category->parent,
+                'items' => $items->sortBy(fn ($license) => $license->days_left ?? PHP_INT_MAX)->values(),
+            ])
+            ->sortBy(fn ($group) => sprintf('%05d-%s', $group->parent?->sort_order ?? 99999, $group->parent?->name ?? ''))
+            ->values();
+
+        $purchaseLicenses = $licensedCategories->where('source', 'purchase');
+        $summary = (object) [
+            'active_count' => $licensedCategories->count(),
+            'nearest' => $purchaseLicenses->sortBy(fn ($license) => $license->days_left ?? PHP_INT_MAX)->first(),
+            'monthly_total' => (float) $purchaseLicenses->sum('monthly_cost'),
+            'full_slot_count' => $licensedCategories->where('slots_full', true)->count(),
+            'expiring_count' => $purchaseLicenses->filter(fn ($license) => $license->urgency !== 'ok')->count(),
+            'cancelled_count' => $purchaseLicenses->where('cancelled', true)->count(),
+        ];
+
+        // Listeler ayrı ekranlara taşındı: ana sayfada yalnız özet + yönlendirme.
+        // Yalnız ÖDENMİŞ siparişler: terk edilmiş deneme "son satın alım" değildir.
+        $lastOrder = $agency->categoryOrders()
+            ->where('status', AgencyCategoryOrder::STATUS_PAID)
+            ->orderByDesc('purchased_at')
+            ->first();
+        $paidOrdersCount = $agency->categoryOrders()
+            ->where('status', AgencyCategoryOrder::STATUS_PAID)
+            ->count();
 
         $cartTotal = $cartItems->sum(fn (Category $category) => (float) $category->monthly_price)
             + $slotCartItems->sum('line_total');
@@ -132,14 +182,17 @@ class CategoryLicenseController extends Controller
             'availableCategories',
             'cartItems',
             'cartCategoryIds',
+            'renewalCategoryIds',
             'slotCartItems',
             'slotSchemaReady',
             'autoRenewEnabled',
             'storedCard',
             'cartTotal',
             'licensedCategories',
+            'licensedGroups',
+            'summary',
             'lastOrder',
-            'ordersCount'
+            'paidOrdersCount'
         ));
     }
 
@@ -976,6 +1029,20 @@ class CategoryLicenseController extends Controller
                 ];
             })
             ->values();
+    }
+
+    /** Bitişe kalan güne göre kart rengi: ok / soon (≤7 gün) / critical (≤3 gün). */
+    private function urgencyFor(?int $daysLeft): string
+    {
+        if ($daysLeft === null) {
+            return 'ok';
+        }
+
+        if ($daysLeft <= self::EXPIRY_CRITICAL_DAYS) {
+            return 'critical';
+        }
+
+        return $daysLeft <= self::EXPIRY_SOON_DAYS ? 'soon' : 'ok';
     }
 
     private function guardSchema(Request $request)
