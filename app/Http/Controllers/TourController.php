@@ -240,6 +240,13 @@ class TourController extends Controller
             ->orderBy('price_try')
             ->get();
 
+        // "En Ucuz" rozeti yalnız teklif gerçekten en ucuzken basılır: aynı turun
+        // daha ucuz bir teklifi varsa rozet yerine o teklife bağlantı verilir.
+        // Kıyas kur-normalize price_try ile (teklifler farklı para biriminde olabilir).
+        $cheaperOffer = $otherOffers->first(
+            fn ($offer) => (float) $offer->price_try < (float) $tour->price_try
+        );
+
         // Similar tours — turun şehirlerinden HERHANGİ biri eşleşsin. Tam eşleşme
         // kullanıldığında "Ölüdeniz, Fethiye" gibi turlar hiç benzer tur bulamıyordu;
         // yalnız ilk şehre bakmak da yetmez (Ölüdeniz'de komşu yok, Fethiye'de var).
@@ -272,7 +279,7 @@ class TourController extends Controller
         $priceData = $priceHistory->pluck('price')->values();
 
         return view('tours.show', compact(
-            'tour', 'otherOffers', 'similarTours', 'reviews', 'avgRating', 'userReview',
+            'tour', 'otherOffers', 'cheaperOffer', 'similarTours', 'reviews', 'avgRating', 'userReview',
             'priceLabels', 'priceData', 'aiContext'
         ));
     }

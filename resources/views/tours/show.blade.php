@@ -662,9 +662,20 @@
                         })();
                         </script>
                     @else
-                        <div class="p-badge" style="margin-bottom:4px;">
-                            <span class="badge badge-green">🏆 En Ucuz</span>
-                        </div>
+                        {{-- Rozet koşullu: daha ucuz teklif varsa dürüst uyarı, gerçekten en
+                             ucuzsa rozet, tek teklifse hiçbiri (kıyas yoksa "en ucuz" da yok). --}}
+                        @if($cheaperOffer)
+                            @php $ucuzYuzde = (int) round((1 - (float) $cheaperOffer->price_try / max((float) $tour->price_try, 0.01)) * 100); @endphp
+                            <div class="p-badge p-ucuz-uyari" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;color:#92400e;font-size:12.5px;font-weight:600;margin-bottom:4px;">
+                                <span style="flex:1;min-width:0;">{{ $cheaperOffer->agency->name }} bu turu{{ $ucuzYuzde > 0 ? ' %'.$ucuzYuzde : '' }} daha ucuza veriyor</span>
+                                <a href="{{ route('tour.redirect', $cheaperOffer) }}" target="_blank" rel="noopener" style="color:#b45309;font-weight:700;white-space:nowrap;">Teklife git →</a>
+                            </div>
+                        @elseif($otherOffers->count())
+                            <div class="p-badge" style="margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="badge badge-green">✓ En ucuz teklif</span>
+                                <span style="font-size:12px;color:var(--text-meta);">{{ $otherOffers->count() + 1 }} acenta içinde</span>
+                            </div>
+                        @endif
                         <div class="p-price" style="margin:12px 0 4px;">
                             <span class="price-tag cheapest" style="font-size:32px;">{{ $tour->formatted_price }}</span>
                             <span class="price-sm"> / kişi başı</span>
@@ -743,8 +754,9 @@
                             <div>
                                 <div style="font-weight:600;font-size:14px;">{{ $offer->agency->name }}</div>
                                 <div style="font-size:12px;color:var(--text-muted);">
-                                    @php $diff = round((($offer->price - $tour->price) / $tour->price) * 100); @endphp
-                                    @if($diff > 0) +%{{ $diff }} daha pahalı @endif
+                                    {{-- Kur-normalize kıyas: farklı para birimindeki teklifler de doğru okunsun --}}
+                                    @php $diff = (float) $tour->price_try > 0 ? round((((float) $offer->price_try - (float) $tour->price_try) / (float) $tour->price_try) * 100) : 0; @endphp
+                                    @if($diff > 0) +%{{ $diff }} daha pahalı @elseif($diff < 0) <span style="color:#b45309;font-weight:600;">%{{ abs($diff) }} daha ucuz</span> @endif
                                 </div>
                             </div>
                             <div style="text-align:right;">
