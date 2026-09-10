@@ -85,6 +85,54 @@ class Category extends Model
         return 'slug';
     }
 
+    /**
+     * Kategori adı kaydedilirken başlık biçimine çekilir ("bali turları" →
+     * "Bali Turları"); yönetici formundan küçük harfle girilen ad satın alma
+     * kartında olduğu gibi çıkıyordu.
+     */
+    public function setNameAttribute(?string $value): void
+    {
+        $this->attributes['name'] = $value === null ? null : static::normalizeName($value);
+    }
+
+    /**
+     * Türkçe duyarlı başlık biçimi: yalnız TAMAMEN küçük harfli kelimelerin ilk
+     * harfi büyütülür (i→İ, ı→I); içinde büyük harf olan kelimeye (ABD, THY)
+     * dokunulmaz; "ve", "ile" gibi bağlaçlar baştaki kelime değilse küçük kalır.
+     */
+    public static function normalizeName(string $name): string
+    {
+        $name = trim((string) preg_replace('/\s+/u', ' ', $name));
+
+        if ($name === '') {
+            return $name;
+        }
+
+        $baglaclar = ['ve', 'ile', 'veya', 'için', 'da', 'de'];
+        $kelimeler = explode(' ', $name);
+
+        foreach ($kelimeler as $i => $kelime) {
+            if ($kelime === '' || $kelime !== mb_strtolower($kelime, 'UTF-8')) {
+                continue; // zaten büyük harf içeriyor ya da harf değil
+            }
+
+            if ($i > 0 && in_array($kelime, $baglaclar, true)) {
+                continue;
+            }
+
+            $ilk = mb_substr($kelime, 0, 1, 'UTF-8');
+            $buyuk = match ($ilk) {
+                'i' => 'İ',
+                'ı' => 'I',
+                default => mb_strtoupper($ilk, 'UTF-8'),
+            };
+
+            $kelimeler[$i] = $buyuk.mb_substr($kelime, 1, null, 'UTF-8');
+        }
+
+        return implode(' ', $kelimeler);
+    }
+
     public function getFormattedMonthlyPriceAttribute(): string
     {
         $price = CategoryLicensing::schemaReady()
