@@ -165,6 +165,18 @@ class Tour extends Model
     }
 
     /**
+     * Grup anahtarı: başlığın normalize slug'ı ("Kapadokya Turu" ve "KAPADOKYA TURU"
+     * aynı; "Kapadokya Turu 2 Gece" ayrı). Birebir başlık eşleşmesi kırılgan ama
+     * çok acentalı aynı tur bugün böyle tanımlanıyor (detaydaki Diğer Acentalar da).
+     */
+    public static function groupKeyFor(string $title): string
+    {
+        $key = Str::slug(mb_strtolower(trim($title), 'UTF-8'));
+
+        return mb_substr($key !== '' ? $key : 'tur', 0, 160);
+    }
+
+    /**
      * Tempo etiketi (pace_score 0-1): düşük = dinlenme ağırlıklı, yüksek = tempolu
      * gezi. Karşılaştırma tablosu ve tur detayındaki bilgi şeridi aynı eşiği okur.
      */
@@ -354,6 +366,14 @@ class Tour extends Model
         static::creating(function (Tour $tour) {
             if (empty($tour->slug)) {
                 $tour->slug = static::makeSlug((string) $tour->title);
+            }
+        });
+
+        // Tur grubu anahtarı: aynı turun farklı acenta teklifleri listede tek kartta
+        // toplanır. Başlık değişince ya da anahtar boşsa yeniden üretilir.
+        static::saving(function (Tour $tour) {
+            if ($tour->isDirty('title') || $tour->group_key === null) {
+                $tour->group_key = static::groupKeyFor((string) $tour->title);
             }
         });
 

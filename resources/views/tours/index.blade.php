@@ -390,9 +390,13 @@
                                     <div style="text-decoration:line-through;color:#94a3b8;font-size:12px;">{{ $tour->formatted_price }}</div>
                                     <div class="price-tag" style="color:#059669;font-size:20px;">{{ $campaign->formatted_discount_price }}</div>
                                 @else
-                                    <div class="price-tag" style="font-size:20px;">{{ $tour->formatted_price }}</div>
+                                    <div class="price-tag" style="font-size:20px;">{{ $tour->formatted_price }}@if(($tour->offer_count ?? 1) > 1)<span style="font-size:12px;font-weight:600;color:var(--text-meta);">'den</span>@endif</div>
                                 @endif
                                 <div style="font-size:12px;color:var(--text-muted);">/ kişi başı</div>
+                                @if(($tour->agency_count ?? 1) > 1)
+                                    {{-- Aynı tur birden çok acentada: kart en ucuz teklif, detayda Diğer Acentalar --}}
+                                    <div class="card-teklif" style="margin-top:4px;font-size:12px;font-weight:700;color:var(--accent-ink);">{{ $tour->agency_count }} acentada</div>
+                                @endif
                             </div>
                             <div class="m-actions" style="display:flex;gap:8px;">
                                 <button type="button" class="btn btn-outline btn-sm compare-toggle" data-tour-id="{{ $tour->id }}" onclick="event.preventDefault(); window.toggleCompare({{ $tour->id }})" style="border-radius:8px;font-size:12px;padding:6px 10px;">+ Karşılaştır</button>

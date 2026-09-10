@@ -80,6 +80,9 @@ class TourController extends Controller
 
         if ($sort === 'uygun') {
             $tours = $this->siralaUygun($query, $filtreParams, $quizProfil, $request);
+        } elseif (config('ui.tour_grouping', true)) {
+            // Aynı turun farklı acenta teklifleri tek kartta (group_key), kart en ucuz teklif
+            $tours = $this->paginateGrouped($query, $filtreParams, $sort, $request);
         } else {
             if (in_array($sort, ['popular', 'reviews'])) {
                 $query->withCount(['clicks', 'views', 'reviews']);
@@ -296,6 +299,79 @@ class TourController extends Controller
             'tour', 'otherOffers', 'cheaperOffer', 'similarTours', 'reviews', 'avgRating', 'userReview',
             'priceLabels', 'priceData', 'priceSignal', 'priceUpdatedAt', 'agencyCoupon', 'aiContext'
         ));
+    }
+
+    /**
+     * Gruplu liste: filtrelenmiş küme group_key ile toplanır; grup başına en ucuz
+     * teklif (price_try) temsilci karttır ve offer_count / agency_count /
+     * min_price_try taşır. Sıralama grup ölçülerine göre (min/max fiyat, ilk
+     * kalkış, son ekleme, popülerlik toplamı). group_key boş kalan (henüz
+     * doldurulmamış) satırlar kendi başına grup olur, birbirine karışmaz.
+     */
+    private function paginateGrouped(Builder $query, array $filtreParams, string $sort, Request $request): LengthAwarePaginator
+    {
+        $base = Tour::query()->active()->whereHas('agency', fn ($q) => $q->active());
+        TourListFilter::apply($base, $filtreParams);
+
+        // Anahtarsız satır için nöbetçi: slug'da geçmeyen karakterle ("#id:"), yoksa
+        // "Tur Fethiye" → "tur-fethiye" gibi gerçek anahtarlarla karışırdı.
+        $keyExpr = DB::connection()->getDriverName() === 'mysql'
+            ? "COALESCE(group_key, CONCAT('#id:', id))"
+            : "COALESCE(group_key, '#id:' || id)";
+
+        $groups = (clone $base)->getQuery()
+            ->selectRaw("{$keyExpr} as gkey")
+            ->selectRaw('MIN(price_try) as min_price_try, MAX(price_try) as max_price_try')
+            ->selectRaw('COUNT(*) as offer_count, COUNT(DISTINCT agency_id) as agency_count')
+            ->selectRaw('MIN(departure_date) as first_date, MAX(created_at) as last_created')
+            ->selectRaw('SUM(clicks_count + views_count) as popularity')
+            ->selectRaw('SUM((select count(*) from reviews where reviews.tour_id = tours.id)) as review_total')
+            ->groupBy(DB::raw($keyExpr));
+
+        match ($sort) {
+            'price_desc' => $groups->orderByDesc('max_price_try'),
+            'date' => $groups->orderBy('first_date'),
+            'newest' => $groups->orderByDesc('last_created'),
+            'popular' => $groups->orderByDesc('popularity')->orderByDesc('review_total'),
+            'reviews' => $groups->orderByDesc('review_total'),
+            default => $groups->orderBy('min_price_try'),
+        };
+        $groups->orderBy('gkey');
+
+        $groupPage = $groups->paginate(12);
+        $rows = collect($groupPage->items())->keyBy('gkey');
+        $keys = $rows->keys();
+
+        // Temsilci: grup başına en ucuz teklif (id ile deterministik)
+        $realKeys = $keys->reject(fn ($k) => str_starts_with((string) $k, '#id:'))->values();
+        $idKeys = $keys->filter(fn ($k) => str_starts_with((string) $k, '#id:'))->map(fn ($k) => (int) substr($k, 4))->values();
+        $repIds = [];
+        if ($realKeys->isNotEmpty()) {
+            foreach ((clone $base)->whereIn('group_key', $realKeys)->orderBy('price_try')->orderBy('id')->get(['id', 'group_key']) as $row) {
+                $repIds[$row->group_key] ??= $row->id;
+            }
+        }
+        foreach ($idKeys as $id) {
+            $repIds['#id:'.$id] = $id;
+        }
+
+        $items = (clone $query)->reorder()->whereIn('tours.id', array_values($repIds))->get()->keyBy('id');
+        $sirali = collect();
+        foreach ($keys as $key) {
+            $tour = $items->get($repIds[$key] ?? 0);
+            if (! $tour) {
+                continue;
+            }
+            $row = $rows->get($key);
+            $tour->offer_count = (int) $row->offer_count;
+            $tour->agency_count = (int) $row->agency_count;
+            $tour->min_price_try = (float) $row->min_price_try;
+            $tour->max_price_try = (float) $row->max_price_try;
+            $sirali->push($tour);
+        }
+
+        return (new LengthAwarePaginator($sirali, $groupPage->total(), $groupPage->perPage(), $groupPage->currentPage(), ['path' => $request->url()]))
+            ->appends($request->query());
     }
 
     /**

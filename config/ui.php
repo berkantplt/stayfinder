@@ -24,4 +24,11 @@ return [
     | HİÇBİR MOD KOD SİLMEZ — .env'de HOME_NAV çevirmek yeterli.
     */
     'home_nav' => env('HOME_NAV', 'mega'),
+
+    /*
+    | /turlar'da aynı turun farklı acenta teklifleri tek kartta toplanır
+    | ("3 acentada · 4.499 ₺'den"). Kapatınca her teklif ayrı kart (eski davranış);
+    | kod silinmez. Gruplama anahtarı tours.group_key (başlığın normalize slug'ı).
+    */
+    'tour_grouping' => (bool) env('TOUR_GROUPING', true),
 ];
