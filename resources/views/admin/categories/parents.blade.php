@@ -26,9 +26,13 @@
             {{-- Üst kategori ekleme formu (fiyatsız) --}}
             <div style="background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;margin-bottom:24px;max-width:94%;margin-left:auto;margin-right:auto;">
                 <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">+ Yeni Üst Kategori Ekle</h3>
-                <form method="POST" action="{{ route('admin.categories.parents.store') }}">
+                <form method="POST" action="{{ route('admin.categories.parents.store') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="panel-grid-ic" style="gap:12px;align-items:end;">
+                        <div class="form-group" style="margin:0;">
+                            <label>Kart görseli (ana sayfa)</label>
+                            <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+                        </div>
                         <div class="form-group" style="margin:0;">
                             <label>Üst Kategori Adı *</label>
                             <input type="text" name="name" required placeholder="Yurt Dışı Turlar">
@@ -78,6 +82,7 @@
                                         data-name="{{ $category->name }}"
                                         data-icon="{{ $category->icon }}"
                                         data-sort-order="{{ $category->sort_order }}"
+                                        data-image="{{ $category->image_url }}"
                                         data-update-url="{{ route('admin.categories.update', $category) }}"
                                         onclick="editParent(this)"
                                     >✏️ Düzenle</button>
@@ -103,9 +108,20 @@
 <div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
     <div style="background:white;padding:24px;border-radius:16px;width:100%;max-width:500px;box-shadow:var(--shadow-lg);">
         <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">Üst Kategori Düzenle</h3>
-        <form method="POST" id="editForm">
+        <form method="POST" id="editForm" enctype="multipart/form-data">
             @csrf @method('PUT')
             <div class="form-group"><label>Ad *</label><input type="text" name="name" id="editName" required></div>
+            <div class="form-group">
+                <label>Kart görseli (ana sayfadaki büyük kart)</label>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <img id="editImagePreview" src="" alt="" style="width:72px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none;">
+                    <div style="flex:1;">
+                        <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+                        <label id="editRemoveImageWrap" style="display:none;font-size:12.5px;color:#dc2626;margin-top:6px;"><input type="checkbox" name="remove_image" value="1"> Mevcut görseli kaldır</label>
+                    </div>
+                </div>
+                <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">JPG, PNG veya WEBP, en çok 3 MB. Boşsa kart turkuaz zemin ve ikonla çizilir.</div>
+            </div>
             <div class="form-row">
                 <div class="form-group"><label>İkon (Emoji)</label><input type="text" name="icon" id="editIcon"></div>
                 <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort"></div>
@@ -124,6 +140,11 @@ function editParent(button) {
     document.getElementById('editName').value = button.dataset.name || '';
     document.getElementById('editIcon').value = button.dataset.icon || '';
     document.getElementById('editSort').value = button.dataset.sortOrder || 0;
+    var onizleme = document.getElementById('editImagePreview'), kaldir = document.getElementById('editRemoveImageWrap');
+    onizleme.src = button.dataset.image || '';
+    onizleme.style.display = button.dataset.image ? 'block' : 'none';
+    kaldir.style.display = button.dataset.image ? 'block' : 'none';
+    kaldir.querySelector('input').checked = false;
     document.getElementById('editModal').style.display = 'flex';
 }
 function closeEditModal() {

@@ -9,7 +9,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'slug', 'icon', 'description', 'monthly_price', 'extra_tour_price', 'parent_id', 'sort_order', 'is_active'];
+    protected $fillable = ['name', 'slug', 'icon', 'image', 'description', 'monthly_price', 'extra_tour_price', 'parent_id', 'sort_order', 'is_active'];
+
+    /** Kart görseli adresi: public diskteki yol ya da tam URL; yoksa null. */
+    public function getImageUrlAttribute(): ?string
+    {
+        $image = $this->attributes['image'] ?? null;
+        if (! $image) {
+            return null;
+        }
+
+        return str_starts_with($image, 'http://') || str_starts_with($image, 'https://')
+            ? $image
+            : asset('storage/'.ltrim($image, '/'));
+    }
 
     protected $casts = [
         'is_active' => 'boolean',

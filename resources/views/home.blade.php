@@ -165,6 +165,21 @@
          İkisi farklı iş görüyor, biri diğerinin yerine geçmiyor.
          Hangisinin görüneceği config/ui.php: home_nav ile seçilir — üç modun
          hiçbiri kod silmez, .env'de HOME_NAV çevirmek yeterli. --}}
+    {{-- Dört büyük görselli kategori kartı (masaüstü; mobilde .m-cats ızgarası var).
+         Görsel yoksa turkuaz zemin + ikon. Sıra: üst kategorilerin sort_order'ı. --}}
+    @php $oneCikanKategoriler = $categories->take(4); @endphp
+    @if($oneCikanKategoriler->count() >= 2)
+        <div class="home-cats" aria-label="Kategoriler">
+            @foreach($oneCikanKategoriler as $cat)
+                <a href="{{ \App\Support\LandingSlug::urlForCategory($cat) }}" class="home-cat" @if($cat->image_url) style="background-image:url('{{ $cat->image_url }}');" @endif>
+                    @unless($cat->image_url)<span class="home-cat-ikon" aria-hidden="true">{{ $cat->icon }}</span>@endunless
+                    <span class="home-cat-ad">{{ $cat->name }}</span>
+                    <span class="home-cat-alt">Turları gör →</span>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
     @php $homeNav = config('ui.home_nav', 'both'); @endphp
     <div class="filter-bar-wrapper" @if($homeNav === 'mega') style="display:none;" @endif>
         <form id="home-filter-form" action="{{ route('home') }}" method="GET" class="filter-bar yfilter-card">
@@ -1161,6 +1176,17 @@
 
 @section('styles')
         /* ── Hero başlık bloğu ── */
+        /* Ana sayfa: dört büyük kategori kartı */
+        .home-cats { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:16px; margin:28px 0 8px; }
+        .home-cat { position:relative; display:flex; flex-direction:column; justify-content:flex-end; gap:2px; min-height:180px; border-radius:18px; overflow:hidden; background:linear-gradient(135deg,#0d9488,#115e59); background-size:cover; background-position:center; color:#fff; text-decoration:none; padding:16px 18px; box-shadow:var(--shadow-md); transition:transform .2s, box-shadow .2s; }
+        .home-cat::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.62)); }
+        .home-cat > * { position:relative; }
+        .home-cat:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); color:#fff; }
+        .home-cat-ikon { position:absolute; top:14px; left:16px; font-size:40px; line-height:1; }
+        .home-cat-ad { font-size:18px; font-weight:800; letter-spacing:-.3px; }
+        .home-cat-alt { font-size:12.5px; font-weight:600; opacity:.9; }
+        @media(max-width:1000px) { .home-cats { grid-template-columns:repeat(2, minmax(0, 1fr)); } .home-cat { min-height:150px; } }
+        @media(max-width:768px) { .home-cats { display:none; } }
         .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.92); color:var(--accent-dark); border:1px solid rgba(255,255,255,.85); border-radius:100px; padding:8px 17px; font-size:13.5px; font-weight:700; margin-bottom:22px; box-shadow:0 8px 22px -12px rgba(15,23,42,.5); backdrop-filter:blur(6px); }
         .hero-badge svg { color:var(--accent); flex-shrink:0; }
         .hero-title { font-size:56px; font-weight:800; letter-spacing:-1.8px; line-height:1.08; color:#0f172a; margin-bottom:18px; }
