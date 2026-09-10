@@ -60,6 +60,11 @@ class User extends Authenticatable
         return $this->isAgency() && $this->agency?->isApproved();
     }
 
+    public function savedSearches()
+    {
+        return $this->hasMany(SavedSearch::class);
+    }
+
     public function favoriteTours()
     {
         return $this->belongsToMany(Tour::class, 'favorites')

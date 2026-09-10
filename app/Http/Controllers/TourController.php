@@ -7,6 +7,7 @@ use App\Models\AiSearchLog;
 use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\Destination;
+use App\Models\SavedSearch;
 use App\Models\Tour;
 use App\Models\TourRubricScore;
 use App\Models\TourView;
@@ -99,6 +100,14 @@ class TourController extends Controller
         // Kart rozeti: son 30 gündeki fiyat düşüşü (ana sayfayla ortak hesap)
         $tourDrops = PriceDrops::last30Days($tours->pluck('id'));
 
+        // Kayıtlı arama: aktif filtre varsa "Bu aramayı kaydet" (üye) / girişe git (ziyaretçi);
+        // aynı kombinasyon zaten kayıtlıysa düğme yerine "Kayıtlı ✓".
+        $kayitParams = SavedSearch::paramsFrom($filtreParams);
+        $kayitliArama = null;
+        if ($kayitParams !== [] && auth()->check()) {
+            $kayitliArama = auth()->user()->savedSearches()->get()->first(fn ($s) => $s->params === $kayitParams);
+        }
+
         // Boş sonuçta akıllı gevşetme: her aktif filtre grubu için "kaldırınca kaç
         // tur çıkar" sayılır, sıfır olanlar gizlenir. Yalnız boş sayfada çalışır
         // (grup başına bir COUNT).
@@ -134,7 +143,7 @@ class TourController extends Controller
         $activeDestination = $request->filled('destination') ? (string) $request->destination : null;
 
         return view('tours.index', compact(
-            'tours', 'tourDrops', 'relaxations', 'departureCity', 'departureDefaulted', 'uygunSiralamaVar', 'destinations', 'agencies', 'categories', 'departureCities',
+            'tours', 'tourDrops', 'relaxations', 'departureCity', 'departureDefaulted', 'uygunSiralamaVar', 'kayitParams', 'kayitliArama', 'destinations', 'agencies', 'categories', 'departureCities',
             'activeCategory', 'activeDestination'
         ));
     }

@@ -97,6 +97,22 @@ Schedule::call(function () {
 | bilinen kurlar korunur (komut FAILURE döner ama veri bozulmaz).
 |
 */
+/*
+|--------------------------------------------------------------------------
+| Kayıtlı Arama Kontrolü
+|--------------------------------------------------------------------------
+|
+| Üyelerin kaydettiği /turlar filtrelerine uyan, son kontrolden sonra eklenen
+| turlar için günde bir site içi bildirim (arama başına tek bildirim).
+|
+*/
+Schedule::command('app:check-saved-searches')
+    ->dailyAt('09:00')
+    ->onOneServer()
+    ->withoutOverlapping(30)
+    ->runInBackground()
+    ->name('saved-search-check');
+
 Schedule::command('app:update-currency-rates')
     ->dailyAt('16:00')
     ->onOneServer()

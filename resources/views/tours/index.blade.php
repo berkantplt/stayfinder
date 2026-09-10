@@ -277,6 +277,24 @@
                 @if(request('sort') == 'uygun' && ($uygunSiralamaVar ?? false))
                     <span class="m-chip" style="padding:5px 10px;font-size:12px;cursor:default;">Tatil karakterine göre sıralandı</span>
                 @endif
+                @if(!empty($kayitParams))
+                    {{-- Kayıtlı arama: aktif filtre varken; üye kaydeder, ziyaretçi girişe gider --}}
+                    @auth
+                        @if($kayitliArama ?? null)
+                            <a href="{{ route('customer.saved-searches.index') }}" class="m-chip" style="padding:5px 10px;font-size:12px;text-decoration:none;">✓ Kayıtlı arama</a>
+                        @else
+                            <form method="POST" action="{{ route('customer.saved-searches.store') }}" style="margin:0;">
+                                @csrf
+                                @foreach($kayitParams as $k => $v)
+                                    <input type="hidden" name="params[{{ $k }}]" value="{{ $v }}">
+                                @endforeach
+                                <button type="submit" class="m-chip" style="padding:5px 10px;font-size:12px;">Bu aramayı kaydet</button>
+                            </form>
+                        @endif
+                    @else
+                        <a href="{{ route('login', ['next' => request()->getRequestUri()]) }}" class="m-chip" style="padding:5px 10px;font-size:12px;text-decoration:none;">Bu aramayı kaydet</a>
+                    @endauth
+                @endif
                 @if($departureDefaulted ?? false)
                     {{-- Profil şehri varsayılan olarak uygulandı; görünür ve tek dokunuşla kalkar --}}
                     <a href="{{ route('tours.index') }}?departure_city=" class="m-chip m-chip-on" style="text-decoration:none;padding:5px 10px;font-size:12px;" title="Profilindeki şehir; kaldırmak için tıkla">{{ $departureCity }}'dan kalkış (profilin) ✕</a>

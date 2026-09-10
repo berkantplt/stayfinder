@@ -885,6 +885,7 @@
                     @if(! auth()->user()->isAdmin() && ! auth()->user()->isAgency())
                         <a href="{{ route('favorites.index') }}">Favorilerim</a>
                         <a href="{{ route('customer.coupons.index') }}">Kuponlarım</a>
+                        <a href="{{ route('customer.saved-searches.index') }}">Kayıtlı Aramalarım</a>
                     @endif
                 @endauth
             </div>
@@ -967,6 +968,7 @@
                 @else
                     <a href="{{ route('favorites.index') }}">❤️ Favorilerim</a>
                     <a href="{{ route('customer.coupons.index') }}">🎟️ Kuponlarım</a>
+                    <a href="{{ route('customer.saved-searches.index') }}">🔎 Kayıtlı Aramalarım</a>
                     <a href="{{ route('profile.show') }}">👤 Profilim</a>
                 @endif
                 <div style="font-size:14px;color:var(--text-muted);padding:10px 0;border-bottom:none;">👤 {{ auth()->user()->name }}</div>

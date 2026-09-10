@@ -26,6 +26,7 @@ use App\Http\Controllers\AiSearchController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\ChatV2Controller;
 use App\Http\Controllers\Customer\CouponController;
+use App\Http\Controllers\Customer\SavedSearchController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DiscoveryGuideController;
 use App\Http\Controllers\FavoriteController;
@@ -138,6 +139,12 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:10,1')
         ->name('customer.coupons.claim');
 
+    // Kayıtlı aramalar: /turlar filtresi kaydedilir, uyan yeni turda bildirim
+    Route::get('/kayitli-aramalarim', [SavedSearchController::class, 'index'])->name('customer.saved-searches.index');
+    Route::post('/kayitli-aramalarim', [SavedSearchController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('customer.saved-searches.store');
+    Route::delete('/kayitli-aramalarim/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('customer.saved-searches.destroy');
     Route::post('/turlar/{tour}/yorum', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/yorum/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     // Profile
