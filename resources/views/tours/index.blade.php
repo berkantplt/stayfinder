@@ -279,13 +279,15 @@
                 @endif
                 @if($mIndirim)
                     <span class="m-drop-badge">%{{ $mIndirim }} İNDİRİM</span>
+                @elseif(($tourDrops ?? [])[$tour->id] ?? null)
+                    <span class="m-drop-badge">↓ %{{ $tourDrops[$tour->id] }} DÜŞTÜ</span>
                 @endif
                 <div class="card-body" style="flex:1;display:flex;flex-direction:column;">
                     @if($tour->category)
                         <div style="margin-bottom:8px;"><span class="badge badge-accent" style="font-size:11px;">{{ $tour->category->icon }} {{ $tour->category->name }}</span></div>
                     @endif
                     <div class="card-title" style="font-size:16px;margin-bottom:8px;line-height:1.4;">{{ $tour->title }}</div>
-                    <div class="card-meta" style="margin-bottom:12px;">{{ $tour->agency->name }}</div>
+                    <div style="margin-bottom:12px;">@include('partials.tour_card_agency', ['tour' => $tour])</div>
                     
                     <div style="margin-top:auto;">
                         <div class="card-meta" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">

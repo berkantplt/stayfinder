@@ -29,7 +29,8 @@
             @endif
             <div class="card-body">
                 <div class="card-title">{{ $tour->title }}</div>
-                <div class="card-meta">{{ $tour->agency->name }} · {{ $tour->duration_label }}</div>
+                @include('partials.tour_card_agency', ['tour' => $tour])
+                @if($tour->duration_label)<div class="card-meta">{{ $tour->duration_label }}</div>@endif
                 @include('partials.tour_card_meta', ['tour' => $tour])
                 <div class="card-price-row" style="margin-top:8px;">
                     @if(($tour->reviews_count ?? 0) > 0)

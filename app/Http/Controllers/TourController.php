@@ -9,6 +9,7 @@ use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourView;
 use App\Support\DestinationFilter;
+use App\Support\PriceDrops;
 use App\Support\LandingSlug;
 use App\Support\TourComparison;
 use App\Support\TurkishCities;
@@ -134,6 +135,9 @@ class TourController extends Controller
 
         $tours = $query->paginate(12)->withQueryString();
 
+        // Kart rozeti: son 30 gündeki fiyat düşüşü (ana sayfayla ortak hesap)
+        $tourDrops = PriceDrops::last30Days($tours->pluck('id'));
+
         // DISTINCT ham dizge DEĞİL: "Kapadokya, Nevşehir" listeden kalkar, yerine
         // "Kapadokya" ve "Nevşehir" ayrı ayrı ve seçilebilir olarak gelir.
         $destinations = DestinationFilter::vocabulary(
@@ -150,7 +154,7 @@ class TourController extends Controller
         $activeDestination = $request->filled('destination') ? (string) $request->destination : null;
 
         return view('tours.index', compact(
-            'tours', 'destinations', 'agencies', 'categories', 'departureCities',
+            'tours', 'tourDrops', 'destinations', 'agencies', 'categories', 'departureCities',
             'activeCategory', 'activeDestination'
         ));
     }

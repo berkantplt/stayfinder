@@ -247,7 +247,22 @@
            Sarmalayıcı masaüstü görünümünü değiştirmez: kart yine hücreyi doldurur. */
         .m-cardwrap { position:relative; display:flex; }
         .m-cardwrap > .card { flex:1; min-width:0; }
-        .m-fav, .m-rating, .m-drop-badge { display:none; }
+        /* Kart üstü parçalar (kalp, puan, düşüş rozeti) masaüstünde de basılır — eskiden
+           işaretleme gidip CSS ile gizleniyordu, masaüstü kullanıcı listeden favori
+           ekleyemiyordu. Mobil ölçüleri ≤768 bloğunda ezilir. */
+        .m-drop-badge { display:inline-flex; position:absolute; top:10px; left:10px; z-index:2; background:var(--accent-ink); color:#fff; font-family:'Manrope',var(--font); font-size:10.5px; font-weight:800; letter-spacing:-.1px; padding:5px 10px; border-radius:100px; }
+        .m-fav { display:flex; position:absolute; top:10px; right:10px; z-index:3; width:32px; height:32px; padding:0; align-items:center; justify-content:center; border:none; border-radius:50%; background:rgba(255,255,255,.92); color:#0f2421; cursor:pointer; box-shadow:0 2px 8px rgba(4,24,21,.14); }
+        .m-fav.on { color:#e0563a; }
+        .m-fav.on svg { fill:currentColor; }
+        .m-rating { display:inline-flex; align-items:center; gap:3px; font-family:'Manrope',var(--font); font-size:11.5px; font-weight:800; color:#0f2421; }
+        .m-rating svg { color:#f5b301; }
+        .m-rating i { font-style:normal; font-weight:600; color:#8a9a95; }
+        /* Başlık en fazla iki satır: kartlar aynı boyda kalır */
+        .m-cardwrap .card-title { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.6em; }
+        .card-agency { display:flex; align-items:center; gap:6px; }
+        .card-agency-logo { width:18px; height:18px; border-radius:50%; object-fit:cover; flex:none; }
+        .card-agency-ini { width:18px; height:18px; border-radius:50%; background:rgba(13,148,136,.10); color:var(--accent-ink); font-size:9px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex:none; }
+        .card-price-row { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
         .card-body { padding:16px; }
         .card-title { font-size:15px; font-weight:700; margin-bottom:4px; line-height:1.3; }
         .card-meta { font-size:13px; color:var(--text-meta); }
