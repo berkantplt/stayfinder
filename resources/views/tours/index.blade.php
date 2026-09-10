@@ -40,8 +40,22 @@
 .filter-radio:hover { color:var(--accent); }
 .filter-radio input[type="radio"] { accent-color:var(--accent); width:16px; height:16px; margin:0; cursor:pointer; }
 
-/* ===== Mobil filtre: chip şeridi + bottom sheet (Airbnb kalıbı) ===== */
+/* ===== Katlanır ikincil filtreler ===== */
+.filter-more { border-top:1px solid #f1f5f9; padding-top:14px; margin-bottom:16px; }
+.filter-more summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--accent-ink); margin-bottom:14px; }
+.filter-more summary::-webkit-details-marker { display:none; }
+.filter-more summary::before { content:'+'; display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border:1.5px solid currentColor; border-radius:6px; font-size:13px; line-height:1; }
+.filter-more[open] summary::before { content:'−'; }
+
+/* ===== Aktif filtre etiketleri: mobilde chip şeridi + bottom sheet (Airbnb kalıbı),
+   masaüstünde yalnız aktif etiketler (has-active) ===== */
+.m-chip { flex:none; display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(15,36,33,.12); background:#fff; color:#42544f; font-family:'Manrope',var(--font); font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:100px; cursor:pointer; white-space:nowrap; }
+.m-chip-on { background:var(--accent-ink); border-color:var(--accent-ink); color:#fff; font-weight:700; }
 .m-chipbar { display:none; }
+@media(min-width:769px) {
+    .m-chipbar.has-active { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+    .m-chipbar .m-chip-main, .m-chipbar .m-chip-cat { display:none !important; }
+}
 .m-sheet-back { display:none; position:fixed; inset:0; background:rgba(4,24,21,.45); z-index:2500; }
 .m-sheet { position:fixed; left:0; right:0; bottom:0; z-index:2600; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -12px 40px rgba(4,24,21,.3); transform:translateY(105%); transition:transform .3s ease; display:flex; flex-direction:column; max-height:82vh; }
 .m-sheet.open { transform:translateY(0); }
@@ -52,10 +66,8 @@
     #tours-results h1 { font-size:22px; margin-bottom:14px; }
     .m-chipbar { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; margin-bottom:14px; padding-bottom:2px; }
     .m-chipbar::-webkit-scrollbar { display:none; }
-    .m-chip { flex:none; display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(15,36,33,.12); background:#fff; color:#42544f; font-family:'Manrope',var(--font); font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:100px; cursor:pointer; white-space:nowrap; }
     .m-chip-main { background:#0f172a; border-color:#0f172a; color:#fff; font-weight:800; }
     .m-chip-main b { background:var(--accent); border-radius:100px; padding:1px 7px; font-size:11px; }
-    .m-chip-on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
     .m-sheet-grab { width:36px; height:4px; border-radius:3px; background:#cbd5e1; margin:8px auto 0; }
     .m-sheet-head { display:flex; justify-content:space-between; align-items:center; padding:8px 18px 10px; border-bottom:1px solid #eef2f1; }
     .m-sheet-head span { font-family:'Manrope',var(--font); font-size:15px; font-weight:800; color:#0f172a; }
@@ -109,24 +121,9 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                     Detaylı Filtreleme
                 </h3>
-                
                 <div class="filter-group">
                     <label class="filter-label">Arama</label>
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="Tur veya yer..." class="filter-input">
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Kategori</label>
-                    <div style="display:flex;flex-direction:column;gap:4px;">
-                        <label class="filter-radio">
-                            <input type="radio" name="category" value="" {{ !request('category') ? 'checked' : '' }}> Tümü
-                        </label>
-                        @foreach($categories as $cat)
-                        <label class="filter-radio">
-                            <input type="radio" name="category" value="{{ $cat->slug }}" {{ request('category') == $cat->slug ? 'checked' : '' }}> {{ $cat->icon }} {{ $cat->name }}
-                        </label>
-                        @endforeach
-                    </div>
                 </div>
 
                 <div class="filter-group">
@@ -138,6 +135,14 @@
                             <option value="{{ $dest['city'] }}" {{ request('destination') === $dest['city'] ? 'selected' : '' }}>{{ $dest['city'] }} ({{ $dest['count'] }})</option>
                         @endforeach
                     </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Tarih Aralığı</label>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <input type="date" name="date_start" value="{{ request('date_start') }}" class="filter-input" placeholder="Başlangıç" title="Başlangıç Tarihi">
+                        <input type="date" name="date_end" value="{{ request('date_end') }}" class="filter-input" placeholder="Bitiş" title="Bitiş Tarihi">
+                    </div>
                 </div>
 
                 <div class="filter-group">
@@ -153,20 +158,39 @@
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Tarih Aralığı</label>
-                    <div style="display:flex;flex-direction:column;gap:8px;">
-                        <input type="date" name="date_start" value="{{ request('date_start') }}" class="filter-input" placeholder="Başlangıç" title="Başlangıç Tarihi">
-                        <input type="date" name="date_end" value="{{ request('date_end') }}" class="filter-input" placeholder="Bitiş" title="Bitiş Tarihi">
+                    <label class="filter-label">Fiyat (kişi başı, ₺)</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="number" name="min_price" value="{{ request('min_price') }}" placeholder="En az" min="0" step="100" inputmode="numeric" class="filter-input">
+                        <input type="number" name="max_price" value="{{ request('max_price') }}" placeholder="En çok" min="0" step="100" inputmode="numeric" class="filter-input">
                     </div>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:6px;">Yabancı para fiyatlar güncel kurla TL'ye çevrilir.</div>
                 </div>
 
-                <div class="filter-group">
-                    <label class="filter-label">Tur Süresi</label>
-                    <div style="display:flex;gap:8px;">
-                        <input type="number" name="min_days" value="{{ request('min_days') }}" placeholder="Min Gün" min="1" class="filter-input">
-                        <input type="number" name="max_days" value="{{ request('max_days') }}" placeholder="Maks Gün" min="1" class="filter-input">
+                {{-- İkincil filtreler katlanır; içinde seçim varsa açık gelir --}}
+                <details class="filter-more" {{ request('category') || request('min_days') || request('max_days') ? 'open' : '' }}>
+                    <summary>Daha fazla filtre</summary>
+                    <div class="filter-group">
+                        <label class="filter-label">Kategori</label>
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                            <label class="filter-radio">
+                                <input type="radio" name="category" value="" {{ !request('category') ? 'checked' : '' }}> Tümü
+                            </label>
+                            @foreach($categories as $cat)
+                            <label class="filter-radio">
+                                <input type="radio" name="category" value="{{ $cat->slug }}" {{ request('category') == $cat->slug ? 'checked' : '' }}> {{ $cat->icon }} {{ $cat->name }}
+                            </label>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Tur Süresi</label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="number" name="min_days" value="{{ request('min_days') }}" placeholder="Min Gün" min="1" class="filter-input">
+                            <input type="number" name="max_days" value="{{ request('max_days') }}" placeholder="Maks Gün" min="1" class="filter-input">
+                        </div>
+                    </div>
+                </details>
 
                 <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:12px;font-weight:700;py:12px;">Sonuçları Göster</button>
                 @if(request()->except('page'))
@@ -206,10 +230,13 @@
                 'category' => request('category'),
                 'yurt' => in_array(request('yurt'), ['ic', 'dis'], true) ? request('yurt') : null,
                 'visa' => in_array(request('visa'), ['vizesiz', 'vizeli'], true) ? request('visa') : null,
+                'price' => request('min_price') || request('max_price') ? true : null,
             ]);
             $mAgencyName = request('agency_id') ? optional($agencies->firstWhere('id', (int) request('agency_id')))->name : null;
         @endphp
-        <div class="m-chipbar">
+        {{-- Masaüstünde de basılır: yalnız aktif filtre etiketleri (Filtreler düğmesi ve
+             hızlı kategoriler mobil; CSS). Etiket ✕ ile tek dokunuşta kalkar. --}}
+        <div class="m-chipbar {{ count($mActive) ? 'has-active' : '' }}">
             <button type="button" class="m-chip m-chip-main" onclick="mSheetOpen()">⚙ Filtreler @if(count($mActive))<b>{{ count($mActive) }}</b>@endif</button>
             @if(request('q'))
                 <button type="button" class="m-chip m-chip-on" onclick="mChipClear('q')">“{{ \Illuminate\Support\Str::limit(request('q'), 14) }}” ✕</button>
@@ -232,11 +259,14 @@
             @if(isset($mActive['visa']))
                 <button type="button" class="m-chip m-chip-on" onclick="mChipClear('visa')">{{ $mActive['visa'] === 'vizesiz' ? 'Vizesiz' : 'Vizeli' }} ✕</button>
             @endif
+            @if(request('min_price') || request('max_price'))
+                <button type="button" class="m-chip m-chip-on" onclick="mChipClear('min_price,max_price')">{{ request('min_price') ? number_format((int) request('min_price'), 0, ',', '.') : '0' }}–{{ request('max_price') ? number_format((int) request('max_price'), 0, ',', '.') : '∞' }} ₺ ✕</button>
+            @endif
             @if(request('min_days') || request('max_days'))
                 <button type="button" class="m-chip m-chip-on" onclick="mChipClear('min_days,max_days')">{{ request('min_days', '1') }}-{{ request('max_days', '∞') }} gün ✕</button>
             @endif
             @foreach($categories as $cat)
-                <button type="button" class="m-chip {{ request('category') == $cat->slug ? 'm-chip-on' : '' }}" onclick="mQuickCat('{{ $cat->slug }}')">{{ $cat->icon }} {{ $cat->name }}{{ request('category') == $cat->slug ? ' ✕' : '' }}</button>
+                <button type="button" class="m-chip m-chip-cat {{ request('category') == $cat->slug ? 'm-chip-on' : '' }}" onclick="mQuickCat('{{ $cat->slug }}')">{{ $cat->icon }} {{ $cat->name }}{{ request('category') == $cat->slug ? ' ✕' : '' }}</button>
             @endforeach
         </div>
 
