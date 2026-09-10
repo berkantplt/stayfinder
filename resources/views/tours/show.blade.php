@@ -880,9 +880,15 @@
                         </div>
                     @endif
                     {{-- Fiyat sinyali: grafiğe gömülü eğilim tek satırda; veri yetmiyorsa iddia yok --}}
-                    @if($priceSignal)
+                    @if($priceSignal || $priceUpdatedAt)
                         <div class="p-sinyal" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px;font-size:12.5px;color:var(--text-meta);">
+                            @if($priceSignal)
                             <span style="display:inline-flex;align-items:center;gap:5px;color:#065f46;font-weight:600;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/></svg> {{ $priceSignal }}</span>
+                            @endif
+                            @if($priceUpdatedAt)
+                                {{-- Son fiyat kaydı (gün); updated_at karakter işleriyle de değiştiği için kullanılmaz --}}
+                                <span>Fiyat son güncelleme: {{ $priceUpdatedAt->locale('tr')->isoFormat('D MMMM') }}</span>
+                            @endif
                         </div>
                     @endif
                     <div class="p-agency" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">

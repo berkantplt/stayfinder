@@ -283,6 +283,7 @@ class TourController extends Controller
         // anlık görüntü yok). "30 günün en düşüğü" için 30 günde en az iki kayıt şart;
         // yoksa son değişiklikten bu yana geçen gün ("12 gündür aynı fiyat").
         $latestHistory = $tour->priceHistories()->reorder()->orderByDesc('recorded_at')->orderByDesc('id')->first();
+        $priceUpdatedAt = $latestHistory?->recorded_at; // gün bazlı; saat verisi yok, uydurulmaz
         $priceSignal = null;
         if ($priceHistory->count() >= 2 && (float) $tour->price <= (float) $priceHistory->min('price')) {
             $priceSignal = 'Son 30 günün en düşük fiyatı';
@@ -298,7 +299,7 @@ class TourController extends Controller
 
         return view('tours.show', compact(
             'tour', 'otherOffers', 'cheaperOffer', 'similarTours', 'reviews', 'avgRating', 'userReview',
-            'priceLabels', 'priceData', 'priceSignal', 'aiContext'
+            'priceLabels', 'priceData', 'priceSignal', 'priceUpdatedAt', 'aiContext'
         ));
     }
 
