@@ -1070,7 +1070,7 @@
                                 <span class="ftr-phone-ico">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-3a8 8 0 0 1 16 0v3"/><path d="M4 14h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M20 14h-2a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1z"/><path d="M17 19v1a2 2 0 0 1-2 2h-3"/></svg>
                                 </span>
-                                <span><b>7/24 Destek</b><span>{{ $ftrPhone }}</span></span>
+                                <span><b>İletişim</b><span>{{ $ftrPhone }}</span></span>
                             </a>
                         </div>
                         <div class="ftr-col"><h4>Popüler Bağlantılar</h4><ul>
@@ -1107,7 +1107,7 @@
                     <div class="ftr-trust">
                         <div>
                             <span class="ftr-trust-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8.4 7 9.6 4-1.2 7-5.2 7-9.6V6z"/><path d="m9 11.5 2.2 2.2 3.3-4.2"/></svg></span>
-                            <span><b>7/24 Destek</b><span>Uzman ekibimiz her zaman yanınızda.</span></span>
+                            <span><b>Sorularınız İçin</b><span>İletişim sayfasından yazın, bir iş günü içinde dönüş.</span></span>
                         </div>
                         <div>
                             <span class="ftr-trust-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v3"/></svg></span>

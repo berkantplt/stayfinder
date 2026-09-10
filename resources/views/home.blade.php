@@ -712,8 +712,8 @@
             <div><b>En iyi fiyatlar</b><span>Karşılaştır, avantajı yakala</span></div>
         </div>
         <div class="hero-trust-item">
-            <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4.5" height="6" rx="2"/><rect x="17" y="13.5" width="4.5" height="6" rx="2"/><path d="M20 19.5v.5a2.5 2.5 0 0 1-2.5 2.5H13"/></svg></span>
-            <div><b>7/24 destek</b><span>Seyahatinde yanındayız</span></div>
+            <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L15.5 10"/></svg></span>
+            <div><b>Ücretsiz karşılaştırma</b><span>Üyelik gerekmez</span></div>
         </div>
         <div class="hero-trust-item">
             <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.3"/></svg></span>
@@ -791,8 +791,8 @@
                 <b>Onaylı Acentalar</b><span>Doğrulanmış tur şirketleri</span>
             </div>
             <div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4.5" height="6" rx="2"/><rect x="17" y="13.5" width="4.5" height="6" rx="2"/><path d="M20 19.5v.5a2.5 2.5 0 0 1-2.5 2.5H13"/></svg>
-                <b>7/24 Destek</b><span>Seyahatte yanınızdayız</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L15.5 10"/></svg>
+                <b>Ücretsiz</b><span>Üyelik gerekmez</span>
             </div>
             <div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.3l-8 8a2 2 0 0 1-2.9 0l-6-6a2 2 0 0 1-.6-1.4V4.5A1.5 1.5 0 0 1 4.5 3h8.4a2 2 0 0 1 1.4.6l6.2 6.2a1.8 1.8 0 0 1 0 2.5z"/><circle cx="8" cy="8" r="1.3"/></svg>
@@ -800,7 +800,7 @@
             </div>
             <div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.4 2.4 4.6-4.9"/></svg>
-                <b>Onaylı Acentalar</b><span>Güvenilir hizmet</span>
+                <b>Rezervasyon Acentada</b><span>Ödeme acentanın sitesinde</span>
             </div>
         </div>
     </div>
