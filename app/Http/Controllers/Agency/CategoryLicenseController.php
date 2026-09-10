@@ -741,6 +741,13 @@ class CategoryLicenseController extends Controller
 
         $order->load('items.category');
 
+        // Callback iyzico'dan gelen cross-site POST'tur; çerez taşınmazsa oradaki
+        // sepet temizliği boş oturumda çalışır. Burası kullanıcının KENDİ
+        // oturumu — ödenen kalemleri sepetten burada da düşür (yedek temizlik).
+        if ($order->isPaid()) {
+            $this->forgetCartEntriesForOrder($order);
+        }
+
         return view('agency.category-licenses.result', compact('order'));
     }
 
