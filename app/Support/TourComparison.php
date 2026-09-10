@@ -172,7 +172,7 @@ class TourComparison
             self::satir('Program', $tours, fn (Tour $t) => is_array($t->itinerary) && $t->itinerary !== []
                 ? count($t->itinerary).' günlük detaylı program'
                 : null),
-            self::satir('Tempo', $tours, fn (Tour $t) => self::tempoEtiketi($t->pace_score)),
+            self::satir('Tempo', $tours, fn (Tour $t) => $t->tempo_label),
             self::satir('Vize', $tours, fn (Tour $t) => match (true) {
                 $t->requires_visa === null => null,
                 // Kapıda vize kullanıcı için ayrı bir kategori: konsolosluk
@@ -261,19 +261,6 @@ class TourComparison
         return $kalan > 0 ? $metin.' (+'.$kalan.' tarih)' : $metin;
     }
 
-    /** pace_score 0-1: düşük = dinlenme ağırlıklı, yüksek = tempolu gezi. */
-    private static function tempoEtiketi(?float $skor): ?string
-    {
-        if ($skor === null) {
-            return null;
-        }
-
-        return match (true) {
-            $skor < 0.35 => 'Dinlenme ağırlıklı',
-            $skor < 0.65 => 'Dengeli',
-            default => 'Tempolu gezi',
-        };
-    }
 
     /**
      * included/excluded metinlerini maddelere bölüp turlar arasında eşleştirir.

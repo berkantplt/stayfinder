@@ -24,6 +24,26 @@
 
     .m-cta { display:none; }
 
+    /* ── Bilgi şeridi (karar bilgileri) ── */
+    .p-strip { display:grid; grid-template-columns:repeat(var(--p-strip-n, 5), minmax(0, 1fr)); gap:0; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:14px 6px; margin:0 0 16px; }
+    .p-cell { display:grid; grid-template-columns:20px minmax(0, 1fr); grid-template-rows:auto auto; column-gap:10px; align-items:center; min-width:0; padding:0 12px; border-left:1px solid var(--border-light); }
+    .p-cell-ikon { grid-row:1 / span 2; }
+    .p-cell:first-child { border-left:0; }
+    .p-cell-ikon { display:flex; flex:none; width:20px; height:20px; color:var(--accent-ink); }
+    .p-cell-ikon svg { width:20px; height:20px; }
+    .p-cell-etiket { display:block; font-size:11px; font-weight:600; letter-spacing:.2px; text-transform:uppercase; color:var(--text-meta); }
+    .p-cell-deger { display:block; font-size:13.5px; font-weight:700; color:var(--text); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .p-cell-ikon + .p-cell-etiket { flex:none; }
+    .p-cell > .p-cell-etiket, .p-cell > .p-cell-deger { min-width:0; }
+    @media(max-width:768px) {
+        /* Mobil: en fazla 4 hücre, dikey ikon/etiket/değer; tempo masaüstüne özel */
+        .p-strip { grid-template-columns:repeat(4, minmax(0, 1fr)); padding:12px 0; border-radius:16px; }
+        .p-cell { display:flex; flex-direction:column; gap:4px; text-align:center; padding:0 2px; border-left:0; }
+        .p-cell-masaustu { display:none; }
+        .p-cell-etiket { font-size:10px; }
+        .p-cell-deger { font-size:12px; white-space:nowrap; max-width:100%; }
+    }
+
     /* ── Paylaş / favori düğmeleri ── */
     .detail-main { position:relative; min-width:0; }
     .p-actions { display:flex; justify-content:flex-end; gap:8px; margin:0 0 12px; }
@@ -234,6 +254,35 @@
                              şehrin tüm turlarına gitmek kullanıcıyı incelediği
                              turdan koparıyordu. --}}
                         {{ $boardingCities->implode(', ') }}
+                    </div>
+                @endif
+
+                {{-- Bilgi şeridi: karar bilgileri tek satırda (ulaşım, kalkış, vize, süre;
+                     masaüstünde tempo). Boş veri hücre basmaz; vize null ise (acenta hiç
+                     işaretlememiş) "Vizesiz" denmez, hücre çıkmaz. --}}
+                @php
+                    $seritHucreleri = array_values(array_filter([
+                        ['ikon' => $tour->transport_type === 'ucak' ? 'plane' : 'bus', 'etiket' => 'Ulaşım', 'deger' => $tour->transport_short_label],
+                        ['ikon' => 'pin', 'etiket' => 'Kalkış', 'deger' => $boardingCities->count()
+                            ? $boardingCities->first().($boardingCities->count() > 1 ? ' +'.($boardingCities->count() - 1) : '')
+                            : null],
+                        ['ikon' => 'visa', 'etiket' => 'Vize', 'deger' => $tour->visa_label],
+                        ['ikon' => 'clock', 'etiket' => 'Süre', 'deger' => $tour->duration_label ?: null],
+                        ['ikon' => 'gauge', 'etiket' => 'Tempo', 'deger' => $tour->tempo_label, 'masaustu' => true],
+                    ], fn ($h) => $h['deger'] !== null && $h['deger'] !== ''));
+                    $seritIkonlar = [
+                        'bus' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 10h16M8 18v2M16 18v2"/><circle cx="8" cy="14" r="1"/><circle cx="16" cy="14" r="1"/></svg>', 'plane' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l8-2 4-8 2 1-2 8 6 3-1 2-7-1-3 4-2-1 1-5z"/></svg>', 'pin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>', 'visa' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16.5h7"/></svg>', 'clock' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>', 'gauge' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M12 15l3-4"/><circle cx="12" cy="15" r="1"/></svg>',
+                    ];
+                @endphp
+                @if(count($seritHucreleri))
+                    <div class="p-strip" style="--p-strip-n:{{ count($seritHucreleri) }};">
+                        @foreach($seritHucreleri as $h)
+                            <div class="p-cell {{ !empty($h['masaustu']) ? 'p-cell-masaustu' : '' }}">
+                                <span class="p-cell-ikon">{!! $seritIkonlar[$h['ikon']] !!}</span>
+                                <span class="p-cell-etiket">{{ $h['etiket'] }}</span>
+                                <span class="p-cell-deger">{{ $h['deger'] }}</span>
+                            </div>
+                        @endforeach
                     </div>
                 @endif
 

@@ -164,6 +164,50 @@ class Tour extends Model
         return $gece.' gece '.$gun.' gün';
     }
 
+    /**
+     * Tempo etiketi (pace_score 0-1): düşük = dinlenme ağırlıklı, yüksek = tempolu
+     * gezi. Karşılaştırma tablosu ve tur detayındaki bilgi şeridi aynı eşiği okur.
+     */
+    public function getTempoLabelAttribute(): ?string
+    {
+        $skor = $this->pace_score;
+        if ($skor === null) {
+            return null;
+        }
+
+        return match (true) {
+            $skor < 0.35 => 'Dinlenme ağırlıklı',
+            $skor < 0.65 => 'Dengeli',
+            default => 'Tempolu gezi',
+        };
+    }
+
+    /**
+     * Vize etiketi — ÜÇ durum, iki kolon: requires_visa null ise acenta hiç
+     * işaretlememiştir (2026-09-01 öncesi turlar) ve null döner; ekranda
+     * "Vizesiz" DENMEZ. Kapıda vize, vizeli turun alt durumu.
+     */
+    public function getVisaLabelAttribute(): ?string
+    {
+        if ($this->requires_visa === null) {
+            return null;
+        }
+
+        if (! $this->requires_visa) {
+            return 'Vizesiz';
+        }
+
+        return $this->visa_on_arrival ? 'Kapıda vize' : 'Vizeli';
+    }
+
+    /** Kısa ulaşım adı ("Otobüs"); bilgi şeridi ve kart satırı için. Bilinmiyorsa null. */
+    public function getTransportShortLabelAttribute(): ?string
+    {
+        $tip = $this->transport_type;
+
+        return $tip && isset(self::TRANSPORT_TYPES[$tip]) ? self::TRANSPORT_TYPES[$tip] : null;
+    }
+
     /** Kabul edilen ulaşım tipleri → kartta gösterilecek ad. */
     public const TRANSPORT_TYPES = [
         'ucak' => 'Uçak',
