@@ -445,6 +445,136 @@ class AgencyCategoryLicensingTest extends TestCase
         $this->assertSame([], session('agency_category_license_cart', []));
     }
 
+    public function test_active_subscription_is_added_to_cart_as_renewal_and_checkout_extends_expiry(): void
+    {
+        Queue::fake();
+        Notification::fake();
+
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $subscription = AgencyCategorySubscription::create([
+            'agency_id' => $agency->id,
+            'category_id' => $category->id,
+            'monthly_price' => 2000,
+            'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+            'started_at' => today()->subDays(20),
+            'expires_at' => today()->addDays(10),
+        ]);
+
+        // Aktif abonelikli kategori artık reddedilmez: YENİLEME kalemi olur
+        $this->actingAs($user)
+            ->postJson(route('agency.category-licenses.cart.add'), ['category_id' => $category->id])
+            ->assertOk()
+            ->assertJson([
+                'ok' => true,
+                'count' => 1,
+                'items' => [['key' => 'renewal-'.$category->id, 'type' => 'renewal', 'id' => $category->id]],
+            ]);
+
+        $this->assertSame(
+            [$category->id => today()->addDays(10)->toDateString()],
+            session('agency_category_renewal_cart', [])
+        );
+        $this->assertSame([], session('agency_category_license_cart', []));
+
+        $this->mockIyzicoForCheckoutFormInit('renewal-cart-token');
+
+        $this->actingAs($user)
+            ->post(route('agency.category-licenses.initiate-payment'), $this->validBuyerPayload())
+            ->assertOk();
+
+        $order = AgencyCategoryOrder::where('provider_token', 'renewal-cart-token')->firstOrFail();
+        $this->assertSame($category->name.' (yenileme)', $order->items()->first()->category_name);
+
+        $this->mockIyzicoForCallbackSuccess($order, 'iyzico-payment-renewal-cart');
+        $this->post(route('agency.category-licenses.iyzico.callback', $order), ['token' => 'renewal-cart-token'])
+            ->assertRedirect(route('agency.category-licenses.payment.result', $order));
+
+        $subscription->refresh();
+
+        // Kalan 10 gün korunur: mevcut bitişten +1 ay, başlangıç sıfırlanmaz
+        $this->assertSame(today()->addDays(10)->addMonth()->toDateString(), $subscription->expires_at->toDateString());
+        $this->assertSame(today()->subDays(20)->toDateString(), $subscription->started_at->toDateString());
+    }
+
+    public function test_renewal_cart_entry_drops_itself_when_subscription_expiry_changed(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $subscription = AgencyCategorySubscription::create([
+            'agency_id' => $agency->id,
+            'category_id' => $category->id,
+            'monthly_price' => 2000,
+            'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+            'started_at' => today()->subDays(20),
+            'expires_at' => today()->addDays(10),
+        ]);
+
+        $this->actingAs($user)
+            ->postJson(route('agency.category-licenses.cart.add'), ['category_id' => $category->id])
+            ->assertOk()
+            ->assertJson(['count' => 1]);
+
+        // Yenileme bu arada başka yoldan yapıldı (callback oturumu temizleyememiş olabilir)
+        $subscription->update(['expires_at' => today()->addDays(10)->addMonth()]);
+
+        // Sepette yalnız yeni eklenen hak kalır; bayat yenileme kalemi kendini düşürür
+        $this->actingAs($user)
+            ->postJson(route('agency.category-licenses.cart.add-slot'), ['category_id' => $category->id])
+            ->assertOk()
+            ->assertJson(['count' => 1, 'items' => [['type' => 'extra_slot']]]);
+    }
+
+    public function test_payment_result_page_clears_paid_items_from_cart(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $order = $this->makePendingIyzicoOrder($agency, $category, 'result-clear-token');
+        $order->update(['status' => AgencyCategoryOrder::STATUS_PAID, 'paid_at' => now()]);
+
+        $this->actingAs($user)
+            ->withSession([
+                'agency_category_license_cart' => [$category->id, 999],
+                'agency_category_slot_cart' => [$category->id => 2],
+            ])
+            ->get(route('agency.category-licenses.payment.result', $order))
+            ->assertOk();
+
+        // Yalnız bu siparişte ödenen kategori düşer, başka kalemler korunur
+        $this->assertSame([999], session('agency_category_license_cart'));
+        $this->assertSame([], session('agency_category_slot_cart'));
+    }
+
+    public function test_index_last_purchase_card_ignores_unpaid_orders(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+
+        $paid = $this->makePendingIyzicoOrder($agency, $category, 'paid-token');
+        $paid->update(['status' => AgencyCategoryOrder::STATUS_PAID, 'purchased_at' => now()->subDay()]);
+        $failed = $this->makePendingIyzicoOrder($agency, $category, 'failed-token');
+        $failed->update(['status' => AgencyCategoryOrder::STATUS_FAILED, 'purchased_at' => now()]);
+
+        $this->actingAs($user)
+            ->get(route('agency.category-licenses.index'))
+            ->assertOk()
+            ->assertSee($paid->order_number)
+            ->assertDontSee($failed->order_number)
+            ->assertSee('Toplam 1 ödenmiş sipariş');
+    }
+
+    public function test_legacy_agency_index_lists_only_child_categories_as_licenses(): void
+    {
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+        $agency->update(['legacy_category_access' => true]);
+
+        $this->actingAs($user)
+            ->get(route('agency.category-licenses.index'))
+            ->assertOk()
+            ->assertSee('data-subscription-card="'.$category->id.'"', false)
+            ->assertDontSee('data-subscription-card="'.$category->parent_id.'"', false)
+            ->assertSee('Geçiş erişimi');
+    }
+
     private function makePendingIyzicoOrder(Agency $agency, Category $category, string $token): AgencyCategoryOrder
     {
         $order = AgencyCategoryOrder::create([
