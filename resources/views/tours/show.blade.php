@@ -24,6 +24,28 @@
 
     .m-cta { display:none; }
 
+    /* ── Galeri: kaydırmalı şerit + sayaç + tam ekran ── */
+    .m-gallery { position:relative; }
+    .g-strip { display:flex; height:340px; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; border-radius:var(--radius-lg); -webkit-overflow-scrolling:touch; }
+    .g-strip::-webkit-scrollbar { display:none; }
+    .g-slide { flex:0 0 100%; width:100%; height:100%; object-fit:cover; scroll-snap-align:start; scroll-snap-stop:always; cursor:zoom-in; display:block; }
+    .g-count { position:absolute; left:12px; top:300px; background:rgba(15,23,42,.72); color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:100px; pointer-events:none; font-variant-numeric:tabular-nums; }
+    .g-thumb.on { border-color:var(--accent) !important; }
+    .g-lb { border:0; padding:0; width:100vw; max-width:100vw; height:100vh; max-height:100vh; background:#0b1220; color:#fff; }
+    .g-lb::backdrop { background:rgba(0,0,0,.92); }
+    .g-lb-strip { display:flex; width:100%; height:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+    .g-lb-strip::-webkit-scrollbar { display:none; }
+    .g-lb-slide { flex:0 0 100%; width:100%; height:100%; display:flex; align-items:center; justify-content:center; scroll-snap-align:start; scroll-snap-stop:always; overflow:auto; touch-action:pinch-zoom; }
+    .g-lb-slide img { max-width:100%; max-height:100%; object-fit:contain; cursor:zoom-in; }
+    .g-lb-slide img.buyuk { max-width:none; max-height:none; width:180vw; height:auto; cursor:zoom-out; }
+    .g-lb-kapat, .g-lb-nav { position:absolute; z-index:2; border:0; background:rgba(255,255,255,.16); color:#fff; width:44px; height:44px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .g-lb-kapat:hover, .g-lb-nav:hover { background:rgba(255,255,255,.28); }
+    .g-lb-kapat { top:calc(12px + env(safe-area-inset-top)); right:12px; }
+    .g-lb-nav { top:50%; transform:translateY(-50%); }
+    .g-lb-prev { left:12px; }
+    .g-lb-next { right:12px; }
+    .g-lb-count { position:absolute; top:calc(24px + env(safe-area-inset-top)); left:16px; font-size:13px; font-weight:700; z-index:2; font-variant-numeric:tabular-nums; }
+
     /* ── Bilgi şeridi (karar bilgileri) ── */
     .p-strip { display:grid; grid-template-columns:repeat(var(--p-strip-n, 5), minmax(0, 1fr)); gap:0; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:14px 6px; margin:0 0 16px; }
     .p-cell { display:grid; grid-template-columns:20px minmax(0, 1fr); grid-template-rows:auto auto; column-gap:10px; align-items:center; min-width:0; padding:0 12px; border-left:1px solid var(--border-light); }
@@ -102,7 +124,9 @@
         /* ===== Mobil tasarım dili (turXtur Mobil 3) ===== */
         /* Galeri kenardan kenara, altı yuvarlatılmış — uygulama kalıbı */
         .m-gallery { margin:0 -16px 18px !important; }
-        #galleryMain { height:250px !important; border-radius:0 0 20px 20px !important; }
+        .g-strip { height:250px !important; border-radius:0 0 20px 20px !important; }
+        .g-count { top:212px; }
+        .g-lb-nav { display:none; }
         .m-gallery-thumbs { padding:0 16px 4px !important; }
         .container > .section:first-child { padding-top:12px !important; }
         /* Başlıklar tasarım tipografisi */
@@ -192,18 +216,40 @@
             <div class="detail-main {{ count($gallery) ? '' : 'no-gallery' }}">
                 @if(count($gallery))
                     <div class="m-gallery" style="margin-bottom:20px;">
-                        <img id="galleryMain" src="{{ $gallery[0] }}" alt="{{ $tour->title }}" style="width:100%;height:340px;object-fit:cover;border-radius:var(--radius-lg);view-transition-name: tour-{{ $tour->id }};">
+                        {{-- Kaydırmalı şerit (scroll-snap): mobilde parmakla, masaüstünde küçük
+                             resimle gezilir; sayaç "3 / 12"; tıklayınca tam ekran. Yalnız ilk
+                             görsel view-transition-name taşır (aynı ad iki kez → geçiş iptal). --}}
+                        <div class="g-strip" id="gStrip" role="region" aria-label="Tur fotoğrafları">
+                            @foreach($gallery as $i => $img)
+                                <img src="{{ $img }}" alt="{{ $tour->title }}{{ count($gallery) > 1 ? ' — fotoğraf '.($i + 1) : '' }}" class="g-slide" data-index="{{ $i }}"
+                                    @if($i === 0) id="galleryMain" style="view-transition-name: tour-{{ $tour->id }};" @else loading="lazy" @endif>
+                            @endforeach
+                        </div>
                         @if(count($gallery) > 1)
+                            <div class="g-count" id="gCount" aria-live="polite">1 / {{ count($gallery) }}</div>
                             <div class="m-gallery-thumbs" style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:4px;">
-                                @foreach($gallery as $img)
-                                    <img src="{{ $img }}" alt="{{ $tour->title }}" loading="lazy"
-                                        onclick="document.getElementById('galleryMain').src=this.src;"
-                                        style="width:90px;height:64px;object-fit:cover;border-radius:8px;cursor:pointer;flex:0 0 auto;border:2px solid transparent;"
-                                        onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='transparent';">
+                                @foreach($gallery as $i => $img)
+                                    <img src="{{ $img }}" alt="" loading="lazy" class="g-thumb {{ $i === 0 ? 'on' : '' }}" data-index="{{ $i }}"
+                                        style="width:90px;height:64px;object-fit:cover;border-radius:8px;cursor:pointer;flex:0 0 auto;border:2px solid transparent;">
                                 @endforeach
                             </div>
                         @endif
                     </div>
+                    {{-- Tam ekran görüntüleyici: <dialog>, kaydırmalı, ok tuşları, dokununca büyüt.
+                         Görseller acenta sitelerinden dış bağlantı; yükleme kırık görsel yedeğine düşer. --}}
+                    <dialog id="gLightbox" class="g-lb" aria-label="Fotoğraf galerisi">
+                        <button type="button" class="g-lb-kapat" id="gLbKapat" aria-label="Kapat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                        <div class="g-lb-count" id="gLbCount"></div>
+                        <div class="g-lb-strip" id="gLbStrip">
+                            @foreach($gallery as $i => $img)
+                                <div class="g-lb-slide"><img src="{{ $img }}" alt="{{ $tour->title }}" loading="lazy" data-index="{{ $i }}"></div>
+                            @endforeach
+                        </div>
+                        @if(count($gallery) > 1)
+                            <button type="button" class="g-lb-nav g-lb-prev" id="gLbPrev" aria-label="Önceki fotoğraf"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+                            <button type="button" class="g-lb-nav g-lb-next" id="gLbNext" aria-label="Sonraki fotoğraf"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+                        @endif
+                    </dialog>
                 @endif
 
                 {{-- Paylaş / favori satırı: masaüstünde başlığın üstünde sağa yaslı,
@@ -947,6 +993,50 @@ document.querySelectorAll('.inc-box .inc-body, .prog-day .prog-day-body').forEac
         var h = (location.hash || '').replace('#', '');
         if (h) activate(h, false);
     });
+})();
+
+// Galeri: şerit sayacı, küçük resimle gezinme, tam ekran görüntüleyici.
+(function () {
+    var strip = document.getElementById('gStrip');
+    if (!strip) return;
+    var slides = strip.querySelectorAll('.g-slide'), n = slides.length;
+    var count = document.getElementById('gCount'), thumbs = document.querySelectorAll('.g-thumb');
+    var lb = document.getElementById('gLightbox'), lbStrip = document.getElementById('gLbStrip'), lbCount = document.getElementById('gLbCount');
+    function idxOf(el) { return Math.min(n - 1, Math.max(0, Math.round(el.scrollLeft / Math.max(1, el.clientWidth)))); }
+    function goTo(el, i, yumusak) { el.scrollTo({ left: i * el.clientWidth, behavior: yumusak ? 'smooth' : 'auto' }); }
+    function guncelle() {
+        var i = idxOf(strip);
+        if (count) count.textContent = (i + 1) + ' / ' + n;
+        thumbs.forEach(function (t, k) { t.classList.toggle('on', k === i); });
+    }
+    strip.addEventListener('scroll', function () { window.requestAnimationFrame(guncelle); }, { passive: true });
+    thumbs.forEach(function (t) { t.addEventListener('click', function () { goTo(strip, +t.dataset.index, true); }); });
+
+    if (!lb || typeof lb.showModal !== 'function') return;
+    function lbGuncelle() { if (lbCount) lbCount.textContent = (idxOf(lbStrip) + 1) + ' / ' + n; }
+    function lbAc(i) {
+        lb.showModal();
+        document.body.style.overflow = 'hidden';
+        window.requestAnimationFrame(function () { goTo(lbStrip, i, false); lbGuncelle(); });
+    }
+    slides.forEach(function (s) { s.addEventListener('click', function () { lbAc(+s.dataset.index); }); });
+    lb.addEventListener('close', function () {
+        document.body.style.overflow = '';
+        lbStrip.querySelectorAll('img.buyuk').forEach(function (im) { im.classList.remove('buyuk'); });
+        goTo(strip, idxOf(lbStrip), false); // şeritte de aynı fotoğrafta kal
+    });
+    lb.addEventListener('click', function (e) { if (e.target === lb) lb.close(); });
+    document.getElementById('gLbKapat').addEventListener('click', function () { lb.close(); });
+    var prev = document.getElementById('gLbPrev'), next = document.getElementById('gLbNext');
+    if (prev) prev.addEventListener('click', function () { goTo(lbStrip, Math.max(0, idxOf(lbStrip) - 1), true); });
+    if (next) next.addEventListener('click', function () { goTo(lbStrip, Math.min(n - 1, idxOf(lbStrip) + 1), true); });
+    lbStrip.addEventListener('scroll', function () { window.requestAnimationFrame(lbGuncelle); }, { passive: true });
+    lb.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight' && next) next.click();
+        if (e.key === 'ArrowLeft' && prev) prev.click();
+    });
+    // Tıklayınca/dokununca büyüt; iki parmakla sıkıştırma tarayıcıya bırakılır (touch-action)
+    lbStrip.querySelectorAll('img').forEach(function (im) { im.addEventListener('click', function () { im.classList.toggle('buyuk'); }); });
 })();
 
 // Kısa bilgi baloncuğu: ekranın altında 3 sn görünür; şerit ve sekme barının üstünde durur.
