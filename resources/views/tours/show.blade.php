@@ -23,6 +23,24 @@
     .tour-tab-panel[hidden] { display:none; }
 
     .m-cta { display:none; }
+
+    /* ── Paylaş / favori düğmeleri ── */
+    .detail-main { position:relative; min-width:0; }
+    .p-actions { display:flex; justify-content:flex-end; gap:8px; margin:0 0 12px; }
+    .p-act { display:inline-flex; align-items:center; gap:6px; height:38px; padding:0 14px; border:1.5px solid var(--border); border-radius:10px; background:var(--white); color:var(--text); font-family:var(--font); font-size:13px; font-weight:600; cursor:pointer; transition:border-color .2s, color .2s; }
+    .p-act:hover { border-color:var(--accent); color:var(--accent-ink); }
+    .p-act.on { color:#e0563a; border-color:#fecaca; background:#fef2f2; }
+    .p-act.on svg { fill:currentColor; }
+    @media(max-width:768px) {
+        .detail-main:not(.no-gallery) .p-actions { position:absolute; right:-4px; top:198px; z-index:3; margin:0; }
+        .detail-main:not(.no-gallery) .p-act { width:40px; height:40px; padding:0; border:none; border-radius:50%; justify-content:center; background:rgba(255,255,255,.94); box-shadow:0 2px 8px rgba(4,24,21,.18); }
+        .detail-main:not(.no-gallery) .p-act span { display:none; }
+    }
+    /* Kısa bilgi baloncuğu (paylaş/favori geri bildirimi) */
+    #p-toast { position:fixed; left:16px; right:16px; bottom:calc(var(--tabbar-h) + var(--cta-h) + 12px); z-index:var(--z-banner); max-width:440px; margin:0 auto; background:#0f172a; color:#fff; border-radius:12px; padding:12px 14px; font-size:13px; line-height:1.45; box-shadow:0 10px 25px -3px rgba(0,0,0,.25); opacity:0; transform:translateY(8px); transition:opacity .2s, transform .2s; pointer-events:none; }
+    #p-toast.acik { opacity:1; transform:none; }
+    @media(prefers-reduced-motion:reduce) { #p-toast { transition:none; } }
+
     /* Mobil kompakt fiyat kartı: tek satır fiyat + acenta, ince buton üçlüsü */
     .p-tel-short { display:none; }
     @media(max-width:768px) {
@@ -145,10 +163,13 @@
 
         <div class="detail-grid">
             {{-- Left: Tour Info --}}
-            <div>
-                @php
-                    $gallery = is_array($tour->images) && count($tour->images) ? $tour->images : ($tour->image ? [$tour->image] : []);
-                @endphp
+            @php
+                $gallery = is_array($tour->images) && count($tour->images) ? $tour->images : ($tour->image ? [$tour->image] : []);
+                // Paylaşılan adrese ref etiketi: kanonik adres bu parametreyi zaten
+                // temizliyor (App\Support\Seo::TRACKING_PARAMS), SEO'ya dokunmaz.
+                $shareUrl = route('tours.show', $tour).'?ref=paylas';
+            @endphp
+            <div class="detail-main {{ count($gallery) ? '' : 'no-gallery' }}">
                 @if(count($gallery))
                     <div class="m-gallery" style="margin-bottom:20px;">
                         <img id="galleryMain" src="{{ $gallery[0] }}" alt="{{ $tour->title }}" style="width:100%;height:340px;object-fit:cover;border-radius:var(--radius-lg);view-transition-name: tour-{{ $tour->id }};">
@@ -164,6 +185,12 @@
                         @endif
                     </div>
                 @endif
+
+                {{-- Paylaş / favori satırı: masaüstünde başlığın üstünde sağa yaslı,
+                     mobilde galeri fotoğrafının üstünde yuvarlak düğmeler (CSS). --}}
+                <div class="p-actions" id="pActions">
+                    <button type="button" class="p-act" id="pShare" data-url="{{ $shareUrl }}" data-title="{{ $tour->title }}" aria-label="Paylaş"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span>Paylaş</span></button>
+                </div>
 
                 {{-- AI danışman barı: aramadan gelen kullanıcı bağlamını kaybetmesin --}}
                 @if(!empty($aiContext))
@@ -869,6 +896,35 @@ document.querySelectorAll('.inc-box .inc-body, .prog-day .prog-day-body').forEac
     window.addEventListener('hashchange', function () {
         var h = (location.hash || '').replace('#', '');
         if (h) activate(h, false);
+    });
+})();
+
+// Kısa bilgi baloncuğu: ekranın altında 3 sn görünür; şerit ve sekme barının üstünde durur.
+window.pToast = function (mesaj) {
+    var el = document.getElementById('p-toast');
+    if (!el) { el = document.createElement('div'); el.id = 'p-toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = mesaj;
+    clearTimeout(el._t);
+    requestAnimationFrame(function () { el.classList.add('acik'); });
+    el._t = setTimeout(function () { el.classList.remove('acik'); }, 3200);
+};
+
+// Paylaş: cihazın paylaşım menüsü → (dokunmatik) WhatsApp → bağlantıyı kopyala.
+(function () {
+    var btn = document.getElementById('pShare');
+    if (!btn) return;
+    btn.addEventListener('click', async function () {
+        var url = btn.dataset.url, title = btn.dataset.title;
+        if (navigator.share) {
+            try { await navigator.share({ title: title, text: title, url: url }); return; }
+            catch (e) { if (e && e.name === 'AbortError') return; }
+        }
+        if (window.matchMedia('(pointer:coarse)').matches) {
+            window.open('https://wa.me/?text=' + encodeURIComponent(title + ' ' + url), '_blank', 'noopener');
+            return;
+        }
+        try { await navigator.clipboard.writeText(url); window.pToast('Bağlantı kopyalandı.'); }
+        catch (e) { window.prompt('Bağlantıyı kopyala', url); }
     });
 })();
 
