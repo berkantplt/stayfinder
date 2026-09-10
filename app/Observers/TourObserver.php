@@ -139,14 +139,29 @@ class TourObserver
             return;
         }
 
-        if ((float) $tour->price >= (float) $tour->getOriginal('price')) {
+        $eski = (float) $tour->getOriginal('price');
+        if ((float) $tour->price >= $eski) {
             return;
         }
 
-        $favoriters = $tour->favoritedBy()->get();
+        foreach ($tour->favoritedBy()->get() as $user) {
+            // Aynı gün, aynı tur, okunmamış → tek bildirim: ilk eski fiyat korunur,
+            // yeni fiyat ve yüzde güncellenir (acenta günde üç kez değiştirince üç
+            // bildirim gidiyordu).
+            $mevcut = $user->notifications()
+                ->where('type', PriceDropNotification::class)
+                ->whereNull('read_at')
+                ->whereDate('created_at', today())
+                ->where('data->tour_id', $tour->id)
+                ->first();
 
-        if ($favoriters->isNotEmpty()) {
-            Notification::send($favoriters, new PriceDropNotification($tour));
+            if ($mevcut) {
+                $ilkEski = (float) ($mevcut->data['old_price'] ?? $eski);
+                $mevcut->forceFill(['data' => PriceDropNotification::payload($tour, $ilkEski)])->save();
+                continue;
+            }
+
+            $user->notify(new PriceDropNotification($tour, $eski));
         }
     }
 
