@@ -113,17 +113,18 @@
                         </div>
                         <div class="hero-search-field split-field">
                             <span class="hsf-ico">
-                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><rect x="3" y="8" width="18" height="12" rx="3"/><circle cx="16" cy="14" r="1.4"/></svg>
+                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                             </span>
                             <span class="hsf-body">
-                                <label for="heroBudget">Bütçe (kişi başı)</label>
-                                <select name="max_price" id="heroBudget">
+                                {{-- Üçüncü kutu bütçe değil kalkış şehri: tur pazarında daha ayırt
+                                     edici; bütçe /turlar'daki fiyat filtresinde. Liste facet'ten
+                                     (kalkış + durak şehirleri, en çok tur olan 15). --}}
+                                <label for="heroDep">Nereden?</label>
+                                <select name="departure_city" id="heroDep">
                                     <option value="">Fark etmez</option>
-                                    <option value="5000">Max 5.000 ₺</option>
-                                    <option value="10000">Max 10.000 ₺</option>
-                                    <option value="20000">Max 20.000 ₺</option>
-                                    <option value="30000">Max 30.000 ₺</option>
-                                    <option value="50000">Max 50.000 ₺</option>
+                                    @foreach($facets['departures'] as $depCity => $depCount)
+                                        <option value="{{ $depCity }}">{{ $depCity }}</option>
+                                    @endforeach
                                 </select>
                             </span>
                             <span class="hsf-caret" aria-hidden="true">
