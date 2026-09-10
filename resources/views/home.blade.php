@@ -717,7 +717,7 @@
         </div>
         <div class="hero-trust-item">
             <span class="hti-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.3"/></svg></span>
-            <div><b>Güvenli ödeme</b><span>256-bit SSL ile koruma</span></div>
+            <div><b>Rezervasyon acentada</b><span>Ödeme acentanın kendi sitesinde</span></div>
         </div>
     </div>
 
@@ -788,7 +788,7 @@
         <div class="m-trustbar">
             <div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12.2l2.1 2.1L15.4 10"/></svg>
-                <b>Güvenli Ödeme</b><span>256-bit SSL ile koruma</span>
+                <b>Onaylı Acentalar</b><span>Doğrulanmış tur şirketleri</span>
             </div>
             <div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4.5" height="6" rx="2"/><rect x="17" y="13.5" width="4.5" height="6" rx="2"/><path d="M20 19.5v.5a2.5 2.5 0 0 1-2.5 2.5H13"/></svg>
