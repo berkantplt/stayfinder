@@ -256,6 +256,33 @@ class AgencyCategoryTourSlotTest extends TestCase
         ]);
     }
 
+    public function test_extra_slot_rejected_for_cancelled_subscription(): void
+    {
+        Queue::fake();
+        Notification::fake();
+        config(['iyzico.auto_renew_enabled' => true]);
+
+        [$user, $agency, $category] = $this->makeAgencyAndCategory();
+        $subscription = $this->makeActiveSubscription($agency, $category);
+        $subscription->update(['auto_renew' => false, 'cancelled_at' => now()]);
+
+        // İptal edilmiş abonelik dönem sonunda kapanır, haklar sıfırlanır — satış reddedilir
+        $this->actingAs($user)
+            ->postJson(route('agency.category-licenses.cart.add-slot'), ['category_id' => $category->id])
+            ->assertStatus(422)
+            ->assertJson(['ok' => false]);
+
+        $this->assertSame([], session('agency_category_slot_cart', []));
+
+        // Yenileme tekrar açılınca hak eklenebilir
+        $subscription->update(['auto_renew' => true, 'cancelled_at' => null]);
+
+        $this->actingAs($user)
+            ->postJson(route('agency.category-licenses.cart.add-slot'), ['category_id' => $category->id])
+            ->assertOk()
+            ->assertJson(['ok' => true, 'count' => 1]);
+    }
+
     private function makeAgencyAndCategory(bool $legacy = false): array
     {
         $agency = Agency::create([

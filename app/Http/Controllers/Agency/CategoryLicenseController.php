@@ -343,12 +343,18 @@ class CategoryLicenseController extends Controller
 
         // Aktif abonelik VEYA aynı satın almada alınan kategori (sepette) —
         // ikisi de yoksa hak bağlanacak abonelik olmaz, ödeme boşa gider.
-        $hasActiveSubscription = $agency->activeCategorySubscriptions()
+        $subscription = $agency->activeCategorySubscriptions()
             ->where('category_id', $category->id)
-            ->exists();
+            ->first();
 
-        if (! $hasActiveSubscription && ! $this->cartCategoryIds()->contains($category->id)) {
+        if ($subscription === null && ! $this->cartCategoryIds()->contains($category->id)) {
             return $this->cartError($request, 'Ekstra tur hakkı için '.$category->name.' kategorisinde aktif aboneliğiniz olmalı veya kategori sepetinizde olmalı.');
+        }
+
+        // İptal edilmiş abonelik dönem sonunda kapanır ve haklar sıfırlanır —
+        // acenta birkaç hafta sonra yok olacak bir hak için ödeme yapmasın.
+        if ($subscription !== null && CategoryLicensing::autoRenewEnabled() && $subscription->isCancelled()) {
+            return $this->cartError($request, $category->name.' aboneliği iptal edilmiş; dönem sonunda ekstra haklar sıfırlanır. Hak almadan önce "Yenilemeyi Aç" ile aboneliği sürdürün.');
         }
 
         $slotCart = $this->slotCartQuantities();
