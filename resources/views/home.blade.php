@@ -296,7 +296,8 @@
          Keşif Rehberi → ai.discovery_enabled, Tur Danışmanı → ai.chat_v2_enabled
          (layout'taki cv2 balonuyla aynı bayrak; admin rolünde balon render edilmediği
          için kart da gizlenir — ölü buton kalmasın). İkisi de kapalıysa bölüm yok.
-         Mobil (≤768px) BİLEREK dışarıda: mobil yüzey turXtur Mobil 3 tasarımına ait. --}}
+         Mobilde (≤768px) sıkıştırılmış düzen: kartlar alt alta, küçük figür (2026-09-10;
+         önceden tamamen gizliydi, telefon müşterisi AI'ı hiç görmüyordu). --}}
     @php
         $aiKesifAcik = (bool) config('ai.discovery_enabled');
         // Balonla AYNI kural (App\Support\ChatV2Visibility) — kart varsa balon da
@@ -309,16 +310,21 @@
            padding) — burada tekrarlanmaz, yoksa panel kardeşlerinden 20px içeri
            kaçıyordu (inceleme bulgusu). */
         .ai-hub-wrap { margin: 26px 0 6px; }
-        .ai-hub { background: #fdf9f5; border-radius: 24px; padding: 24px 28px; display: flex; align-items: stretch; gap: 20px; flex-wrap: wrap; }
-        .ai-hub-intro { flex: 1 1 220px; display: flex; flex-direction: column; justify-content: center; min-width: 210px; }
-        .ai-hub-intro h2 { font-size: 21px; font-weight: 800; color: var(--text); line-height: 1.35; letter-spacing: -0.3px; }
+        /* Açık turkuaz → krem geçiş; başlık ortada ve büyük, kartlar altında yan yana */
+        .ai-hub { background: linear-gradient(135deg, #ecfdf9 0%, #fdf9f5 60%); border-radius: 24px; padding: 28px 28px 24px; display: flex; align-items: stretch; gap: 20px; flex-wrap: wrap; }
+        .ai-hub-intro { flex: 1 1 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .ai-hub-intro h2 { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.3; letter-spacing: -0.4px; text-wrap: balance; }
         .ai-hub-intro p { margin-top: 8px; font-size: 13.5px; color: var(--text-sec); }
         .ai-hub-card { flex: 1 1 300px; background: var(--white); border: 1px solid var(--border-light); border-radius: 16px; box-shadow: var(--shadow); display: flex; gap: 14px; min-width: 290px; overflow: hidden; }
         /* Tasarımdaki gibi: karakter beyaz kart zemininde, alt kenara taşarak
            (bleed) oturur — ayrı renkli kutu yok. object-position:top ile baş
            daima görünür, kırpma alttan olur. */
-        .ai-hub-figure { flex: 0 0 34%; max-width: 175px; }
-        .ai-hub-figure img { display: block; width: 100%; height: 100%; min-height: 150px; object-fit: cover; object-position: top center; }
+        .ai-hub-figure { flex: 0 0 40%; max-width: 215px; }
+        .ai-hub-figure img { display: block; width: 100%; height: 100%; min-height: 190px; object-fit: cover; object-position: top center; }
+        /* Örnek istemler: dokununca formu doldurur, GÖNDERMEZ (her gönderim LLM maliyeti) */
+        .ai-hub-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+        .ai-hub-chip { border: 1px solid var(--accent-light); background: var(--white); color: var(--accent-deep); font-family: var(--font); font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 100px; cursor: pointer; text-align: left; }
+        .ai-hub-chip:hover { border-color: var(--accent); }
         .ai-hub-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 14px 16px 14px 0; }
         .ai-hub-body h3 { font-size: 16px; font-weight: 800; color: var(--text); }
         .ai-hub-body p { margin: 6px 0 12px; font-size: 12.5px; line-height: 1.55; color: var(--text-sec); }
@@ -326,7 +332,17 @@
         /* 769-1000px bandında üçlü tek satıra sığmaz; intro tam satıra alınır,
            iki kart altta yan yana kalır (tek kartın kocaman sarması önlenir). */
         @media (max-width: 1000px) { .ai-hub-intro { flex-basis: 100%; } }
-        @media (max-width: 768px) { .ai-hub-wrap { display: none; } }
+        @media (max-width: 768px) {
+            .ai-hub-wrap { margin: 18px 0 6px; }
+            .ai-hub { padding: 18px 16px 16px; gap: 12px; border-radius: 20px; }
+            .ai-hub-intro h2 { font-size: 19px; }
+            .ai-hub-intro p { font-size: 12.5px; }
+            .ai-hub-card { flex: 1 1 100%; min-width: 0; }
+            .ai-hub-figure { flex: 0 0 30%; max-width: 120px; }
+            .ai-hub-figure img { min-height: 140px; }
+            .ai-hub-body { padding: 12px 12px 12px 0; }
+            .ai-hub-body p { display: none; }
+        }
 
         /* ===== Keşif Rehberi penceresi: sayfa değiştirmeyen yatay <dialog> ===== */
         /* margin:auto ŞART: global reset (*{margin:0}) dialog'un doğal ortalamasını
@@ -392,6 +408,11 @@
                 <div class="ai-hub-body">
                     <h3>Keşif Rehberi AI</h3>
                     <p>Destinasyonuna, sürene ve ilgi alanlarına göre sana özel gün gün plan ve öneriler sunar.</p>
+                    <div class="ai-hub-chips" aria-label="Örnek istekler">
+                        <button type="button" class="ai-hub-chip" data-kesif-yer="Paris" data-kesif-gun="4">Paris'te 4 günlük romantik plan</button>
+                        <button type="button" class="ai-hub-chip" data-kesif-yer="Kapadokya" data-kesif-gun="2">Kapadokya'da 2 gün</button>
+                        <button type="button" class="ai-hub-chip" data-kesif-yer="Roma" data-kesif-gun="3">Roma'da 3 günlük yeme içme rotası</button>
+                    </div>
                     {{-- Yeni sayfaya GÖTÜRMEZ: ortadaki yatay pencerede form + üretim
                          takibi (kullanıcı kararı). /kesif-rehberi sayfası nav/footer'dan
                          hâlâ erişilebilir. --}}
@@ -407,6 +428,10 @@
                 <div class="ai-hub-body">
                     <h3>Tur Danışmanı AI</h3>
                     <p>Turlar hakkında sor, karşılaştır, en uygun seçeneği birlikte bulalım.</p>
+                    <div class="ai-hub-chips" aria-label="Örnek sorular">
+                        <button type="button" class="ai-hub-chip" data-sohbet="Kapadokya turlarının farklarını göster">Kapadokya turlarının farklarını göster</button>
+                        <button type="button" class="ai-hub-chip" data-sohbet="İstanbul'dan kalkan vizesiz turlar hangileri?">İstanbul'dan kalkan vizesiz turlar</button>
+                    </div>
                     {{-- Karttan açılınca sohbet köşedeki dikey balon yerine ORTADA
                          yatay pencere olarak açılır (cv2-orta sınıfı, kullanıcı
                          kararı); balondan açılınca klasik görünüm korunur. Panel
@@ -417,6 +442,30 @@
             @endif
         </div>
     </div>
+    <script>
+    // Örnek istem çipleri: ilgili pencereyi açar ve formu DOLDURUR; gönderme kullanıcıda
+    // (her gönderim yapay zekâ maliyeti). Pencere açma düğmeleri mevcut akışı kullanır.
+    document.addEventListener('click', function (e) {
+        var chip = e.target.closest('.ai-hub-chip');
+        if (!chip) return;
+        if (chip.dataset.kesifYer) {
+            var ac = document.getElementById('dgm-ac');
+            if (ac) ac.click();
+            var yer = document.getElementById('dgm-destinasyon'), gun = document.getElementById('dgm-gun');
+            if (yer) { yer.value = chip.dataset.kesifYer; yer.focus(); }
+            if (gun && chip.dataset.kesifGun) gun.value = chip.dataset.kesifGun;
+        } else if (chip.dataset.sohbet) {
+            var sohbetAc = document.getElementById('cv2-karttan-ac');
+            if (sohbetAc) sohbetAc.click();
+            var input = document.getElementById('cv2-input');
+            if (input) {
+                input.value = chip.dataset.sohbet;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.focus();
+            }
+        }
+    });
+    </script>
 
     @if($aiKesifAcik)
     {{-- Keşif Rehberi penceresi: form + üretim takibi burada, sayfa değişmez.
@@ -1378,9 +1427,10 @@
             #homeMain > #storiesSection { order:2; }
             #homeMain > .filter-bar-wrapper { order:3; }
             #homeMain > #tours-section { order:4; }
-            #homeMain > .m-cats { order:5; }
-            #homeMain > .m-promo { order:6; }
-            #homeMain > .m-stats { order:7; }
+            @if($aiKesifAcik || $aiDanismanAcik) #homeMain > .ai-hub-wrap { order:5; } @endif {{-- bölüm yokken sınıf adı sayfada geçmesin --}}
+            #homeMain > .m-cats { order:6; }
+            #homeMain > .m-promo { order:7; }
+            #homeMain > .m-stats { order:8; }
             .hero-carousel { display:none; }
             .hero-trust, .mega-wrap { display:none; }
             #destinationsSection { display:none !important; }
