@@ -109,7 +109,8 @@ class TourCardMetaTest extends TestCase
 
         $this->get(route('tours.index'))
             ->assertOk()
-            ->assertSee('Gidiş Dönüş Otobüs')
+            // Kart satırı kısa adı basar ("Otobüs"); tam etiket (Gidiş Dönüş Otobüs) accessor'da kalır
+            ->assertSee('Otobüs')
             ->assertSee('İstanbul çıkışlı');
     }
 
