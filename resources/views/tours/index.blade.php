@@ -371,8 +371,16 @@
             <div style="grid-column:1/-1;text-align:center;padding:80px 20px;background:var(--white);border-radius:16px;border:1px dashed #cbd5e1;">
                 <div style="font-size:64px;margin-bottom:16px;opacity:0.5;">🧳</div>
                 <h3 style="font-weight:800;font-size:20px;color:#0f172a;margin-bottom:8px;">Tur bulunamadı</h3>
-                <p style="color:#64748b;font-size:15px;max-width:300px;margin:0 auto 20px;">Seçtiğiniz filtrelere uygun bir tur bulamadık. Lütfen farklı kriterler deneyin.</p>
-                <a href="{{ route('tours.index') }}" class="btn btn-outline">Filtreleri Temizle</a>
+                <p style="color:#64748b;font-size:15px;max-width:340px;margin:0 auto 16px;">Seçtiğiniz filtrelere uygun bir tur bulamadık. Bir seçimi gevşetince çıkacak tur sayısı:</p>
+                {{-- Akıllı gevşetme: her çip bir filtre grubunu kaldırır, sayı o hâldeki sonuç --}}
+                @if(!empty($relaxations))
+                    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 auto 20px;max-width:520px;">
+                        @foreach($relaxations as $r)
+                            <a href="{{ $r['url'] }}" class="m-chip" style="text-decoration:none;">{{ $r['label'] }}: <b style="margin-left:2px;">{{ $r['count'] }} tur</b></a>
+                        @endforeach
+                    </div>
+                @endif
+                <a href="{{ route('tours.index') }}" class="btn btn-outline">Tüm filtreleri temizle</a>
             </div>
             @endforelse
         </div>

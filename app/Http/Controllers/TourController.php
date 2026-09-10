@@ -11,6 +11,7 @@ use App\Models\Tour;
 use App\Models\TourView;
 use App\Support\DestinationFilter;
 use App\Support\PriceDrops;
+use App\Support\TourListFilter;
 use App\Support\LandingSlug;
 use App\Support\TourComparison;
 use App\Support\TurkishCities;
@@ -42,81 +43,9 @@ class TourController extends Controller
             ->active()
             ->whereHas('agency', fn ($q) => $q->active());
 
-        // Filters
-        if ($request->filled('q')) {
-            $search = $request->q;
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('destination', 'like', "%{$search}%");
-            });
-        }
-
-        // Kelime sınırlı eşleşme: "Fethiye" seçimi "Ölüdeniz, Fethiye" turunu da
-        // bulur, ama "Kas" seçimi "Kastamonu"yu getirmez (bkz. DestinationFilter).
-        if ($request->filled('destination')) {
-            DestinationFilter::apply($query, $request->destination);
-        }
-
-        // Kalkış şehrim: kalkış şehri VEYA duraklarından biri eşleşen turlar.
-        // Şehir bilgisi girilmemiş turlar bu filtrede gizlenir (scopeDepartsFrom).
-        if ($request->filled('departure_city')) {
-            $query->departsFrom($request->departure_city);
-        }
-
-        // Filtre değerleri TL — kur-normalize price_try ile karşılaştırılır
-        if ($request->filled('min_price')) {
-            $query->where('price_try', '>=', $request->min_price);
-        }
-        if ($request->filled('max_price')) {
-            $query->where('price_try', '<=', $request->max_price);
-        }
-
-        if ($request->filled('agency_id')) {
-            $query->where('agency_id', $request->agency_id);
-        }
-
-        if ($request->filled('category')) {
-            $cat = Category::where('slug', $request->category)->first();
-            if ($cat) {
-                $catIds = collect([$cat->id])->merge($cat->children()->pluck('id'));
-                $query->whereIn('category_id', $catIds);
-            }
-        }
-
-        // Yurt içi / yurt dışı: mobil kategori kısayolları bu parametreyi kullanır
-        if (in_array($request->yurt, ['ic', 'dis'], true)) {
-            $query->where('is_international', $request->yurt === 'dis');
-        }
-
-        // Vize: kaynak tours.requires_visa (ana sayfa filtre barıyla AYNI kolon).
-        // DestinationProfile şehir listesi KULLANILMAZ — ölçümde Paris ve
-        // Yunanistan "vizesiz" çıkıyordu, gerekçe HomeController'da yazılı.
-        // İşaretlenmemiş tur hiçbir yöne girmez.
-        if (in_array($request->visa, ['vizesiz', 'vizeli'], true)) {
-            $query->where('requires_visa', $request->visa === 'vizeli');
-        }
-
-        if ($request->filled('min_days')) {
-            $query->where('duration_days', '>=', $request->min_days);
-        }
-        if ($request->filled('max_days')) {
-            $query->where('duration_days', '<=', $request->max_days);
-        }
-
-        if ($request->filled('date_start')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('departure_date', '>=', $request->date_start)
-                    ->orWhereHas('dates', fn ($dq) => $dq->where('departure_date', '>=', $request->date_start));
-            });
-        }
-
-        if ($request->filled('date_end')) {
-            $query->where(function ($q) use ($request) {
-                // If a tour overlaps or starts before this date
-                $q->where('departure_date', '<=', $request->date_end)
-                    ->orWhereHas('dates', fn ($dq) => $dq->where('departure_date', '<=', $request->date_end));
-            });
-        }
+        // Filtre dili tek yerde: gevşetme sayımı ve kayıtlı arama aynı sınıfı kullanır
+        $filtreParams = $request->query();
+        TourListFilter::apply($query, $filtreParams);
 
         // Sort
         $sort = $request->input('sort', 'price_asc');
@@ -139,6 +68,25 @@ class TourController extends Controller
         // Kart rozeti: son 30 gündeki fiyat düşüşü (ana sayfayla ortak hesap)
         $tourDrops = PriceDrops::last30Days($tours->pluck('id'));
 
+        // Boş sonuçta akıllı gevşetme: her aktif filtre grubu için "kaldırınca kaç
+        // tur çıkar" sayılır, sıfır olanlar gizlenir. Yalnız boş sayfada çalışır
+        // (grup başına bir COUNT).
+        $relaxations = [];
+        if ($tours->total() === 0) {
+            $base = Tour::active()->whereHas('agency', fn ($q) => $q->active());
+            foreach (TourListFilter::activeGroups($filtreParams) as $grup) {
+                $adet = TourListFilter::apply(clone $base, $filtreParams, [$grup])->count();
+                if ($adet > 0) {
+                    $relaxations[] = [
+                        'label' => TourListFilter::LABELS[$grup],
+                        'count' => $adet,
+                        'url' => $request->fullUrlWithoutQuery(array_merge(TourListFilter::GROUPS[$grup], ['page'])),
+                    ];
+                }
+            }
+            usort($relaxations, fn ($a, $b) => $b['count'] <=> $a['count']);
+        }
+
         // DISTINCT ham dizge DEĞİL: "Kapadokya, Nevşehir" listeden kalkar, yerine
         // "Kapadokya" ve "Nevşehir" ayrı ayrı ve seçilebilir olarak gelir.
         $destinations = DestinationFilter::vocabulary(
@@ -155,7 +103,7 @@ class TourController extends Controller
         $activeDestination = $request->filled('destination') ? (string) $request->destination : null;
 
         return view('tours.index', compact(
-            'tours', 'tourDrops', 'destinations', 'agencies', 'categories', 'departureCities',
+            'tours', 'tourDrops', 'relaxations', 'destinations', 'agencies', 'categories', 'departureCities',
             'activeCategory', 'activeDestination'
         ));
     }
