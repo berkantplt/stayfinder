@@ -18,7 +18,8 @@ class NotificationController extends Controller
         $notifications = $user->notifications()->paginate(20);
 
         $announcementSeenAt = $user->announcements_seen_at ?? $user->created_at;
-        $announcements = Announcement::with('tour')
+        $announcements = Announcement::forUser($user) // A6: role göre
+            ->with('tour')
             ->latest()
             ->take(15)
             ->get();

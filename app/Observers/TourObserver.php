@@ -122,6 +122,7 @@ class TourObserver
 
         Announcement::create([
             'type' => Announcement::TYPE_NEW_TOUR,
+            'audience' => Announcement::AUDIENCE_VISITOR, // A6: yalnız müşteriye
             'tour_id' => $tour->id,
             'title' => 'Yeni Tur Eklendi!',
             'message' => "Yeni bir macera seni bekliyor: {$tour->title}. Hemen incele!",
