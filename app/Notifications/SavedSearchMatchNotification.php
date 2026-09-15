@@ -28,7 +28,7 @@ class SavedSearchMatchNotification extends Notification
 
         return [
             'saved_search_id' => $this->savedSearch->id,
-            'title' => 'Aramana uyan yeni tur',
+            'title' => 'Aramanıza uyan yeni tur', // D10: bildirimlerde "siz" hitabı
             'message' => $message,
             'url' => $this->savedSearch->url(),
             'icon' => '🔎',

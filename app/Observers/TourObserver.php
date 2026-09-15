@@ -124,8 +124,10 @@ class TourObserver
             'type' => Announcement::TYPE_NEW_TOUR,
             'audience' => Announcement::AUDIENCE_VISITOR, // A6: yalnız müşteriye
             'tour_id' => $tour->id,
+            // D10: bildirim/duyuru metinlerinde tek hitap "siz" (diğer bildirimler,
+            // paneller ve e-postalarla aynı) — liste içinde "sen/siz" karışmasın.
             'title' => 'Yeni Tur Eklendi!',
-            'message' => "Yeni bir macera seni bekliyor: {$tour->title}. Hemen incele!",
+            'message' => "Yeni bir macera sizi bekliyor: {$tour->title}. Hemen inceleyin!",
             'icon' => '✨',
         ]);
     }

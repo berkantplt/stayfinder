@@ -74,7 +74,7 @@
             @empty
             <div style="padding:60px; text-align:center; color:var(--text-muted);">
                 <div style="font-size:48px; margin-bottom:16px;">📭</div>
-                <p>Henüz hiç bildiriminiz bulunmuyor.</p>
+                <p>Henüz bildiriminiz yok.</p>
             </div>
             @endforelse
         </div>
