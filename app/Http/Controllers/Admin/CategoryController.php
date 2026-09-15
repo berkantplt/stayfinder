@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgencyCategoryOrderItem;
 use App\Models\Category;
 use App\Support\CategoryLicensing;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -190,14 +193,71 @@ class CategoryController extends Controller
         return redirect()->route($isChild ? 'admin.categories.index' : 'admin.categories.parents')->with('success', 'Kategori güncellendi.');
     }
 
+    /**
+     * B5 — Kategori silme korumaları.
+     *
+     * Eskiden yalnız alt kategori ve (arşivdekiler hariç) tur sayısına bakılıyordu;
+     * agency_category_subscriptions.category_id cascadeOnDelete olduğundan silme,
+     * acentanın parasıyla aldığı aboneliği (başlangıç/bitiş/fiyat = denetim izi)
+     * sessizce yok ediyordu. Panelde "0 tur" görünen ama aboneliği olan kategori
+     * tam bu tuzaktı. Erişimi kapatmanın yolu silmek değil pasife almak (toggle).
+     *
+     * - Arşivdeki (soft-deleted) turlar da sayılır: geri alınınca kategorisiz kalmasın.
+     * - Abonelik satırı (her durumda) ya da sipariş kalemi olan kategori silinmez:
+     *   pending sipariş ödendiğinde kategori yoksa lisans açılamazdı.
+     * - Sayım ve silme tek transaction'da, kategori satırı kilitli: aynı anda gelen
+     *   iyzico callback'i ile yarış kapanır. DB tarafında FK artık restrictOnDelete
+     *   (migration 2026_09_15_110000) — kod atlansa bile cascade kaybı olmaz.
+     */
     public function destroy(Category $category)
     {
-        if ($category->children()->count() > 0 || $category->tours()->count() > 0) {
+        $turSayisi = $category->tours()->withTrashed()->count();
+        if ($category->children()->count() > 0 || $turSayisi > 0) {
+            $arsiv = $category->tours()->onlyTrashed()->count();
+
             return redirect()->route('admin.categories.index')
-                ->withErrors('Bu kategoriye bağlı alt kategoriler veya turlar olduğu için silinemez.');
+                ->withErrors('Bu kategoriye bağlı alt kategoriler veya turlar olduğu için silinemez.'
+                    .($arsiv > 0 ? " ({$arsiv} tur arşivde — 30 gün içinde geri alınabilir.)" : ''));
         }
 
-        $category->delete();
+        if (! CategoryLicensing::schemaReady()) {
+            $category->delete();
+
+            return redirect()->route('admin.categories.index')->with('success', 'Kategori silindi.');
+        }
+
+        try {
+            $engel = DB::transaction(function () use ($category) {
+                $kilitli = Category::whereKey($category->id)->lockForUpdate()->firstOrFail();
+
+                $abonelik = $kilitli->agencyCategorySubscriptions()->count();
+                $kalem = AgencyCategoryOrderItem::where('category_id', $kilitli->id)->count();
+
+                if ($abonelik > 0 || $kalem > 0) {
+                    $aktif = $kilitli->activeAgencyCategorySubscriptions()->count();
+
+                    return sprintf(
+                        '%s silinemez: %d abonelik kaydı (%d aktif) ve %d sipariş kalemi var. Acenta erişimini kapatmak için kategoriyi pasife alın; abonelik ve sipariş geçmişi denetim izi olarak kalmalı.',
+                        $kilitli->name,
+                        $abonelik,
+                        $aktif,
+                        $kalem
+                    );
+                }
+
+                $kilitli->delete();
+
+                return null;
+            });
+        } catch (QueryException $e) {
+            // restrictOnDelete FK yarış hâlinde devreye girdi (aynı anda abonelik yazıldı)
+            return redirect()->route('admin.categories.index')
+                ->withErrors($category->name.' silinemedi: aynı anda bu kategoriye bir abonelik/sipariş yazıldı. Sayfayı yenileyip tekrar deneyin.');
+        }
+
+        if ($engel !== null) {
+            return redirect()->route('admin.categories.index')->withErrors($engel);
+        }
 
         return redirect()->route('admin.categories.index')->with('success', 'Kategori silindi.');
     }
