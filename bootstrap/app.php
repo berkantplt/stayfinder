@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAgencyApproved;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use App\Providers\PartnerServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
@@ -34,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: $trustedProxies === null
             ? '*'
             : array_values(array_filter(array_map('trim', explode(',', (string) $trustedProxies)))));
+
+        // A5 — Güvenlik başlıkları (X-Frame-Options, nosniff, Referrer-Policy,
+        // HSTS yalnız canlı+HTTPS, CSP report-only). Bkz. SecurityHeaders.
+        $middleware->append(SecurityHeaders::class);
 
         // iyzico kendi session'umuzu bilmiyor; callback POST'unu CSRF'den muaf tut.
         $middleware->validateCsrfTokens(except: [
