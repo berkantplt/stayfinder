@@ -7,6 +7,7 @@ use App\Models\TourView;
 use App\Support\TurkishCities;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -77,6 +78,12 @@ class ProfileController extends Controller
 
         auth()->user()->update(['password' => Hash::make($request->password)]);
 
-        return redirect()->route('profile.show')->with('success', 'Şifreniz güncellendi!');
+        // D6: ele geçirilmiş hesapta şifre değişse bile saldırganın oturumu açık
+        // kalıyordu. Diğer cihazlar kapatılır (AuthenticateSession middleware'i
+        // şifre hash'i değişen oturumları düşürür), bu oturumun kimliği yenilenir.
+        Auth::logoutOtherDevices($request->password);
+        $request->session()->regenerate();
+
+        return redirect()->route('profile.show')->with('success', 'Şifreniz güncellendi; diğer cihazlardaki oturumlarınız kapatıldı.');
     }
 }

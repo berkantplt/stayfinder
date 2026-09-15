@@ -36,6 +36,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ? '*'
             : array_values(array_filter(array_map('trim', explode(',', (string) $trustedProxies)))));
 
+        // D6 — Şifre değişince diğer cihazlardaki oturumlar düşsün: bu middleware
+        // oturumda saklanan şifre hash'ini her istekte kullanıcınınkiyle karşılaştırır;
+        // Auth::logoutOtherDevices() ve şifre sıfırlama bu sayede etkili olur.
+        $middleware->web(append: [\Illuminate\Session\Middleware\AuthenticateSession::class]);
+
         // A5 — Güvenlik başlıkları (X-Frame-Options, nosniff, Referrer-Policy,
         // HSTS yalnız canlı+HTTPS, CSP report-only). Bkz. SecurityHeaders.
         $middleware->append(SecurityHeaders::class);
