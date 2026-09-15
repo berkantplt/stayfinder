@@ -35,7 +35,8 @@ class AccountNavTest extends TestCase
 
         $this->actingAs($user)->get(route('customer.coupons.index'))->assertOk()
             ->assertSee('<a href="'.route('customer.coupons.index').'" class="active"', false)
-            ->assertDontSee('<a href="'.route('profile.show').'" class="active"', false);
+            // hesap-nav içindeki Profil sekmesi pasif (mobil alt çubuktaki "Hesabım" ayrı, D11)
+            ->assertSee('<a href="'.route('profile.show').'" class="">', false);
 
         $this->actingAs($user)->get('/hesabim')->assertRedirect(route('profile.show'));
     }
