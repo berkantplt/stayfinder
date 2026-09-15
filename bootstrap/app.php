@@ -24,8 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'agency.approved' => EnsureAgencyApproved::class,
         ]);
 
-        // Trust all proxies (required for Cloudflare tunnel / ngrok)
-        $middleware->trustProxies(at: '*');
+        // A13 — Güvenilen proxy listesi .env'den (TRUSTED_PROXIES). Tümüne güvenmek
+        // ('*') istemcinin X-Forwarded-For başlığını doğrudan $request->ip() yapar;
+        // aşağıdaki login/register/ai_search limitlerinin hepsi IP ile anahtarlandığı
+        // için başlık değiştirilerek atlanabilirdi. Anahtar TANIMSIZSA eski davranış
+        // ('*') korunur — yerel Cloudflare tunnel/ngrok ve mevcut canlı bozulmaz;
+        // canlıda gerçek proxy IP'leri (Cloudflare vb.) ya da proxy yoksa boş yazılır.
+        $trustedProxies = env('TRUSTED_PROXIES');
+        $middleware->trustProxies(at: $trustedProxies === null
+            ? '*'
+            : array_values(array_filter(array_map('trim', explode(',', (string) $trustedProxies)))));
 
         // iyzico kendi session'umuzu bilmiyor; callback POST'unu CSRF'den muaf tut.
         $middleware->validateCsrfTokens(except: [
