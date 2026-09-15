@@ -77,6 +77,11 @@ class AgencyApprovalWorkflowTest extends TestCase
         $this->assertNotNull($agency->approved_at);
         $this->assertSame('Basvuru uygun bulundu.', $agency->approval_notes);
 
+        // D6: AuthenticateSession oturumdaki şifre izini kullanıcıyla karşılaştırır;
+        // aynı test oturumunda farklı şifreli kullanıcıya geçerken oturum temizlenir
+        // (gerçekte çıkış oturumu zaten geçersiz kılar).
+        $this->flushSession();
+
         $this->actingAs($agencyUser)
             ->get(route('agency.category-licenses.index'))
             ->assertOk();
