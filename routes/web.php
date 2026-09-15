@@ -426,6 +426,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // Reports
     Route::get('/raporlar', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/raporlar/disa-aktar', [ReportController::class, 'export'])->name('reports.export'); // B13: CSV
 
     // Destination Profiles (AI-fed + manuel düzenlenebilir)
     Route::get('/destinasyon-profilleri', [DestinationProfileController::class, 'index'])->name('destination-profiles.index');
