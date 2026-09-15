@@ -728,9 +728,10 @@
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <div style="color:#f59e0b;font-size:14px;">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</div>
                                 @if(auth()->check() && auth()->id() === $review->user_id)
-                                    <form method="POST" action="{{ route('reviews.destroy', $review) }}" style="display:inline;">
+                                    {{-- D8: yanlışlıkla dokunma yorumu anında siliyordu; onay + geri alınamayacağı bilgisi --}}
+                                    <form method="POST" action="{{ route('reviews.destroy', $review) }}" style="display:inline;" onsubmit="return confirm('Yorumunuz silinsin mi? Bu işlem geri alınamaz.')">
                                         @csrf @method('DELETE')
-                                        <button type="submit" style="font-size:12px;color:#dc2626;background:none;border:none;cursor:pointer;font-family:var(--font);">Sil</button>
+                                        <button type="submit" style="font-size:12px;color:#dc2626;background:none;border:none;cursor:pointer;font-family:var(--font);" title="Yorumu sil">Sil</button>
                                     </form>
                                 @endif
                             </div>
