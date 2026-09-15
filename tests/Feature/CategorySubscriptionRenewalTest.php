@@ -299,7 +299,7 @@ class CategorySubscriptionRenewalTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
-            ->post(route('admin.agencies.categories.revoke', [$agency, $subscription]))
+            ->post(route('admin.agencies.categories.revoke', [$agency, $subscription]), ['reason' => 'Test: ödeme anlaşmazlığı']) // B12: gerekçe zorunlu
             ->assertRedirect();
 
         $subscription->refresh();

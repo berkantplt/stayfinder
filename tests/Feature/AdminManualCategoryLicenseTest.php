@@ -147,7 +147,7 @@ class AdminManualCategoryLicenseTest extends TestCase
         $this->assertTrue($tour->fresh()->isPubliclyVisible());
 
         $this->actingAs($this->admin)
-            ->post(route('admin.agencies.categories.revoke', [$this->agency, $subscription]))
+            ->post(route('admin.agencies.categories.revoke', [$this->agency, $subscription]), ['reason' => 'Test: ödeme anlaşmazlığı']) // B12: gerekçe zorunlu
             ->assertRedirect();
 
         $subscription->refresh();
@@ -155,6 +155,26 @@ class AdminManualCategoryLicenseTest extends TestCase
 
         $this->assertFalse($tour->fresh()->isPubliclyVisible());
         $this->assertFalse(Tour::active()->whereKey($tour->id)->exists());
+    }
+
+    /** B12 — İptal gerekçesi zorunlu: gerekçesiz istek reddedilir, abonelik aktif kalır. */
+    public function test_admin_revoke_requires_reason(): void
+    {
+        $subscription = AgencyCategorySubscription::create([
+            'agency_id' => $this->agency->id,
+            'category_id' => $this->category->id,
+            'monthly_price' => 2000,
+            'status' => AgencyCategorySubscription::STATUS_ACTIVE,
+            'started_at' => today(),
+            'expires_at' => today()->addMonth(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.agencies.show', $this->agency))
+            ->post(route('admin.agencies.categories.revoke', [$this->agency, $subscription]))
+            ->assertSessionHasErrors('reason');
+
+        $this->assertSame(AgencyCategorySubscription::STATUS_ACTIVE, $subscription->fresh()->status);
     }
 
     public function test_revoked_category_can_be_granted_again(): void
@@ -218,7 +238,7 @@ class AdminManualCategoryLicenseTest extends TestCase
             ->assertForbidden();
 
         $this->actingAs($customer)
-            ->post(route('admin.agencies.categories.revoke', [$this->agency, $subscription]))
+            ->post(route('admin.agencies.categories.revoke', [$this->agency, $subscription]), ['reason' => 'Test: ödeme anlaşmazlığı']) // B12: gerekçe zorunlu
             ->assertForbidden();
     }
 
@@ -242,7 +262,7 @@ class AdminManualCategoryLicenseTest extends TestCase
 
         // Yanlış acenta üzerinden başka acentanın aboneliği iptal edilemez
         $this->actingAs($this->admin)
-            ->post(route('admin.agencies.categories.revoke', [$this->agency, $subscription]))
+            ->post(route('admin.agencies.categories.revoke', [$this->agency, $subscription]), ['reason' => 'Test: ödeme anlaşmazlığı']) // B12: gerekçe zorunlu
             ->assertNotFound();
 
         $this->assertSame(
