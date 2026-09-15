@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Review extends Model
 {
+    use SoftDeletes; // A10: silme = arşiv, geri alınabilir
+
     protected $fillable = ['user_id', 'tour_id', 'rating', 'comment'];
     protected $casts    = ['rating' => 'integer'];
 

@@ -208,3 +208,6 @@ Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
     // 24 saat yerine en fazla 5 dk sürede düşer, kuyruk saatlerce donmaz.
     ->withoutOverlapping(5)
     ->name('queue-worker');
+
+// A10 — Arşivdeki (soft-deleted) turlar 30 gün sonra kalıcı silinir (Tour::prunable).
+Schedule::command('model:prune', ['--model' => [\App\Models\Tour::class]])->dailyAt('04:10');

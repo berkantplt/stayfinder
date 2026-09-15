@@ -73,6 +73,31 @@
         </div>
 
         <div style="margin-top:16px;">{{ $tours->links() }}</div>
+
+        {{-- A10: Arşiv — silinen turlar 30 gün geri alınabilir --}}
+        @if($archivedTours->isNotEmpty())
+        <details class="p-kart" style="padding:16px 24px;max-width:94%;margin:24px auto 0;">
+            <summary style="cursor:pointer;font-weight:700;color:var(--p-metin-2);">🗄️ Arşiv — {{ $archivedTours->count() }} silinmiş tur (30 gün içinde geri alınabilir)</summary>
+            <div class="table-wrap" style="margin-top:12px;"><table class="table" style="width:100%;text-align:left;">
+                <thead><tr><th style="padding-left:0;">Tur</th><th>Silinme</th><th>Kalıcı silinme</th><th></th></tr></thead>
+                <tbody>
+                @foreach($archivedTours as $arsiv)
+                    <tr>
+                        <td style="padding-left:0;font-weight:600;color:var(--p-metin);">{{ $arsiv->title }}</td>
+                        <td style="white-space:nowrap;">{{ $arsiv->deleted_at->format('d.m.Y H:i') }}</td>
+                        <td style="white-space:nowrap;color:var(--p-metin-3);">{{ $arsiv->deleted_at->copy()->addDays(30)->format('d.m.Y') }}</td>
+                        <td style="text-align:right;">
+                            <form method="POST" action="{{ route('agency.tours.restore', $arsiv) }}" style="display:inline;">
+                                @csrf
+                                <button type="submit" class="p-btn p-btn-ikincil p-btn-kucuk">↩ Geri al</button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table></div>
+        </details>
+        @endif
         </div>
     </div>
 </div>

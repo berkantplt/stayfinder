@@ -166,6 +166,14 @@ class TourObserver
         }
     }
 
+    /** A10 — Arşivden geri alınan tur: silmede temizlenen RAG kaydı ve önbellekler yeniden kurulur. */
+    public function restored(Tour $tour): void
+    {
+        Log::info("[TourObserver] Tur arşivden geri alındı: #{$tour->id} ({$tour->title})");
+        $this->flushDestinationInventoryCaches();
+        $this->syncKnowledgeChunkFor($tour);
+    }
+
     /**
      * Tur silindiğinde embedding cache'ini ve RAG bilgi bankası kaydını temizle —
      * yoksa asistan artık var olmayan turu bilgi bankasından önermeye devam ediyor.

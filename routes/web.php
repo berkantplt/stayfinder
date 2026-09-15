@@ -336,6 +336,8 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         Route::get('/turlar/{tour}/duzenle', [AgencyTourController::class, 'edit'])->name('tours.edit');
         Route::put('/turlar/{tour}', [AgencyTourController::class, 'update'])->name('tours.update');
         Route::delete('/turlar/{tour}', [AgencyTourController::class, 'destroy'])->name('tours.destroy');
+        // A10: arşivden geri alma — silinmiş kayıt bağlanabilsin diye withTrashed
+        Route::post('/turlar/{tour}/geri-al', [AgencyTourController::class, 'restore'])->withTrashed()->name('tours.restore');
 
         // Tour dates
         Route::post('/turlar/{tour}/tarihler', [TourDateController::class, 'store'])->name('tours.dates.store');

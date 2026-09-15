@@ -53,7 +53,10 @@ class TourController extends Controller
 
         $canCreateTours = $agency->legacy_category_access || count($agency->accessibleCategoryIds()) > 0;
 
-        return view('agency.tours.index', compact('tours', 'canCreateTours'));
+        // A10: arşiv (soft-deleted) — geri alınabilir, 30 gün sonra kalıcı silinir
+        $archivedTours = $agency->tours()->onlyTrashed()->orderByDesc('deleted_at')->get();
+
+        return view('agency.tours.index', compact('tours', 'canCreateTours', 'archivedTours'));
     }
 
     public function create()
@@ -545,10 +548,23 @@ class TourController extends Controller
     public function destroy(Tour $tour)
     {
         $this->authorize($tour);
-        $tour->delete();
+        $tour->delete(); // A10: soft delete — arşive gider, 30 gün geri alınabilir
 
         return redirect()->route('agency.tours.index')
-            ->with('success', 'Tur silindi.');
+            ->with('success', 'Tur arşive taşındı. 30 gün içinde "Arşiv" bölümünden geri alabilirsiniz.');
+    }
+
+    /** A10 — Arşivdeki turu geri alır (rota withTrashed ile bağlar). */
+    public function restore(Tour $tour)
+    {
+        $this->authorize($tour);
+
+        if ($tour->trashed()) {
+            $tour->restore();
+        }
+
+        return redirect()->route('agency.tours.index')
+            ->with('success', 'Tur geri alındı.');
     }
 
     private function authorize(Tour $tour): void

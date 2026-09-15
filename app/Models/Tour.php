@@ -8,6 +8,8 @@ use App\Support\DestinationFilter;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 use Illuminate\Support\Str;
@@ -15,6 +17,8 @@ use Illuminate\Support\Str;
 #[ObservedBy(TourObserver::class)]
 class Tour extends Model
 {
+    use Prunable, SoftDeletes; // A10: silme = arşiv; 30 gün sonra model:prune kalıcı siler
+
     use HasFactory;
 
     public const SUPPORTED_CURRENCIES = [
@@ -359,6 +363,15 @@ class Tour extends Model
         }
 
         return $slug;
+    }
+
+    /**
+     * A10 — Arşivde 30 günden uzun kalan turlar kalıcı silinir (model:prune, gecelik).
+     * forceDelete cascade FK'leri tetikler: tarihler, tıklamalar, yorumlar, favoriler gider.
+     */
+    public function prunable()
+    {
+        return static::onlyTrashed()->where('deleted_at', '<', now()->subDays(30));
     }
 
     protected static function booted(): void
