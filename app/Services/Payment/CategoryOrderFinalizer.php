@@ -40,6 +40,7 @@ class CategoryOrderFinalizer
                 'provider_payment_id' => $paymentId,
                 'failure_reason' => null,
             ]);
+            cache()->forget(CategoryLicensing::ADMIN_TREND_CACHE_KEY); // B8: admin trend grafiği tazelensin
 
             $items = $order->items()->with('category')->get();
             $slotSchemaReady = CategoryLicensing::slotSchemaReady();

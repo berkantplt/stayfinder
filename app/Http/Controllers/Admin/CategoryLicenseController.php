@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Tour;
 use App\Support\CategoryLicensing;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CategoryLicenseController extends Controller
 {
@@ -20,12 +21,10 @@ class CategoryLicenseController extends Controller
             return $redirect;
         }
 
-        $data = $this->buildSharedData();
-
         return view('admin.category-licenses.index', [
-            'stats' => $data['stats'],
-            'topDemandCategories' => $data['topDemandCategories'],
-            'trendData' => $data['trendData'],
+            'stats' => $this->stats(),
+            'topDemandCategories' => $this->topDemandCategories($this->enrichedCategories()),
+            'trendData' => $this->trendData(),
         ]);
     }
 
@@ -35,12 +34,10 @@ class CategoryLicenseController extends Controller
             return $redirect;
         }
 
-        $data = $this->buildSharedData();
-
         return view('admin.category-licenses.pricing', [
             // Fiyat yalnızca alt kategorilerde belirlenir; üst kategoriler fiyatsız gruptur
-            'categories' => $data['categories']->whereNotNull('parent_id')->values(),
-            'stats' => $data['stats'],
+            'categories' => $this->enrichedCategories()->whereNotNull('parent_id')->values(),
+            'stats' => $this->stats(),
             'extraSlotReady' => CategoryLicensing::slotSchemaReady(),
         ]);
     }
@@ -51,12 +48,13 @@ class CategoryLicenseController extends Controller
             return $redirect;
         }
 
-        $data = $this->buildSharedData();
-
         return view('admin.category-licenses.access', [
-            'activeSubscriptions' => $data['activeSubscriptions'],
-            'legacyAgencies' => $data['legacyAgencies'],
-            'stats' => $data['stats'],
+            'activeSubscriptions' => AgencyCategorySubscription::active()
+                ->with(['agency', 'category.parent'])
+                ->orderBy('expires_at')
+                ->get(),
+            'legacyAgencies' => $this->legacyAgencies(),
+            'stats' => $this->stats(),
         ]);
     }
 
@@ -139,39 +137,52 @@ class CategoryLicenseController extends Controller
         return null;
     }
 
-    private function buildSharedData(): array
+    /**
+     * B8 — Eski buildSharedData() üç ekranda (genel bakış / tarife / erişim) koşulsuz
+     * tam çalışıyordu: tüm aktif abonelikler + tüm legacy acentalar + tüm kategoriler
+     * + 6 aylık siparişler belleğe; tarife sayfası bunun yalnız kategori listesini,
+     * erişim sayfası yalnız abonelik/legacy listesini kullanıyordu. Artık her ekran
+     * yalnız ihtiyacını çağırır: özet sayılar SQL aggregate, trend 1 saat önbellekte
+     * (ödeme kesinleşince CategoryOrderFinalizer anahtarı siler).
+     */
+    private function stats(): array
     {
-        $activeSubscriptions = AgencyCategorySubscription::active()
-            ->with(['agency', 'category.parent'])
-            ->orderBy('expires_at')
-            ->get();
+        $actualMonthlyRevenue = round((float) AgencyCategorySubscription::active()->sum('monthly_price'), 2);
+        $activeCount = AgencyCategorySubscription::active()->count();
 
-        $legacyCategoryUsageByAgency = Tour::query()
-            ->selectRaw('agency_id, COUNT(DISTINCT category_id) as used_categories_count')
-            ->where('is_active', true)
-            ->whereNotNull('category_id')
-            ->whereHas('agency', fn ($query) => $query->where('legacy_category_access', true))
-            ->groupBy('agency_id')
-            ->get()
-            ->keyBy('agency_id');
+        // Legacy talep: kategori başına kaç geçiş erişimli acenta aktif tur yayınlıyor;
+        // hipotetik aylık değer = acenta sayısı × kategori tarifesi (portföy değeri).
+        $legacyDemand = $this->legacyDemandByCategory();
+        $prices = $legacyDemand->isEmpty()
+            ? collect()
+            : Category::whereIn('id', $legacyDemand->keys())->pluck('monthly_price', 'id');
+        $legacyDemandValue = 0.0;
+        foreach ($legacyDemand as $categoryId => $row) {
+            $legacyDemandValue += (int) $row->agency_count * (float) ($prices[$categoryId] ?? 0);
+        }
+        $legacyDemandValue = round($legacyDemandValue, 2);
 
-        $legacyAgencies = Agency::where('legacy_category_access', true)
-            ->withCount([
-                'tours as active_tours_count' => fn ($query) => $query->where('is_active', true),
-            ])
-            ->orderBy('name')
-            ->get()
-            ->map(function (Agency $agency) use ($legacyCategoryUsageByAgency) {
-                $agency->used_categories_count = (int) data_get(
-                    $legacyCategoryUsageByAgency->get($agency->id),
-                    'used_categories_count',
-                    0
-                );
+        return [
+            'actual_monthly_revenue' => $actualMonthlyRevenue,
+            'portfolio_monthly_value' => round($actualMonthlyRevenue + $legacyDemandValue, 2),
+            'active_subscriptions' => $activeCount,
+            'combined_demand' => $activeCount + (int) $legacyDemand->sum('agency_count'),
+            'legacy_agencies' => Agency::where('legacy_category_access', true)->count(),
+            'legacy_active_tours' => Tour::where('is_active', true)
+                ->whereHas('agency', fn ($q) => $q->where('legacy_category_access', true))
+                ->count(),
+            // B7: yalnız ödenmiş — pending/failed/cancelled "sipariş" sayılmaz
+            'total_orders' => AgencyCategoryOrder::where('status', AgencyCategoryOrder::STATUS_PAID)->count(),
+            'category_count' => Category::count(),
+            // Eski hesapla aynı: fiyatsız (null) kategoriler 0 sayılarak ortalama
+            'average_monthly_price' => round((float) Category::query()->value(DB::raw('AVG(COALESCE(monthly_price, 0))')), 2),
+        ];
+    }
 
-                return $agency;
-            });
-
-        $legacyDemandByCategory = Tour::query()
+    /** category_id => {agency_count, active_tours_count} — geçiş erişimli acentaların aktif turları. */
+    private function legacyDemandByCategory()
+    {
+        return Tour::query()
             ->selectRaw('category_id, COUNT(DISTINCT agency_id) as agency_count, COUNT(*) as active_tours_count')
             ->where('is_active', true)
             ->whereNotNull('category_id')
@@ -179,6 +190,12 @@ class CategoryLicenseController extends Controller
             ->groupBy('category_id')
             ->get()
             ->keyBy('category_id');
+    }
+
+    /** Tarife + genel bakış talep sıralaması için zenginleştirilmiş kategori listesi (alan adları korunur). */
+    private function enrichedCategories()
+    {
+        $legacyDemandByCategory = $this->legacyDemandByCategory();
 
         $orderTotalsByCategory = AgencyCategoryOrderItem::query()
             ->selectRaw('category_id, COUNT(*) as order_items_count, COALESCE(SUM(unit_price), 0) as gross_total')
@@ -187,11 +204,13 @@ class CategoryLicenseController extends Controller
             ->get()
             ->keyBy('category_id');
 
-        $subscriptionRevenueByCategory = $activeSubscriptions
+        // Kategori başına aktif abonelik geliri SQL'de (eskiden tüm satırlar belleğe alınıp gruplanıyordu)
+        $subscriptionRevenueByCategory = AgencyCategorySubscription::active()
+            ->selectRaw('category_id, COALESCE(SUM(monthly_price), 0) as revenue')
             ->groupBy('category_id')
-            ->map(fn ($subscriptions) => round($subscriptions->sum(fn ($subscription) => (float) $subscription->monthly_price), 2));
+            ->pluck('revenue', 'category_id');
 
-        $categories = Category::with('parent')
+        return Category::with('parent')
             ->withCount([
                 'agencyCategorySubscriptions as active_subscriptions_count' => fn ($query) => $query->active(),
                 'tours as active_tours_count' => fn ($query) => $query->where('is_active', true),
@@ -202,7 +221,7 @@ class CategoryLicenseController extends Controller
             ->map(function (Category $category) use ($legacyDemandByCategory, $orderTotalsByCategory, $subscriptionRevenueByCategory) {
                 $legacyDemand = $legacyDemandByCategory->get($category->id);
                 $orderTotals = $orderTotalsByCategory->get($category->id);
-                $actualMonthlyRevenue = (float) ($subscriptionRevenueByCategory->get($category->id) ?? 0);
+                $actualMonthlyRevenue = round((float) ($subscriptionRevenueByCategory[$category->id] ?? 0), 2);
                 $legacyDemandCount = (int) data_get($legacyDemand, 'agency_count', 0);
 
                 $category->legacy_demand_count = $legacyDemandCount;
@@ -216,8 +235,11 @@ class CategoryLicenseController extends Controller
 
                 return $category;
             });
+    }
 
-        $topDemandCategories = $categories
+    private function topDemandCategories($categories)
+    {
+        return $categories
             ->sort(function (Category $left, Category $right) {
                 return ($right->combined_demand_count <=> $left->combined_demand_count)
                     ?: ($right->portfolio_monthly_value <=> $left->portfolio_monthly_value)
@@ -225,31 +247,37 @@ class CategoryLicenseController extends Controller
             })
             ->take(10)
             ->values();
+    }
 
-        $actualMonthlyRevenue = round($activeSubscriptions->sum(fn ($subscription) => (float) $subscription->monthly_price), 2);
-        $legacyDemandValue = round($categories->sum('legacy_monthly_value'), 2);
+    /** Geçiş erişimli acentalar + kullandıkları kategori sayısı (erişim ekranı). */
+    private function legacyAgencies()
+    {
+        $legacyCategoryUsageByAgency = Tour::query()
+            ->selectRaw('agency_id, COUNT(DISTINCT category_id) as used_categories_count')
+            ->where('is_active', true)
+            ->whereNotNull('category_id')
+            ->whereHas('agency', fn ($query) => $query->where('legacy_category_access', true))
+            ->groupBy('agency_id')
+            ->get()
+            ->keyBy('agency_id');
 
-        $stats = [
-            'actual_monthly_revenue' => $actualMonthlyRevenue,
-            'portfolio_monthly_value' => round($actualMonthlyRevenue + $legacyDemandValue, 2),
-            'active_subscriptions' => $activeSubscriptions->count(),
-            'combined_demand' => (int) $categories->sum('combined_demand_count'),
-            'legacy_agencies' => $legacyAgencies->count(),
-            'legacy_active_tours' => (int) $legacyAgencies->sum('active_tours_count'),
-            // B7: yalnız ödenmiş — pending/failed/cancelled "sipariş" sayılmaz
-            'total_orders' => AgencyCategoryOrder::where('status', AgencyCategoryOrder::STATUS_PAID)->count(),
-            'category_count' => $categories->count(),
-            'average_monthly_price' => round((float) $categories->avg(fn (Category $category) => (float) $category->monthly_price), 2),
-        ];
+        return Agency::where('legacy_category_access', true)
+            ->withCount([
+                'tours as active_tours_count' => fn ($query) => $query->where('is_active', true),
+            ])
+            ->orderBy('name')
+            ->get()
+            ->map(function (Agency $agency) use ($legacyCategoryUsageByAgency) {
+                $agency->used_categories_count = (int) data_get($legacyCategoryUsageByAgency->get($agency->id), 'used_categories_count', 0);
 
-        return [
-            'activeSubscriptions' => $activeSubscriptions,
-            'legacyAgencies' => $legacyAgencies,
-            'categories' => $categories,
-            'topDemandCategories' => $topDemandCategories,
-            'trendData' => $this->buildTrendData(),
-            'stats' => $stats,
-        ];
+                return $agency;
+            });
+    }
+
+    /** 6 aylık eğri 1 saat önbellekte; ödeme kesinleşince finalizer anahtarı siler. */
+    private function trendData(): array
+    {
+        return cache()->remember(CategoryLicensing::ADMIN_TREND_CACHE_KEY, 3600, fn () => $this->buildTrendData());
     }
 
     /**

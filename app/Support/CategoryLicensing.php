@@ -9,6 +9,9 @@ class CategoryLicensing
     /** Her kategori aboneliğine dahil tur ekleme hakkı; fazlası ekstra hak olarak satılır. */
     public const BASE_TOUR_ALLOWANCE = 2;
 
+    /** B8 — Admin KYM genel bakış 6 aylık trend önbelleği; ödeme kesinleşince silinir. */
+    public const ADMIN_TREND_CACHE_KEY = 'admin:kym:trend';
+
     private static ?bool $schemaReady = null;
 
     private static ?bool $slotSchemaReady = null;
