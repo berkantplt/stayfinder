@@ -17,6 +17,18 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        // A14 — Yaşanmış veri kaybına karşı korkuluk (2026-08-26: config cache varken
+        // test koşumu yerel MySQL'i migrate:fresh ile sildi). Hangi yoldan koşulursa
+        // koşulsun (composer test, php artisan test, vendor/bin/phpunit) bağlantı
+        // sqlite :memory: değilse suite ilk testte durur; migrate:fresh hiç çalışmaz.
+        if (config('database.default') !== 'sqlite'
+            || config('database.connections.sqlite.database') !== ':memory:') {
+            static::fail(
+                'Testler gerçek veritabanına bağlı görünüyor ('.config('database.default').'). '
+                .'Önce `php artisan config:clear` çalıştırın; phpunit.xml sqlite :memory: tanımlar.'
+            );
+        }
+
         // Testler HERMETİK olmalı: observer'ların tetiklediği embedding/enrichment
         // job'ları sync kuyrukta anında koşup GERÇEK OpenAI'a gidiyordu — ağ yokken
         // suite düşüyor (cURL error 6), ağ varken her koşu gerçek API parası yakıyordu.
