@@ -35,6 +35,10 @@ class AdminCategoryImageTest extends TestCase
         Storage::disk('public')->assertExists($kategori->image);
 
         Category::create(['name' => 'Deniz Tatili', 'slug' => 'deniz-tatili', 'is_active' => true, 'sort_order' => 2]);
+        // Kartlar varsayılan KAPALI (2026-09-15 kararı); bayrakla açılınca görsel kartta
+        $this->get(route('home'))->assertOk()->assertDontSee('class="home-cat"', false);
+
+        config(['ui.home_category_cards' => true]);
         $this->get(route('home'))->assertOk()
             ->assertSee('class="home-cat"', false)
             ->assertSee($kategori->image_url, false);

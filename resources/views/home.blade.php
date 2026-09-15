@@ -164,8 +164,9 @@
          Hangisinin görüneceği config/ui.php: home_nav ile seçilir — üç modun
          hiçbiri kod silmez, .env'de HOME_NAV çevirmek yeterli. --}}
     {{-- Dört büyük görselli kategori kartı (masaüstü; mobilde .m-cats ızgarası var).
+         config/ui.php home_category_cards ile açılır — 2026-09-15'ten beri KAPALI.
          Görsel yoksa turkuaz zemin + ikon. Sıra: üst kategorilerin sort_order'ı. --}}
-    @php $oneCikanKategoriler = $categories->take(4); @endphp
+    @php $oneCikanKategoriler = config('ui.home_category_cards') ? $categories->take(4) : collect(); @endphp
     @if($oneCikanKategoriler->count() >= 2)
         <div class="home-cats" aria-label="Kategoriler">
             @foreach($oneCikanKategoriler as $cat)
