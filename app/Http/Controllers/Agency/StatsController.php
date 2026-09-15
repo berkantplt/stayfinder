@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Agency;
 use App\Http\Controllers\Controller;
 use App\Models\Tour;
 use App\Models\TourClick;
+use App\Models\TourDate;
 use App\Models\TourView;
 use Illuminate\Support\Facades\DB;
 
@@ -53,26 +54,38 @@ class StatsController extends Controller
             ->pluck('total', 'hour');
 
         $hourLabels = [];
-        $hourData   = [];
+        $hourData = [];
         for ($h = 0; $h < 24; $h++) {
-            $hourLabels[] = str_pad($h, 2, '0', STR_PAD_LEFT) . ':00';
-            $hourData[]   = $hourlyViews[$h] ?? 0;
+            $hourLabels[] = str_pad($h, 2, '0', STR_PAD_LEFT).':00';
+            $hourData[] = $hourlyViews[$h] ?? 0;
         }
 
-        // Tour dates popularity (which dates get most clicks for same tour)
-        $popularDates = \App\Models\TourDate::whereIn('tour_id', $tourIds)
-            ->where('departure_date', '>=', now())
-            ->with('tour')
-            ->get()
-            ->sortByDesc(function ($date) {
-                return TourClick::where('tour_id', $date->tour_id)
-                    ->where('clicked_at', '>=', $date->departure_date)
-                    ->count();
-            })
-            ->take(10);
+        // C7: eski ölçü "clicked_at >= departure_date" gelecek tarihler için
+        // matematiksel olarak hep 0'dı; liste fiilen rastgeleydi ve tarih
+        // başına bir COUNT sorgusu atıyordu. Şimdi en yakın 10 tarih, tarihe
+        // göre sıralı; yanına bilgi amaçlı "turun son 30 gün tıklaması" tek
+        // GROUP BY ile eklenir. (Tarih bazlı tıklama kaydı yok — tur bazlı ölçü.)
+        $upcomingDates = TourDate::whereIn('tour_id', $tourIds)
+            ->whereDate('departure_date', '>=', today())
+            ->with('tour:id,title,slug')
+            ->orderBy('departure_date')
+            ->limit(10)
+            ->get();
+
+        $recentClicksByTour = $upcomingDates->isEmpty()
+            ? collect()
+            : TourClick::whereIn('tour_id', $upcomingDates->pluck('tour_id')->unique())
+                ->where('clicked_at', '>=', now()->subDays(30))
+                ->selectRaw('tour_id, COUNT(*) as clicks')
+                ->groupBy('tour_id')
+                ->pluck('clicks', 'tour_id');
+
+        $upcomingDates->each(function (TourDate $date) use ($recentClicksByTour) {
+            $date->recent_clicks = (int) ($recentClicksByTour[$date->tour_id] ?? 0);
+        });
 
         return view('agency.stats', compact(
-            'topViewed', 'topClicked', 'hourLabels', 'hourData', 'popularDates'
+            'topViewed', 'topClicked', 'hourLabels', 'hourData', 'upcomingDates'
         ));
     }
 }

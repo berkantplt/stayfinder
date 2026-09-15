@@ -59,14 +59,16 @@
             </div>
         </div>
 
-        {{-- Popular Dates --}}
+        {{-- C7: "Popüler" iddiası kaldırıldı — tarih bazlı tıklama kaydı yok; liste en yakın tarihe göre --}}
         <div class="stat-card" style="padding:24px;">
-            <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:#0f172a;">📅 Yaklaşan Popüler Tarihler</h3>
-            @forelse($popularDates as $date)
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;color:#0f172a;">📅 Yaklaşan Tarihler</h3>
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:16px;">En yakın 10 hareket tarihi. Tıklama sayısı tura aittir (son 30 gün), tarihe özel değildir.</div>
+            @forelse($upcomingDates as $date)
             <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f1f5f9;">
                 <div>
-                    <span style="font-weight:600;font-size:14px;color:#0f172a;">{{ $date->tour->title }}</span>
+                    <span style="font-weight:600;font-size:14px;color:#0f172a;">{{ $date->tour?->title ?? 'Silinmiş tur' }}</span>
                     @if($date->label)<span class="badge badge-accent" style="font-size:10px;margin-left:6px;">{{ $date->label }}</span>@endif
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">🖱️ {{ $date->recent_clicks }} tıklama / 30 gün</div>
                 </div>
                 <div style="text-align:right;">
                     <div style="font-weight:600;font-size:13px;color:#0f172a;">📅 {{ $date->departure_date->format('d-m-Y') }} → {{ $date->return_date->format('d-m-Y') }}</div>
