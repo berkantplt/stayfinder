@@ -502,7 +502,11 @@
         }
         
         /* Panel global UI refinements */
-        body.panel-layout-active .stat-card, body.panel-layout-active div[style*="border-radius"] {
+        /* A2: kart görünümü artık .p-kart ile; satır içi border-radius seçicisi geçiş
+           dönemi için kalır ama kenar çubuğu içini (logo kutusu beyaza dönüyordu) ve
+           .p-ham (rozet/nokta gibi kart olmayanlar) dışlar. */
+        body.panel-layout-active .stat-card, body.panel-layout-active .p-kart,
+        body.panel-layout-active div[style*="border-radius"]:not(.panel-sidebar-module *):not(.p-ham) {
             box-shadow: 0 10px 40px -10px rgba(0,0,0,0.06), 0 8px 16px -8px rgba(0,0,0,0.03) !important;
             border: 1px solid rgba(255,255,255,0.8) !important;
             border-radius: 20px !important;
