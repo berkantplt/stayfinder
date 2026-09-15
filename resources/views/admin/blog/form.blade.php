@@ -6,9 +6,7 @@
     <div class="section">
         <h1 style="font-size:22px;font-weight:800;margin-bottom:24px;">{{ isset($post) ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı' }}</h1>
 
-        @if($errors->any())
-            <div class="alert alert-error">{{ $errors->first() }}</div>
-        @endif
+        @include('partials.form-errors')
 
         <form method="POST" action="{{ isset($post) ? route('admin.blog.update', $post) : route('admin.blog.store') }}">
             @csrf

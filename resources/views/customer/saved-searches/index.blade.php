@@ -10,9 +10,7 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-        @if($errors->any())
-            <div class="alert alert-error">{{ $errors->first() }}</div>
-        @endif
+        @include('partials.form-errors')
 
         @if($searches->count())
             <div style="display:flex;flex-direction:column;gap:12px;">

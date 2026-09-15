@@ -1062,6 +1062,18 @@
                 <div class="alert alert-error">{{ session('error') }}</div>
             </div>
         @endif
+        {{-- A11: withErrors()/doğrulama hataları. İçerik bölümü layout'tan ÖNCE
+             çalıştığı için sayfa partials.form-errors'u bastıysa bayrak set olur ve
+             burada ikinci kez basılmaz; basmadıysa (12 sayfa öyleydi) burada görünür. --}}
+        @if($errors->any() && ! app()->bound('view.errors_rendered'))
+            <div class="container global-hatalar" style="padding-top:16px;">
+                @include('partials.form-errors')
+            </div>
+        @endif
+        @php
+            // Bayrak istek sonunda temizlenir (testlerde aynı app birden çok istek görebilir)
+            if (app()->bound('view.errors_rendered')) { app()->forgetInstance('view.errors_rendered'); }
+        @endphp
         @yield('content')
     </main>
 

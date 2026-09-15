@@ -35,11 +35,7 @@
                 <a href="{{ route('agency.category-licenses.cart.show') }}" class="btn btn-outline">← Sepete Dön</a>
             </div>
 
-            @if($errors->any())
-                <div class="alert alert-error" style="max-width:94%;margin:0 auto 24px;">
-                    @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
-                </div>
-            @endif
+            @include('partials.form-errors', ['style' => 'max-width:94%;margin:0 auto 24px;'])
 
             @unless($iyzicoConfigured)
                 <div class="alert alert-error" style="max-width:94%;margin:0 auto 24px;">

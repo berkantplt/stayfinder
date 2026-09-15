@@ -9,9 +9,7 @@
             @if(session('success'))
                 <div class="alert alert-success" style="max-width:94%;margin:0 auto 16px;">{{ session('success') }}</div>
             @endif
-            @if($errors->any())
-                <div class="alert alert-error" style="max-width:94%;margin:0 auto 16px;">{{ $errors->first() }}</div>
-            @endif
+            @include('partials.form-errors', ['style' => 'max-width:94%;margin:0 auto 16px;'])
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:94%;margin:0 auto 24px;">
                 <div>
                     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">

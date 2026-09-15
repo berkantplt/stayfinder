@@ -19,9 +19,7 @@
                 <div class="alert alert-success" style="max-width:94%;margin-left:auto;margin-right:auto;">{{ session('success') }}</div>
             @endif
 
-            @if($errors->any())
-                <div class="alert alert-error" style="max-width:94%;margin-left:auto;margin-right:auto;">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
-            @endif
+            @include('partials.form-errors', ['style' => 'max-width:94%;margin-left:auto;margin-right:auto;'])
 
             @unless($categoryLicensingReady)
                 <div class="alert alert-error" style="max-width:94%;margin-left:auto;margin-right:auto;">

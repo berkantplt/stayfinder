@@ -230,11 +230,7 @@
 
             <div style="max-width:94%; margin:0 auto;">
                 <div style="max-width:960px;">
-                    @if($errors->any())
-                        <div class="alert alert-error" style="margin-bottom: 24px;">
-                            @foreach($errors->all() as $e) {{ $e }}<br> @endforeach
-                        </div>
-                    @endif
+                    @include('partials.form-errors', ['style' => 'margin-bottom: 24px;'])
 
                     @unless($canCreateTours)
                         <div class="alert alert-error" style="margin-bottom: 24px;">

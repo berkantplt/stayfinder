@@ -21,15 +21,7 @@
                     <div class="alert alert-success" style="margin-bottom:16px;">{{ session('success') }}</div>
                 @endif
 
-                @if($errors->any())
-                    <div class="alert" style="margin-bottom:16px; border:1px solid #fecaca; background:#fef2f2; color:#991b1b;">
-                        <ul style="margin:0; padding-left:18px;">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
+                @include('partials.form-errors', ['style' => 'margin-bottom:16px;'])
 
                 <div class="card">
                     <div style="overflow-x:auto;">

@@ -17,9 +17,7 @@
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
-            @if($errors->any())
-                <div class="alert alert-error">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
-            @endif
+            @include('partials.form-errors')
 
             {{-- Yeni talep formu --}}
             <div style="background:#fff;border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;margin-bottom:24px;">

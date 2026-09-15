@@ -688,9 +688,7 @@
                             <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">Yorum Yaz</h3>
                             <form method="POST" action="{{ route('reviews.store', $tour) }}">
                                 @csrf
-                                @if($errors->any())
-                                    <div class="alert alert-error">{{ $errors->first() }}</div>
-                                @endif
+                                @include('partials.form-errors')
                                 <div class="form-group">
                                     <label>Puanınız</label>
                                     <div style="display:flex;gap:8px;">

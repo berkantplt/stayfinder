@@ -16,9 +16,7 @@
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
-            @if($errors->any())
-                <div class="alert alert-error">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
-            @endif
+            @include('partials.form-errors')
 
             {{-- Add New City --}}
             <div class="stat-card" style="padding:30px;margin-bottom:32px;border-left:4px solid var(--accent) !important;">

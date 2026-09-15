@@ -14,9 +14,7 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
-        @if($errors->any())
-            <div class="alert alert-error">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
-        @endif
+        @include('partials.form-errors')
 
         <div class="stat-card" style="padding:32px;">
             <form method="POST" action="{{ route('agency.profile.update') }}" enctype="multipart/form-data">

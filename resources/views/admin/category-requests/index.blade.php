@@ -13,9 +13,7 @@
             @if(session('success'))
                 <div class="alert alert-success" style="max-width:94%;margin:0 auto 24px;">{{ session('success') }}</div>
             @endif
-            @if($errors->any())
-                <div class="alert alert-error" style="max-width:94%;margin:0 auto 24px;">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
-            @endif
+            @include('partials.form-errors', ['style' => 'max-width:94%;margin:0 auto 24px;'])
 
             @if($parentCategories->isEmpty())
                 <div class="alert alert-error" style="max-width:94%;margin:0 auto 24px;">

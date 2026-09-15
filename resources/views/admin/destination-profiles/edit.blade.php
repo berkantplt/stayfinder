@@ -28,11 +28,7 @@
             @if(session('success'))
                 <div class="alert alert-success" style="max-width:94%;margin:0 auto 16px;">{{ session('success') }}</div>
             @endif
-            @if($errors->any())
-                <div class="alert alert-error" style="max-width:94%;margin:0 auto 16px;">
-                    @foreach($errors->all() as $e) {{ $e }}<br> @endforeach
-                </div>
-            @endif
+            @include('partials.form-errors', ['style' => 'max-width:94%;margin:0 auto 16px;'])
 
             <form method="POST" action="{{ route('admin.destination-profiles.update', $profile) }}" style="max-width:94%;margin:0 auto 32px;">
                 @csrf

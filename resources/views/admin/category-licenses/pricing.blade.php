@@ -25,11 +25,7 @@
                 <div class="alert alert-success" style="max-width:94%;margin:0 auto 24px;">{{ session('success') }}</div>
             @endif
 
-            @if($errors->any())
-                <div class="alert alert-error" style="max-width:94%;margin:0 auto 24px;">
-                    @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
-                </div>
-            @endif
+            @include('partials.form-errors', ['style' => 'max-width:94%;margin:0 auto 24px;'])
 
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;max-width:94%;margin:0 auto 24px;">
                 <div class="stat-card" style="padding:20px;">

@@ -9,9 +9,7 @@
             <h1 style="font-size:24px;font-weight:700;">Yeni Acenta Ekle</h1>
         </div>
 
-        @if($errors->any())
-            <div class="alert alert-error">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
-        @endif
+        @include('partials.form-errors')
 
         <form method="POST" action="{{ route('admin.agencies.store') }}">
             @csrf

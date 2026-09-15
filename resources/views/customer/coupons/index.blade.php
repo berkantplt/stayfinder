@@ -17,11 +17,7 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
-        @if($errors->any())
-            <div class="alert alert-error">
-                @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
-            </div>
-        @endif
+        @include('partials.form-errors')
 
         @if($coupons->count())
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">

@@ -14,9 +14,7 @@
                 <a href="{{ route('agency.campaigns.index') }}" class="btn btn-outline">← Geri</a>
             </div>
 
-            @if($errors->any())
-                <div class="alert alert-error">@foreach($errors->all() as $e) {{ $e }}<br> @endforeach</div>
-            @endif
+            @include('partials.form-errors')
 
             <div class="stat-card" style="padding:30px;margin-bottom:32px;border-left:4px solid #10b981 !important;">
                 <form method="POST" action="{{ route('agency.campaigns.update', $campaign) }}">
