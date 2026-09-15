@@ -475,7 +475,10 @@
                     <div class="form-group"><label>Tur Linki (Acentanın tur sayfası)</label><input type="url" name="tour_url" value="{{ old('tour_url', $tour->tour_url) }}" placeholder="https://acenta.com/bu-tur">
 @error('tour_url')<p class="p-hata">{{ $message }}</p>@enderror</div>
                     <div class="form-group">
-                        <label><input type="checkbox" name="is_active" value="1" {{ $tour->is_active ? 'checked' : '' }}> Aktif</label>
+                        {{-- C2: işaret kaldırılınca tarayıcı alanı hiç göndermez; hidden 0 ile "pasif" isteği sunucuya ulaşır --}}
+                        <input type="hidden" name="is_active" value="0">
+                        <label><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $tour->is_active))> Aktif</label>
+                        @error('is_active')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div style="display:flex;gap:12px;">
                         <button type="submit" class="btn btn-primary">Kaydet</button>
