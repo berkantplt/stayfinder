@@ -19,9 +19,19 @@
         .sidebar-bullet { width:6px; height:6px; border-radius:999px; background:currentColor; opacity:0.75; }
     </style>
 
-    @php($categoryLicensingActive = request()->routeIs('admin.category-licenses*'))
-    @php($pendingAgencyApplicationsCount = \App\Models\Agency::pendingApproval()->count())
-    @php($pendingCategoryRequestsCount = \App\Models\CategoryRequest::pending()->count())
+    {{-- A7: iki COUNT her admin sayfasında koşuyordu; 60 sn önbellek. Onay/red
+         işlemleri anahtarı siler (AdminController, Admin\CategoryRequestController). --}}
+    @php
+        $categoryLicensingActive = request()->routeIs('admin.category-licenses*');
+        $bekleyen = cache()->remember('admin:bekleyen-sayaclar', 60, function () {
+            return [
+                'basvuru' => \App\Models\Agency::pendingApproval()->count(),
+                'talep' => \App\Models\CategoryRequest::pending()->count(),
+            ];
+        });
+        $pendingAgencyApplicationsCount = $bekleyen['basvuru'];
+        $pendingCategoryRequestsCount = $bekleyen['talep'];
+    @endphp
 
     <div style="display:flex;flex-direction:column;">
         <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">

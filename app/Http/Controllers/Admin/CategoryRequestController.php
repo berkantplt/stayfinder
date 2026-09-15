@@ -48,6 +48,7 @@ class CategoryRequestController extends Controller
      */
     public function approve(Request $request, CategoryRequest $categoryRequest)
     {
+        cache()->forget('admin:bekleyen-sayaclar'); // A7
         if (! $categoryRequest->isPending()) {
             return back()->withErrors('Bu talep zaten sonuçlandırılmış.');
         }
@@ -97,6 +98,7 @@ class CategoryRequestController extends Controller
 
     public function reject(Request $request, CategoryRequest $categoryRequest)
     {
+        cache()->forget('admin:bekleyen-sayaclar'); // A7
         if (! $categoryRequest->isPending()) {
             return back()->withErrors('Bu talep zaten sonuçlandırılmış.');
         }

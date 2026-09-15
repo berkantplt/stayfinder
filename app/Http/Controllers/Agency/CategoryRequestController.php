@@ -23,6 +23,7 @@ class CategoryRequestController extends Controller
 
     public function store(Request $request)
     {
+        cache()->forget('admin:bekleyen-sayaclar'); // A7: admin rozeti
         $agency = $this->currentAgency();
 
         $validated = $request->validate([

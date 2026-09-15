@@ -25,6 +25,7 @@ class NotificationController extends Controller
             ->get();
 
         $user->forceFill(['announcements_seen_at' => now()])->save();
+        $user->forgetBadgeCache(); // A7
 
         return view('notifications.index', compact('notifications', 'announcements', 'announcementSeenAt'));
     }
@@ -33,6 +34,7 @@ class NotificationController extends Controller
     {
         $notification = auth()->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
+        auth()->user()->forgetBadgeCache(); // A7
 
         return back();
     }
@@ -42,6 +44,7 @@ class NotificationController extends Controller
         $user = auth()->user();
         $user->unreadNotifications->markAsRead();
         $user->forceFill(['announcements_seen_at' => now()])->save();
+        $user->forgetBadgeCache(); // A7
 
         return back()->with('success', 'Tüm bildirimler okundu olarak işaretlendi.');
     }

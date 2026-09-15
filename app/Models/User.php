@@ -93,4 +93,18 @@ class User extends Authenticatable
     {
         return $this->favoriteTours()->where('tour_id', $tour->id)->exists();
     }
+
+    /**
+     * A7 — Üst menü rozeti (okunmamış bildirim + görülmemiş duyuru) her istekte
+     * 2 COUNT sorgusuydu; 60 sn önbellek. Okundu/görüldü işlemleri anahtarı siler.
+     */
+    public function badgeCacheKey(): string
+    {
+        return 'rozet:'.$this->id;
+    }
+
+    public function forgetBadgeCache(): void
+    {
+        cache()->forget($this->badgeCacheKey());
+    }
 }

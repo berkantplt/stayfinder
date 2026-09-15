@@ -458,6 +458,7 @@ class AdminController extends Controller
 
     public function approveAgencyApplication(Request $request, Agency $agency)
     {
+        cache()->forget('admin:bekleyen-sayaclar'); // A7
         $validated = $request->validate([
             'approval_notes' => 'nullable|string|max:2000',
         ]);
@@ -477,6 +478,7 @@ class AdminController extends Controller
 
     public function rejectAgencyApplication(Request $request, Agency $agency)
     {
+        cache()->forget('admin:bekleyen-sayaclar'); // A7
         $validated = $request->validate([
             'approval_notes' => 'nullable|string|max:2000',
         ]);

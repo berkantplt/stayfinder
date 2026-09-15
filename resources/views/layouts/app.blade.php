@@ -826,8 +826,9 @@
         @auth
             @php
                 // SQL COUNT (satırları belleğe yüklemeden) + görülmemiş duyuru sayısı
-                $unreadCount = auth()->user()->unreadNotifications()->count()
-                    + \App\Models\Announcement::unseenBy(auth()->user())->count();
+                // A7: 60 sn önbellek — okundu/görüldü işlemleri anahtarı siler (User::forgetBadgeCache)
+                $unreadCount = cache()->remember(auth()->user()->badgeCacheKey(), 60, fn () => auth()->user()->unreadNotifications()->count()
+                    + \App\Models\Announcement::unseenBy(auth()->user())->count());
             @endphp
         @endauth
 

@@ -248,6 +248,7 @@ Route::post('/kayit', function (Request $request) {
         ]);
 
         $user = DB::transaction(function () use ($validated) {
+            cache()->forget('admin:bekleyen-sayaclar'); // A7: admin rozeti
             $agency = Agency::create([
                 'name' => $validated['agency_name'],
                 'email' => $validated['email'],
