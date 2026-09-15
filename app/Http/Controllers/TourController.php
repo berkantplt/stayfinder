@@ -204,11 +204,16 @@ class TourController extends Controller
         $aiContext = $this->captureAiSelection($request, $tour);
         $tour->load('agency', 'dates', 'category');
 
-        // Record view
+        // Record view. D12: speculation rules ile ön yüklenen (prefetch/prerender)
+        // istekler Sec-Purpose başlığı taşır — kullanıcı sayfayı henüz açmadı,
+        // sayılmaz; gerçek gezinmede tarayıcı başlıksız yeni istek atmaz ama
+        // prerender'lanan sayfa etkinleşince JS ile sayım yapılmıyor, yani
+        // hover edilip tıklanmayan turlar görüntülenme kazanıyordu.
         $sessionId = session()->getId();
         $recentKey = 'tour_view_'.$tour->id.'_'.$sessionId;
+        $isSpeculative = str_contains(strtolower((string) $request->header('Sec-Purpose', '')), 'prefetch');
 
-        if (! cache()->has($recentKey)) {
+        if (! $isSpeculative && ! cache()->has($recentKey)) {
             TourView::create([
                 'tour_id' => $tour->id,
                 'session_id' => $sessionId,

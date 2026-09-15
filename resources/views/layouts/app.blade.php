@@ -2432,8 +2432,10 @@
     </script>
 
     {{-- App hissi: dokunma başlarken sayfayı önceden hazırla — geçişler anında olur.
-         (Tarayıcı isteği Sec-Purpose başlığıyla işaretler; dokunma %99 gezinmeye
-         dönüştüğü için görüntülenme sayacına etkisi ihmal edilebilir.) --}}
+         Tarayıcı isteği Sec-Purpose başlığıyla işaretler; TourController::show bu
+         başlığı görünce görüntülenme SAYMAZ (D12) — masaüstünde hover ile tetiklenen
+         prerender'lar sayaçları şişiriyordu. Kural: GET'te yan etkisi olan sayfa
+         (ör. /bildirimler: duyuruları "görüldü" işaretler) bu listeye GİRMEZ. --}}
     <script type="speculationrules">
     {
         "prerender": [{
@@ -2444,7 +2446,7 @@
             "eagerness": "moderate"
         }],
         "prefetch": [{
-            "where": { "href_matches": ["/", "/turlar", "/blog", "/favorilerim", "/profil"] },
+            "where": { "href_matches": ["/", "/turlar", "/blog", "/favorilerim", "/profilim", "/kuponlarim", "/kayitli-aramalarim"] },
             "eagerness": "moderate"
         }]
     }
