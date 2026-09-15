@@ -233,13 +233,19 @@
                 <div style="max-width:960px;">
                     @include('partials.form-errors', ['style' => 'margin-bottom: 24px;'])
 
-                    @unless($currentCategoryAccessible)
+                    @if($categoryMissing)
+                        {{-- C10: kategorisiz tur (eski kayıt) — yetki sorunu değil, eksik alan --}}
+                        <div class="alert alert-warning" style="margin-bottom: 24px;">
+                            Bu tur henüz bir kategoriye bağlı değil; kategorisiz turlar sitede listelenmez. Aşağıdaki
+                            <strong>Kategori Yetkisi</strong> alanından bir kategori seçip kaydedin.
+                        </div>
+                    @elseif(! $currentCategoryAccessible)
                         <div class="alert alert-error" style="margin-bottom: 24px;">
                             Bu turun mevcut kategorisi için aktif yetkiniz kalmamış görünüyor. Güncelleyebilmek için yetkili bir kategori seçin veya
                             <a href="{{ route('agency.category-licenses.index') }}" style="font-weight:700;color:inherit;text-decoration:underline;">Kategori Yetkileri sayfası</a>
                             üzerinden yeni kategori yetkisi alın.
                         </div>
-                    @endunless
+                    @endif
 
                     <div class="stat-card" style="padding:32px;">
                 <form method="POST" action="{{ route('agency.tours.update', $tour) }}" enctype="multipart/form-data">

@@ -179,10 +179,14 @@ class TourController extends Controller
         $agency = auth()->user()->agency;
         $categories = $this->resolveAgencyCategoryTree($agency);
         $currencyOptions = Tour::supportedCurrencies();
-        $currentCategoryAccessible = $agency->hasCategoryAccess($tour->category_id);
+        // C10: kategorisi hiç olmayan (eski/seeder) tur ile yetkisi bitmiş tur
+        // farklı teşhis ister — hasCategoryAccess(null) her zaman false döner,
+        // "yetkiniz kalmamış" demek yanıltıcı olurdu.
+        $categoryMissing = $tour->category_id === null;
+        $currentCategoryAccessible = $categoryMissing || $agency->hasCategoryAccess($tour->category_id);
         $categorySlotUsage = $this->categorySlotUsageFor($agency);
 
-        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions', 'currentCategoryAccessible', 'categorySlotUsage'));
+        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions', 'currentCategoryAccessible', 'categoryMissing', 'categorySlotUsage'));
     }
 
     public function update(Request $request, Tour $tour)

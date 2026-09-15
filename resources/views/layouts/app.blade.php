@@ -346,6 +346,7 @@
         .alert { padding:12px 16px; border-radius:10px; font-size:14px; margin-bottom:16px; }
         .alert-success { background:var(--green-bg); color:var(--green-text); border:1px solid #a7f3d0; }
         .alert-error { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+        .alert-warning { background:#fffbeb; color:#92400e; border:1px solid #fde68a; }
 
         /* ── Price ── */
         .price-tag { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
