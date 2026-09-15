@@ -12,6 +12,7 @@
                 <option value="{{ $city }}" {{ $selectedDepartureCity === $city ? 'selected' : '' }}>{{ $city }}</option>
             @endforeach
         </select>
+@error('departure_city')<p class="p-hata">{{ $message }}</p>@enderror
     </div>
     <div class="form-group" style="margin-bottom:0;">
         <label>Durak Şehirler <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(yol üstünde yolcu alınan iller)</span></label>

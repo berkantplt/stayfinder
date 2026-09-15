@@ -80,14 +80,17 @@
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;">Kalkış Tarihi *</label>
                                 <input type="date" name="departure_date" required>
+@error('departure_date')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;">Fiyat ({{ $tour->currency_symbol }}) *</label>
                                 <input type="number" name="price" min="0" step="0.01" value="{{ old('price', $tour->price) }}" required>
+@error('price')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;">Etiket (opsiyonel)</label>
                                 <input type="text" name="label" placeholder="Ör: Bayram Özel">
+@error('label')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
@@ -133,14 +136,17 @@
                                     <div class="form-group" style="margin-bottom:0;">
                                         <label style="font-size:11px;">Kalkış</label>
                                         <input type="date" name="departure_date" value="{{ $date->departure_date->format('Y-m-d') }}" required>
+@error('departure_date')<p class="p-hata">{{ $message }}</p>@enderror
                                     </div>
                                     <div class="form-group" style="margin-bottom:0;">
                                         <label style="font-size:11px;">Fiyat</label>
                                         <input type="number" name="price" min="0" step="0.01" value="{{ number_format((float) ($date->price ?? $tour->price), 2, '.', '') }}" required>
+@error('price')<p class="p-hata">{{ $message }}</p>@enderror
                                     </div>
                                     <div class="form-group" style="margin-bottom:0;">
                                         <label style="font-size:11px;">Etiket</label>
                                         <input type="text" name="label" value="{{ $date->label }}">
+@error('label')<p class="p-hata">{{ $message }}</p>@enderror
                                     </div>
                                     <div style="display:flex;gap:4px;">
                                         <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>

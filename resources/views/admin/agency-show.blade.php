@@ -55,12 +55,14 @@
                         <form method="POST" action="{{ route('admin.agency-applications.approve', $agency) }}" style="display:flex;flex-direction:column;gap:10px;">
                             @csrf
                             <textarea name="approval_notes" rows="3" placeholder="Onay notu (opsiyonel)" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #fed7aa;background:#fff;font-size:14px;outline:none;resize:vertical;"></textarea>
+@error('approval_notes')<p class="p-hata">{{ $message }}</p>@enderror
                             <button type="submit" class="btn btn-primary" style="justify-content:center;">Onayla</button>
                         </form>
 
                         <form method="POST" action="{{ route('admin.agency-applications.reject', $agency) }}" style="display:flex;flex-direction:column;gap:10px;">
                             @csrf
                             <textarea name="approval_notes" rows="3" placeholder="Red nedeni (opsiyonel)" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #fecaca;background:#fff;font-size:14px;outline:none;resize:vertical;"></textarea>
+@error('approval_notes')<p class="p-hata">{{ $message }}</p>@enderror
                             <button type="submit" class="btn btn-outline" style="justify-content:center;color:#991b1b;border-color:#fecaca;background:#fff5f5;">Reddet</button>
                         </form>
                     </div>
@@ -129,6 +131,7 @@
                                         </option>
                                     @endforeach
                                 </select>
+@error('category_id')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="flex:1;min-width:110px;margin:0;">
                                 <label style="font-size:13px;font-weight:700;color:#475569;">Süre</label>
@@ -138,6 +141,7 @@
                                     <option value="6">6 Ay</option>
                                     <option value="12" selected>12 Ay</option>
                                 </select>
+@error('months')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <button type="submit" class="btn btn-primary" {{ $grantableCategories->isEmpty() ? 'disabled' : '' }}>Ekle</button>
                         </form>

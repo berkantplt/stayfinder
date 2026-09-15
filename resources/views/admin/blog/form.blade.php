@@ -15,6 +15,7 @@
             <div class="form-group">
                 <label>Başlık *</label>
                 <input type="text" name="title" value="{{ old('title', $post->title ?? '') }}" placeholder="Blog başlığı">
+@error('title')<p class="p-hata">{{ $message }}</p>@enderror
             </div>
 
             <div class="form-row">
@@ -25,26 +26,31 @@
                             <option value="{{ $cat }}" {{ old('category', $post->category ?? 'Rehber') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
                         @endforeach
                     </select>
+@error('category')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
                 <div class="form-group">
                     <label>Kapak Görseli URL</label>
                     <input type="url" name="image" value="{{ old('image', $post->image ?? '') }}" placeholder="https://...">
+@error('image')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
             </div>
 
             <div class="form-group">
                 <label>Kısa Özet</label>
                 <textarea name="excerpt" rows="2" placeholder="Ana sayfada ve liste sayfasında görünür...">{{ old('excerpt', $post->excerpt ?? '') }}</textarea>
+@error('excerpt')<p class="p-hata">{{ $message }}</p>@enderror
             </div>
 
             <div class="form-group">
                 <label>İçerik *</label>
                 <textarea name="content" rows="12" placeholder="Yazı içeriği...">{{ old('content', $post->content ?? '') }}</textarea>
+@error('content')<p class="p-hata">{{ $message }}</p>@enderror
             </div>
 
             <div class="form-group">
                 <label>SEO Meta Açıklama</label>
                 <input type="text" name="meta_description" value="{{ old('meta_description', $post->meta_description ?? '') }}" placeholder="Google'da görünecek açıklama (max 160 karakter)">
+@error('meta_description')<p class="p-hata">{{ $message }}</p>@enderror
             </div>
 
             <div class="form-group" style="display:flex;align-items:center;gap:10px;">

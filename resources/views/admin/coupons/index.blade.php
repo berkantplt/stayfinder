@@ -94,6 +94,7 @@
             <div class="form-group">
                 <label>Kupon Kodu (Örn: YAZ2026)</label>
                 <input type="text" name="code" required style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+@error('code')<p class="p-hata">{{ $message }}</p>@enderror
             </div>
 
             <div style="display:flex; gap:16px; margin-bottom:16px;">
@@ -103,10 +104,12 @@
                         <option value="fixed">Sabit Tutar (₺)</option>
                         <option value="percent">Yüzde (%)</option>
                     </select>
+@error('discount_type')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
                 <div style="flex:1;">
                     <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">İndirim Değeri</label>
                     <input type="number" name="discount_value" step="0.01" required style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+@error('discount_value')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
             </div>
 
@@ -114,10 +117,12 @@
                 <div style="flex:1;">
                     <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Minimum Sepet Tutarı (₺)</label>
                     <input type="number" name="min_purchase_amount" value="0" step="0.01" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+@error('min_purchase_amount')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
                 <div style="flex:1;">
                     <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Toplam Kullanım Limiti</label>
                     <input type="number" name="max_uses" placeholder="Örn: 100 (Boşsa sınırsız)" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+@error('max_uses')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
             </div>
 
@@ -125,10 +130,12 @@
                 <div style="flex:1;">
                     <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Başlangıç Tarihi</label>
                     <input type="date" name="starts_at" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+@error('starts_at')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
                 <div style="flex:1;">
                     <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Bitiş Tarihi</label>
                     <input type="date" name="expires_at" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+@error('expires_at')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
             </div>
 

@@ -246,7 +246,8 @@
 
                     @include('agency.tours._import_panel')
 
-                    <div class="form-group"><label>Tur Adı *</label><input type="text" name="title" value="{{ old('title') }}" required></div>
+                    <div class="form-group"><label>Tur Adı *</label><input type="text" name="title" value="{{ old('title') }}" required>
+@error('title')<p class="p-hata">{{ $message }}</p>@enderror</div>
                     <div class="form-group">
                         <label>Kategori Yetkisi *</label>
                         <select name="category_id" required>
@@ -258,6 +259,7 @@
                                 @endforeach
                             @endforeach
                         </select>
+@error('category_id')<p class="p-hata">{{ $message }}</p>@enderror
                         @if(!empty($categorySlotUsage))
                             <div id="categorySlotHint" style="display:none;font-size:12px;font-weight:600;margin-top:6px;"></div>
                             <script>
@@ -286,8 +288,10 @@
                         </div>
                     </div>
                     <div class="form-row form-row-3">
-                        <div class="form-group"><label>Destinasyon *</label><input type="text" name="destination" value="{{ old('destination') }}" required placeholder="Ör: Antalya"></div>
-                        <div class="form-group"><label>Süre (gün) *</label><input type="number" id="durationDaysInput" name="duration_days" value="{{ old('duration_days', 1) }}" min="1" required></div>
+                        <div class="form-group"><label>Destinasyon *</label><input type="text" name="destination" value="{{ old('destination') }}" required placeholder="Ör: Antalya">
+@error('destination')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                        <div class="form-group"><label>Süre (gün) *</label><input type="number" id="durationDaysInput" name="duration_days" value="{{ old('duration_days', 1) }}" min="1" required>
+@error('duration_days')<p class="p-hata">{{ $message }}</p>@enderror</div>
                         <div class="form-group">
                             <label>Ulaşım</label>
                             <select name="transport_type" id="transportTypeInput">
@@ -296,11 +300,13 @@
                                     <option value="{{ $kod }}" {{ old('transport_type', '') === $kod ? 'selected' : '' }}>{{ $ad }}</option>
                                 @endforeach
                             </select>
+@error('transport_type')<p class="p-hata">{{ $message }}</p>@enderror
                             <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Kartta "Gidiş Dönüş Otobüs" şeklinde görünür.</div>
                         </div>
                         <div class="form-group">
                             <label>Gece</label>
                             <input type="number" id="durationNightsInput" name="duration_nights" value="{{ old('duration_nights') }}" min="0" max="255" placeholder="Boş = gün − 1">
+@error('duration_nights')<p class="p-hata">{{ $message }}</p>@enderror
                             <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Turda "7 gece 8 gün" yazacak. Boş bırakırsan gün−1 varsayılır; konaklamasız günübirlik turda 0 yaz.</div>
                         </div>
                         <div class="form-group">
@@ -312,6 +318,7 @@
                                     </option>
                                 @endforeach
                             </select>
+@error('currency')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
@@ -407,22 +414,32 @@
                         <div id="pricingOptionsHidden"></div>
                     </div>
 
-                    <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description') }}</textarea></div>
-                    <div class="form-group"><label>Dahil Olanlar (her satıra bir madde)</label><textarea name="included">{{ old('included') }}</textarea></div>
-                    <div class="form-group"><label>Dahil Olmayanlar</label><textarea name="excluded">{{ old('excluded') }}</textarea></div>
+                    <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description') }}</textarea>
+@error('description')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                    <div class="form-group"><label>Dahil Olanlar (her satıra bir madde)</label><textarea name="included">{{ old('included') }}</textarea>
+@error('included')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                    <div class="form-group"><label>Dahil Olmayanlar</label><textarea name="excluded">{{ old('excluded') }}</textarea>
+@error('excluded')<p class="p-hata">{{ $message }}</p>@enderror</div>
                     <div class="form-group">
                         <label>Tur Programı (gün gün)</label>
                         <div id="itineraryContainer" style="display:flex;flex-direction:column;gap:12px;"></div>
                         <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addItineraryDay()">+ Gün Ekle</button>
                     </div>
-                    <div class="form-group"><label>Kalkış / Biniş Noktaları</label><textarea name="departure_points" rows="3" placeholder="21:00 Yenibosna&#10;21:30 Mecidiyeköy">{{ old('departure_points') }}</textarea></div>
-                    <div class="form-group"><label>Konaklama / Otel Bilgisi</label><textarea name="hotel_info" rows="2" placeholder="5★ Suhan Cappadocia Hotel & Spa">{{ old('hotel_info') }}</textarea></div>
-                    <div class="form-group"><label>Ekstra Tur ve Aktiviteler</label><textarea name="extras" rows="2">{{ old('extras') }}</textarea></div>
-                    <div class="form-group"><label>İptal / İade Koşulları</label><textarea name="cancellation_policy" rows="2">{{ old('cancellation_policy') }}</textarea></div>
-                    <div class="form-group"><label>Rehber Bilgisi / Notları</label><textarea name="guide_info" rows="2">{{ old('guide_info') }}</textarea></div>
-                    <div class="form-group"><label>Hareket Sıklığı</label><input type="text" name="frequency" value="{{ old('frequency') }}" placeholder="Örn: Her Cuma kesin hareketli"></div>
+                    <div class="form-group"><label>Kalkış / Biniş Noktaları</label><textarea name="departure_points" rows="3" placeholder="21:00 Yenibosna&#10;21:30 Mecidiyeköy">{{ old('departure_points') }}</textarea>
+@error('departure_points')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                    <div class="form-group"><label>Konaklama / Otel Bilgisi</label><textarea name="hotel_info" rows="2" placeholder="5★ Suhan Cappadocia Hotel & Spa">{{ old('hotel_info') }}</textarea>
+@error('hotel_info')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                    <div class="form-group"><label>Ekstra Tur ve Aktiviteler</label><textarea name="extras" rows="2">{{ old('extras') }}</textarea>
+@error('extras')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                    <div class="form-group"><label>İptal / İade Koşulları</label><textarea name="cancellation_policy" rows="2">{{ old('cancellation_policy') }}</textarea>
+@error('cancellation_policy')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                    <div class="form-group"><label>Rehber Bilgisi / Notları</label><textarea name="guide_info" rows="2">{{ old('guide_info') }}</textarea>
+@error('guide_info')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                    <div class="form-group"><label>Hareket Sıklığı</label><input type="text" name="frequency" value="{{ old('frequency') }}" placeholder="Örn: Her Cuma kesin hareketli">
+@error('frequency')<p class="p-hata">{{ $message }}</p>@enderror</div>
                     @include('agency.tours._gallery', ['initialImages' => old('gallery', [])])
-                    <div class="form-group"><label>Tur Linki (Acentanın tur sayfası)</label><input type="url" name="tour_url" value="{{ old('tour_url') }}" placeholder="https://acenta.com/bu-tur"></div>
+                    <div class="form-group"><label>Tur Linki (Acentanın tur sayfası)</label><input type="url" name="tour_url" value="{{ old('tour_url') }}" placeholder="https://acenta.com/bu-tur">
+@error('tour_url')<p class="p-hata">{{ $message }}</p>@enderror</div>
                     <div style="display:flex;gap:12px;">
                         <button type="submit" class="btn btn-primary">Turu Kaydet</button>
                         <a href="{{ route('agency.tours.index') }}" class="btn btn-outline">İptal</a>

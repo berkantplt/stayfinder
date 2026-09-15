@@ -41,10 +41,12 @@
                             <div class="form-group" style="margin:0;">
                                 <label>Kategori Adı *</label>
                                 <input type="text" name="name" value="{{ $req->requested_name }}" required maxlength="100">
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label>İkon</label>
                                 <input type="text" name="icon" placeholder="🌎" maxlength="20">
+@error('icon')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label>Üst Kategori *</label>
@@ -54,11 +56,13 @@
                                         <option value="{{ $parent->id }}">{{ $parent->icon }} {{ $parent->name }}</option>
                                     @endforeach
                                 </select>
+@error('parent_id')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             @if($categoryLicensingReady)
                                 <div class="form-group" style="margin:0;">
                                     <label>Aylık Ücret (TL) *</label>
                                     <input type="number" name="monthly_price" value="2000" min="0" step="0.01" required>
+@error('monthly_price')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                             @endif
                             <button type="submit" class="btn btn-primary" style="height:44px;" {{ $parentCategories->isEmpty() ? 'disabled' : '' }}>✅ Onayla</button>
@@ -69,6 +73,7 @@
                     <form method="POST" action="{{ route('admin.category-requests.reject', $req) }}" style="display:flex;gap:8px;align-items:center;" onsubmit="return confirm('Talep reddedilsin mi?');">
                         @csrf
                         <input type="text" name="admin_note" placeholder="Red gerekçesi (opsiyonel)" maxlength="500" style="flex:1;margin:0;">
+@error('admin_note')<p class="p-hata">{{ $message }}</p>@enderror
                         <button type="submit" class="btn btn-danger btn-sm" style="white-space:nowrap;">🚫 Reddet</button>
                     </form>
                 </div>

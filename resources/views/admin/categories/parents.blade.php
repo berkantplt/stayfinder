@@ -30,18 +30,22 @@
                         <div class="form-group" style="margin:0;">
                             <label>Kart görseli (ana sayfa)</label>
                             <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+@error('image_file')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label>Üst Kategori Adı *</label>
                             <input type="text" name="name" required placeholder="Yurt Dışı Turlar">
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label>İkon (Emoji)</label>
                             <input type="text" name="icon" placeholder="🌍">
+@error('icon')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label>Sıralama</label>
                             <input type="number" name="sort_order" value="0">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <button type="submit" class="btn btn-primary" style="height:44px;">+ Üst Kategori Ekle</button>
                     </div>
@@ -108,21 +112,25 @@
         <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">Üst Kategori Düzenle</h3>
         <form method="POST" id="editForm" enctype="multipart/form-data">
             @csrf @method('PUT')
-            <div class="form-group"><label>Ad *</label><input type="text" name="name" id="editName" required></div>
+            <div class="form-group"><label>Ad *</label><input type="text" name="name" id="editName" required>
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror</div>
             <div class="form-group">
                 <label>Kart görseli (ana sayfadaki büyük kart)</label>
                 <div style="display:flex;align-items:center;gap:12px;">
                     <img id="editImagePreview" src="" alt="" style="width:72px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none;">
                     <div style="flex:1;">
                         <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+@error('image_file')<p class="p-hata">{{ $message }}</p>@enderror
                         <label id="editRemoveImageWrap" style="display:none;font-size:12.5px;color:#dc2626;margin-top:6px;"><input type="checkbox" name="remove_image" value="1"> Mevcut görseli kaldır</label>
                     </div>
                 </div>
                 <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">JPG, PNG veya WEBP, en çok 3 MB. Boşsa kart turkuaz zemin ve ikonla çizilir.</div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>İkon (Emoji)</label><input type="text" name="icon" id="editIcon"></div>
-                <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort"></div>
+                <div class="form-group"><label>İkon (Emoji)</label><input type="text" name="icon" id="editIcon">
+@error('icon')<p class="p-hata">{{ $message }}</p>@enderror</div>
+                <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror</div>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">
                 <button type="button" class="btn btn-outline" onclick="closeEditModal()">İptal</button>

@@ -38,22 +38,27 @@
                     <div>
                         <label style="font-size:13px;color:#475569;font-weight:600;">Şehir</label>
                         <input type="text" name="city" value="{{ old('city', $profile->city) }}" class="form-input" required>
+@error('city')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label style="font-size:13px;color:#475569;font-weight:600;">Ülke</label>
                         <input type="text" name="country" value="{{ old('country', $profile->country) }}" class="form-input">
+@error('country')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div style="grid-column:1/-1;">
                         <label style="font-size:13px;color:#475569;font-weight:600;">Özet (2-3 cümle)</label>
                         <textarea name="summary" rows="3" class="form-input">{{ old('summary', $profile->summary) }}</textarea>
+@error('summary')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label style="font-size:13px;color:#475569;font-weight:600;">Kalabalık skoru (0–1)</label>
                         <input type="number" step="0.01" min="0" max="1" name="crowd_score" value="{{ old('crowd_score', $profile->crowd_score) }}" class="form-input" required>
+@error('crowd_score')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label style="font-size:13px;color:#475569;font-weight:600;">Canlılık skoru (0–1)</label>
                         <input type="number" step="0.01" min="0" max="1" name="liveliness_score" value="{{ old('liveliness_score', $profile->liveliness_score) }}" class="form-input" required>
+@error('liveliness_score')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div style="grid-column:1/-1;">
                         <label style="font-size:13px;color:#475569;font-weight:600;">
@@ -61,14 +66,17 @@
                             <span style="font-size:11px;color:#94a3b8;font-weight:400;">— izin verilen: {{ implode(', ', $allowedVibeTags) }}</span>
                         </label>
                         <input type="text" name="vibe_tags" value="{{ old('vibe_tags', implode(', ', (array) ($profile->vibe_tags ?? []))) }}" class="form-input" placeholder="cultural, historical, nature">
+@error('vibe_tags')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label style="font-size:13px;color:#475569;font-weight:600;">İdeal Aylar (1–12, virgül)</label>
                         <input type="text" name="best_months" value="{{ old('best_months', implode(', ', (array) ($profile->best_months ?? []))) }}" class="form-input" placeholder="4, 5, 9, 10">
+@error('best_months')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label style="font-size:13px;color:#475569;font-weight:600;">Yoğun Aylar (1–12, virgül)</label>
                         <input type="text" name="crowded_months" value="{{ old('crowded_months', implode(', ', (array) ($profile->crowded_months ?? []))) }}" class="form-input" placeholder="7, 8">
+@error('crowded_months')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label style="font-size:13px;color:#475569;font-weight:600;">Türk vatandaşı için vize</label>
@@ -80,6 +88,7 @@
                             <option value="1" {{ $visaValue === '1' ? 'selected' : '' }}>Evet, gerekli</option>
                             <option value="0" {{ $visaValue === '0' ? 'selected' : '' }}>Hayır, vizesiz</option>
                         </select>
+@error('requires_visa_for_tr')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div style="grid-column:1/-1;">
                         <label style="font-size:13px;color:#475569;font-weight:600;">
@@ -87,6 +96,7 @@
                             <span style="font-size:11px;color:#94a3b8;font-weight:400;">— format: <code>{"1":{"temp_c":24,"condition":"ılık"},"7":...}</code></span>
                         </label>
                         <textarea name="climate_by_month" rows="6" class="form-input" style="font-family:monospace;font-size:12px;">{{ old('climate_by_month', $profile->climate_by_month ? json_encode($profile->climate_by_month, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '') }}</textarea>
+@error('climate_by_month')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                 </div>
 

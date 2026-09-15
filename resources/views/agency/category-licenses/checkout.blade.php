@@ -69,14 +69,17 @@
                                 <div class="tam">
                                     <label for="odeme-unvan">Ünvan</label>
                                     <input type="text" id="odeme-unvan" name="company_title" value="{{ old('company_title', $agency->name) }}" class="form-input" data-corporate-required autocomplete="organization">
+@error('company_title')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
                                     <label for="odeme-vergi-no">Vergi Numarası</label>
                                     <input type="text" id="odeme-vergi-no" name="tax_number" value="{{ old('tax_number') }}" class="form-input" data-corporate-required inputmode="numeric">
+@error('tax_number')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
                                     <label for="odeme-vergi-dairesi">Vergi Dairesi</label>
                                     <input type="text" id="odeme-vergi-dairesi" name="tax_office" value="{{ old('tax_office') }}" class="form-input" data-corporate-required>
+@error('tax_office')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                             </div>
                         </div>
@@ -85,34 +88,42 @@
                             <div>
                                 <label for="odeme-ad">Ad <span data-corporate-only style="color:var(--text-muted);font-weight:400;">(yetkili kişi)</span></label>
                                 <input type="text" id="odeme-ad" name="name" value="{{ old('name') }}" class="form-input" required autocomplete="given-name">
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label for="odeme-soyad">Soyad <span data-corporate-only style="color:var(--text-muted);font-weight:400;">(yetkili kişi)</span></label>
                                 <input type="text" id="odeme-soyad" name="surname" value="{{ old('surname') }}" class="form-input" required autocomplete="family-name">
+@error('surname')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label for="odeme-tc">TC Kimlik No</label>
                                 <input type="text" id="odeme-tc" name="identity_number" value="{{ old('identity_number') }}" maxlength="11" minlength="11" class="form-input" required inputmode="numeric">
+@error('identity_number')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label for="odeme-gsm">GSM</label>
                                 <input type="tel" id="odeme-gsm" name="gsm" value="{{ old('gsm', $agency->phone) }}" placeholder="+905..." class="form-input" required autocomplete="tel">
+@error('gsm')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="tam">
                                 <label for="odeme-eposta">E-posta</label>
                                 <input type="email" id="odeme-eposta" name="email" value="{{ old('email', $agency->email) }}" class="form-input" required autocomplete="email">
+@error('email')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="tam">
                                 <label for="odeme-adres">Adres</label>
                                 <textarea id="odeme-adres" name="address" rows="2" class="form-input" required autocomplete="street-address">{{ old('address', $agency->address) }}</textarea>
+@error('address')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label for="odeme-sehir">Şehir</label>
                                 <input type="text" id="odeme-sehir" name="city" value="{{ old('city') }}" class="form-input" required autocomplete="address-level2">
+@error('city')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label for="odeme-posta">Posta Kodu</label>
                                 <input type="text" id="odeme-posta" name="zip_code" value="{{ old('zip_code') }}" class="form-input" autocomplete="postal-code">
+@error('zip_code')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <input type="hidden" name="country" value="Turkey">
                         </div>

@@ -27,10 +27,12 @@
                     <div class="form-group">
                         <label>Kategori Adı *</label>
                         <input type="text" name="requested_name" value="{{ old('requested_name') }}" required maxlength="100" placeholder="Örn: Latin Amerika Turları">
+@error('requested_name')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-group">
                         <label>Açıklama (opsiyonel)</label>
                         <textarea name="note" rows="2" maxlength="1000" placeholder="Bu kategoriye neden ihtiyacınız var?">{{ old('note') }}</textarea>
+@error('note')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <button type="submit" class="btn btn-primary">Talebi Gönder</button>
                 </form>

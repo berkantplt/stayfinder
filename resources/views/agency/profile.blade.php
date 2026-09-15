@@ -33,6 +33,7 @@
                     <label class="btn btn-outline btn-sm" style="cursor:pointer;">
                         📷 Logo Yükle
                         <input type="file" name="logo" accept="image/*" style="display:none;" onchange="previewLogo(this)">
+@error('logo')<p class="p-hata">{{ $message }}</p>@enderror
                     </label>
                     <div style="font-size:11px;color:#94a3b8;margin-top:6px;">Max 2MB · JPG, PNG</div>
                 </div>
@@ -41,32 +42,38 @@
                 <div class="form-group">
                     <label>Acenta Adı *</label>
                     <input type="text" name="name" value="{{ old('name', $agency->name) }}" required>
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Telefon</label>
                         <input type="text" name="phone" value="{{ old('phone', $agency->phone) }}" placeholder="+90 555 123 4567">
+@error('phone')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-group">
                         <label>E-posta</label>
                         <input type="email" name="email" value="{{ old('email', $agency->email) }}">
+@error('email')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Web Sitesi</label>
                     <input type="url" name="website_url" value="{{ old('website_url', $agency->website_url) }}" placeholder="https://acenta.com">
+@error('website_url')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="form-group">
                     <label>Adres</label>
                     <input type="text" name="address" value="{{ old('address', $agency->address) }}" placeholder="İstanbul, Türkiye">
+@error('address')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="form-group">
                     <label>Hakkımızda</label>
                     <textarea name="description" rows="4" placeholder="Acentanızı tanıtın...">{{ old('description', $agency->description) }}</textarea>
+@error('description')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
 
                 <button type="submit" class="btn btn-primary">Profili Güncelle</button>

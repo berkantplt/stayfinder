@@ -80,11 +80,13 @@
                                             <label style="font-size:11px;font-weight:600;color:#64748b;display:block;">
                                                 Aylık Ücret (TL)
                                                 <input type="number" name="monthly_price" min="0" step="0.01" value="{{ number_format((float) $category->monthly_price, 2, '.', '') }}" style="margin:4px 0 0;width:100%;">
+@error('monthly_price')<p class="p-hata">{{ $message }}</p>@enderror
                                             </label>
                                             @if($extraSlotReady)
                                                 <label style="font-size:11px;font-weight:600;color:#64748b;display:block;">
                                                     Ekstra Tur Fiyatı (TL)
                                                     <input type="number" name="extra_tour_price" min="0" step="0.01" value="{{ number_format((float) $category->extra_tour_price, 2, '.', '') }}" style="margin:4px 0 0;width:100%;">
+@error('extra_tour_price')<p class="p-hata">{{ $message }}</p>@enderror
                                                 </label>
                                             @endif
                                             <button type="submit" class="btn btn-outline btn-sm" style="align-self:flex-start;">Kaydet</button>

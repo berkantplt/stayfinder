@@ -87,12 +87,14 @@
                                         <form method="POST" action="{{ route('admin.agency-applications.approve', $agency) }}" style="display:flex;flex-direction:column;gap:10px;">
                                             @csrf
                                             <textarea name="approval_notes" rows="3" placeholder="Onay notu (opsiyonel)" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:14px;outline:none;resize:vertical;"></textarea>
+@error('approval_notes')<p class="p-hata">{{ $message }}</p>@enderror
                                             <button type="submit" class="btn btn-primary" style="justify-content:center;">Onayla</button>
                                         </form>
 
                                         <form method="POST" action="{{ route('admin.agency-applications.reject', $agency) }}" style="display:flex;flex-direction:column;gap:10px;">
                                             @csrf
                                             <textarea name="approval_notes" rows="3" placeholder="Red nedeni (opsiyonel)" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #fecaca;background:#fef2f2;font-size:14px;outline:none;resize:vertical;"></textarea>
+@error('approval_notes')<p class="p-hata">{{ $message }}</p>@enderror
                                             <button type="submit" class="btn btn-outline" style="justify-content:center;color:#991b1b;border-color:#fecaca;background:#fff5f5;">Reddet</button>
                                         </form>
                                     </div>

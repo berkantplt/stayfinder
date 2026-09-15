@@ -37,11 +37,13 @@
                     <div class="form-group">
                         <label>Fotoğraf URL'si</label>
                         <input type="url" name="image" value="{{ $dest->image }}" placeholder="https://images.unsplash.com/...">
+@error('image')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="form-group">
                         <label>Sıralama</label>
                         <input type="number" name="sort_order" value="{{ $dest->sort_order }}" min="0">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
 
                     <div style="display:flex;gap:8px;">

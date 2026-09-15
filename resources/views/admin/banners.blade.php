@@ -43,7 +43,8 @@
                             </label>
                             <input type="range" name="white_veil" min="0" max="100" value="{{ $perde }}"
                                 oninput="document.getElementById('veilVal').textContent='%'+this.value;
-                                         document.querySelectorAll('.js-veil').forEach(e => e.style.background = perdeCss(this.value))"
+                                         document.querySelectorAll('.js-veil').forEach(e =>
+@error('white_veil')<p class="p-hata">{{ $message }}</p>@enderror e.style.background = perdeCss(this.value))"
                                 style="width:100%;accent-color:var(--accent);">
                             <div style="font-size:11px;color:#64748b;margin-top:6px;">
                                 Ana sayfada başlığın arkasındaki beyaz geçiş. Tek ayar, tüm banner'lara birden uygulanır —
@@ -71,6 +72,7 @@
                             <input type="range" name="deco_opacity" min="0" max="100" value="{{ $mdSeffaflik }}"
                                 oninput="document.getElementById('decoOpVal').textContent='%'+this.value; decoOnizle()"
                                 style="width:100%;accent-color:var(--accent);">
+@error('deco_opacity')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin-bottom:0;flex:1;min-width:220px;">
                             <label style="font-size:13px;color:#475569;font-weight:700;">
@@ -79,6 +81,7 @@
                             <input type="range" name="deco_darkness" min="0" max="100" value="{{ $mdKoyuluk }}"
                                 oninput="document.getElementById('decoDkVal').textContent='%'+this.value; decoOnizle()"
                                 style="width:100%;accent-color:var(--accent);">
+@error('deco_darkness')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         {{-- Canlı mini önizleme: sitedekiyle AYNI şekiller (küçük kopya) --}}
                         <div style="flex:none;">
@@ -113,23 +116,28 @@
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Banner Başlığı <span style="color:#ef4444">*</span></label>
                             <input type="text" name="title" required placeholder="Ör: Kapadokya" value="{{ old('title') }}" style="padding:14px;background:#f8fafc;">
+@error('title')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Görsel <span style="color:#ef4444">*</span></label>
                             <input type="file" name="image" accept="image/*" required style="padding:11px;background:#f8fafc;">
+@error('image')<p class="p-hata">{{ $message }}</p>@enderror
                             <div style="font-size:11px;color:#64748b;margin-top:6px;">Önerilen boyut: En az 1920x1080 piksel (Full HD)</div>
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Bulanıklık (Blur): <span id="newBlurVal" style="font-weight:700;color:var(--accent);">0px</span></label>
                             <input type="range" name="blur" min="0" max="20" value="0" oninput="document.getElementById('newBlurVal').textContent=this.value+'px'" style="width:100%;accent-color:var(--accent);">
+@error('blur')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Karanlık (Overlay): <span id="newDarkVal" style="font-weight:700;color:var(--accent);">40%</span></label>
                             <input type="range" name="darkness" min="0" max="100" value="40" oninput="document.getElementById('newDarkVal').textContent=this.value+'%'" style="width:100%;accent-color:var(--accent);">
+@error('darkness')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Sıralama</label>
                             <input type="number" name="sort_order" value="0" style="padding:14px;background:#f8fafc;">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                     </div>
                     <div style="margin-top:24px;display:flex;justify-content:flex-end;">
@@ -168,14 +176,17 @@
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;color:#475569;">Başlık</label>
                                 <input type="text" name="title" value="{{ $banner->title }}" required style="padding:12px;background:#f8fafc;">
+@error('title')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;color:#475569;">Görsel Değiştir</label>
                                 <input type="file" name="image" accept="image/*" style="padding:9px;background:#f8fafc;">
+@error('image')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;color:#475569;">Sıralama</label>
                                 <input type="number" name="sort_order" value="{{ $banner->sort_order }}" style="padding:12px;background:#f8fafc;">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;">
@@ -184,12 +195,14 @@
                                 <input type="range" name="blur" min="0" max="20" value="{{ $banner->blur }}"
                                     oninput="document.getElementById('blurVal{{ $banner->id }}').textContent=this.value+'px';document.querySelector('#preview-{{ $banner->id }} img').style.filter='blur('+this.value+'px)'"
                                     style="width:100%;accent-color:var(--accent);">
+@error('blur')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label style="font-size:12px;color:#475569;">Karanlık: <span id="darkVal{{ $banner->id }}" style="font-weight:700;color:var(--accent);">{{ $banner->darkness }}%</span></label>
                                 <input type="range" name="darkness" min="0" max="100" value="{{ $banner->darkness }}"
                                     oninput="document.getElementById('darkVal{{ $banner->id }}').textContent=this.value+'%';document.getElementById('overlay-{{ $banner->id }}').style.background='rgba(0,0,0,'+(this.value/100)+')'"
                                     style="width:100%;accent-color:var(--accent);">
+@error('darkness')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                         </div>
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;gap:12px;flex-wrap:wrap;">

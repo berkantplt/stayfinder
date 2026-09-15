@@ -35,23 +35,28 @@
                                 <option value="{{ $tour->id }}">{{ $tour->title }} ({{ $tour->formatted_price }})</option>
                             @endforeach
                         </select>
+@error('tour_id')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:13px;color:#475569;">İndirimli Fiyat (₺) <span style="color:#ef4444">*</span></label>
                         <input type="number" name="discount_price" min="0" step="0.01" required placeholder="Ör: 2499" style="padding:14px;background:#f8fafc;font-weight:600;color:#10b981;">
+@error('discount_price')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:13px;color:#475569;">Kampanya Etiketi (Adı) <span style="color:#ef4444">*</span></label>
                         <input type="text" name="label" required placeholder="Ör: Erken Rezervasyon İndirimi" value="{{ old('label') }}" style="padding:14px;background:#f8fafc;">
+@error('label')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div class="panel-grid-ic" style="gap:16px;">
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Başlangıç <span style="color:#ef4444">*</span></label>
                             <input type="datetime-local" name="starts_at" required style="padding:14px;background:#f8fafc;">
+@error('starts_at')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Bitiş <span style="color:#ef4444">*</span></label>
                             <input type="datetime-local" name="ends_at" required style="padding:14px;background:#f8fafc;">
+@error('ends_at')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                     </div>
                 </div>

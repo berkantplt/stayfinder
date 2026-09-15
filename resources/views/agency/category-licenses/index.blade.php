@@ -352,6 +352,7 @@
                                                                 @csrf
                                                                 <label for="hak-plani-{{ $sub->id }}">Yeni dönemde kalacak ekstra hak:</label>
                                                                 <input type="number" id="hak-plani-{{ $sub->id }}" name="keep" min="0" max="{{ $license->extra_slots }}" value="{{ $license->extra_slots }}">
+@error('keep')<p class="p-hata">{{ $message }}</p>@enderror
                                                                 <button type="submit" class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11.5px;">Azalt</button>
                                                             </form>
                                                         @endif

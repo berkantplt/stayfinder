@@ -42,10 +42,12 @@
                         <div class="form-group" style="margin:0;">
                             <label>Ad *</label>
                             <input type="text" name="name" required placeholder="Kültür Turları">
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label>İkon (Emoji)</label>
                             <input type="text" name="icon" placeholder="🏛️">
+@error('icon')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label>Üst Kategori *</label>
@@ -55,22 +57,26 @@
                                     <option value="{{ $parent->id }}">{{ $parent->icon }} {{ $parent->name }}</option>
                                 @endforeach
                             </select>
+@error('parent_id')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         @if($categoryLicensingReady)
                             <div class="form-group" style="margin:0;">
                                 <label>Aylık Ücret (TL) *</label>
                                 <input type="number" name="monthly_price" value="2000" min="0" step="0.01" required>
+@error('monthly_price')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                         @endif
                         @if($extraSlotReady)
                             <div class="form-group" style="margin:0;">
                                 <label>Ekstra Tur Fiyatı (TL) *</label>
                                 <input type="number" name="extra_tour_price" value="1000" min="0" step="0.01" required>
+@error('extra_tour_price')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                         @endif
                         <div class="form-group" style="margin:0;">
                             <label>Sıralama</label>
                             <input type="number" name="sort_order" id="createSort" value="0">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <button type="submit" class="btn btn-primary" style="height:44px;" {{ $parentCategories->isEmpty() ? 'disabled' : '' }}>Ekle</button>
                     </div>
@@ -149,16 +155,21 @@
         <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">Alt Kategori Düzenle</h3>
         <form method="POST" id="editForm">
             @csrf @method('PUT')
-            <div class="form-group"><label>Ad *</label><input type="text" name="name" id="editName" required></div>
+            <div class="form-group"><label>Ad *</label><input type="text" name="name" id="editName" required>
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror</div>
             <div class="form-row">
-                <div class="form-group"><label>İkon (Emoji)</label><input type="text" name="icon" id="editIcon"></div>
+                <div class="form-group"><label>İkon (Emoji)</label><input type="text" name="icon" id="editIcon">
+@error('icon')<p class="p-hata">{{ $message }}</p>@enderror</div>
                 @if($categoryLicensingReady)
-                    <div class="form-group"><label>Aylık Ücret (TL) *</label><input type="number" name="monthly_price" id="editMonthlyPrice" min="0" step="0.01" required></div>
+                    <div class="form-group"><label>Aylık Ücret (TL) *</label><input type="number" name="monthly_price" id="editMonthlyPrice" min="0" step="0.01" required>
+@error('monthly_price')<p class="p-hata">{{ $message }}</p>@enderror</div>
                 @endif
                 @if($extraSlotReady)
-                    <div class="form-group"><label>Ekstra Tur Fiyatı (TL) *</label><input type="number" name="extra_tour_price" id="editExtraTourPrice" min="0" step="0.01" required></div>
+                    <div class="form-group"><label>Ekstra Tur Fiyatı (TL) *</label><input type="number" name="extra_tour_price" id="editExtraTourPrice" min="0" step="0.01" required>
+@error('extra_tour_price')<p class="p-hata">{{ $message }}</p>@enderror</div>
                 @endif
-                <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort"></div>
+                <div class="form-group"><label>Sıralama</label><input type="number" name="sort_order" id="editSort">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror</div>
             </div>
             @if($extraSlotReady)
                 <div style="font-size:12px;color:var(--text-muted);margin:-6px 0 12px;">Her abonelik {{ \App\Support\CategoryLicensing::BASE_TOUR_ALLOWANCE }} tur hakkı içerir; ekstra tur fiyatı, hak başına tek seferlik bedeldir.</div>
@@ -170,6 +181,7 @@
                         <option value="{{ $parent->id }}">{{ $parent->icon }} {{ $parent->name }}</option>
                     @endforeach
                 </select>
+@error('parent_id')<p class="p-hata">{{ $message }}</p>@enderror
             </div>
             <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:24px;">
                 <button type="button" class="btn btn-outline" onclick="closeEditModal()">İptal</button>

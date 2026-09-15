@@ -27,19 +27,23 @@
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Şehir Adı <span style="color:#ef4444">*</span></label>
                             <input type="text" name="name" required placeholder="Ör: Paris" value="{{ old('name') }}" style="padding:14px;background:#f8fafc;">
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Ülke <span style="color:#ef4444">*</span></label>
                             <input type="text" name="country" required placeholder="Ör: Fransa" value="{{ old('country') }}" style="padding:14px;background:#f8fafc;">
+@error('country')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label style="font-size:13px;color:#475569;">Sıralama</label>
                             <input type="number" name="sort_order" value="0" style="padding:14px;background:#f8fafc;">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror
                         </div>
                     </div>
                     <div class="form-group" style="margin-top:20px;margin-bottom:0;">
                         <label style="font-size:13px;color:#475569;">Turları Gör Bağlantısı <span style="color:#94a3b8;font-weight:400;">(boşsa şehir adıyla arama yapılır)</span></label>
                         <input type="text" name="link" placeholder="Ör: /turlar?destination=Paris veya /turlar?q=Paris" value="{{ old('link') }}" style="padding:14px;background:#f8fafc;">
+@error('link')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div style="margin-top:24px;display:flex;justify-content:flex-end;">
                         <button type="submit" class="btn btn-primary" style="padding:14px 32px;font-size:15px;">Şehir Ekle</button>
@@ -75,14 +79,17 @@
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label style="font-size:12px;">Şehir</label>
                                     <input type="text" name="name" value="{{ $city->name }}" required style="padding:10px;">
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label style="font-size:12px;">Ülke</label>
                                     <input type="text" name="country" value="{{ $city->country }}" required style="padding:10px;">
+@error('country')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label style="font-size:12px;">Sıra</label>
                                     <input type="number" name="sort_order" value="{{ $city->sort_order }}" style="padding:10px;">
+@error('sort_order')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label style="font-size:12px;">Durum</label>
@@ -90,11 +97,13 @@
                                         <option value="1" {{ $city->is_active ? 'selected' : '' }}>Aktif</option>
                                         <option value="0" {{ !$city->is_active ? 'selected' : '' }}>Pasif</option>
                                     </select>
+@error('is_active')<p class="p-hata">{{ $message }}</p>@enderror
                                 </div>
                             </div>
                             <div class="form-group" style="margin-top:12px;margin-bottom:0;">
                                 <label style="font-size:12px;">Turları Gör Bağlantısı <span style="color:#94a3b8;">(boşsa şehir adıyla arama)</span></label>
                                 <input type="text" name="link" value="{{ $city->link }}" placeholder="/turlar?destination={{ $city->name }}" style="padding:10px;">
+@error('link')<p class="p-hata">{{ $message }}</p>@enderror
                             </div>
                             <div style="margin-top:15px;display:flex;justify-content:flex-end;gap:10px;">
                                 <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('edit-city-{{ $city->id }}').style.display='none'">İptal</button>
@@ -110,6 +119,7 @@
                             <form action="{{ route('admin.featured_cities.add_image', $city) }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:10px;">
                                 @csrf
                                 <input type="file" name="image" accept="image/*" required style="font-size:12px;">
+@error('image')<p class="p-hata">{{ $message }}</p>@enderror
                                 <button type="submit" class="btn btn-primary btn-sm">+ Görsel Ekle</button>
                             </form>
                         </div>

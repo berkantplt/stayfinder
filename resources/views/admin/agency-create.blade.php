@@ -13,17 +13,22 @@
 
         <form method="POST" action="{{ route('admin.agencies.store') }}">
             @csrf
-            <div class="form-group"><label>Acenta Adı *</label><input type="text" name="name" value="{{ old('name') }}" required></div>
+            <div class="form-group"><label>Acenta Adı *</label><input type="text" name="name" value="{{ old('name') }}" required>
+@error('name')<p class="p-hata">{{ $message }}</p>@enderror</div>
             <div class="form-row">
-                <div class="form-group"><label>Telefon</label><input type="text" name="phone" value="{{ old('phone') }}"></div>
+                <div class="form-group"><label>Telefon</label><input type="text" name="phone" value="{{ old('phone') }}">
+@error('phone')<p class="p-hata">{{ $message }}</p>@enderror</div>
                 <div class="form-group">
                     <label>E-posta *</label>
                     <input type="email" name="email" value="{{ old('email') }}" required>
+@error('email')<p class="p-hata">{{ $message }}</p>@enderror
                     <small style="color:#64748b;font-size:12px;">Panel giriş adresi olur. Şifre otomatik üretilip kaydettikten sonra bir kez gösterilir.</small>
                 </div>
             </div>
-            <div class="form-group"><label>Web Sitesi</label><input type="url" name="website_url" value="{{ old('website_url') }}"></div>
-            <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description') }}</textarea></div>
+            <div class="form-group"><label>Web Sitesi</label><input type="url" name="website_url" value="{{ old('website_url') }}">
+@error('website_url')<p class="p-hata">{{ $message }}</p>@enderror</div>
+            <div class="form-group"><label>Açıklama</label><textarea name="description">{{ old('description') }}</textarea>
+@error('description')<p class="p-hata">{{ $message }}</p>@enderror</div>
             <button type="submit" class="btn btn-primary">Acenta Oluştur</button>
         </form>
     </div>
