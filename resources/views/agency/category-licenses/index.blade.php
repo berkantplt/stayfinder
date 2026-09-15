@@ -85,7 +85,9 @@
                 </div>
                 {{-- Ana eylem duruma bağlı: sepet doluysa ödeme, hiç yetki yoksa kategori seçimi, aksi halde tur oluşturma --}}
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    @unless($isLegacy)
                     <a href="{{ route('agency.category-licenses.checkout-form') }}" class="btn btn-primary" data-cta-odeme style="{{ $cartEmpty ? 'display:none;' : '' }}">Ödemeye Geç</a>
+                    @endunless
                     @if(! $isLegacy && $licensedCategories->isEmpty())
                         <a href="#satin-alinabilir" class="btn btn-primary" data-cta-varsayilan style="{{ $cartEmpty ? '' : 'display:none;' }}">Kategori Seç</a>
                     @else
@@ -157,22 +159,22 @@
             @if($isLegacy)
                 <div class="alert alert-success" style="max-width:94%;margin:0 auto 24px;">
                     Bu acenta geçiş kapsamına alındı. Kayıtlı turların etkilenmemesi için tüm aktif alt kategoriler satın alınmış gibi tanımlandı.
+                    Satın alma gerekmediği için bu sayfada sepet ve ödeme bulunmaz; yetkili kategoriler aşağıda listelenir.
                 </div>
             @endif
 
-            <div class="panel-grid-yan">
+            @php $sagSutunVar = ! $isLegacy || $lastOrder !== null; @endphp
+            <div class="panel-grid-yan" @if(! $sagSutunVar) style="grid-template-columns:minmax(0,1fr);" @endif>
                 <div class="kym-bolum">
+                    {{-- C17: geçiş erişimli acentaya satın alma arayüzü gösterilmez --}}
+                    @unless($isLegacy)
                     <div class="stat-card" id="satin-alinabilir" style="padding:24px;">
                         <div class="kym-bolum-baslik">
                             <h2>Satın Alınabilir Kategoriler</h2>
                             <div class="not">Aylık ücret kategori bazlıdır.</div>
                         </div>
 
-                        @if($isLegacy)
-                            <div class="kym-bos">
-                                Geçiş erişimi nedeniyle yeni kategori satın alımı gerekmiyor. Tüm aktif alt kategoriler hesabınızda açık görünüyor.
-                            </div>
-                        @elseif($availableCategories->isEmpty())
+                        @if($availableCategories->isEmpty())
                             <div class="kym-bos">
                                 Satın alınabilir açık kategori kalmadı. Aktif yetkileriniz tüm kullanılabilir kategorileri kapsıyor.
                             </div>
@@ -210,6 +212,7 @@
                             </div>
                         @endif
                     </div>
+                    @endunless
 
                     <div class="stat-card" id="aktif-yetkiler" style="padding:24px;">
                         <div class="kym-bolum-baslik">
@@ -380,8 +383,10 @@
                     </div>
                 </div>
 
+                @if($sagSutunVar)
                 <div class="kym-bolum" style="gap:16px;">
                     {{-- Sepet özeti: kalem adları burada, kaldırma XHR ile; tam ekran ayrı sayfada (cart.show) --}}
+                    @unless($isLegacy)
                     <div class="stat-card kym-yan-kart" style="padding:16px;">
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
                             <h2>Sepet</h2>
@@ -429,6 +434,7 @@
                             </a>
                         </div>
                     </div>
+                    @endunless
 
                     @if($autoRenewEnabled && ! $isLegacy)
                         <div class="stat-card kym-yan-kart" id="yenileme-karti" style="padding:16px;scroll-margin-top:90px;">
@@ -453,7 +459,8 @@
                         </div>
                     @endif
 
-                    {{-- Satın alımlar burada yalnız ÖZET (yalnız ödenmiş siparişler): tam liste ayrı ekranda --}}
+                    {{-- Satın alımlar burada yalnız ÖZET (yalnız ödenmiş siparişler): tam liste ayrı ekranda; legacy'de yalnız geçmiş sipariş varsa --}}
+                    @if(! $isLegacy || $lastOrder !== null)
                     <div class="stat-card kym-yan-kart" style="padding:16px;">
                         <h2 style="margin-bottom:12px;">Son Satın Alım</h2>
 
@@ -485,7 +492,9 @@
                             </a>
                         @endif
                     </div>
+                    @endif
                 </div>
+                @endif
             </div>
         </div>
     </div>
