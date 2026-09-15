@@ -263,7 +263,7 @@ Route::post('/kayit', function (Request $request) {
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'role' => 'agency',
+                'role' => User::ROLE_AGENCY,
                 'agency_id' => $agency->id,
                 'phone' => $validated['phone'] ?? null,
             ]);
@@ -287,7 +287,7 @@ Route::post('/kayit', function (Request $request) {
         'name' => $validated['name'],
         'email' => $validated['email'],
         'password' => Hash::make($validated['password']),
-        'role' => 'visitor',
+        'role' => User::ROLE_VISITOR,
     ]);
 
     Auth::login($user);

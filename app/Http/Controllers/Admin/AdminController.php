@@ -440,7 +440,7 @@ class AdminController extends Controller
                 'name' => $agency->name.' Yönetici',
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
-                'role' => 'agency',
+                'role' => User::ROLE_AGENCY,
                 'agency_id' => $agency->id,
             ]);
 

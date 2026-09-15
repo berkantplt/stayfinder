@@ -12,6 +12,17 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    // A9 — Rol değerleri tek yerden. Serbest metin olduğu dönemde DB'ye tanımsız
+    // bir rol (ör. "user") girip sessizce müşteri gibi davranmıştı; artık kod bu
+    // sabitleri kullanır, migration kolonu enum'a çevirir (MySQL).
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_AGENCY = 'agency';
+
+    public const ROLE_VISITOR = 'visitor';
+
+    public const ROLES = [self::ROLE_ADMIN, self::ROLE_AGENCY, self::ROLE_VISITOR];
+
     protected $fillable = [
         'name', 'email', 'password', 'role', 'agency_id',
         'phone', 'avatar', 'city', 'bio', 'birth_date',
@@ -47,12 +58,18 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === self::ROLE_ADMIN;
     }
 
     public function isAgency(): bool
     {
-        return $this->role === 'agency';
+        return $this->role === self::ROLE_AGENCY;
+    }
+
+    /** Müşteri (ziyaretçi) hesabı — admin ve acenta dışındaki tek rol. */
+    public function isCustomer(): bool
+    {
+        return $this->role === self::ROLE_VISITOR;
     }
 
     public function agencyApproved(): bool
