@@ -100,7 +100,7 @@
             <div style="display:flex; gap:16px; margin-bottom:16px;">
                 <div style="flex:1;">
                     <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">İndirim Tipi</label>
-                    <select name="discount_type" required style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+                    <select name="discount_type" required data-discount-type style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
                         <option value="fixed">Sabit Tutar (₺)</option>
                         <option value="percent">Yüzde (%)</option>
                     </select>
@@ -108,7 +108,7 @@
                 </div>
                 <div style="flex:1;">
                     <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">İndirim Değeri</label>
-                    <input type="number" name="discount_value" step="0.01" required style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+                    <input type="number" name="discount_value" step="0.01" min="0.01" max="{{ \App\Models\Coupon::MAX_FIXED }}" required data-discount-value value="{{ old('discount_value') }}" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
 @error('discount_value')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -153,4 +153,19 @@
         </div>
     </div>
 </div>
+<script>
+(function () {
+    // C13: yüzde seçilince tarayıcı üst sınırı 100, sabit tutarda 1.000.000 (sunucu kuralıyla aynı)
+    var type = document.querySelector('[data-discount-type]');
+    var value = document.querySelector('[data-discount-value]');
+    if (!type || !value) return;
+    function sync() {
+        var pct = type.value === 'percent';
+        value.max = pct ? {{ \App\Models\Coupon::MAX_PERCENT }} : {{ \App\Models\Coupon::MAX_FIXED }};
+        value.placeholder = pct ? 'Örn: 15 (en fazla 100)' : 'Örn: 500';
+    }
+    type.addEventListener('change', sync);
+    sync();
+})();
+</script>
 @endsection

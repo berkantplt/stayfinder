@@ -34,6 +34,36 @@ class Coupon extends Model
         'min_purchase_amount' => 'decimal:2',
     ];
 
+    /** C13 — yüzde indirimin üst sınırı; formda ve doğrulamada aynı sayı. */
+    public const MAX_PERCENT = 100;
+
+    /** C13 — sabit indirim üst sınırı (TL); "%500" gibi anlamsız değerlerin sabit eşi. */
+    public const MAX_FIXED = 1000000;
+
+    /**
+     * C13 — İndirim değeri kuralı türe bağlıdır: yüzde ≤ 100, sabit ≤ 1.000.000 TL,
+     * her ikisinde 0 anlamsız. Acenta ve admin formları aynı kuralı kullanır.
+     *
+     * @return array<int, string>
+     */
+    public static function discountValueRules(?string $type): array
+    {
+        $max = $type === 'percent' ? self::MAX_PERCENT : self::MAX_FIXED;
+
+        return ['required', 'numeric', 'gt:0', 'max:'.$max];
+    }
+
+    /** @return array<string, string> */
+    public static function discountValueMessages(?string $type): array
+    {
+        return [
+            'discount_value.gt' => 'İndirim değeri 0\'dan büyük olmalı.',
+            'discount_value.max' => $type === 'percent'
+                ? 'Yüzde indirim en fazla %'.self::MAX_PERCENT.' olabilir.'
+                : 'Sabit indirim en fazla '.number_format(self::MAX_FIXED, 0, ',', '.').' ₺ olabilir.',
+        ];
+    }
+
     public function usages()
     {
         return $this->hasMany(CouponUsage::class);

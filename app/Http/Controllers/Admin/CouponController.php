@@ -20,12 +20,12 @@ class CouponController extends Controller
             // Kod HTML/JS bağlamlarında basılıyor — karakter kümesi kısıtlı tutuluyor.
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:coupons,code'],
             'discount_type' => 'required|in:percent,fixed',
-            'discount_value' => 'required|numeric|min:0',
+            'discount_value' => Coupon::discountValueRules($request->input('discount_type')), // C13
             'min_purchase_amount' => 'nullable|numeric|min:0',
             'max_uses' => 'nullable|integer|min:1',
             'starts_at' => 'nullable|date',
             'expires_at' => 'nullable|date|after_or_equal:starts_at',
-        ]);
+        ], Coupon::discountValueMessages($request->input('discount_type')));
 
         $validated['is_active'] = $request->has('is_active');
 
@@ -39,12 +39,12 @@ class CouponController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:coupons,code,'.$coupon->id],
             'discount_type' => 'required|in:percent,fixed',
-            'discount_value' => 'required|numeric|min:0',
+            'discount_value' => Coupon::discountValueRules($request->input('discount_type')), // C13
             'min_purchase_amount' => 'nullable|numeric|min:0',
             'max_uses' => 'nullable|integer|min:1',
             'starts_at' => 'nullable|date',
             'expires_at' => 'nullable|date|after_or_equal:starts_at',
-        ]);
+        ], Coupon::discountValueMessages($request->input('discount_type')));
 
         $validated['is_active'] = $request->has('is_active');
 
