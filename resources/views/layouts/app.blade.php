@@ -710,6 +710,7 @@
             .m-tabbar a svg { width:22px; height:22px; }
             .m-tabbar a.active { color:var(--accent-ink); font-weight:800; }
             .m-tabbar a.active svg { fill:rgba(13,148,136,.13); }
+            .m-tab-rozet { position:absolute; top:-4px; right:calc(50% - 18px); min-width:16px; height:16px; padding:0 4px; border-radius:999px; background:#ef4444; color:#fff; font-size:9.5px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; line-height:1; } /* D11 */
             /* Ozel ozellikler bir SECICI icinde olmak zorunda — medya sorgusunun
                govdesine dogrudan yazilirsa gecersiz sayilip yok sayilir. */
             :root {
@@ -1111,9 +1112,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7M13 6h7"/><path d="M7.5 6v13M16.5 6v13"/><path d="M4.5 13 7.5 7l3 6a3 3 0 0 1-6 0zM13.5 13l3-6 3 6a3 3 0 0 1-6 0z"/></svg>
                 Karşılaştır
             </a>
-            <a href="{{ $mProfileUrl }}" class="{{ request()->is('profil*') ? 'active' : '' }}">
+            {{-- D11: "Profilim" → "Hesabım": /profilim artık kupon/bildirim/kayıtlı arama
+                 sekmelerini ilk seviyede taşıyan hesap ana ekranı (D1); rozet okunmamış bildirim --}}
+            <a href="{{ $mProfileUrl }}" class="{{ request()->is('profilim*', 'hesabim*', 'kuponlarim*', 'bildirimler*', 'kayitli-aramalarim*') ? 'active' : '' }}" style="position:relative;">
+                @if(auth()->check() && ! auth()->user()->isAdmin() && ! auth()->user()->isAgency() && ($unreadCount ?? 0) > 0)
+                    <span class="m-tab-rozet">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                @endif
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>
-                Profilim
+                {{ auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isAgency()) ? 'Panel' : 'Hesabım' }}
             </a>
         </div>
     @endif
