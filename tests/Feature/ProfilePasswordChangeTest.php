@@ -31,7 +31,7 @@ class ProfilePasswordChangeTest extends TestCase
             'password_confirmation' => 'yeni-sifre-456',
         ]);
 
-        $response->assertRedirect(route('profile.show'))
+        $response->assertRedirect(route('profile.security'))
             ->assertSessionHas('success', 'Şifreniz güncellendi; diğer cihazlardaki oturumlarınız kapatıldı.');
 
         $this->assertTrue(Hash::check('yeni-sifre-456', $user->fresh()->password));

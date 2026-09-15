@@ -4,6 +4,7 @@
 @section('content')
 <div class="container">
     <div class="section">
+        @include('partials.account-nav')
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif

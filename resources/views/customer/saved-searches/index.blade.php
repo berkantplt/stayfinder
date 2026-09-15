@@ -4,6 +4,7 @@
 @section('content')
 <div class="container">
     <div class="section">
+        @include('partials.account-nav')
         <h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">Kayıtlı Aramalarım</h1>
         <p style="color:var(--text-meta);font-size:14px;margin-bottom:24px;">Uyan yeni tur eklenince bildirimlerinde görürsün. Her arama için günde en fazla bir bildirim.</p>
 

@@ -4,6 +4,7 @@
 @section('content')
 <div class="container" style="max-width:680px;">
     <div class="section">
+        @include('partials.account-nav')
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
             <h1 style="font-size:22px;font-weight:800;">Profilimi Düzenle</h1>
             <a href="{{ route('profile.show') }}" class="btn btn-outline btn-sm">← Geri</a>
@@ -84,28 +85,7 @@
             </form>
         </div>
 
-        {{-- Password Form --}}
-        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;">
-            <h2 style="font-size:16px;font-weight:700;margin-bottom:18px;">🔒 Şifre Değiştir</h2>
-            <form method="POST" action="{{ route('profile.password') }}">
-                @csrf @method('PUT')
-                <div class="form-group">
-                    <label>Mevcut Şifre</label>
-                    <input type="password" name="current_password" placeholder="••••••••">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Yeni Şifre</label>
-                        <input type="password" name="password" placeholder="Min. 8 karakter">
-                    </div>
-                    <div class="form-group">
-                        <label>Şifre Tekrar</label>
-                        <input type="password" name="password_confirmation" placeholder="Tekrar girin">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-outline">Şifreyi Güncelle</button>
-            </form>
-        </div>
+        <div style="font-size:13px;color:var(--text-muted);">Şifre ve hesap güvenliği ayarları <a href="{{ route('profile.security') }}" style="color:var(--accent);font-weight:600;">Güvenlik</a> sekmesinde.</div>
     </div>
 </div>
 

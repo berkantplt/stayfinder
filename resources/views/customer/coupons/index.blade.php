@@ -4,6 +4,7 @@
 @section('content')
 <div class="container">
     <div class="section">
+        @include('partials.account-nav')
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
             <span style="font-size:26px;">🎟️</span>
             <h1 style="font-size:24px;font-weight:800;margin:0;">Kuponlarım</h1>

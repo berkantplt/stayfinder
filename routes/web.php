@@ -147,9 +147,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/kayitli-aramalarim/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('customer.saved-searches.destroy');
     Route::post('/turlar/{tour}/yorum', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/yorum/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
-    // Profile
+    // Profile — D1: /hesabim ortak giriş kapısı, sekmeler partials/account-nav
+    Route::get('/hesabim', fn () => redirect()->route('profile.show'))->name('account.index');
     Route::get('/profilim', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profilim/duzenle', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profilim/guvenlik', [ProfileController::class, 'security'])->name('profile.security');
     Route::put('/profilim', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profilim/sifre', [ProfileController::class, 'updatePassword'])->name('profile.password');
 

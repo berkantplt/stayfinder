@@ -35,6 +35,12 @@ class ProfileController extends Controller
         return view('profile.edit', ['user' => auth()->user()]);
     }
 
+    /** D1 — Güvenlik sekmesi: şifre (ileride e-posta onayı, veri indirme, hesap silme). */
+    public function security()
+    {
+        return view('profile.security', ['user' => auth()->user()]);
+    }
+
     public function update(Request $request)
     {
         $user = auth()->user();
@@ -89,6 +95,6 @@ class ProfileController extends Controller
         Auth::logoutOtherDevices($request->password);
         $request->session()->regenerate();
 
-        return redirect()->route('profile.show')->with('success', 'Şifreniz güncellendi; diğer cihazlardaki oturumlarınız kapatıldı.');
+        return redirect()->route('profile.security')->with('success', 'Şifreniz güncellendi; diğer cihazlardaki oturumlarınız kapatıldı.');
     }
 }

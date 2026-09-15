@@ -4,6 +4,7 @@
 @section('content')
 <div class="container">
     <div class="section">
+        @include('partials.account-nav')
         <h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">❤️ Favorilerim @if($favorites->total() > 0)<span style="font-size:14px;color:var(--text-muted);font-weight:600;">({{ $favorites->total() }})</span>@endif</h1>
         <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px;">Beğendiğin turlar burada saklanır.</p>
 

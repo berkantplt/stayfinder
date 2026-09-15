@@ -4,6 +4,7 @@
 @section('content')
 <div class="container" style="padding-top:120px; padding-bottom:60px;">
     <div style="max-width:800px; margin:0 auto;">
+        @include('partials.account-nav')
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
             <h1 style="font-size:24px; font-weight:700;">Bildirimlerim</h1>
             @if($notifications->where('read_at', null)->count() > 0)
