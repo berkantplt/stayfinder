@@ -80,6 +80,9 @@
                                 @endforelse
                             </tbody>
                         </table></div>
+                        @if($coupons->hasPages())
+                            <div style="margin-top:16px;">{{ $coupons->links() }}</div>
+                        @endif
                     </div>
                 </div>
             </div>

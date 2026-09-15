@@ -16,7 +16,8 @@ class CouponController extends Controller
             ->withCount('usages')
             ->where('agency_id', $agencyId)
             ->latest()
-            ->get();
+            ->orderByDesc('id') // aynı saniyede açılan kuponlarda sayfalar arası kararlı sıra
+            ->paginate(20); // C14
 
         return view('agency.coupons.index', compact('coupons'));
     }

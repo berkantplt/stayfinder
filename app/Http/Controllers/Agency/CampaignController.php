@@ -12,11 +12,14 @@ class CampaignController extends Controller
     public function index()
     {
         $agency = auth()->user()->agency;
-        $tours = $agency->tours()->active()->get();
-        $campaigns = Campaign::whereIn('tour_id', $tours->pluck('id'))
+        // Seçim kutusu: yalnız yayındaki turlar (kampanya pasif tura açılmaz); aranabilir alan (C14)
+        $tours = $agency->tours()->active()->orderBy('title')->get();
+        // Liste: acentanın TÜM turlarının kampanyaları — tur pasife alınınca kampanyası listeden kaybolmasın
+        $campaigns = Campaign::whereIn('tour_id', $agency->tours()->select('id'))
             ->with('tour')
             ->orderByDesc('created_at')
-            ->get();
+            ->orderByDesc('id') // eşit zaman damgalarında kararlı sayfalama
+            ->paginate(20); // C14
 
         return view('agency.campaigns.index', compact('tours', 'campaigns'));
     }
@@ -47,7 +50,7 @@ class CampaignController extends Controller
         $this->authorizeCampaign($campaign);
 
         $agency = auth()->user()->agency;
-        $tours = $agency->tours()->active()->get();
+        $tours = $agency->tours()->active()->orderBy('title')->get();
 
         return view('agency.campaigns.edit', compact('campaign', 'tours'));
     }

@@ -29,7 +29,8 @@
                 <div class="panel-grid-2">
                     <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:13px;color:#475569;">Hedef Tur <span style="color:#ef4444">*</span></label>
-                        <select name="tour_id" required style="padding:14px 36px 14px 14px;background-color:#f8fafc;">
+                        @include('partials.searchable-select')
+                        <select name="tour_id" required data-searchable style="padding:14px 36px 14px 14px;background-color:#f8fafc;">
                             <option value="">Tur Seçin</option>
                             @foreach($tours as $tour)
                                 <option value="{{ $tour->id }}">{{ $tour->title }} ({{ $tour->formatted_price }})</option>
@@ -119,6 +120,9 @@
                 <div>Yeni bir kampanya oluşturarak satışlarınızı artırabilirsiniz.</div>
             </div>
             @endforelse
+            @if($campaigns->hasPages())
+                <div style="margin-top:16px;">{{ $campaigns->links() }}</div>
+            @endif
         </div>
         </div>
     </div>
