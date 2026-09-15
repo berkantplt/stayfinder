@@ -596,29 +596,95 @@ class AdminController extends Controller
 
     public function destinations()
     {
-        $destinations = Destination::orderBy('sort_order')->get();
+        // B17: sayfalama — tüm destinasyonlar tek sayfada geliyordu
+        $destinations = Destination::orderBy('sort_order')->orderBy('name')->paginate(12);
 
         return view('admin.destinations', compact('destinations'));
     }
 
+    /**
+     * B17 — Eskiden yalnız dış görsel URL'si ve sıralama düzenlenebiliyordu; görsel
+     * dış adrese bağlı olduğu için o adres ölünce ana sayfa kartı boş kalıyordu.
+     * Şimdi ad/açıklama/ülke de düzenlenir, görsel sunucuya yüklenebilir
+     * (TourImageService: içerik tipi doğrulaması, uuid ad, /storage/ yolu).
+     * Öncelik: yüklenen dosya > "görseli kaldır" > URL alanı.
+     */
     public function updateDestination(Request $request, Destination $destination)
     {
         $validated = $request->validate([
-            'image' => 'nullable|url',
-            'sort_order' => 'nullable|integer',
+            // name UNIQUE sütun; ayrıca turlarla eşleşme anahtarı (tours.destination metni)
+            'name' => ['required', 'string', 'max:100', Rule::unique('destinations', 'name')->ignore($destination->id)],
+            'country' => 'nullable|string|max:100',
+            'description' => 'nullable|string|max:2000',
+            'image' => 'nullable|url|max:255', // sütun varchar(255)
+            'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp,avif|max:8192',
+            'remove_image' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'dest_id' => 'nullable|integer', // blade'de old()/@error'ı bu karta kapsamlar
+        ], [
+            'name.unique' => 'Bu adda başka bir destinasyon zaten var.',
         ]);
 
-        $destination->update($validated);
+        // Ad, ana sayfa kartı ve landing'de turlarla METİN üzerinden eşleşir; yeni ad
+        // hiçbir aktif turun destinasyonuyla eşleşmiyorsa kart boş kalır — engelle.
+        if ($validated['name'] !== $destination->name) {
+            $eslesen = DestinationFilter::apply(Tour::active(), $validated['name'])->count();
+            if ($eslesen === 0) {
+                return back()->withInput()->withErrors([
+                    'name' => 'Bu ad hiçbir aktif turun destinasyonuyla eşleşmiyor; kart ve landing sayfası boş kalır. Turlardaki yazımla birebir girin.',
+                ]);
+            }
+        }
 
-        return redirect()->route('admin.destinations')
+        // NOT NULL sütunlar: boş bırakılınca varsayılanına dön (null yazılırsa 500)
+        $validated['country'] = $validated['country'] ?? 'Türkiye';
+        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+
+        $images = app(\App\Services\TourImage\TourImageService::class);
+        $eskiGorsel = (string) $destination->image;
+        $yeniDosya = null;
+
+        if ($request->hasFile('image_file')) {
+            try {
+                $yeniDosya = $images->storeUpload($request->file('image_file'));
+                $validated['image'] = $yeniDosya;
+            } catch (\RuntimeException $e) {
+                return back()->withInput()->withErrors(['image_file' => $e->getMessage()]);
+            }
+        } elseif ($request->boolean('remove_image')) {
+            $validated['image'] = null;
+        } elseif (($validated['image'] ?? null) === null) {
+            // URL alanı boş: dosya yok, kaldır işaretli değil → mevcut görsel KORUNUR.
+            // (Yüklenmiş /storage/ görseli URL alanına basılmaz; boş gelmesi "sil" değildir.)
+            unset($validated['image']);
+        }
+
+        unset($validated['image_file'], $validated['remove_image'], $validated['dest_id']);
+
+        try {
+            $destination->update($validated);
+        } catch (\Throwable $e) {
+            if ($yeniDosya) {
+                $images->delete($yeniDosya); // kayıt başarısızsa yeni dosya yetim kalmasın
+            }
+            throw $e;
+        }
+
+        // Sunucuya yüklenmiş eski görsel artık kullanılmıyorsa diskten sil
+        if ($eskiGorsel !== '' && $eskiGorsel !== (string) $destination->image) {
+            $images->delete($eskiGorsel);
+        }
+
+        return redirect()->route('admin.destinations', ['page' => $request->integer('page') ?: null])
             ->with('success', $destination->name.' güncellendi.');
     }
 
-    public function toggleDestination(Destination $destination)
+    public function toggleDestination(Request $request, Destination $destination)
     {
         $destination->update(['is_active' => ! $destination->is_active]);
 
-        return redirect()->route('admin.destinations')
+        // B17: sayfalama geldi — işlem sonrası aynı sayfada kal
+        return redirect()->route('admin.destinations', ['page' => $request->integer('page') ?: null])
             ->with('success', $destination->name.' '.($destination->is_active ? 'aktifleştirildi' : 'pasifleştirildi').'.');
     }
 }
