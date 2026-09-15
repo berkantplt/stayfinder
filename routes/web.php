@@ -145,7 +145,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:10,1')
         ->name('customer.saved-searches.store');
     Route::delete('/kayitli-aramalarim/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('customer.saved-searches.destroy');
-    Route::post('/turlar/{tour}/yorum', [ReviewController::class, 'store'])->name('reviews.store');
+    // D7: yorum yazma sınırı — kullanıcı başına saatte 5 (kupon almada 10/dk vardı, burada yoktu)
+    Route::post('/turlar/{tour}/yorum', [ReviewController::class, 'store'])
+        ->middleware('throttle:5,60')
+        ->name('reviews.store');
     Route::delete('/yorum/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     // Profile — D1: /hesabim ortak giriş kapısı, sekmeler partials/account-nav
     Route::get('/hesabim', fn () => redirect()->route('profile.show'))->name('account.index');

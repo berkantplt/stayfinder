@@ -721,8 +721,15 @@
                             <div style="display:flex;align-items:center;gap:10px;">
                                 <div style="width:38px;height:38px;background:var(--accent-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);">{{ mb_substr($review->user->name, 0, 1) }}</div>
                                 <div>
-                                    <div style="font-weight:600;font-size:14px;">{{ $review->user->name }}</div>
-                                    <div style="font-size:12px;color:var(--text-muted);">{{ $review->created_at->diffForHumans() }}</div>
+                                    <div style="font-weight:600;font-size:14px;">{{ $review->user?->name ?? 'Silinmiş kullanıcı' }}</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">
+                                        {{ $review->created_at->diffForHumans() }}
+                                        {{-- D7: zayıf ama gerçek güven işareti — yeni hesap / tek yorum ile yerleşik yorumcu ayrılır --}}
+                                        @if($review->user)
+                                            · Üye: {{ $review->user->created_at->locale('tr')->isoFormat('MMM YYYY') }}
+                                            · {{ $review->user->reviews_count }} yorum
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                             <div style="display:flex;align-items:center;gap:8px;">

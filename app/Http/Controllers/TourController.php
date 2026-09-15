@@ -264,7 +264,8 @@ class TourController extends Controller
             ->limit(4)
             ->get();
 
-        $reviews = $tour->reviews()->with('user')->get();
+        // D7: yorumcu güven işareti (üyelik tarihi + toplam yorum sayısı) tek sorguda
+        $reviews = $tour->reviews()->with(['user' => fn ($q) => $q->withCount('reviews')])->get();
         $avgRating = $reviews->avg('rating') ? round($reviews->avg('rating'), 1) : null;
         $userReview = auth()->check()
             ? $reviews->firstWhere('user_id', auth()->id())

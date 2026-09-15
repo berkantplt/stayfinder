@@ -82,6 +82,11 @@ class User extends Authenticatable
         return $this->hasMany(SavedSearch::class);
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function favoriteTours()
     {
         return $this->belongsToMany(Tour::class, 'favorites')
