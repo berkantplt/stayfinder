@@ -4,7 +4,7 @@
 @section('content')
 <div class="container">
     <div class="section">
-        <h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">❤️ Favorilerim</h1>
+        <h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">❤️ Favorilerim @if($favorites->total() > 0)<span style="font-size:14px;color:var(--text-muted);font-weight:600;">({{ $favorites->total() }})</span>@endif</h1>
         <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px;">Beğendiğin turlar burada saklanır.</p>
 
         @if(session('success'))
@@ -61,6 +61,9 @@
             </div>
             @endforeach
         </div>
+        @if($favorites->hasPages())
+            <div style="margin-top:24px;">{{ $favorites->links() }}</div>
+        @endif
         @else
             <div style="text-align:center;padding:60px 20px;">
                 <div style="font-size:64px;margin-bottom:16px;">💔</div>

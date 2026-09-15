@@ -47,11 +47,11 @@
         {{-- Stats --}}
         <div class="grid-4" style="margin-bottom:32px;">
             <div class="stat-card">
-                <div class="stat-value" style="color:var(--accent);">{{ $favorites->count() }}</div>
+                <div class="stat-value" style="color:var(--accent);">{{ $favoriteCount }}</div>
                 <div class="stat-label">Favorilerim</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color:#f59e0b;">{{ $reviews->count() }}</div>
+                <div class="stat-value" style="color:#f59e0b;">{{ $reviewCount }}</div>
                 <div class="stat-label">Yorumlarım</div>
             </div>
             <div class="stat-card">
@@ -59,7 +59,7 @@
                 <div class="stat-label">Gezilen Tur</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" style="color:#8b5cf6;">{{ $reviews->avg('rating') ? number_format($reviews->avg('rating'), 1) : '—' }}</div>
+                <div class="stat-value" style="color:#8b5cf6;">{{ $reviewAvg !== null ? number_format($reviewAvg, 1) : '—' }}</div>
                 <div class="stat-label">Ort. Puanım</div>
             </div>
         </div>
@@ -68,7 +68,7 @@
             {{-- Favorites --}}
             <div>
                 <h2 style="font-size:17px;font-weight:700;margin-bottom:14px;">❤️ Favorilerim</h2>
-                @forelse($favorites->take(5) as $tour)
+                @forelse($favorites as $tour)
                 <a href="{{ route('tours.show', $tour) }}" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);">
                     @if($tour->image)
                         <img src="{{ $tour->image }}" alt="{{ $tour->title }}" style="width:56px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">
@@ -84,15 +84,15 @@
                 @empty
                     <div style="color:var(--text-muted);font-size:14px;padding:20px 0;text-align:center;">Henüz favori tur yok. <a href="{{ route('tours.index') }}" style="color:var(--accent);">Keşfet →</a></div>
                 @endforelse
-                @if($favorites->count() > 5)
-                    <a href="{{ route('favorites.index') }}" style="font-size:13px;color:var(--accent);font-weight:600;display:block;margin-top:8px;">Tümünü gör ({{ $favorites->count() }}) →</a>
+                @if($favoriteCount > $favorites->count())
+                    <a href="{{ route('favorites.index') }}" style="font-size:13px;color:var(--accent);font-weight:600;display:block;margin-top:8px;">Tümünü gör ({{ $favoriteCount }}) →</a>
                 @endif
             </div>
 
             {{-- Reviews --}}
             <div>
                 <h2 style="font-size:17px;font-weight:700;margin-bottom:14px;">⭐ Yorumlarım</h2>
-                @forelse($reviews->take(4) as $review)
+                @forelse($reviews as $review)
                 <div style="padding:10px 0;border-bottom:1px solid var(--border-light);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                         <a href="{{ route('tours.show', $review->tour) }}" style="font-weight:600;font-size:13px;color:var(--text);">{{ $review->tour->title }}</a>
@@ -104,6 +104,9 @@
                 @empty
                     <div style="color:var(--text-muted);font-size:14px;padding:20px 0;text-align:center;">Henüz yorum yapmadınız.</div>
                 @endforelse
+                @if($reviewCount > $reviews->count())
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Son {{ $reviews->count() }} yorum gösteriliyor ({{ $reviewCount }} toplam). Yorumlarınız ilgili tur sayfalarında yer alır.</div>
+                @endif
             </div>
         </div>
     </div>

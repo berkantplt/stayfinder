@@ -40,7 +40,8 @@ class FavoriteController extends Controller
             ->with('agency')
             ->active()
             ->latest('favorites.created_at')
-            ->get();
+            ->orderByDesc('tours.id') // aynı saniyede eklenenlerde sayfalar arası kararlı sıra
+            ->paginate(24); // D3: 200 favorili kullanıcıda tek sayfa şişiyordu
 
         return view('favorites.index', compact('favorites'));
     }

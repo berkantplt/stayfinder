@@ -16,13 +16,18 @@ class ProfileController extends Controller
 {
     public function show()
     {
-        $user = auth()->user()->load([]);
+        $user = auth()->user();
 
-        $favorites = $user->favoriteTours()->with('agency')->active()->latest('favorites.created_at')->get();
-        $reviews = Review::where('user_id', $user->id)->with('tour.agency')->latest()->get();
+        // D3: profil özet sayfası — tümünü çekmek yerine sayılar + son birkaç kayıt;
+        // tam listeler kendi sayfalarında (favoriler sayfalı).
+        $favoriteCount = $user->favoriteTours()->active()->count();
+        $favorites = $user->favoriteTours()->with('agency')->active()->latest('favorites.created_at')->orderByDesc('tours.id')->take(6)->get();
+        $reviewCount = Review::where('user_id', $user->id)->count();
+        $reviewAvg = $reviewCount > 0 ? round((float) Review::where('user_id', $user->id)->avg('rating'), 1) : null;
+        $reviews = Review::where('user_id', $user->id)->with('tour.agency')->latest()->orderByDesc('id')->take(5)->get();
         $viewCount = TourView::where('user_id', $user->id)->count();
 
-        return view('profile.show', compact('user', 'favorites', 'reviews', 'viewCount'));
+        return view('profile.show', compact('user', 'favorites', 'favoriteCount', 'reviews', 'reviewCount', 'reviewAvg', 'viewCount'));
     }
 
     public function edit()
