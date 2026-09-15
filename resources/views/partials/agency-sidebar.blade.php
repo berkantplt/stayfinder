@@ -25,9 +25,23 @@
         <a href="{{ route('agency.tours.create') }}" class="sidebar-link {{ request()->routeIs('agency.tours.create') ? 'active' : '' }}">
             <span class="sidebar-icon">➕</span> Tur Ekle
         </a>
-        <a href="{{ route('agency.category-licenses.index') }}" class="sidebar-link {{ request()->routeIs('agency.category-licenses*') ? 'active' : '' }}">
+        @php
+            // C15: alt menü + sepet rozeti (oturumdan, DB'ye gitmez); geçiş erişimli acentada sepet yok (C17)
+            $kymLegacy = (bool) auth()->user()->agency?->legacy_category_access;
+            $kymCartCount = $kymLegacy ? 0 : \App\Http\Controllers\Agency\CategoryLicenseController::sessionCartItemCount();
+        @endphp
+        <a href="{{ route('agency.category-licenses.index') }}" class="sidebar-link {{ request()->routeIs('agency.category-licenses.index') ? 'active' : '' }}">
             <span class="sidebar-icon">🧾</span> Kategori Yetkileri
+            @if($kymCartCount > 0)<span class="p-sb-rozet" title="Sepette {{ $kymCartCount }} kalem">{{ $kymCartCount }}</span>@endif
         </a>
+        <a href="{{ route('agency.category-licenses.index') }}" class="sidebar-link p-sb-alt-link {{ request()->routeIs('agency.category-licenses.index') ? 'active' : '' }}">Genel Bakış</a>
+        @unless($kymLegacy)
+            <a href="{{ route('agency.category-licenses.cart.show') }}" class="sidebar-link p-sb-alt-link {{ request()->routeIs('agency.category-licenses.cart.show', 'agency.category-licenses.checkout-form') ? 'active' : '' }}">
+                Sepet
+                @if($kymCartCount > 0)<span class="p-sb-rozet">{{ $kymCartCount }}</span>@endif
+            </a>
+        @endunless
+        <a href="{{ route('agency.category-licenses.orders') }}" class="sidebar-link p-sb-alt-link {{ request()->routeIs('agency.category-licenses.orders*') ? 'active' : '' }}">Satın Alımlar</a>
         <a href="{{ route('agency.campaigns.index') }}" class="sidebar-link {{ request()->routeIs('agency.campaigns.*') ? 'active' : '' }}">
             <span class="sidebar-icon">🏷️</span> Kampanyalar
         </a>

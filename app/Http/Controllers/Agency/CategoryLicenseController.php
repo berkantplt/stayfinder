@@ -874,6 +874,20 @@ class CategoryLicenseController extends Controller
         return $agency;
     }
 
+    /**
+     * C15 — Kenar çubuğu rozeti: oturumdaki sepet kalem sayısı (yeni kategori +
+     * yenileme + ekstra tur hakkı). DB'ye gitmez; doğrulanmış kalem listesi
+     * için index()/cart.show'daki resolve* yardımcıları kullanılır.
+     */
+    public static function sessionCartItemCount(): int
+    {
+        $categories = collect(session(self::CART_SESSION_KEY, []))->map(fn ($id) => (int) $id)->filter()->unique()->count();
+        $renewals = collect(session(self::RENEWAL_CART_SESSION_KEY, []))->filter(fn ($date) => (string) $date !== '')->count();
+        $slots = collect(session(self::SLOT_CART_SESSION_KEY, []))->filter(fn ($quantity) => (int) $quantity > 0)->count();
+
+        return $categories + $renewals + $slots;
+    }
+
     private function cartCategoryIds()
     {
         return collect(session(self::CART_SESSION_KEY, []))

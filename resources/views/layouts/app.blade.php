@@ -629,6 +629,8 @@
         .sidebar-link:hover { background:rgba(255,255,255,.05); color:var(--p-sb-metin-aktif); }
         .sidebar-link.active { background:rgba(255,255,255,.1); color:#fff; box-shadow:inset 0 1px 1px rgba(255,255,255,.1); }
         .sidebar-icon { font-size:18px; opacity:.9; }
+        .p-sb-alt-link { padding:7px 16px 7px 46px; font-size:13px; font-weight:500; } /* C15: alt menü */
+        .p-sb-alt-link.active { background:rgba(255,255,255,.08); }
         .sidebar-submenu { margin:-2px 0 12px 22px; padding-left:16px; border-left:1px solid rgba(148,163,184,.18); display:flex; flex-direction:column; gap:4px; }
         .sidebar-sublink { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; font-size:13px; font-weight:600; color:var(--p-sb-metin); transition:all .2s; }
         .sidebar-sublink:hover { background:rgba(255,255,255,.05); color:var(--p-sb-metin-aktif); }
