@@ -25,6 +25,7 @@
         ['route' => 'customer.coupons.index', 'is' => ['kuponlarim*'], 'ikon' => '🎟️', 'ad' => 'Kuponlarım'],
         ['route' => 'notifications.index', 'is' => ['bildirimler*'], 'ikon' => '🔔', 'ad' => 'Bildirimler', 'rozet' => $hesapUnread],
         ['route' => 'customer.saved-searches.index', 'is' => ['kayitli-aramalarim*'], 'ikon' => '🔎', 'ad' => 'Kayıtlı Aramalar'],
+        ['route' => 'account.activity', 'is' => ['hesabim/aramalarim*'], 'ikon' => '🤖', 'ad' => 'Aramalarım'],
         ['route' => 'profile.security', 'is' => ['profilim/guvenlik*', 'profilim/duzenle*'], 'ikon' => '🔒', 'ad' => 'Güvenlik'],
     ];
 @endphp

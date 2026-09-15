@@ -25,6 +25,7 @@ use App\Http\Controllers\AgencyController;
 use App\Http\Controllers\AiSearchController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\ChatV2Controller;
+use App\Http\Controllers\Customer\AccountActivityController;
 use App\Http\Controllers\Customer\CouponController;
 use App\Http\Controllers\Customer\SavedSearchController;
 use App\Http\Controllers\DestinationController;
@@ -152,6 +153,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/yorum/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     // Profile — D1: /hesabim ortak giriş kapısı, sekmeler partials/account-nav
     Route::get('/hesabim', fn () => redirect()->route('profile.show'))->name('account.index');
+    // D9: Aramalarım (AI aramaları, rehberler, karşılaştırma listesi) + sunucu karşılaştırma listesi
+    Route::get('/hesabim/aramalarim', [AccountActivityController::class, 'index'])->name('account.activity');
+    Route::get('/karsilastirma-listem', [AccountActivityController::class, 'compareIndex'])->name('account.compare.index');
+    Route::put('/karsilastirma-listem', [AccountActivityController::class, 'compareSync'])
+        ->middleware('throttle:60,1')
+        ->name('account.compare.sync');
+    Route::delete('/karsilastirma-listem/{tour}', [AccountActivityController::class, 'compareRemove'])->name('account.compare.remove');
     Route::get('/profilim', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profilim/duzenle', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::get('/profilim/guvenlik', [ProfileController::class, 'security'])->name('profile.security');

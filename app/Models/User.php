@@ -90,6 +90,12 @@ class User extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
+    /** D9 — sunucuya yazılan karşılaştırma listesi (localStorage ile eşitlenir). */
+    public function compareTours()
+    {
+        return $this->belongsToMany(Tour::class, 'user_compare_tours')->withTimestamps();
+    }
+
     public function favoriteTours()
     {
         return $this->belongsToMany(Tour::class, 'favorites')

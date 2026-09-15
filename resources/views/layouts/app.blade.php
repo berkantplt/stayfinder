@@ -1940,6 +1940,32 @@
                 else { btn.innerHTML = '+ Karşılaştır'; btn.style.background = '#fff'; btn.style.color = '#475569'; }
             });
         }
+        // D9: giriş yapmış müşteride liste sunucuda da tutulur (cihaz değişince kaybolmaz,
+        // /hesabim/aramalarim'da görünür). Yüklemede sunucu esas: yerelde varken sunucu
+        // boşsa yerel gönderilir (girişten önce eklenenler), aksi hâlde sunucu listesi alınır.
+        const compareSync = @json(auth()->check() && auth()->user()->isCustomer() ? ['get' => route('account.compare.index'), 'put' => route('account.compare.sync')] : null);
+        function pushCompareToServer() {
+            if (!compareSync) return;
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            fetch(compareSync.put, {
+                method: 'PUT', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                body: JSON.stringify({ ids: comparedTours }),
+            }).catch(function () {});
+        }
+        function pullCompareFromServer() {
+            if (!compareSync) return;
+            fetch(compareSync.get, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (!data || !Array.isArray(data.ids)) return;
+                    if (data.ids.length === 0 && comparedTours.length > 0) { pushCompareToServer(); return; }
+                    comparedTours = data.ids.map(function (id) { return parseInt(id); });
+                    localStorage.setItem('compared_tours', JSON.stringify(comparedTours));
+                    updateCompareUI();
+                })
+                .catch(function () {});
+        }
         window.toggleCompare = function(id) {
             id = parseInt(id); const idx = comparedTours.indexOf(id);
             if (idx > -1) comparedTours.splice(idx, 1);
@@ -1947,11 +1973,13 @@
             else alert('En fazla 3 tur.');
             localStorage.setItem('compared_tours', JSON.stringify(comparedTours));
             updateCompareUI();
+            pushCompareToServer();
         };
         window.clearCompare = function() {
             comparedTours = [];
             localStorage.setItem('compared_tours', JSON.stringify(comparedTours));
             updateCompareUI();
+            pushCompareToServer();
         };
         window.goToCompare = function() {
             if (comparedTours.length < 2) {
@@ -1963,7 +1991,7 @@
             }).join('&');
             window.location.href = comparePageUrl + '?' + query;
         };
-        document.addEventListener('DOMContentLoaded', updateCompareUI);
+        document.addEventListener('DOMContentLoaded', function () { updateCompareUI(); pullCompareFromServer(); });
     </script>
 
     @php
