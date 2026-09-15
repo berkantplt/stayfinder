@@ -41,11 +41,23 @@
 
             <div style="display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,1fr);gap:24px;max-width:94%;margin:0 auto;">
                 <div class="stat-card" style="padding:24px;">
-                    <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:18px;">Aktif Kategori Abonelikleri</h2>
+                    <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:12px;">Aktif Kategori Abonelikleri <span class="p-alt" style="font-weight:600;">({{ $activeSubscriptions->total() }})</span></h2>
+
+                    {{-- B18: arama + 7 gün filtresi; sayfalama filtreyi korur --}}
+                    <form method="GET" action="{{ route('admin.category-licenses.access') }}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+                        <input type="search" name="q" value="{{ $q }}" placeholder="Acenta veya kategori ara" style="flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--p-cizgi);border-radius:10px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--p-metin-2);">
+                            <input type="checkbox" name="bitis" value="7" @checked($bitis === '7')> 7 gün içinde bitecek
+                        </label>
+                        <button type="submit" class="p-btn p-btn-ikincil p-btn-kucuk">Filtrele</button>
+                        @if($q !== '' || $bitis !== '')
+                            <a href="{{ route('admin.category-licenses.access') }}" class="p-alt">Temizle</a>
+                        @endif
+                    </form>
 
                     @if($activeSubscriptions->isEmpty())
                         <div style="padding:18px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;">
-                            Henüz aktif kategori aboneliği bulunmuyor.
+                            {{ ($q !== '' || $bitis !== '') ? 'Filtreye uyan aktif abonelik yok.' : 'Henüz aktif kategori aboneliği bulunmuyor.' }}
                         </div>
                     @else
                         <div style="overflow-x:auto;">
@@ -98,6 +110,7 @@
                                 </tbody>
                             </table></div>
                         </div>
+                        <div style="margin-top:16px;">{{ $activeSubscriptions->links() }}</div>
                     @endif
                 </div>
 

@@ -42,19 +42,37 @@ class CategoryLicenseController extends Controller
         ]);
     }
 
-    public function access()
+    /**
+     * B18 — Aktif abonelikler eskiden tümüyle tek sayfaya basılıyordu; arama ve
+     * "yakında bitecek" filtresi yoktu. Şimdi acenta/kategori araması, 7 günlük
+     * bitiş filtresi ve 25'lik sayfalama (filtreler sayfa geçişinde korunur).
+     */
+    public function access(Request $request)
     {
         if ($redirect = $this->redirectIfSchemaMissing()) {
             return $redirect;
         }
 
+        $q = trim((string) $request->input('q', ''));
+        $bitis = $request->input('bitis') === '7' ? '7' : '';
+
+        $subscriptions = AgencyCategorySubscription::active()
+            ->with(['agency', 'category.parent'])
+            ->when($q !== '', fn ($query) => $query->where(function ($w) use ($q) {
+                $w->whereHas('agency', fn ($a) => $a->where('name', 'like', '%'.$q.'%'))
+                    ->orWhereHas('category', fn ($c) => $c->where('name', 'like', '%'.$q.'%'));
+            }))
+            ->when($bitis === '7', fn ($query) => $query->whereDate('expires_at', '<=', today()->addDays(7)->toDateString()))
+            ->orderBy('expires_at')
+            ->paginate(25)
+            ->withQueryString();
+
         return view('admin.category-licenses.access', [
-            'activeSubscriptions' => AgencyCategorySubscription::active()
-                ->with(['agency', 'category.parent'])
-                ->orderBy('expires_at')
-                ->get(),
+            'activeSubscriptions' => $subscriptions,
             'legacyAgencies' => $this->legacyAgencies(),
             'stats' => $this->stats(),
+            'q' => $q,
+            'bitis' => $bitis,
         ]);
     }
 
