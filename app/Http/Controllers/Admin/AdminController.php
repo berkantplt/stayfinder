@@ -13,6 +13,8 @@ use App\Models\Tour;
 use App\Models\TourClick;
 use App\Models\TourView;
 use App\Models\User;
+use App\Notifications\AgencyApplicationDecidedNotification;
+use App\Notifications\AgencyStatusChangedNotification;
 use App\Support\CategoryLicensing;
 use App\Support\DestinationFilter;
 use Illuminate\Http\Request;
@@ -397,6 +399,25 @@ class AdminController extends Controller
         return back()->with('success', $categoryName.' aboneliği iptal edildi — bu kategorideki turlar yayından kalktı.');
     }
 
+    /**
+     * B11/B12 — Acentanın kullanıcılarına bildirim (database + mail). Onay/red/
+     * pasifleştirme ve kategori yetkisi verme/iptali eskiden yalnız DB'ye yazılıyor,
+     * acenta hiç haberdar olmuyordu. Taşıyıcı (SMTP) hatası admin işlemini bozmaz.
+     */
+    private function notifyAgencyUsers(Agency $agency, \Illuminate\Notifications\Notification $notification): void
+    {
+        $users = $agency->users()->get();
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        try {
+            \Illuminate\Support\Facades\Notification::send($users, $notification);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[AdminController] Acenta bildirimi gönderilemedi #'.$agency->id.': '.$e->getMessage());
+        }
+    }
+
     private function generateManualOrderNumber(): string
     {
         do {
@@ -471,6 +492,8 @@ class AdminController extends Controller
             'is_active' => true,
         ]);
 
+        $this->notifyAgencyUsers($agency, new AgencyApplicationDecidedNotification($agency->fresh())); // B11
+
         return redirect()
             ->route('admin.agency-applications')
             ->with('success', $agency->name.' başvurusu onaylandı.');
@@ -492,6 +515,8 @@ class AdminController extends Controller
             'legacy_category_access' => false,
         ]);
 
+        $this->notifyAgencyUsers($agency, new AgencyApplicationDecidedNotification($agency->fresh())); // B11
+
         return redirect()
             ->route('admin.agency-applications')
             ->with('success', $agency->name.' başvurusu reddedildi.');
@@ -509,6 +534,7 @@ class AdminController extends Controller
         }
 
         $agency->update(['is_active' => ! $agency->is_active]);
+        $this->notifyAgencyUsers($agency, new AgencyStatusChangedNotification($agency->fresh())); // B11
 
         return redirect()->route('admin.agencies')
             ->with('success', $agency->name.' '.($agency->is_active ? 'aktifleştirildi' : 'pasifleştirildi').'.');
