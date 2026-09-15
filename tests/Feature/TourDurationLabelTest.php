@@ -97,8 +97,9 @@ class TourDurationLabelTest extends TestCase
 
     public function test_acenta_gece_alanini_kaydedebilir(): void
     {
+        $ust = \App\Models\Category::create(['name' => 'Üst', 'slug' => 'ust-'.uniqid(), 'is_active' => true]);
         $kategori = \App\Models\Category::create([
-            'name' => 'Kültür', 'slug' => 'kultur-'.uniqid(), 'is_active' => true,
+            'name' => 'Kültür', 'slug' => 'kultur-'.uniqid(), 'is_active' => true, 'parent_id' => $ust->id, // C19
         ]);
         $user = \App\Models\User::create([
             'name' => 'Acenta Kullanıcı',

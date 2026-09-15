@@ -88,7 +88,8 @@ class TourController extends Controller
         $agency = auth()->user()->agency;
 
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
+            // C19: üst kategoriler satılmaz ve tur alamaz; pasif alt kategori de seçilemez
+            'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNotNull('parent_id')->where('is_active', true)],
             'title' => 'required|string|max:255',
             'destination' => 'required|string|max:100',
             'departure_city' => ['required', 'string', Rule::in(TurkishCities::all())],
@@ -115,6 +116,8 @@ class TourController extends Controller
             'frequency' => 'nullable|string|max:255',
             'requires_visa' => 'required|in:0,1,kapida',
         ], [
+            'category_id.required' => 'Kategori seçin.',
+            'category_id.exists' => 'Yalnızca aktif alt kategoriler seçilebilir; üst kategoriler tur alamaz.',
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
             'requires_visa.required' => 'Vize durumunu işaretleyin: Vizeli, Kapıda vize veya Vizesiz.',
@@ -183,10 +186,12 @@ class TourController extends Controller
         // farklı teşhis ister — hasCategoryAccess(null) her zaman false döner,
         // "yetkiniz kalmamış" demek yanıltıcı olurdu.
         $categoryMissing = $tour->category_id === null;
+        // C19: eski kayıt üst kategoriye bağlıysa form alt kategori seçtirmeden kaydetmez
+        $categoryIsParent = ! $categoryMissing && $tour->category !== null && $tour->category->parent_id === null;
         $currentCategoryAccessible = $categoryMissing || $agency->hasCategoryAccess($tour->category_id);
         $categorySlotUsage = $this->categorySlotUsageFor($agency);
 
-        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions', 'currentCategoryAccessible', 'categoryMissing', 'categorySlotUsage'));
+        return view('agency.tours.edit', compact('tour', 'categories', 'currencyOptions', 'currentCategoryAccessible', 'categoryMissing', 'categoryIsParent', 'categorySlotUsage'));
     }
 
     public function update(Request $request, Tour $tour)
@@ -195,7 +200,8 @@ class TourController extends Controller
         $agency = auth()->user()->agency;
 
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
+            // C19: üst kategoriler satılmaz ve tur alamaz; pasif alt kategori de seçilemez
+            'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNotNull('parent_id')->where('is_active', true)],
             'title' => 'required|string|max:255',
             'destination' => 'required|string|max:100',
             'departure_city' => ['required', 'string', Rule::in(TurkishCities::all())],
@@ -223,6 +229,8 @@ class TourController extends Controller
             'frequency' => 'nullable|string|max:255',
             'requires_visa' => 'required|in:0,1,kapida',
         ], [
+            'category_id.required' => 'Kategori seçin.',
+            'category_id.exists' => 'Yalnızca aktif alt kategoriler seçilebilir; üst kategoriler tur alamaz.',
             'departure_city.required' => 'Kalkış şehrini seçin.',
             'departure_city.in' => 'Geçerli bir kalkış şehri seçin.',
             'requires_visa.required' => 'Vize durumunu işaretleyin: Vizeli, Kapıda vize veya Vizesiz.',
@@ -654,14 +662,12 @@ class TourController extends Controller
             return collect();
         }
 
+        // C19: üst kategori seçilemez; yalnız erişilebilir aktif ALT kategorisi
+        // olan üstler optgroup başlığı olarak döner.
         return Category::active()
             ->parents()
-            ->where(function ($query) use ($accessibleCategoryIds) {
-                $query
-                    ->whereIn('id', $accessibleCategoryIds)
-                    ->orWhereHas('children', function ($childQuery) use ($accessibleCategoryIds) {
-                        $childQuery->active()->whereIn('id', $accessibleCategoryIds);
-                    });
+            ->whereHas('children', function ($childQuery) use ($accessibleCategoryIds) {
+                $childQuery->active()->whereIn('id', $accessibleCategoryIds);
             })
             ->with([
                 'children' => function ($childQuery) use ($accessibleCategoryIds) {

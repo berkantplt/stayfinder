@@ -45,10 +45,13 @@ class TourVisaFieldTest extends TestCase
             'agency_id' => $agency->id,
         ]);
 
+        // C19: tur yalnız aktif ALT kategoriye bağlanabilir
+        $parent = Category::create(['name' => 'Yurt Dışı', 'slug' => 'yurt-disi', 'is_active' => true]);
         $this->category = Category::create([
             'name' => 'Kültür Turları',
             'slug' => 'kultur-turlari',
             'is_active' => true,
+            'parent_id' => $parent->id,
         ]);
     }
 

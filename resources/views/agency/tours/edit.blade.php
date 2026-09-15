@@ -239,6 +239,11 @@
                             Bu tur henüz bir kategoriye bağlı değil; kategorisiz turlar sitede listelenmez. Aşağıdaki
                             <strong>Kategori Yetkisi</strong> alanından bir kategori seçip kaydedin.
                         </div>
+                    @elseif($categoryIsParent)
+                        <div class="alert alert-warning" style="margin-bottom: 24px;">
+                            Bu tur bir <strong>üst kategoriye</strong> ({{ $tour->category->name }}) bağlı. Üst kategoriler tur alamaz;
+                            kaydedebilmek için aşağıdan uygun bir alt kategori seçin.
+                        </div>
                     @elseif(! $currentCategoryAccessible)
                         <div class="alert alert-error" style="margin-bottom: 24px;">
                             Bu turun mevcut kategorisi için aktif yetkiniz kalmamış görünüyor. Güncelleyebilmek için yetkili bir kategori seçin veya
@@ -259,11 +264,13 @@
                         <label>Kategori Yetkisi *</label>
                         <select name="category_id" required>
                             <option value="">Kategori Seçin</option>
+                            {{-- C19: üst kategori seçilemez (optgroup başlığı), yalnız aktif alt kategoriler --}}
                             @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('category_id', $tour->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->icon }} {{ $cat->name }}</option>
-                                @foreach($cat->children as $child)
-                                    <option value="{{ $child->id }}" {{ old('category_id', $tour->category_id) == $child->id ? 'selected' : '' }}>&nbsp;&nbsp;↳ {{ $child->icon }} {{ $child->name }}</option>
-                                @endforeach
+                                <optgroup label="{{ $cat->icon }} {{ $cat->name }}">
+                                    @foreach($cat->children as $child)
+                                        <option value="{{ $child->id }}" @selected(old('category_id', $tour->category_id) == $child->id)>{{ $child->icon }} {{ $child->name }}</option>
+                                    @endforeach
+                                </optgroup>
                             @endforeach
                         </select>
 @error('category_id')<p class="p-hata">{{ $message }}</p>@enderror

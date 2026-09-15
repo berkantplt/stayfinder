@@ -253,11 +253,13 @@
                         <label>Kategori Yetkisi *</label>
                         <select name="category_id" required>
                             <option value="">Kategori Seçin</option>
+                            {{-- C19: üst kategori seçilemez (optgroup başlığı), yalnız aktif alt kategoriler --}}
                             @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->icon }} {{ $cat->name }}</option>
-                                @foreach($cat->children as $child)
-                                    <option value="{{ $child->id }}" {{ old('category_id') == $child->id ? 'selected' : '' }}>&nbsp;&nbsp;↳ {{ $child->icon }} {{ $child->name }}</option>
-                                @endforeach
+                                <optgroup label="{{ $cat->icon }} {{ $cat->name }}">
+                                    @foreach($cat->children as $child)
+                                        <option value="{{ $child->id }}" @selected(old('category_id') == $child->id)>{{ $child->icon }} {{ $child->name }}</option>
+                                    @endforeach
+                                </optgroup>
                             @endforeach
                         </select>
 @error('category_id')<p class="p-hata">{{ $message }}</p>@enderror

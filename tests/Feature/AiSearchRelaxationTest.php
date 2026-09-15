@@ -138,7 +138,8 @@ class AiSearchRelaxationTest extends TestCase
             'approved_at' => now(),
             'legacy_category_access' => true,
         ]);
-        $category = \App\Models\Category::create(['name' => 'Yurt Dışı', 'slug' => 'yurt-disi-k', 'is_active' => true]);
+        $ust = \App\Models\Category::create(['name' => 'Yurt Dışı', 'slug' => 'yurt-disi-k', 'is_active' => true]);
+        $category = \App\Models\Category::create(['name' => 'Avrupa', 'slug' => 'avrupa-k', 'is_active' => true, 'parent_id' => $ust->id]); // C19
         $user = \App\Models\User::factory()->create(['role' => 'agency', 'agency_id' => $agency->id]);
 
         $this->actingAs($user)->post(route('agency.tours.store'), [

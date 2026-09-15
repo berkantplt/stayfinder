@@ -36,10 +36,13 @@ class TourPricingBlocksTest extends TestCase
             'agency_id' => $agency->id,
         ]);
 
+        // C19: tur yalnız aktif ALT kategoriye bağlanabilir
+        $parent = Category::create(['name' => 'Yurt İçi', 'slug' => 'yurt-ici', 'is_active' => true]);
         $this->category = Category::create([
             'name' => 'Yurt İçi Turlar',
             'slug' => 'yurt-ici-turlar',
             'is_active' => true,
+            'parent_id' => $parent->id,
         ]);
     }
 

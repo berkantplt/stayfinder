@@ -37,7 +37,9 @@ class TourGalleryTest extends TestCase
             'legacy_category_access' => true,
         ]);
         $this->agencyUser = User::factory()->create(['role' => 'agency', 'agency_id' => $agency->id]);
-        $this->category = Category::create(['name' => 'Tur', 'slug' => 'tur', 'is_active' => true]);
+        // C19: tur yalnız aktif ALT kategoriye bağlanabilir
+        $parent = Category::create(['name' => 'Üst', 'slug' => 'ust', 'is_active' => true]);
+        $this->category = Category::create(['name' => 'Tur', 'slug' => 'tur', 'is_active' => true, 'parent_id' => $parent->id]);
     }
 
     private function tourPayload(array $overrides = []): array
