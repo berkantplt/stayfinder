@@ -50,6 +50,13 @@
                     @csrf
                     @method('PUT')
 
+                    {{-- Tüm satırların ortak il listesi (B10) — listede olmayan değer sunucuda atlanır ve bildirilir --}}
+                    <datalist id="kalkis-illeri">
+                        @foreach($sehirler as $sehir)
+                            <option value="{{ $sehir }}"></option>
+                        @endforeach
+                    </datalist>
+
                     <div class="card" style="padding:0;overflow:hidden;">
                         <table style="width:100%;border-collapse:collapse;font-size:14px;">
                             <thead>
@@ -77,16 +84,17 @@
                                         {{ $tour->agency->name ?? '—' }}
                                     </td>
                                     <td style="padding:12px 16px;">
-                                        <select name="cities[{{ $tour->id }}]"
-                                                style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:#fff;">
-                                            <option value="">— seçilmedi —</option>
-                                            @foreach($sehirler as $sehir)
-                                                <option value="{{ $sehir }}"
-                                                    @selected(($tour->departure_city ?? ($oneriler[$tour->id]['city'] ?? null)) === $sehir)>
-                                                    {{ $sehir }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        {{-- B10: satır başına 81 seçenekli <select> (50 satırda 4.100 option, 1,1 MB
+                                             HTML) yerine tek paylaşımlı <datalist>. Yazarak arama da gelir. --}}
+                                        @php($reddedildi = in_array($tour->id, session('kalkis_reddedilen', []), true))
+                                        <input type="text" list="kalkis-illeri" name="cities[{{ $tour->id }}]"
+                                               value="{{ old('cities.'.$tour->id, $tour->departure_city ?? ($oneriler[$tour->id]['city'] ?? '')) }}"
+                                               placeholder="— seçilmedi —" autocomplete="off"
+                                               @if($reddedildi) aria-invalid="true" @endif
+                                               style="width:100%;padding:8px 12px;border:1px solid {{ $reddedildi ? '#dc2626' : '#cbd5e1' }};border-radius:8px;font-size:14px;background:{{ $reddedildi ? '#fef2f2' : '#fff' }};">
+                                        @if($reddedildi)
+                                            <div class="p-hata">Listede olmayan değer — kaydedilmedi</div>
+                                        @endif
                                         @if(isset($oneriler[$tour->id]))
                                             {{-- Otomatik çıkarımın önerisi hazır seçili gelir; kaydetmeden
                                                  önce insan onayı şart, bu yüzden kaynağı da yazıyoruz. --}}

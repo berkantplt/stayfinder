@@ -8,6 +8,7 @@ use App\Support\DepartureCityExtractor;
 use App\Support\TurkishCities;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -68,7 +69,12 @@ class DepartureCityController extends Controller
             'cities.*' => ['nullable', 'string'],
         ]);
 
-        $degisen = 0;
+        // B10 — Eskiden satır başına Tour::find + update (50 satır = 100 sorgu) ve
+        // listede olmayan değer SESSİZCE atlanıyordu: admin "50 tur güncellendi"
+        // görüp değişmeyeni fark etmiyordu. Şimdi: tek SELECT, şehir başına tek
+        // UPDATE, atlananlar tur numarasıyla bildirilir.
+        $hedef = [];    // tour_id => canonical (null = temizle)
+        $atlanan = [];  // tour_id => girilen metin
 
         foreach ($validated['cities'] as $tourId => $city) {
             $city = trim((string) $city);
@@ -78,18 +84,31 @@ class DepartureCityController extends Controller
             $canonical = $city === '' ? null : TurkishCities::canonical($city);
 
             if ($city !== '' && $canonical === null) {
-                continue; // listede olmayan değer sessizce atlanır
-            }
-
-            $tour = Tour::find((int) $tourId);
-            if ($tour === null || $tour->departure_city === $canonical) {
+                $atlanan[(int) $tourId] = $city;
                 continue;
             }
 
-            // Tek kolon güncellemesi: fiyat geçmişi / embedding event'leri boşuna
-            // tetiklenmesin.
-            Tour::whereKey($tour->getKey())->update(['departure_city' => $canonical]);
-            $degisen++;
+            $hedef[(int) $tourId] = $canonical;
+        }
+
+        $mevcut = $hedef === []
+            ? collect()
+            : Tour::whereIn('id', array_keys($hedef))->get(['id', 'departure_city'])->keyBy('id');
+
+        // Aynı şehre giden turlar tek UPDATE'te; sadece gerçekten değişenler.
+        $sehreGore = [];
+        foreach ($hedef as $tourId => $canonical) {
+            $tour = $mevcut->get($tourId);
+            if ($tour === null || $tour->departure_city === $canonical) {
+                continue;
+            }
+            $sehreGore[$canonical ?? ''][] = $tourId;
+        }
+
+        $degisen = 0;
+        foreach ($sehreGore as $sehir => $ids) {
+            // Query builder: fiyat geçmişi / embedding event'leri boşuna tetiklenmesin.
+            $degisen += Tour::whereIn('id', $ids)->update(['departure_city' => $sehir === '' ? null : $sehir]);
         }
 
         if ($degisen > 0) {
@@ -97,6 +116,28 @@ class DepartureCityController extends Controller
             \App\Services\AiSearch\DestinationKnowledgeService::flushInventory();
         }
 
-        return back()->with('success', "{$degisen} turun kalkış şehri güncellendi.");
+        $yanit = back()->with('success', "{$degisen} turun kalkış şehri güncellendi.");
+
+        if ($atlanan !== []) {
+            // Tur numarası ekranda görünmez; adminin satırı bulabilmesi için başlıkla
+            // bildir, yazdığı metni alanda bırak (withInput + old) ve satırı işaretle.
+            $basliklar = Tour::whereIn('id', array_keys($atlanan))->pluck('title', 'id');
+            $ornekler = collect($atlanan)
+                ->take(10)
+                ->map(fn ($metin, $id) => '"'.$metin.'" → '.Str::limit((string) ($basliklar[$id] ?? "tur #{$id}"), 40))
+                ->implode(', ');
+
+            $yanit
+                ->withInput()
+                ->with('kalkis_reddedilen', array_keys($atlanan))
+                ->withErrors(sprintf(
+                    '%d satır 81 il listesinde olmayan değer nedeniyle KAYDEDİLMEDİ (kırmızı satırlar): %s%s. Listeden bir il seçin.',
+                    count($atlanan),
+                    $ornekler,
+                    count($atlanan) > 10 ? ' ve '.(count($atlanan) - 10).' satır daha' : ''
+                ));
+        }
+
+        return $yanit;
     }
 }
