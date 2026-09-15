@@ -38,7 +38,7 @@
                     <div style="font-size:28px;font-weight:800;color:#0f172a;margin-top:6px;">{{ $stats['combined_demand'] }}</div>
                 </div>
                 <div class="stat-card" style="padding:20px;">
-                    <div style="font-size:13px;color:#64748b;font-weight:600;">Toplam Sipariş</div>
+                    <div style="font-size:13px;color:#64748b;font-weight:600;">Ödenmiş Sipariş</div>
                     <div style="font-size:28px;font-weight:800;color:#0f172a;margin-top:6px;">{{ $stats['total_orders'] }}</div>
                 </div>
             </div>

@@ -236,7 +236,8 @@ class CategoryLicenseController extends Controller
             'combined_demand' => (int) $categories->sum('combined_demand_count'),
             'legacy_agencies' => $legacyAgencies->count(),
             'legacy_active_tours' => (int) $legacyAgencies->sum('active_tours_count'),
-            'total_orders' => AgencyCategoryOrder::count(),
+            // B7: yalnız ödenmiş — pending/failed/cancelled "sipariş" sayılmaz
+            'total_orders' => AgencyCategoryOrder::where('status', AgencyCategoryOrder::STATUS_PAID)->count(),
             'category_count' => $categories->count(),
             'average_monthly_price' => round((float) $categories->avg(fn (Category $category) => (float) $category->monthly_price), 2),
         ];
@@ -251,21 +252,37 @@ class CategoryLicenseController extends Controller
         ];
     }
 
+    /**
+     * B7 — Son 6 ayın gelir/sipariş/aktivasyon eğrisi. YALNIZ ödenmiş (PAID)
+     * siparişler, ödemenin gerçekleştiği ay (paid_at) esasıyla. Eskiden status
+     * filtresi yoktu ve purchased_at kullanılıyordu: ödeme ekranını açıp yarıda
+     * bırakan acentanın pending siparişi (purchased_at = now()) "gelir"e giriyor,
+     * aynı modülün Siparişler ekranıyla çelişiyordu. Aktivasyon sayısı yalnız
+     * lisans kalemleri (ekstra tur hakkı bir kategori aktivasyonu değildir).
+     */
     private function buildTrendData(): array
     {
         $periodStart = now()->subMonths(5)->startOfMonth();
 
         $recentOrders = AgencyCategoryOrder::query()
-            ->whereNotNull('purchased_at')
-            ->where('purchased_at', '>=', $periodStart)
-            ->get(['subtotal', 'purchased_at']);
+            ->where('status', AgencyCategoryOrder::STATUS_PAID)
+            ->whereNotNull('paid_at')
+            ->where('paid_at', '>=', $periodStart)
+            ->get(['id', 'subtotal', 'paid_at']);
 
+        // item_type sütunu ayrı migration'la geldi (slotSchemaReady); şema yoksa
+        // sütunu SEÇME — MySQL "Unknown column" ile 3 admin ekranını düşürürdü.
+        // isExtraSlot() null'u lisans sayar, reject her iki durumda güvenli.
+        $slotReady = CategoryLicensing::slotSchemaReady();
         $recentOrderItems = AgencyCategoryOrderItem::query()
-            ->where('created_at', '>=', $periodStart)
-            ->get(['created_at']);
+            ->whereIn('order_id', $recentOrders->pluck('id'))
+            ->get($slotReady ? ['order_id', 'item_type'] : ['order_id'])
+            ->reject(fn (AgencyCategoryOrderItem $item) => $item->isExtraSlot());
 
-        $ordersByMonth = $recentOrders->groupBy(fn (AgencyCategoryOrder $order) => $order->purchased_at?->format('Y-m'));
-        $orderItemsByMonth = $recentOrderItems->groupBy(fn (AgencyCategoryOrderItem $item) => $item->created_at?->format('Y-m'));
+        $paidMonthByOrderId = $recentOrders->mapWithKeys(fn (AgencyCategoryOrder $order) => [$order->id => $order->paid_at->format('Y-m')]);
+
+        $ordersByMonth = $recentOrders->groupBy(fn (AgencyCategoryOrder $order) => $order->paid_at->format('Y-m'));
+        $orderItemsByMonth = $recentOrderItems->groupBy(fn (AgencyCategoryOrderItem $item) => $paidMonthByOrderId[$item->order_id]);
 
         $labels = [];
         $revenueData = [];
