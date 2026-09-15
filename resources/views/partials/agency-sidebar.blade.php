@@ -1,26 +1,21 @@
 <div class="panel-sidebar-module">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;padding:0 8px;">
+    <div class="p-sb-baslik">
         @if(auth()->user()->agency && auth()->user()->agency->logo)
-            <img src="{{ auth()->user()->agency->logo }}" alt="{{ auth()->user()->agency->name }}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);">
+            <div class="p-sb-logo"><img src="{{ auth()->user()->agency->logo }}" alt="{{ auth()->user()->agency->name }}"></div>
         @else
-            <div style="width:40px;height:40px;background:linear-gradient(135deg, #1e293b, #0f172a);border:1px solid rgba(255,255,255,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:inset 0 1px 1px rgba(255,255,255,0.1);">🏢</div>
+            <div class="p-sb-logo">🏢</div>
         @endif
         <div>
-            <div style="font-weight:700;font-size:16px;line-height:1.2;color:#f8fafc;letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">
+            <div class="p-sb-ad">
                 {{ auth()->user()->agency ? auth()->user()->agency->name : 'Acenta Paneli' }}
             </div>
-            <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Acenta Paneli</div>
+            <div class="p-sb-alt">Acenta Paneli</div>
         </div>
     </div>
 
-    <style>
-        .sidebar-link { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; font-size:14px; font-weight:600; color:#94a3b8; transition:all .2s; margin-bottom:6px; letter-spacing:0.2px; }
-        .sidebar-link:hover { background:rgba(255,255,255,0.05); color:#f8fafc; }
-        .sidebar-link.active { background:rgba(255,255,255,0.1); color:#ffffff; box-shadow:inset 0 1px 1px rgba(255,255,255,0.1); }
-        .sidebar-icon { font-size:18px; opacity:0.9; }
-    </style>
+    {{-- A3: stiller layouts/app.blade.php "Panel bileşen katmanı" bloğunda --}}
 
-    <div style="display:flex;flex-direction:column;">
+    <div class="p-sb-liste">
         <a href="{{ route('agency.dashboard') }}" class="sidebar-link {{ request()->routeIs('agency.dashboard') ? 'active' : '' }}">
             <span class="sidebar-icon">📊</span> Dashboard
         </a>
@@ -48,7 +43,7 @@
         <a href="{{ route('agency.profile') }}" class="sidebar-link {{ request()->routeIs('agency.profile') ? 'active' : '' }}">
             <span class="sidebar-icon">⚙️</span> Acenta Profili
         </a>
-        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;">
+        <hr class="p-sb-ayrac">
         <a href="{{ route('home') }}" class="sidebar-link">
             <span class="sidebar-icon">🌍</span> Siteye Dön
         </a>

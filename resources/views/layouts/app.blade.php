@@ -578,6 +578,68 @@
         /* Karşılaştırma tepsisi site özelliği: panel sayfalarında basılmaz (mobilde dibi örtüyordu) */
         body.panel-layout-active #compare-bar { display:none !important; }
 
+        /* ══ A3: Panel bileşen katmanı ══
+           Panel 2.500+ satır içi stil ve 73 farklı hex ile yazılmıştı. Bu katman
+           token'ları ve tekrar eden parçaları (kart, düğme, etiket, alan hatası,
+           kenar çubuğu) tek yerde tanımlar; sayfalar aşamalı olarak buna geçer.
+           Kenar çubuğu stilleri partials/*-sidebar.blade.php içindeki <style>
+           bloklarından buraya taşındı (her sayfada tekrar basılıyordu). */
+        :root {
+            --p-yuzey:#fff; --p-zemin:#f8fafc; --p-cizgi:#e2e8f0; --p-cizgi-acik:#f1f5f9;
+            --p-metin:#0f172a; --p-metin-2:#475569; --p-metin-3:#64748b; --p-metin-4:#94a3b8;
+            --p-vurgu:#0d9488; --p-vurgu-koyu:#0f766e;
+            --p-basari:#10b981; --p-basari-zemin:#dcfce7; --p-basari-metin:#15803d;
+            --p-uyari:#f59e0b; --p-uyari-zemin:#fef3c7; --p-uyari-metin:#b45309;
+            --p-tehlike:#dc2626; --p-tehlike-zemin:#fef2f2; --p-tehlike-metin:#991b1b; --p-tehlike-cizgi:#fecaca;
+            --p-bilgi-zemin:#eff6ff; --p-bilgi-metin:#1d4ed8;
+            --p-radius:16px; --p-radius-kucuk:10px;
+            --p-golge:0 10px 40px -10px rgba(0,0,0,.06), 0 8px 16px -8px rgba(0,0,0,.03);
+            --p-sb-zemin:linear-gradient(180deg,#1e293b 0%,#0f172a 100%); --p-sb-metin:#94a3b8; --p-sb-metin-aktif:#f8fafc;
+        }
+        .p-kart { background:var(--p-yuzey); border:1px solid var(--p-cizgi); border-radius:var(--p-radius); padding:24px; }
+        .p-kart-baslik { font-size:16px; font-weight:700; color:var(--p-metin); margin-bottom:16px; letter-spacing:-.3px; }
+        .p-sayfa-baslik { font-size:26px; font-weight:800; letter-spacing:-.5px; color:var(--p-metin); }
+        .p-alt { font-size:13px; color:var(--p-metin-3); }
+        .p-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 18px; border-radius:var(--p-radius-kucuk); font-size:14px; font-weight:700; border:1px solid transparent; cursor:pointer; text-decoration:none; line-height:1.2; transition:background .15s, border-color .15s; }
+        .p-btn-birincil { background:var(--p-vurgu); color:#fff; } .p-btn-birincil:hover { background:var(--p-vurgu-koyu); color:#fff; }
+        .p-btn-ikincil { background:var(--p-yuzey); color:var(--p-metin-2); border-color:var(--p-cizgi); } .p-btn-ikincil:hover { background:var(--p-zemin); }
+        .p-btn-tehlike { background:var(--p-tehlike-zemin); color:var(--p-tehlike-metin); border-color:var(--p-tehlike-cizgi); } .p-btn-tehlike:hover { background:#fee2e2; }
+        .p-btn-kucuk { padding:6px 12px; font-size:13px; }
+        .p-etiket { display:inline-flex; align-items:center; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; line-height:1.4; white-space:nowrap; }
+        .p-etiket-basari { background:var(--p-basari-zemin); color:var(--p-basari-metin); }
+        .p-etiket-uyari { background:var(--p-uyari-zemin); color:var(--p-uyari-metin); }
+        .p-etiket-tehlike { background:var(--p-tehlike-zemin); color:var(--p-tehlike-metin); }
+        .p-etiket-bilgi { background:var(--p-bilgi-zemin); color:var(--p-bilgi-metin); }
+        .p-etiket-notr { background:var(--p-cizgi-acik); color:var(--p-metin-3); }
+        /* A12: alan altı doğrulama mesajı */
+        .p-hata { color:var(--p-tehlike-metin); font-size:12.5px; margin:6px 0 0; line-height:1.4; }
+        .p-hata::before { content:"⚠ "; }
+        /* Kenar çubuğu (admin + acenta ortak) */
+        .p-sb-baslik { display:flex; align-items:center; gap:12px; margin-bottom:32px; padding:0 8px; }
+        .p-sb-logo { width:40px; height:40px; flex-shrink:0; background:linear-gradient(135deg,#1e293b,#0f172a); border:1px solid rgba(255,255,255,.1); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:inset 0 1px 1px rgba(255,255,255,.1); overflow:hidden; }
+        .p-sb-logo img { width:100%; height:100%; object-fit:cover; display:block; }
+        .p-sb-ad { font-weight:700; font-size:16px; line-height:1.2; color:var(--p-sb-metin-aktif); letter-spacing:-.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; }
+        .p-sb-alt { font-size:12px; color:var(--p-sb-metin); margin-top:2px; }
+        .p-sb-liste { display:flex; flex-direction:column; }
+        .p-sb-esnek { flex:1; }
+        .p-sb-rozet { min-width:22px; height:22px; border-radius:999px; background:#f97316; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; padding:0 7px; }
+        .p-sb-ayrac { border:none; border-top:1px solid rgba(255,255,255,.08); margin:16px 0; }
+        .sidebar-link { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; font-size:14px; font-weight:600; color:var(--p-sb-metin); transition:all .2s; margin-bottom:6px; letter-spacing:.2px; }
+        .sidebar-link:hover { background:rgba(255,255,255,.05); color:var(--p-sb-metin-aktif); }
+        .sidebar-link.active { background:rgba(255,255,255,.1); color:#fff; box-shadow:inset 0 1px 1px rgba(255,255,255,.1); }
+        .sidebar-icon { font-size:18px; opacity:.9; }
+        .sidebar-submenu { margin:-2px 0 12px 22px; padding-left:16px; border-left:1px solid rgba(148,163,184,.18); display:flex; flex-direction:column; gap:4px; }
+        .sidebar-sublink { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; font-size:13px; font-weight:600; color:var(--p-sb-metin); transition:all .2s; }
+        .sidebar-sublink:hover { background:rgba(255,255,255,.05); color:var(--p-sb-metin-aktif); }
+        .sidebar-sublink.active { background:rgba(255,255,255,.08); color:#fff; }
+        .sidebar-bullet { width:6px; height:6px; border-radius:999px; background:currentColor; opacity:.75; }
+        /* A11: global hata bandı panelde içerik sütununa hizalı */
+        body.panel-layout-active .global-hatalar { margin-left:260px; padding:16px 48px 0 !important; max-width:none !important; }
+        @media(max-width:1024px){ body.panel-layout-active .global-hatalar { margin-left:220px; padding:16px 24px 0 !important; } }
+        @media(max-width:768px){ body.panel-layout-active .global-hatalar { margin-left:0; padding:12px 16px 0 !important; } }
+        /* A15: panel içi kırıntı yolu */
+        body.panel-layout-active .breadcrumb { margin-bottom:14px; }
+
         /* ── Responsive ── */
         @media(max-width:768px) {
             .container { padding:0 16px; }
