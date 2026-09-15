@@ -15,9 +15,10 @@
             <div style="display:flex;gap:8px;">
                 <a href="{{ route('tours.show', $tour) }}" target="_blank" class="btn btn-outline btn-sm">👁️ Herkese Açık Sayfa</a>
                 <a href="{{ route('agency.tours.edit', $tour) }}" class="btn btn-primary btn-sm">✏️ Düzenle</a>
-                <form method="POST" action="{{ route('agency.tours.destroy', $tour) }}" onsubmit="return confirm('Bu turu silmek istediğinize emin misiniz?')" style="display:inline;">
+                {{-- C18: silme = arşivleme (A10); onay metni etkiyi sayılarla söyler --}}
+                <form method="POST" action="{{ route('agency.tours.destroy', $tour) }}" onsubmit="return confirm({{ \Illuminate\Support\Js::from(\App\Models\Tour::archiveConfirmText($tour->title, $reviews->count(), $favoriteCount)) }})" style="display:inline;">
                     @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Sil</button>
+                    <button type="submit" class="btn btn-danger btn-sm" title="Arşive taşı — 30 gün içinde geri alınabilir">🗄️ Arşivle</button>
                 </form>
             </div>
         </div>

@@ -583,6 +583,32 @@ class Tour extends Model
     }
 
     /**
+     * C18 — Arşivleme onay metni (index + show aynı metni kullanır). Tur hemen
+     * silinmez, arşive gider (A10); 30 gün sonra prune ile kalıcı silinir ve
+     * cascade FK'ler yorum/favori/tıklama geçmişini de götürür.
+     */
+    public static function archiveConfirmText(string $title, int $reviewCount, int $favoriteCount): string
+    {
+        $etki = [];
+        if ($reviewCount > 0) {
+            $etki[] = $reviewCount.' yorumu';
+        }
+        if ($favoriteCount > 0) {
+            $etki[] = $favoriteCount.' kez favorilenmesi';
+        }
+
+        $metin = '"'.$title.'" arşive taşınacak ve sitede görünmeyecek. 30 gün içinde "Arşiv" bölümünden geri alabilirsiniz.';
+
+        if ($etki !== []) {
+            $metin .= "\n\nDikkat: bu turun ".implode(' ve ', $etki).' var. 30 gün sonra tur kalıcı silinir ve bunlar da geri getirilemez.';
+        } else {
+            $metin .= "\n\n30 gün sonra tur kalıcı silinir.";
+        }
+
+        return $metin."\n\nArşive taşınsın mı?";
+    }
+
+    /**
      * C9 — Tur sitede yayında değilse Türkçe sebebi, yayındaysa null.
      * Kurallar Tour::active() scope'u ile birebir aynı sırada. Liste ekranı
      * tur başına abonelik sorgusu atmasın diye acentanın aktif abonelik

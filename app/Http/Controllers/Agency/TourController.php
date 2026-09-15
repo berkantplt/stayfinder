@@ -48,6 +48,7 @@ class TourController extends Controller
         $tours = $agency
             ->tours()
             ->with('category')
+            ->withCount(['reviews', 'favoritedBy']) // C18: arşivleme onayında etki sayıları
             ->orderByDesc('created_at')
             ->paginate(15);
 
@@ -90,8 +91,9 @@ class TourController extends Controller
         $avgRating = $reviews->avg('rating') ? round($reviews->avg('rating'), 1) : null;
         $clickCount = TourClick::where('tour_id', $tour->id)->count();
         $viewCount = TourView::where('tour_id', $tour->id)->count();
+        $favoriteCount = $tour->favoritedBy()->count(); // C18: arşivleme onayı için
 
-        return view('agency.tours.show', compact('tour', 'reviews', 'avgRating', 'clickCount', 'viewCount'));
+        return view('agency.tours.show', compact('tour', 'reviews', 'avgRating', 'clickCount', 'viewCount', 'favoriteCount'));
     }
 
     public function store(Request $request)
