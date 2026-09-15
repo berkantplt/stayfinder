@@ -15,6 +15,8 @@ use App\Models\TourView;
 use App\Models\User;
 use App\Notifications\AgencyApplicationDecidedNotification;
 use App\Notifications\AgencyStatusChangedNotification;
+use App\Notifications\CategoryAccessGrantedNotification;
+use App\Notifications\CategoryAccessRevokedNotification;
 use App\Support\CategoryLicensing;
 use App\Support\DestinationFilter;
 use Illuminate\Http\Request;
@@ -303,7 +305,9 @@ class AdminController extends Controller
         $category = Category::findOrFail($validated['category_id']);
         $months = (int) $validated['months'];
 
-        DB::transaction(function () use ($agency, $category, $months) {
+        $subscription = null;
+
+        DB::transaction(function () use ($agency, $category, $months, &$subscription) {
             $order = AgencyCategoryOrder::create([
                 'agency_id' => $agency->id,
                 'order_number' => $this->generateManualOrderNumber(),
@@ -365,12 +369,17 @@ class AdminController extends Controller
             if ($subscription) {
                 $subscription->update($attributes);
             } else {
-                AgencyCategorySubscription::create(array_merge($attributes, [
+                $subscription = AgencyCategorySubscription::create(array_merge($attributes, [
                     'agency_id' => $agency->id,
                     'category_id' => $category->id,
                 ]));
             }
         });
+
+        // B12: acenta hangi kategoride ne kadar süre yetki aldığını panele girmeden öğrensin
+        if ($subscription) {
+            $this->notifyAgencyUsers($agency, new CategoryAccessGrantedNotification($subscription->fresh(['category']), $months));
+        }
 
         return back()->with('success', $category->name.' kategorisi '.$months.' ay süreyle eklendi.');
     }
@@ -380,10 +389,16 @@ class AdminController extends Controller
      * (denetim izi); status=cancelled olunca turlar anında yayından kalkar,
      * gerekirse yeniden eklenebilir.
      */
-    public function revokeCategory(Agency $agency, AgencyCategorySubscription $subscription)
+    public function revokeCategory(Request $request, Agency $agency, AgencyCategorySubscription $subscription)
     {
         abort_unless(CategoryLicensing::schemaReady(), 404);
         abort_unless($subscription->agency_id === $agency->id, 404);
+
+        // B12: iptal turları anında yayından kaldırır — gerekçe zorunlu, acentaya bildirilir
+        $validated = $request->validate(['reason' => 'required|string|min:5|max:300'], [
+            'reason.required' => 'İptal gerekçesi zorunlu — acentaya bildirilir.',
+            'reason.min' => 'İptal gerekçesi en az 5 karakter olmalı.',
+        ]);
 
         // İptalle birlikte satın alınmış ekstra tur hakları da düşer — abonelik
         // yeniden verilirse taban hak (2 tur) ile başlar. Bekleyen azaltma
@@ -392,9 +407,11 @@ class AdminController extends Controller
         $subscription->update([
             'status' => AgencyCategorySubscription::STATUS_CANCELLED,
         ] + (CategoryLicensing::slotSchemaReady() ? ['extra_tour_slots' => 0] : [])
-            + (CategoryLicensing::autoRenewSchemaReady() ? ['next_extra_tour_slots' => null] : []));
+            // cancelled_at: raporlardaki "iptal" hareketi admin iptallerini de saysın (B13)
+            + (CategoryLicensing::autoRenewSchemaReady() ? ['next_extra_tour_slots' => null, 'cancelled_at' => now()] : []));
 
         $categoryName = $subscription->category?->name ?? 'Kategori';
+        $this->notifyAgencyUsers($agency, new CategoryAccessRevokedNotification($subscription->fresh(['category']), $validated['reason']));
 
         return back()->with('success', $categoryName.' aboneliği iptal edildi — bu kategorideki turlar yayından kalktı.');
     }

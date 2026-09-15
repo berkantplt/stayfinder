@@ -224,9 +224,11 @@
                                                              oturumunda kod çalıştırılabiliyordu. --}}
                                                         <form method="POST" action="{{ route('admin.agencies.categories.revoke', [$agency, $ownership->subscription]) }}"
                                                               class="js-confirm-revoke" data-category="{{ $ownership->category->name }}"
-                                                              style="margin:0;">
+                                                              style="margin:0;display:flex;flex-direction:column;gap:6px;min-width:180px;">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;padding:6px 10px;white-space:nowrap;">İptal</button>
+                                                            {{-- B12: gerekçe zorunlu — acentaya bildirilir --}}
+                                                            <input type="text" name="reason" required minlength="5" maxlength="300" placeholder="İptal gerekçesi (acentaya gider)" style="padding:6px 8px;border:1px solid var(--p-cizgi);border-radius:8px;font-size:12px;">
+                                                            <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;padding:6px 10px;white-space:nowrap;">İptal et</button>
                                                         </form>
                                                     @else
                                                         <span style="font-size:12px;color:#94a3b8;">—</span>
