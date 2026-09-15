@@ -379,7 +379,11 @@ class RenewCategorySubscriptions extends Command
 
         $users = $subscription->agency?->users ?? collect();
         if ($users->isNotEmpty()) {
-            Notification::send($users, new CategorySubscriptionRenewalFailedNotification($subscription, $reason));
+            try {
+                Notification::send($users, new CategorySubscriptionRenewalFailedNotification($subscription, $reason));
+            } catch (\Throwable $e) { // A8: e-posta kanalı eklendi; taşıyıcı hatası komutu düşürmez
+                \Illuminate\Support\Facades\Log::warning("[RenewCategorySubscriptions] Başarısız-yenileme bildirimi gönderilemedi #{$subscription->id}: {$e->getMessage()}");
+            }
         }
     }
 

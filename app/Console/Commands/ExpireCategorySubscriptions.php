@@ -59,7 +59,11 @@ class ExpireCategorySubscriptions extends Command
 
                     $users = $subscription->agency?->users ?? collect();
                     if ($users->isNotEmpty()) {
-                        Notification::send($users, new CategorySubscriptionExpiredNotification($subscription));
+                        try {
+                            Notification::send($users, new CategorySubscriptionExpiredNotification($subscription));
+                        } catch (\Throwable $e) { // A8: e-posta kanalı eklendi; taşıyıcı hatası aboneliği durdurmaz
+                            \Illuminate\Support\Facades\Log::warning("[ExpireCategorySubscriptions] Bildirim gönderilemedi #{$subscription->id}: {$e->getMessage()}");
+                        }
                     }
 
                     $this->line('Expired: #'.$subscription->id.' ('.($subscription->category?->name ?? '?').')');
@@ -105,7 +109,11 @@ class ExpireCategorySubscriptions extends Command
 
                     $users = $subscription->agency?->users ?? collect();
                     if ($users->isNotEmpty()) {
-                        Notification::send($users, new CategorySubscriptionExpiringNotification($subscription));
+                        try {
+                            Notification::send($users, new CategorySubscriptionExpiringNotification($subscription));
+                        } catch (\Throwable $e) { // A8
+                            \Illuminate\Support\Facades\Log::warning("[ExpireCategorySubscriptions] Hatırlatma gönderilemedi #{$subscription->id}: {$e->getMessage()}");
+                        }
                     }
 
                     $subscription->update(['renewal_reminder_sent_at' => now()]);
