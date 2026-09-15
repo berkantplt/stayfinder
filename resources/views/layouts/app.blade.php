@@ -494,7 +494,9 @@
         }
         
         /* Premium dashboard main area padding */
-        .panel-sidebar-module + div, .panel-sidebar-module + .section, .panel-sidebar-module ~ div, .panel-sidebar-module ~ .section {
+        /* A1: yalnız bitişik kardeş (+). Genel kardeş (~) seçicisi, kenar çubuğundan
+           sonraki HER div'e 260px margin + ekran yüksekliği veriyordu (modal/script kabı dahil). */
+        .panel-sidebar-module + div, .panel-sidebar-module + .section {
             margin-left:260px !important; padding:32px 48px; min-height:calc(100vh - 70px);
             width:calc(100% - 260px) !important; box-sizing:border-box; background:transparent; max-width:none !important;
         }
@@ -513,17 +515,17 @@
         body.panel-layout-active h1 { color:#0f172a; letter-spacing:-0.5px; }
 
         /* Panel content blocks: 94% centered */
-        body.panel-layout-active .panel-sidebar-module ~ div > .stat-card,
-        body.panel-layout-active .panel-sidebar-module ~ .section > .stat-card,
-        body.panel-layout-active .panel-sidebar-module ~ div > div[style*="grid"],
-        body.panel-layout-active .panel-sidebar-module ~ .section > div[style*="grid"],
-        body.panel-layout-active .panel-sidebar-module ~ div > .section > .stat-card,
-        body.panel-layout-active .panel-sidebar-module ~ div > .section > div[style*="grid"],
-        body.panel-layout-active .panel-sidebar-module ~ div > .card,
-        body.panel-layout-active .panel-sidebar-module ~ div > [class*="panel-grid"],
-        body.panel-layout-active .panel-sidebar-module ~ .section > [class*="panel-grid"],
-        body.panel-layout-active .panel-sidebar-module ~ div > .section > [class*="panel-grid"],
-        body.panel-layout-active .panel-sidebar-module ~ div .section > .card {
+        body.panel-layout-active .panel-sidebar-module + div > .stat-card,
+        body.panel-layout-active .panel-sidebar-module + .section > .stat-card,
+        body.panel-layout-active .panel-sidebar-module + div > div[style*="grid"],
+        body.panel-layout-active .panel-sidebar-module + .section > div[style*="grid"],
+        body.panel-layout-active .panel-sidebar-module + div > .section > .stat-card,
+        body.panel-layout-active .panel-sidebar-module + div > .section > div[style*="grid"],
+        body.panel-layout-active .panel-sidebar-module + div > .card,
+        body.panel-layout-active .panel-sidebar-module + div > [class*="panel-grid"],
+        body.panel-layout-active .panel-sidebar-module + .section > [class*="panel-grid"],
+        body.panel-layout-active .panel-sidebar-module + div > .section > [class*="panel-grid"],
+        body.panel-layout-active .panel-sidebar-module + div .section > .card {
             max-width: 94%; margin-left: auto; margin-right: auto;
         }
 
@@ -549,8 +551,7 @@
             body.panel-layout-active { padding-top:0; }
             body.panel-layout-active .nav { position:sticky; top:0; z-index:var(--z-sticky-nav); padding:0 16px; }
             .panel-sidebar-module { width:220px !important; padding:20px 12px !important; }
-            .panel-sidebar-module + div, .panel-sidebar-module + .section,
-            .panel-sidebar-module ~ div, .panel-sidebar-module ~ .section {
+            .panel-sidebar-module + div, .panel-sidebar-module + .section {
                 margin-left:220px !important; width:calc(100% - 220px) !important; padding:24px !important; min-height:0;
             }
         }
@@ -564,8 +565,7 @@
             }
             .panel-sidebar-module.acik { transform:none; }
             body.panel-menu-acik #mobileNavBack { display:block; } /* perdeyi yeniden kullan */
-            .panel-sidebar-module + div, .panel-sidebar-module + .section,
-            .panel-sidebar-module ~ div, .panel-sidebar-module ~ .section {
+            .panel-sidebar-module + div, .panel-sidebar-module + .section {
                 margin-left:0 !important; width:100% !important; padding:16px !important;
             }
         }
