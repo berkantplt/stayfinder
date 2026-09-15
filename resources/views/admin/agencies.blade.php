@@ -19,21 +19,19 @@
              saklandığı için bu sayfadan ayrıldıktan sonra bir daha görüntülenemez. --}}
         @if($creds = session('new_agency_credentials'))
             <div class="card" style="margin-bottom:24px;padding:20px;border:2px solid #0d9488;background:#f0fdfa;">
-                <div style="font-weight:800;color:#0f766e;margin-bottom:6px;">{{ $creds['agency'] }} — giriş bilgileri</div>
-                <p style="font-size:13px;color:#475569;margin-bottom:12px;">
-                    Bu şifre <strong>yalnızca şimdi</strong> görünüyor. Acentaya güvenli bir kanaldan iletin ve
-                    ilk girişte değiştirmelerini isteyin.
-                </p>
-                <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                    <div style="flex:1;min-width:220px;">
-                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">E-posta</div>
-                        <div style="font-family:monospace;font-size:15px;font-weight:700;">{{ $creds['email'] }}</div>
-                    </div>
-                    <div style="flex:1;min-width:220px;">
-                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">Geçici şifre</div>
-                        <div style="font-family:monospace;font-size:15px;font-weight:700;">{{ $creds['password'] }}</div>
-                    </div>
-                </div>
+                <div style="font-weight:800;color:#0f766e;margin-bottom:6px;">{{ $creds['agency'] }} — giriş kurulumu</div>
+                {{-- B15: parola yok; tek kullanımlık "parola belirle" bağlantısı --}}
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">Giriş e-postası</div>
+                <div style="font-family:monospace;font-size:15px;font-weight:700;margin-bottom:12px;">{{ $creds['email'] }}</div>
+                @if(!empty($creds['mailed']))
+                    <p style="font-size:13px;color:#475569;margin:0;">Parola belirleme bağlantısı acentanın e-postasına gönderildi; acenta parolasını kendisi seçecek. Bağlantı gelmezse acenta "Şifremi unuttum" ile yenisini alabilir.</p>
+                @else
+                    <p style="font-size:13px;color:#475569;margin-bottom:8px;">
+                        Posta hesabı tanımlı olmadığı için bağlantı e-postayla gönderilemedi. Aşağıdaki bağlantı <strong>yalnızca şimdi</strong> görünüyor,
+                        <strong>{{ $creds['expires_minutes'] ?? 60 }} dakika</strong> geçerli ve <strong>tek kullanımlık</strong>; acentaya güvenli bir kanaldan iletin. Süresi dolarsa acenta "Şifremi unuttum" ile yenisini alır.
+                    </p>
+                    <input type="text" readonly value="{{ $creds['setup_url'] ?? '' }}" onclick="this.select()" style="width:100%;font-family:monospace;font-size:13px;padding:10px 12px;border:1px solid #99f6e4;border-radius:10px;background:#fff;">
+                @endif
             </div>
         @endif
 

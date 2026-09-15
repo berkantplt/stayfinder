@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -453,8 +454,14 @@ class AdminController extends Controller
     {
         // E-posta ZORUNLU ve benzersiz: eskiden acenta adından türetiliyordu
         // ("admin@seturege.com") ve şifre sabit 'password' idi — acenta adını
-        // gören herkes panele girebiliyordu. Giriş bilgisi artık tahmin
-        // edilemez ve yalnızca bu isteğin cevabında bir kez gösterilir.
+        // gören herkes panele girebiliyordu.
+        //
+        // B15 — Parola artık hiç ÜRETİLMİYOR ve gösterilmiyor: eskiden düz metin
+        // parola flash oturuma (SESSION_DRIVER=database → sessions tablosuna) yazılıp
+        // ekranda gösteriliyor, admin WhatsApp/e-postayla taşıyordu. Şimdi kullanıcı
+        // rastgele, kimsenin bilmediği bir hash ile yaratılır; acenta parolasını tek
+        // kullanımlık "parola belirle" bağlantısıyla kendisi seçer (posta çalışıyorsa
+        // e-postayla gider, yoksa bağlantı admine bir kez gösterilir).
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string',
@@ -463,35 +470,48 @@ class AdminController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $password = Str::password(16, symbols: false);
-
         // Acenta + kullanıcı tek işlemde: kullanıcı oluşturma patlarsa
         // sahipsiz (girilemeyen) bir acenta kaydı kalmasın.
-        $agency = DB::transaction(function () use ($validated, $password) {
+        [$agency, $user] = DB::transaction(function () use ($validated) {
             $agency = Agency::create(array_merge($validated, [
                 'approval_status' => Agency::STATUS_APPROVED,
                 'approved_at' => now(),
                 'approved_by' => auth()->id(),
             ]));
 
-            User::create([
+            $user = User::create([
                 'name' => $agency->name.' Yönetici',
                 'email' => $validated['email'],
-                'password' => Hash::make($password),
+                'password' => Hash::make(Str::random(40)), // bilinmeyen; bağlantıyla değiştirilecek
                 'role' => User::ROLE_AGENCY,
                 'agency_id' => $agency->id,
             ]);
 
-            return $agency;
+            return [$agency, $user];
         });
+
+        $credentials = ['agency' => $agency->name, 'email' => $user->email, 'mailed' => false];
+
+        // Posta çalışıyorsa bağlantı acentaya e-postayla (Türkçe ResetPasswordNotification) gider.
+        if (! in_array(config('mail.default'), ['log', 'array'], true)) {
+            try {
+                $credentials['mailed'] = Password::sendResetLink(['email' => $user->email]) === Password::RESET_LINK_SENT;
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('[AdminController] Parola bağlantısı e-postayla gönderilemedi: '.$e->getMessage());
+            }
+        }
+
+        // Posta yoksa/gönderilemediyse: tek kullanımlık bağlantı admine BİR kez gösterilir
+        // (parola değil: süresi dolar, bir kez kullanılır, parola belirlenince geçersizleşir).
+        if (! $credentials['mailed']) {
+            $token = Password::broker()->createToken($user);
+            $credentials['setup_url'] = route('password.reset', ['token' => $token, 'email' => $user->email]);
+            $credentials['expires_minutes'] = (int) config('auth.passwords.users.expire', 60);
+        }
 
         return redirect()->route('admin.agencies')
             ->with('success', 'Acenta oluşturuldu.')
-            ->with('new_agency_credentials', [
-                'agency' => $agency->name,
-                'email' => $validated['email'],
-                'password' => $password,
-            ]);
+            ->with('new_agency_credentials', $credentials);
     }
 
     public function approveAgencyApplication(Request $request, Agency $agency)
