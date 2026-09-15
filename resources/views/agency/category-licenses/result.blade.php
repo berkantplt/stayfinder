@@ -11,6 +11,7 @@
     <div>
         @include('partials.agency-sidebar')
         <div class="section" style="padding:24px 0 0 0;">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Panel', 'url' => route('agency.dashboard')], 'items' => [['name' => 'Kategori Yetkileri', 'url' => route('agency.category-licenses.index')], ['name' => 'Satın Alımlar', 'url' => route('agency.category-licenses.orders')], ['name' => 'Sipariş Sonucu']]])
             <div class="stat-card" style="max-width:720px;margin:24px auto;padding:32px;text-align:center;">
                 @if($order->isPaid())
                     <div style="font-size:48px;margin-bottom:8px;">✅</div>

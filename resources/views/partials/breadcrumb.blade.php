@@ -17,7 +17,10 @@
 --}}
 @php
     $crumbs = array_values(array_filter($items ?? [], fn ($i) => !empty($i['name'])));
-    array_unshift($crumbs, ['name' => 'Ana Sayfa', 'url' => route('home')]);
+    // A15: panel sayfaları kökü "Ana Sayfa" yerine kendi dashboard'u yapar;
+    // schema=false ile BreadcrumbList JSON-LD basılmaz (panel sayfaları indekslenmez).
+    array_unshift($crumbs, $root ?? ['name' => 'Ana Sayfa', 'url' => route('home')]);
+    $schema = $schema ?? true;
 @endphp
 
 @if (count($crumbs) > 1)
@@ -38,6 +41,7 @@
         </ol>
     </nav>
 
+    @if($schema)
     @include('partials.json-ld', ['data' => [
         '@context' => 'https://schema.org',
         '@type' => 'BreadcrumbList',
@@ -49,6 +53,7 @@
             'item' => $crumb['url'] ?? null,
         ]))->values()->all(),
     ]])
+    @endif
 
     @once
         @push('head')

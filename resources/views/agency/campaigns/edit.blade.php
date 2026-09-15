@@ -6,6 +6,7 @@
     <div>
         @include('partials.agency-sidebar')
         <div class="section" style="padding:0;">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Panel', 'url' => route('agency.dashboard')], 'items' => [['name' => 'Kampanyalar', 'url' => route('agency.campaigns.index')], ['name' => 'Düzenle']]])
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;">
                 <div style="display:flex;align-items:center;gap:12px;">
                     <div style="width:40px;height:40px;background:var(--accent-bg);color:var(--accent-dark);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;">✏️</div>

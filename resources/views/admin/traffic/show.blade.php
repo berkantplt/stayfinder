@@ -6,6 +6,7 @@
     <div>
         @include('partials.admin-sidebar')
         <div class="section" style="padding:0;">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Admin', 'url' => route('admin.dashboard')], 'items' => [['name' => 'Trafik', 'url' => route('admin.traffic')], ['name' => $tour->title]]])
             <div style="max-width:94%;margin:0 auto 24px;">
                 <a href="{{ route('admin.traffic') }}" style="font-size:13px;color:#64748b;text-decoration:none;">← Trafik</a>
                 <h1 style="font-size:24px;font-weight:700;color:#0f172a;margin-top:8px;">{{ $tour->title }}</h1>

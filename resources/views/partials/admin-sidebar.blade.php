@@ -81,7 +81,7 @@
                 <span class="sidebar-bullet"></span> Siparişler
             </a>
         </div>
-        <a href="{{ route('admin.destinations') }}" class="sidebar-link {{ request()->routeIs('admin.destinations') ? 'active' : '' }}">
+        <a href="{{ route('admin.destinations') }}" class="sidebar-link {{ request()->routeIs('admin.destinations*') ? 'active' : '' }}">
             <span class="sidebar-icon">📷</span> Destinasyonlar
         </a>
         <a href="{{ route('admin.blog.index') }}" class="sidebar-link {{ request()->routeIs('admin.blog*') ? 'active' : '' }}">

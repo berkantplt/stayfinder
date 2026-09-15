@@ -3,6 +3,7 @@
 
 @section('content')
 <div class="container">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Admin', 'url' => route('admin.dashboard')], 'items' => [['name' => 'Acentalar', 'url' => route('admin.agencies')], ['name' => 'Yeni Acenta']]])
     <div class="section">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
             <a href="{{ route('admin.agencies') }}" class="btn btn-outline btn-sm">← Geri</a>

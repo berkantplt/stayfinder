@@ -223,6 +223,7 @@
     <div>
         @include('partials.agency-sidebar')
         <div class="section" style="padding:24px 0 0 0;">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Panel', 'url' => route('agency.dashboard')], 'items' => [['name' => 'Turlarım', 'url' => route('agency.tours.index')], ['name' => 'Yeni Tur']]])
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;max-width:94%;margin-left:auto;margin-right:auto;">
                 <a href="{{ route('agency.tours.index') }}" class="btn btn-outline btn-sm">← Geri</a>
                 <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">Yeni Tur Ekle</h1>

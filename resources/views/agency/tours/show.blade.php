@@ -3,6 +3,7 @@
 
 @section('content')
 <div class="container">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Panel', 'url' => route('agency.dashboard')], 'items' => [['name' => 'Turlarım', 'url' => route('agency.tours.index')], ['name' => $tour->title]]])
     <div class="section">
         {{-- Header --}}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">

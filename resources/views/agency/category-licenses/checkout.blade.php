@@ -27,6 +27,7 @@
     <div>
         @include('partials.agency-sidebar')
         <div class="section" style="padding:24px 0 0 0;">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Panel', 'url' => route('agency.dashboard')], 'items' => [['name' => 'Kategori Yetkileri', 'url' => route('agency.category-licenses.index')], ['name' => 'Sepet', 'url' => route('agency.category-licenses.cart.show')], ['name' => 'Ödeme']]])
             <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:94%;margin:0 auto 24px;">
                 <div>
                     <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.5px;color:var(--text);">Ödeme Bilgileri</h1>

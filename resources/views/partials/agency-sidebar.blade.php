@@ -19,7 +19,7 @@
         <a href="{{ route('agency.dashboard') }}" class="sidebar-link {{ request()->routeIs('agency.dashboard') ? 'active' : '' }}">
             <span class="sidebar-icon">📊</span> Dashboard
         </a>
-        <a href="{{ route('agency.tours.index') }}" class="sidebar-link {{ request()->routeIs('agency.tours.index') ? 'active' : '' }}">
+        <a href="{{ route('agency.tours.index') }}" class="sidebar-link {{ request()->routeIs('agency.tours.index', 'agency.tours.show', 'agency.tours.edit') ? 'active' : '' }}">
             <span class="sidebar-icon">📋</span> Turlarım
         </a>
         <a href="{{ route('agency.tours.create') }}" class="sidebar-link {{ request()->routeIs('agency.tours.create') ? 'active' : '' }}">
@@ -28,7 +28,7 @@
         <a href="{{ route('agency.category-licenses.index') }}" class="sidebar-link {{ request()->routeIs('agency.category-licenses*') ? 'active' : '' }}">
             <span class="sidebar-icon">🧾</span> Kategori Yetkileri
         </a>
-        <a href="{{ route('agency.campaigns.index') }}" class="sidebar-link {{ request()->routeIs('agency.campaigns.index') ? 'active' : '' }}">
+        <a href="{{ route('agency.campaigns.index') }}" class="sidebar-link {{ request()->routeIs('agency.campaigns.*') ? 'active' : '' }}">
             <span class="sidebar-icon">🏷️</span> Kampanyalar
         </a>
         <a href="{{ route('agency.coupons.index') }}" class="sidebar-link {{ request()->routeIs('agency.coupons*') ? 'active' : '' }}">

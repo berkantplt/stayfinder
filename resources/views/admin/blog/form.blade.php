@@ -3,6 +3,7 @@
 
 @section('content')
 <div class="container">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Admin', 'url' => route('admin.dashboard')], 'items' => [['name' => 'Blog Yönetimi', 'url' => route('admin.blog.index')], ['name' => isset($post) ? 'Düzenle' : 'Yeni Yazı']]])
     <div class="section">
         <h1 style="font-size:22px;font-weight:800;margin-bottom:24px;">{{ isset($post) ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı' }}</h1>
 

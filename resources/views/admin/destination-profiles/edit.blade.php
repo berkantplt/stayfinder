@@ -7,6 +7,7 @@
         @include('partials.admin-sidebar')
 
         <div class="section" style="padding:0;">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Admin', 'url' => route('admin.dashboard')], 'items' => [['name' => 'Destinasyon Profilleri', 'url' => route('admin.destination-profiles.index')], ['name' => $profile->destination ?? 'Düzenle']]])
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;max-width:94%;margin:0 auto 24px;">
                 <div>
                     <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">{{ $profile->city }}</h1>

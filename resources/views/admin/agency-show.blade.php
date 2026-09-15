@@ -6,6 +6,7 @@
     <div>
         @include('partials.admin-sidebar')
         <div class="section" style="padding:0;">
+        @include('partials.breadcrumb', ['schema' => false, 'root' => ['name' => 'Admin', 'url' => route('admin.dashboard')], 'items' => [['name' => 'Acentalar', 'url' => route('admin.agencies')], ['name' => $agency->name]]])
             @if(session('success'))
                 <div class="alert alert-success" style="max-width:94%;margin:0 auto 16px;">{{ session('success') }}</div>
             @endif
