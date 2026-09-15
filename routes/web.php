@@ -337,8 +337,13 @@ Route::post('/kayit', function (Request $request) {
     return LoginReturn::redirectAfter($user, $request, 'Hoş geldiniz!');
 })->middleware('throttle:register')->name('register.post');
 
-Route::post('/cikis', function () {
+Route::post('/cikis', function (Request $request) {
     Auth::logout();
+    // D6: oturum geçersiz kılınmazsa eski kullanıcının şifre izi (password_hash_web)
+    // kalır; aynı tarayıcıda giriş yapan ikinci kullanıcı AuthenticateSession
+    // tarafından ilk istekte düşürülürdü. Ayrıca oturum sabitleme önlemi.
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
 
     return redirect()->route('home');
 })->name('logout');
