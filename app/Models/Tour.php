@@ -579,26 +579,54 @@ class Tour extends Model
 
     public function isPubliclyVisible(): bool
     {
+        return $this->publicVisibilityIssue() === null;
+    }
+
+    /**
+     * C9 — Tur sitede yayında değilse Türkçe sebebi, yayındaysa null.
+     * Kurallar Tour::active() scope'u ile birebir aynı sırada. Liste ekranı
+     * tur başına abonelik sorgusu atmasın diye acentanın aktif abonelik
+     * kategori id'leri dışarıdan verilebilir.
+     *
+     * @param  array<int>|null  $subscribedCategoryIds
+     */
+    public function publicVisibilityIssue(?array $subscribedCategoryIds = null): ?string
+    {
         $this->loadMissing('agency', 'category');
 
-        if (! $this->is_active || ! $this->agency?->is_active) {
-            return false;
+        if (! $this->is_active) {
+            return 'Pasif (sizin ayarınız)';
         }
 
-        if (! CategoryLicensing::schemaReady()) {
-            return ! $this->category_id || (bool) $this->category?->is_active;
+        if (! $this->agency?->is_active) {
+            return 'Acenta hesabı pasif';
         }
 
-        if ($this->agency->legacy_category_access) {
-            return ! $this->category_id || (bool) $this->category?->is_active;
+        if (! CategoryLicensing::schemaReady() || $this->agency->legacy_category_access) {
+            if (! $this->category_id) {
+                return null; // geçiş erişimi: kategorisiz tur da listelenir
+            }
+
+            return $this->category?->is_active ? null : 'Kategori pasif';
         }
 
-        if (! $this->category_id || ! $this->category?->is_active) {
-            return false;
+        if (! $this->category_id) {
+            return 'Kategori atanmamış';
         }
 
-        return $this->agency->activeCategorySubscriptions()
-            ->where('category_id', $this->category_id)
-            ->exists();
+        if (! $this->category?->is_active) {
+            return 'Kategori pasif';
+        }
+
+        $subscribedCategoryIds ??= $this->agency->activeCategorySubscriptions()
+            ->pluck('category_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (! in_array((int) $this->category_id, $subscribedCategoryIds, true)) {
+            return 'Kategori yetkisi yok veya süresi dolmuş';
+        }
+
+        return null;
     }
 }

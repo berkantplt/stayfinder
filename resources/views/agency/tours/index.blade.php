@@ -37,6 +37,7 @@
                             <th>Fiyat</th>
                             <th>Tarih</th>
                             <th>Durum</th>
+                            <th>Yayın</th>
                             <th>İşlem</th>
                         </tr>
                     </thead>
@@ -53,6 +54,15 @@
                                     {{ $tour->is_active ? 'Aktif' : 'Pasif' }}
                                 </span>
                             </td>
+                            <td>
+                                {{-- C9: "Aktif" ayarı ile sitede görünürlük farklı şeyler; sebep burada --}}
+                                @if($tour->visibility_issue === null)
+                                    <span class="p-etiket p-etiket-basari">Yayında</span>
+                                @else
+                                    <span class="p-etiket p-etiket-uyari">Yayında değil</span>
+                                    <div style="font-size:11px;color:var(--p-uyari-metin);margin-top:4px;white-space:nowrap;">{{ $tour->visibility_issue }}</div>
+                                @endif
+                            </td>
                             <td style="white-space:nowrap;">
                                 <div style="display:inline-flex;gap:8px;align-items:center;">
                                     <a href="{{ route('agency.tours.show', $tour) }}" class="btn btn-outline btn-sm" title="Görüntüle">👁️</a>
@@ -65,7 +75,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:40px;">Henüz tur eklemediniz.</td></tr>
+                        <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:40px;">Henüz tur eklemediniz.</td></tr>
                         @endforelse
                     </tbody>
                 </table></div>

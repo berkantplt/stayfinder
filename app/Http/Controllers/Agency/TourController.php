@@ -51,6 +51,17 @@ class TourController extends Controller
             ->orderByDesc('created_at')
             ->paginate(15);
 
+        // C9: yayın durumu — "Aktif" ayarı tek başına sitede göründüğü anlamına
+        // gelmez (abonelik bitmiş / kategori pasif / acenta pasif). Abonelik
+        // id'leri tek sorguda alınır; tur başına ek sorgu atılmaz.
+        $subscribedCategoryIds = $agency->legacy_category_access
+            ? []
+            : $agency->activeCategorySubscriptions()->pluck('category_id')->map(fn ($id) => (int) $id)->all();
+        $tours->getCollection()->each(function (Tour $tour) use ($agency, $subscribedCategoryIds) {
+            $tour->setRelation('agency', $agency);
+            $tour->visibility_issue = $tour->publicVisibilityIssue($subscribedCategoryIds);
+        });
+
         $canCreateTours = $agency->legacy_category_access || count($agency->accessibleCategoryIds()) > 0;
 
         // A10: arşiv (soft-deleted) — geri alınabilir, 30 gün sonra kalıcı silinir
