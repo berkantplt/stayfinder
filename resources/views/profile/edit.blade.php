@@ -15,6 +15,23 @@
         @endif
         @include('partials.form-errors')
 
+        {{-- D5: bekleyen e-posta değişikliği --}}
+        @if($user->pending_email)
+            <div class="alert alert-warning" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+                <div>📧 <strong>{{ $user->pending_email }}</strong> onay bekliyor. Bağlantı yeni adrese gönderildi (60 dk geçerli); onaylanana kadar {{ $user->email }} kullanılır.</div>
+                <div style="display:flex;gap:8px;">
+                    <form method="POST" action="{{ route('profile.email.resend') }}">@csrf<button type="submit" class="btn btn-outline btn-sm">Yeniden gönder</button></form>
+                    <form method="POST" action="{{ route('profile.email.cancel') }}">@csrf @method('DELETE')<button type="submit" class="btn btn-outline btn-sm">İptal</button></form>
+                </div>
+            </div>
+            @if(session('email_verify_link'))
+                <div class="alert alert-warning" style="font-size:13px;">
+                    <strong>Posta gönderimi kapalı (geliştirme):</strong> onay bağlantısı bir kez burada gösteriliyor —
+                    <a href="{{ session('email_verify_link') }}" style="color:inherit;text-decoration:underline;word-break:break-all;">{{ session('email_verify_link') }}</a>
+                </div>
+            @endif
+        @endif
+
         {{-- Profile Form --}}
         <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;">
             <h2 style="font-size:16px;font-weight:700;margin-bottom:18px;">👤 Kişisel Bilgiler</h2>
@@ -54,6 +71,8 @@
                     <div class="form-group">
                         <label>E-posta *</label>
                         <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+@error('email')<p class="p-hata">{{ $message }}</p>@enderror
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Adresi değiştirirseniz yeni adrese onay bağlantısı gider; onaylayana kadar mevcut adres geçerli kalır.</div>
                     </div>
                 </div>
                 <div class="form-row">

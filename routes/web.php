@@ -157,6 +157,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profilim/guvenlik', [ProfileController::class, 'security'])->name('profile.security');
     Route::put('/profilim', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profilim/sifre', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    // D5: e-posta değişikliği onayı (yeniden gönder / iptal)
+    Route::post('/profilim/eposta/yeniden-gonder', [ProfileController::class, 'resendEmailChange'])
+        ->middleware('throttle:3,10')
+        ->name('profile.email.resend');
+    Route::delete('/profilim/eposta/bekleyen', [ProfileController::class, 'cancelEmailChange'])->name('profile.email.cancel');
 
     // Notifications
     Route::get('/bildirimler', [NotificationController::class, 'index'])->name('notifications.index');
@@ -218,6 +223,13 @@ Route::post('/giris', function (Request $request) {
 
     return back()->withErrors(['email' => 'Geçersiz e-posta veya şifre.']);
 })->middleware('throttle:login')->name('login.post');
+
+// D5: yeni e-posta adresine giden imzalı onay bağlantısı — başka cihazda,
+// oturumsuz da açılabilir; imza + süre (60 dk) + adres özeti doğrulanır.
+Route::get('/profilim/eposta/onayla/{user}/{hash}', [ProfileController::class, 'verifyEmailChange'])
+    ->whereNumber('user')
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('profile.email.verify');
 
 // Şifre sıfırlama (guest)
 Route::middleware('guest')->group(function () {

@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Review;
 use App\Models\TourView;
+use App\Models\User;
+use App\Notifications\EmailChangeVerificationNotification;
 use App\Support\TurkishCities;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class ProfileController extends Controller
@@ -71,9 +75,98 @@ class ProfileController extends Controller
 
         unset($validated['avatar_file'], $validated['remove_avatar']);
 
+        // D5: e-posta doğrudan değişmez — yeni adres onaylanana kadar bekler,
+        // eski adres geçerli kalır (yazım hatası / erişilemeyen adres kilidi önlenir).
+        $newEmail = mb_strtolower(trim((string) $validated['email']));
+        unset($validated['email']);
+        $emailChanged = $newEmail !== mb_strtolower((string) $user->email);
+
         $user->update($validated);
 
+        if ($emailChanged) {
+            $this->startEmailChange($user, $newEmail);
+
+            return redirect()->route('profile.edit')->with('success',
+                'Profiliniz güncellendi. '.$newEmail.' adresine onay bağlantısı gönderdik; onaylayana kadar '.$user->email.' geçerli kalır.');
+        }
+
+        if ($user->pending_email !== null && $newEmail === mb_strtolower((string) $user->email)) {
+            // Kullanıcı eski adresini geri yazdı: bekleyen değişiklik iptal
+            $user->forceFill(['pending_email' => null, 'pending_email_requested_at' => null])->save();
+        }
+
         return redirect()->route('profile.show')->with('success', 'Profiliniz güncellendi!');
+    }
+
+    /** D5 — bekleyen adres için onay bağlantısını yeniden gönderir. */
+    public function resendEmailChange()
+    {
+        $user = auth()->user();
+
+        if (! $user->pending_email) {
+            return redirect()->route('profile.edit')->withErrors(['email' => 'Bekleyen bir e-posta değişikliği yok.']);
+        }
+
+        $this->startEmailChange($user, $user->pending_email);
+
+        return redirect()->route('profile.edit')->with('success', 'Onay bağlantısı '.$user->pending_email.' adresine yeniden gönderildi.');
+    }
+
+    /** D5 — bekleyen e-posta değişikliğini iptal eder. */
+    public function cancelEmailChange()
+    {
+        auth()->user()->forceFill(['pending_email' => null, 'pending_email_requested_at' => null])->save();
+
+        return redirect()->route('profile.edit')->with('success', 'E-posta değişikliği iptal edildi.');
+    }
+
+    /**
+     * D5 — İmzalı bağlantı (signed middleware: imza + 60 dk). Oturum şart değil:
+     * yeni adres başka cihazda açılabilir. hash = bekleyen adresin sha1'i; bağlantı
+     * üretildikten sonra adres değiştiyse eski bağlantı geçersizdir.
+     */
+    public function verifyEmailChange(Request $request, User $user, string $hash)
+    {
+        abort_unless($user->pending_email !== null && hash_equals(sha1($user->pending_email), $hash), 403, 'Onay bağlantısı geçersiz veya bekleyen değişiklik yok.');
+
+        if (User::where('email', $user->pending_email)->whereKeyNot($user->id)->exists()) {
+            $user->forceFill(['pending_email' => null, 'pending_email_requested_at' => null])->save();
+
+            return redirect()->route(auth()->check() ? 'profile.edit' : 'login')
+                ->withErrors(['email' => 'Bu e-posta adresi artık başka bir hesapta kullanılıyor; değişiklik iptal edildi.']);
+        }
+
+        $user->forceFill([
+            'email' => $user->pending_email,
+            'email_verified_at' => now(),
+            'pending_email' => null,
+            'pending_email_requested_at' => null,
+        ])->save();
+
+        return redirect()->route(auth()->id() === $user->id ? 'profile.edit' : 'login')
+            ->with('success', 'E-posta adresiniz onaylandı: '.$user->email);
+    }
+
+    /** D5 — bekleyen adresi kaydeder, yeni adrese imzalı bağlantı yollar (posta yoksa ekranda gösterir). */
+    private function startEmailChange(User $user, string $email): void
+    {
+        $user->forceFill(['pending_email' => $email, 'pending_email_requested_at' => now()])->save();
+
+        $url = URL::temporarySignedRoute('profile.email.verify', now()->addMinutes(60), [
+            'user' => $user->id,
+            'hash' => sha1($email),
+        ]);
+
+        try {
+            Notification::route('mail', $email)->notify(new EmailChangeVerificationNotification($url, $user->name, $user->email));
+        } catch (\Throwable $e) {
+            report($e); // taşıyıcı hatası profil güncellemesini bozmasın; bağlantı yeniden gönderilebilir
+        }
+
+        // Posta hesabı henüz yok (MAIL_MAILER=log): bağlantı ekranda bir kez gösterilir.
+        if (in_array(config('mail.default'), ['log', 'array'], true)) {
+            session()->flash('email_verify_link', $url);
+        }
     }
 
     public function updatePassword(Request $request)
