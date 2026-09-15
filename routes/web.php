@@ -380,6 +380,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/kategori-yetkilendirme/kategori-tarifesi', [AdminCategoryLicenseController::class, 'pricing'])->name('category-licenses.pricing');
     Route::get('/kategori-yetkilendirme/acenta-erisimleri', [AdminCategoryLicenseController::class, 'access'])->name('category-licenses.access');
     Route::get('/kategori-yetkilendirme/siparisler', [AdminCategoryLicenseController::class, 'orders'])->name('category-licenses.orders');
+    // B9: sipariş detayı + ödeme bekleyen siparişe müdahale
+    Route::get('/kategori-yetkilendirme/siparisler/{order}', [AdminCategoryLicenseController::class, 'orderShow'])->whereNumber('order')->name('category-licenses.orders.show');
+    Route::post('/kategori-yetkilendirme/siparisler/{order}/tamamla', [AdminCategoryLicenseController::class, 'orderComplete'])->whereNumber('order')->name('category-licenses.orders.complete');
+    Route::post('/kategori-yetkilendirme/siparisler/{order}/iptal', [AdminCategoryLicenseController::class, 'orderCancel'])->whereNumber('order')->name('category-licenses.orders.cancel');
     Route::put('/kategori-yetkilendirme/fiyat/{category}', [AdminCategoryLicenseController::class, 'updatePricing'])->name('category-licenses.pricing.update');
     Route::get('/acentalar', [AdminController::class, 'agencies'])->name('agencies');
     Route::get('/acenta-basvurulari', [AdminController::class, 'agencyApplications'])->name('agency-applications');

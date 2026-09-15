@@ -76,37 +76,131 @@ class CategoryLicenseController extends Controller
         ]);
     }
 
-    public function orders()
+    /**
+     * B9 — Sipariş listesi. Eskiden tüm siparişler `->get()` ile belleğe alınıp
+     * toplamlar PHP'de hesaplanıyordu; filtre, detay sayfası ve müdahale yoktu.
+     * Toplamlar SQL aggregate; durum/acenta/sipariş no/tarih filtreleri (sayfalamada korunur).
+     * CİRO yalnızca ödenmiş (PAID) siparişlerden, ödeme anına (paid_at) göre.
+     */
+    public function orders(Request $request)
     {
         if ($redirect = $this->redirectIfSchemaMissing()) {
             return $redirect;
         }
 
-        $orders = AgencyCategoryOrder::with(['agency', 'items.category'])
-            ->orderByDesc('purchased_at')
-            ->paginate(20);
-
-        $allOrders = AgencyCategoryOrder::query()->get(['status', 'subtotal', 'purchased_at', 'paid_at']);
-        $lastThirtyDays = now()->subDays(30);
-
-        // CİRO yalnızca ödenmiş (PAID) siparişlerden hesaplanır — pending/failed/
-        // cancelled sipariş "gelir" sayılmaz (şişkin ciro raporlanmaz). Tarih
-        // filtresi için ödemenin gerçekleştiği an (paid_at) kullanılır.
-        $paidOrders = $allOrders->where('status', AgencyCategoryOrder::STATUS_PAID);
-
-        $orderStats = [
-            'total_orders' => $allOrders->count(),
-            'total_revenue' => round($paidOrders->sum(fn ($order) => (float) $order->subtotal), 2),
-            'last_30_days_orders' => $paidOrders->filter(fn ($order) => $order->paid_at && $order->paid_at->greaterThanOrEqualTo($lastThirtyDays))->count(),
-            'last_30_days_revenue' => round(
-                $paidOrders
-                    ->filter(fn ($order) => $order->paid_at && $order->paid_at->greaterThanOrEqualTo($lastThirtyDays))
-                    ->sum(fn ($order) => (float) $order->subtotal),
-                2
-            ),
+        $durumlar = [
+            AgencyCategoryOrder::STATUS_PAID, AgencyCategoryOrder::STATUS_PENDING,
+            AgencyCategoryOrder::STATUS_FAILED, AgencyCategoryOrder::STATUS_CANCELLED,
+        ];
+        $filtre = [
+            'status' => in_array($request->input('status'), $durumlar, true) ? $request->input('status') : '',
+            'agency_id' => $request->integer('agency_id') ?: null,
+            'q' => trim((string) $request->input('q', '')),
+            'from' => $request->input('from') && strtotime((string) $request->input('from')) ? (string) $request->input('from') : '',
+            'to' => $request->input('to') && strtotime((string) $request->input('to')) ? (string) $request->input('to') : '',
         ];
 
-        return view('admin.category-licenses.orders', compact('orders', 'orderStats'));
+        $orders = AgencyCategoryOrder::with(['agency' => fn ($a) => $a->withTrashed(), 'items.category'])
+            ->when($filtre['status'] !== '', fn ($q) => $q->where('status', $filtre['status']))
+            ->when($filtre['agency_id'], fn ($q) => $q->where('agency_id', $filtre['agency_id']))
+            ->when($filtre['q'] !== '', fn ($q) => $q->where('order_number', 'like', '%'.$filtre['q'].'%'))
+            ->when($filtre['from'] !== '', fn ($q) => $q->whereDate('purchased_at', '>=', $filtre['from']))
+            ->when($filtre['to'] !== '', fn ($q) => $q->whereDate('purchased_at', '<=', $filtre['to']))
+            ->orderByDesc('purchased_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        $paid = AgencyCategoryOrder::where('status', AgencyCategoryOrder::STATUS_PAID);
+        $lastThirtyDays = now()->subDays(30);
+        $toplam = (clone $paid)->selectRaw('COUNT(*) as adet, COALESCE(SUM(subtotal), 0) as tutar')->first();
+        $son30 = (clone $paid)->where('paid_at', '>=', $lastThirtyDays)->selectRaw('COUNT(*) as adet, COALESCE(SUM(subtotal), 0) as tutar')->first();
+
+        $orderStats = [
+            'total_orders' => (int) $toplam->adet,
+            'total_revenue' => round((float) $toplam->tutar, 2),
+            'last_30_days_orders' => (int) $son30->adet,
+            'last_30_days_revenue' => round((float) $son30->tutar, 2),
+            'pending_orders' => AgencyCategoryOrder::where('status', AgencyCategoryOrder::STATUS_PENDING)->count(),
+        ];
+
+        $agencies = Agency::withTrashed()->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.category-licenses.orders', compact('orders', 'orderStats', 'filtre', 'agencies', 'durumlar'));
+    }
+
+    /** B9 — Sipariş detayı: kalemler, ödeme referansı, fatura bilgisi, ilgili abonelikler. */
+    public function orderShow(AgencyCategoryOrder $order)
+    {
+        if ($redirect = $this->redirectIfSchemaMissing()) {
+            return $redirect;
+        }
+
+        $order->load(['agency' => fn ($a) => $a->withTrashed(), 'items.category']);
+
+        $subscriptions = AgencyCategorySubscription::query()
+            ->where('agency_id', $order->agency_id)
+            ->whereIn('category_id', $order->items->pluck('category_id')->filter()->all())
+            ->with('category')
+            ->get()
+            ->keyBy('category_id');
+
+        try {
+            $buyer = $order->buyer_snapshot; // encrypted:array
+        } catch (\Throwable) {
+            $buyer = null; // APP_KEY değişmiş ya da bozuk kayıt: sayfa düşmesin
+        }
+
+        return view('admin.category-licenses.order-show', compact('order', 'subscriptions', 'buyer'));
+    }
+
+    /**
+     * B9 — Ödeme bekleyen siparişi manuel tamamla: para başka yoldan alındıysa
+     * (havale, callback'i düşmüş iyzico ödemesi). Satın alma akışıyla birebir aynı
+     * finalizer kullanılır (idempotent, abonelikleri açar/uzatır). Ödeme yöntemi
+     * DEĞİŞTİRİLMEZ (gerçek para; raporlarda manuel/0 TL sayılmamalı), referans
+     * provider_payment_id'ye "MANUAL-…" olarak yazılır.
+     */
+    public function orderComplete(Request $request, AgencyCategoryOrder $order)
+    {
+        if ($redirect = $this->redirectIfSchemaMissing()) {
+            return $redirect;
+        }
+
+        $validated = $request->validate(['reference' => 'required|string|max:120']);
+
+        if (! $order->isPending()) {
+            return back()->withErrors('Yalnızca ödeme bekleyen sipariş manuel tamamlanabilir (mevcut durum: '.$order->status.').');
+        }
+
+        app(\App\Services\Payment\CategoryOrderFinalizer::class)->finalize($order, 'MANUAL-'.$validated['reference']);
+        \Illuminate\Support\Facades\Log::info("[Admin] Sipariş #{$order->id} ({$order->order_number}) manuel tamamlandı — admin #".auth()->id().", ref: {$validated['reference']}");
+
+        return redirect()->route('admin.category-licenses.orders.show', $order)
+            ->with('success', $order->order_number.' ödendi olarak işaretlendi; abonelikler açıldı.');
+    }
+
+    /** B9 — Ödeme bekleyen siparişi iptal et; fatura bilgisi (KVKK) siparişten silinir. */
+    public function orderCancel(Request $request, AgencyCategoryOrder $order)
+    {
+        if ($redirect = $this->redirectIfSchemaMissing()) {
+            return $redirect;
+        }
+
+        $validated = $request->validate(['reason' => 'required|string|max:200']);
+
+        if (! $order->isPending()) {
+            return back()->withErrors('Yalnızca ödeme bekleyen sipariş iptal edilebilir (mevcut durum: '.$order->status.').');
+        }
+
+        $order->update([
+            'status' => AgencyCategoryOrder::STATUS_CANCELLED,
+            'failure_reason' => 'Yönetici iptali: '.$validated['reason'],
+            'buyer_snapshot' => null,
+        ]);
+        \Illuminate\Support\Facades\Log::info("[Admin] Sipariş #{$order->id} ({$order->order_number}) iptal edildi — admin #".auth()->id().": {$validated['reason']}");
+
+        return redirect()->route('admin.category-licenses.orders.show', $order)
+            ->with('success', $order->order_number.' iptal edildi.');
     }
 
     public function updatePricing(Request $request, Category $category)
