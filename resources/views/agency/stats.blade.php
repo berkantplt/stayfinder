@@ -16,7 +16,12 @@
                 <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:#0f172a;">👁️ En Çok Görüntülenen</h3>
                 @forelse($topViewed as $item)
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;">
-                    <a href="{{ route('agency.tours.show', $item->tour) }}" style="font-weight:600;font-size:14px;color:#0f172a;">{{ $item->tour->title }}</a>
+                    @if($item->tour && ! $item->tour->trashed())
+                        <a href="{{ route('agency.tours.show', $item->tour) }}" style="font-weight:600;font-size:14px;color:#0f172a;">{{ $item->tour->title }}</a>
+                    @else
+                        {{-- C8: arşivlenmiş/silinmiş turun geçmişi kalır, bağlantı verilmez --}}
+                        <span style="font-weight:600;font-size:14px;color:#94a3b8;">{{ $item->tour?->title ?? 'Silinmiş tur' }} <small>(arşivde)</small></span>
+                    @endif
                     <span style="font-weight:700;color:#3b82f6;font-size:16px;">{{ $item->views }}</span>
                 </div>
                 @empty
@@ -29,7 +34,12 @@
                 <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:#0f172a;">🖱️ En Çok Tıklanan</h3>
                 @forelse($topClicked as $item)
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;">
-                    <a href="{{ route('agency.tours.show', $item->tour) }}" style="font-weight:600;font-size:14px;color:#0f172a;">{{ $item->tour->title }}</a>
+                    @if($item->tour && ! $item->tour->trashed())
+                        <a href="{{ route('agency.tours.show', $item->tour) }}" style="font-weight:600;font-size:14px;color:#0f172a;">{{ $item->tour->title }}</a>
+                    @else
+                        {{-- C8: arşivlenmiş/silinmiş turun geçmişi kalır, bağlantı verilmez --}}
+                        <span style="font-weight:600;font-size:14px;color:#94a3b8;">{{ $item->tour?->title ?? 'Silinmiş tur' }} <small>(arşivde)</small></span>
+                    @endif
                     <span style="font-weight:700;color:#10b981;font-size:16px;">{{ $item->clicks }}</span>
                 </div>
                 @empty
