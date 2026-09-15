@@ -945,18 +945,17 @@
             @endunless
             <button class="mobile-menu-btn" onclick="mobilMenuToggle()">☰</button>
 
-            {{-- Sol grup: gezinme --}}
+            {{-- Sol grup: gezinme. 2026-09-15 kararı: "Keşif Rehberi" ve "Kayıtlı
+                 Aramalarım" burada YOK (bar taşıp iki satıra kırılıyordu) — keşif
+                 rehberi ana sayfadaki AI bölümünden, kayıtlı aramalar hesap
+                 sekmelerinden (/profilim) ve mobil çekmeceden erişilir. --}}
             <div class="nav-links nav-links-left">
                 <a href="{{ route('tours.index') }}" class="{{ request()->is('turlar') ? 'nav-active' : '' }}">Turlar</a>
-                @if(config('ai.discovery_enabled'))
-                    <a href="{{ route('discovery.index') }}" class="{{ request()->is('kesif-rehberi*') ? 'nav-active' : '' }}">Keşif Rehberi</a>
-                @endif
                 <a href="{{ route('blog.index') }}" class="{{ request()->is('blog*') ? 'nav-active' : '' }}">Blog</a>
                 @auth
                     @if(! auth()->user()->isAdmin() && ! auth()->user()->isAgency())
                         <a href="{{ route('favorites.index') }}">Favorilerim</a>
                         <a href="{{ route('customer.coupons.index') }}">Kuponlarım</a>
-                        <a href="{{ route('customer.saved-searches.index') }}">Kayıtlı Aramalarım</a>
                     @endif
                 @endauth
             </div>
