@@ -211,3 +211,13 @@ Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
 
 // A10 — Arşivdeki (soft-deleted) turlar 30 gün sonra kalıcı silinir (Tour::prunable).
 Schedule::command('model:prune', ['--model' => [\App\Models\Tour::class]])->dailyAt('04:10');
+
+/*
+|--------------------------------------------------------------------------
+| D4 — Hesap silme (KVKK)
+|--------------------------------------------------------------------------
+| Silme talebi 30 günü dolan müşteri hesapları her gece anonimleştirilir.
+*/
+Schedule::command('users:purge-deleted')
+    ->dailyAt('04:10')->onOneServer()->withoutOverlapping(30)
+    ->name('users-purge-deleted');

@@ -18,6 +18,9 @@
             <p style="color:#475569;font-size:15px;">Hesabınıza giriş yapın</p>
         </div>
 
+        @if(session('success'))
+            <div class="alert alert-success" style="margin-bottom:24px;">{{ session('success') }}</div>
+        @endif
         @include('partials.form-errors', ['style' => 'margin-bottom:24px;'])
 
         <form method="POST" action="{{ route('login.post') }}">

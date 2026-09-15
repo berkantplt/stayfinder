@@ -6,6 +6,7 @@ use App\Models\Review;
 use App\Models\TourView;
 use App\Models\User;
 use App\Notifications\EmailChangeVerificationNotification;
+use App\Services\Account\AccountDeletionService;
 use App\Support\TurkishCities;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -96,6 +97,72 @@ class ProfileController extends Controller
         }
 
         return redirect()->route('profile.show')->with('success', 'Profiliniz güncellendi!');
+    }
+
+    /** D4 — Kullanıcının verileri tek JSON dosyası olarak (KVKK veri taşınabilirliği). */
+    public function exportData()
+    {
+        $user = auth()->user();
+
+        $data = [
+            'olusturma' => now()->toIso8601String(),
+            'profil' => $user->only(['name', 'email', 'phone', 'city', 'bio', 'birth_date', 'created_at', 'email_verified_at']),
+            'favoriler' => $user->favoriteTours()->withTrashed()->get()->map(fn ($t) => [
+                'tur' => $t->title, 'adres' => route('tours.show', $t), 'eklenme' => $t->pivot->created_at?->toIso8601String(),
+                'ekleme_fiyati' => $t->pivot->price_at_save, 'para_birimi' => $t->pivot->currency_at_save,
+            ])->values(),
+            'yorumlar' => $user->reviews()->with('tour')->get()->map(fn ($r) => [
+                'tur' => $r->tour?->title, 'puan' => $r->rating, 'yorum' => $r->comment, 'tarih' => $r->created_at?->toIso8601String(),
+            ])->values(),
+            'kayitli_aramalar' => $user->savedSearches()->get()->map(fn ($s) => [
+                'ad' => $s->name, 'filtreler' => $s->params, 'tarih' => $s->created_at?->toIso8601String(),
+            ])->values(),
+            'kupon_kullanimlari' => \App\Models\CouponUsage::with('coupon')->where('user_id', $user->id)->get()->map(fn ($u) => [
+                'kod' => $u->coupon?->code, 'tarih' => $u->used_at?->toIso8601String(), 'indirim' => $u->discount_amount,
+            ])->values(),
+            'bildirimler' => $user->notifications()->latest()->take(200)->get()->map(fn ($n) => [
+                'baslik' => $n->data['title'] ?? null, 'mesaj' => $n->data['message'] ?? null, 'tarih' => $n->created_at?->toIso8601String(), 'okundu' => $n->read_at?->toIso8601String(),
+            ])->values(),
+            'ai_aramalari' => \App\Models\AiSearchLog::where('user_id', $user->id)->latest()->take(500)->get(['raw_query', 'created_at'])->map(fn ($l) => [
+                'sorgu' => $l->raw_query, 'tarih' => $l->created_at?->toIso8601String(),
+            ])->values(),
+            'kesif_rehberleri' => \App\Models\DiscoveryGuide::where('user_id', $user->id)->latest()->get(['destination_input', 'duration_days', 'status', 'created_at'])->map(fn ($g) => [
+                'sehir' => $g->destination_input, 'gun' => $g->duration_days, 'durum' => $g->status, 'tarih' => $g->created_at?->toIso8601String(),
+            ])->values(),
+        ];
+
+        return response()->json($data, 200, [
+            'Content-Disposition' => 'attachment; filename="turxtur-verilerim-'.now()->format('Y-m-d').'.json"',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * D4 — Hesap silme talebi: şifre onayı → talep zamanı yazılır, oturum kapatılır.
+     * 30 gün içinde giriş yapılırsa iptal (login closure), sonra anonimleştirme
+     * (users:purge-deleted). Yalnız müşteri hesabı; acenta/admin bu yoldan silinmez.
+     */
+    public function requestDeletion(Request $request, AccountDeletionService $service)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->isCustomer(), 403, 'Acenta ve yönetici hesapları bu yoldan silinemez.');
+
+        $request->validate([
+            'password' => ['required', 'current_password'],
+            'onay' => ['accepted'],
+        ], [
+            'password.current_password' => 'Şifre hatalı.',
+            'onay.accepted' => 'Silme sonuçlarını okuyup onaylamanız gerekir.',
+        ]);
+
+        $service->request($user);
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->with('success',
+            'Hesap silme talebiniz alındı. '.AccountDeletionService::WAITING_DAYS.' gün içinde tekrar giriş yaparsanız talep iptal edilir; aksi hâlde hesabınız ve kişisel verileriniz kalıcı olarak anonimleştirilir.');
     }
 
     /** D5 — bekleyen adres için onay bağlantısını yeniden gönderir. */

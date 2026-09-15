@@ -162,6 +162,13 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:3,10')
         ->name('profile.email.resend');
     Route::delete('/profilim/eposta/bekleyen', [ProfileController::class, 'cancelEmailChange'])->name('profile.email.cancel');
+    // D4: KVKK — verilerimi indir (JSON), hesabımı sil (şifre onayı + 30 gün bekleme)
+    Route::get('/profilim/verilerim', [ProfileController::class, 'exportData'])
+        ->middleware('throttle:6,10')
+        ->name('profile.data-export');
+    Route::post('/profilim/sil', [ProfileController::class, 'requestDeletion'])
+        ->middleware('throttle:6,10')
+        ->name('profile.delete');
 
     // Notifications
     Route::get('/bildirimler', [NotificationController::class, 'index'])->name('notifications.index');
@@ -215,6 +222,14 @@ Route::post('/giris', function (Request $request) {
             }
 
             return redirect()->route('agency.dashboard');
+        }
+
+        // D4: 30 günlük bekleme içinde giriş, silme talebini iptal eder
+        if ($user->deletion_requested_at !== null && $user->anonymized_at === null) {
+            app(\App\Services\Account\AccountDeletionService::class)->cancel($user);
+
+            return LoginReturn::redirectAfter($user, $request)
+                ->with('success', 'Hoş geldiniz — hesap silme talebiniz iptal edildi, hesabınız açık kalıyor.');
         }
 
         // Ziyaretçi: bekleyen favori tamamlanır, geldiği tura dönülür (bkz. LoginReturn)

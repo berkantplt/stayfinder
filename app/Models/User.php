@@ -39,6 +39,9 @@ class User extends Authenticatable
             'password' => 'hashed',
             'birth_date' => 'date',
             'announcements_seen_at' => 'datetime',
+            'pending_email_requested_at' => 'datetime', // D5
+            'deletion_requested_at' => 'datetime', // D4
+            'anonymized_at' => 'datetime', // D4
             'ai_preference' => 'array', // AI tercih profili (gece komutu üretir)
         ];
     }
