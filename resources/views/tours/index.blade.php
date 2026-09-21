@@ -21,6 +21,8 @@
 @media(min-width: 900px) {
     .tour-page-layout { flex-direction:row; align-items:flex-start; }
     .tour-sidebar { width:300px; position:sticky; top:24px; flex-shrink:0; }
+    /* Panel ekrandan uzunsa kendi içinde kayar; sayfa dibine inmeden alt filtrelere ulaşılır */
+    .tour-sidebar > div { max-height:calc(100vh - 48px); overflow-y:auto; scrollbar-width:thin; }
 }
 .tour-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:24px; }
 .filter-group { margin-bottom:20px; }
