@@ -5,9 +5,11 @@
 <div class="container">
     <div>
         @include('partials.agency-sidebar')
-        <div class="section" style="padding:0;">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
-                <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">📊 Tur İstatistikleri</h1>
+        <div class="section ist-neon" style="padding:0;">
+            {{-- Başlık: turkuaz bant, kartlarla aynı hizada (%94 ortalı) --}}
+            <div class="ist-baslik-kutu p-ham">
+                <span class="ist-baslik-ikon" aria-hidden="true">📊</span>
+                <h1>Tur İstatistikleri</h1>
             </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;">
@@ -83,6 +85,45 @@
     </div>
 </div>
 @endsection
+
+@push('head')
+<style>
+    /* ── İstatistik sayfası: turkuaz başlık bandı + kartlarda turkuaz neon ──
+       Panel katmanı .stat-card'a !important gölge/kenarlık basar (layouts/app 509-515);
+       buradaki seçiciler daha özgül (body.panel-layout-active .ist-neon .stat-card) olduğu için onu ezer. */
+    .ist-baslik-kutu {
+        max-width:94%; margin:0 auto 28px;
+        display:flex; align-items:center; gap:14px;
+        padding:18px 26px; border-radius:20px;
+        background:linear-gradient(135deg,#0d9488 0%,#14b8a6 55%,#2dd4bf 100%);
+        color:#fff;
+        box-shadow:0 0 0 1px rgba(45,212,191,.45), 0 0 22px rgba(45,212,191,.35), 0 12px 32px -12px rgba(13,148,136,.55);
+    }
+    .ist-baslik-ikon {
+        flex:0 0 auto; width:44px; height:44px; border-radius:12px;
+        display:flex; align-items:center; justify-content:center;
+        font-size:22px; background:rgba(255,255,255,.18); box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);
+    }
+    body.panel-layout-active .ist-baslik-kutu h1, .ist-baslik-kutu h1 {
+        color:#fff; font-size:24px; font-weight:800; letter-spacing:-0.5px; margin:0;
+        text-shadow:0 1px 2px rgba(15,118,110,.35);
+    }
+    body.panel-layout-active .ist-neon .stat-card, .ist-neon .stat-card {
+        border:1px solid rgba(45,212,191,.65) !important;
+        box-shadow:0 0 0 1px rgba(45,212,191,.35), 0 0 18px rgba(45,212,191,.45), 0 0 48px rgba(20,184,166,.22), 0 10px 40px -10px rgba(0,0,0,.06) !important;
+        transition:box-shadow .25s ease, border-color .25s ease;
+    }
+    body.panel-layout-active .ist-neon .stat-card:hover, .ist-neon .stat-card:hover {
+        border-color:rgba(45,212,191,.95) !important;
+        box-shadow:0 0 0 1px rgba(45,212,191,.5), 0 0 26px rgba(45,212,191,.6), 0 0 70px rgba(20,184,166,.3), 0 12px 40px -10px rgba(0,0,0,.08) !important;
+    }
+    @media(max-width:768px){
+        .ist-baslik-kutu { max-width:100%; padding:14px 18px; margin-bottom:20px; }
+        .ist-baslik-ikon { width:38px; height:38px; font-size:19px; }
+        body.panel-layout-active .ist-baslik-kutu h1, .ist-baslik-kutu h1 { font-size:20px; }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
