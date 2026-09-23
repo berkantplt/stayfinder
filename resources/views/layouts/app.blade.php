@@ -244,7 +244,18 @@
 
         /* ── Cards ── */
         .card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:all .25s ease; }
-        .card:hover { box-shadow:var(--shadow-lg); transform:translateY(-3px); }
+        /* Hover: turkuaz kenarlik + olculu parlama. Durus hali bilerek sakin kaliyor —
+           gridde 8 kart ayni anda parlayinca goz tutunacak yer bulamiyor, ayrica
+           turkuaz sitenin aksiyon rengi (buton/fiyat); kartlar da surekli parlarsa
+           butonlarin tekligi eriyor. Klavye odagi AYRI: 112. satirdaki
+           .card:focus-visible kurali gecerli, buraya :focus-visible EKLENMEZ —
+           bu kural kaynakta sonra geldigi icin onu ezer ve fotograf ustundeki
+           beyaz ic ayirici kaybolur. */
+        .card:hover {
+            border-color:rgba(13,148,136,.45);
+            box-shadow:0 0 0 3px rgba(13,148,136,.09), 0 14px 30px -12px rgba(13,148,136,.45);
+            transform:translateY(-3px);
+        }
         .card-img { width:100%; height:180px; object-fit:cover; display:block; }
         /* Kalp butonu kartın <a>'sının DIŞINDA durur (a içinde button geçersiz HTML).
            Sarmalayıcı masaüstü görünümünü değiştirmez: kart yine hücreyi doldurur. */
