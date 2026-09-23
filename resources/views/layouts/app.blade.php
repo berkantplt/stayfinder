@@ -838,6 +838,17 @@
         [data-sifre-hedef].sifre-acik .goz-kapa { display:block; }
         /* Edge yazı girilince kendi göz düğmesini basar; bizimkiyle yan yana iki göz olmasın */
         input[type="password"]::-ms-reveal { display:none; }
+        /* Yalnız input'u saran .sifre-sar içindeki düğme: giriş, şifre sıfırlama, hesap
+           güvenliği. Kayıt sayfası etiketli sarmal kullandığından kendi .kayit-goz'u var. */
+        .sifre-sar { position:relative; }
+        .sifre-sar input { padding-right:48px; }
+        .sifre-goz {
+            position:absolute; right:7px; top:50%; transform:translateY(-50%);
+            width:38px; height:38px; border:none; background:none; color:#64748b;
+            cursor:pointer; border-radius:10px; display:flex; align-items:center; justify-content:center;
+            transition:color .15s ease, background .15s ease;
+        }
+        .sifre-goz:hover { color:#0f766e; background:#f1f5f9; }
 
         {{-- Sayfalar buraya ÇIPLAK CSS basar (home gibi); <style> sarmalı basılırsa iç içe
              <style> oluşur ve o sayfanın İLK kuralı sessizce düşer (2026-09 /kayit'ta yaşandı). --}}
@@ -2476,7 +2487,7 @@
     })();
     </script>
 
-    {{-- Şifre göster/gizle: /giris ve /kayit'taki göz düğmeleri (partials/icon-eye).
+    {{-- Şifre göster/gizle: şifre alanlı sayfalardaki göz düğmeleri (partials/icon-eye).
          Düğme data-sifre-hedef ile alanın id'sini taşır; davranış yalnız burada,
          ikon değişimi yukarıdaki .sifre-acik kuralında — sayfalar sadece konumlandırır. --}}
     <script>

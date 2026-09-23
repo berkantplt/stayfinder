@@ -32,20 +32,35 @@
                 @csrf @method('PUT')
                 @unless($ilkSifre)
                 <div class="form-group">
-                    <label>Mevcut Şifre</label>
-                    <input type="password" name="current_password" autocomplete="current-password" placeholder="••••••••">
+                    <label for="current_password">Mevcut Şifre</label>
+                    <div class="sifre-sar">
+                        <input type="password" id="current_password" name="current_password" autocomplete="current-password" placeholder="••••••••">
+                        <button type="button" class="sifre-goz" data-sifre-hedef="current_password" aria-label="Mevcut şifreyi göster" aria-pressed="false">
+                            @include('partials.icon-eye')
+                        </button>
+                    </div>
 @error('current_password')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
                 @endunless
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Yeni Şifre</label>
-                        <input type="password" name="password" autocomplete="new-password" placeholder="Min. 8 karakter">
+                        <label for="password">Yeni Şifre</label>
+                        <div class="sifre-sar">
+                            <input type="password" id="password" name="password" autocomplete="new-password" placeholder="Min. 8 karakter">
+                            <button type="button" class="sifre-goz" data-sifre-hedef="password" aria-label="Yeni şifreyi göster" aria-pressed="false">
+                                @include('partials.icon-eye')
+                            </button>
+                        </div>
 @error('password')<p class="p-hata">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-group">
-                        <label>Şifre Tekrar</label>
-                        <input type="password" name="password_confirmation" autocomplete="new-password" placeholder="Tekrar girin">
+                        <label for="password_confirmation">Şifre Tekrar</label>
+                        <div class="sifre-sar">
+                            <input type="password" id="password_confirmation" name="password_confirmation" autocomplete="new-password" placeholder="Tekrar girin">
+                            <button type="button" class="sifre-goz" data-sifre-hedef="password_confirmation" aria-label="Şifre tekrarını göster" aria-pressed="false">
+                                @include('partials.icon-eye')
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">{{ $ilkSifre ? 'Şifreyi Belirle' : 'Şifreyi Güncelle' }}</button>
@@ -108,8 +123,13 @@
                 @csrf
                 @if($user->hasPassword())
                 <div class="form-group">
-                    <label>Şifreniz</label>
-                    <input type="password" name="password" autocomplete="current-password" placeholder="Onay için şifreniz" required>
+                    <label for="silme-sifre">Şifreniz</label>
+                    <div class="sifre-sar">
+                        <input type="password" id="silme-sifre" name="password" autocomplete="current-password" placeholder="Onay için şifreniz" required>
+                        <button type="button" class="sifre-goz" data-sifre-hedef="silme-sifre" aria-label="Şifreyi göster" aria-pressed="false">
+                            @include('partials.icon-eye')
+                        </button>
+                    </div>
 @error('password')<p class="p-hata">{{ $message }}</p>@enderror
                 </div>
                 @else

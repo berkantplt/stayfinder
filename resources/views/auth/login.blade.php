@@ -9,15 +9,6 @@
     .auth-wrap { padding-top:32px !important; padding-bottom:48px !important; }
     .auth-card { padding:28px 20px !important; border-radius:18px !important; }
 }
-/* Şifre göz düğmesi: davranış + ikon değişimi layout'ta, burada yalnız konum */
-.giris-sifre { position:relative; }
-.giris-goz {
-    position:absolute; right:7px; top:50%; transform:translateY(-50%);
-    width:38px; height:38px; border:none; background:none; color:#64748b;
-    cursor:pointer; border-radius:10px; display:flex; align-items:center; justify-content:center;
-    transition:color .15s ease, background .15s ease;
-}
-.giris-goz:hover { color:#0f766e; background:#f1f5f9; }
 </style>
 <div class="container auth-wrap" style="max-width:460px;padding-top:100px;padding-bottom:100px;position:relative;z-index:10;">
     <div class="auth-card" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);border-radius:24px;padding:48px 40px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.5);">
@@ -43,9 +34,9 @@
             </div>
             <div class="form-group" style="margin-bottom:28px;">
                 <label for="password" style="font-size:14px;font-weight:600;color:#334155;margin-bottom:8px;display:block;">Şifre</label>
-                <div class="giris-sifre">
+                <div class="sifre-sar">
                     <input type="password" id="password" name="password" required autocomplete="current-password" style="width:100%;padding:14px 48px 14px 16px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:15px;outline:none;transition:all 0.2s;">
-                    <button type="button" class="giris-goz" data-sifre-hedef="password" aria-label="Şifreyi göster" aria-pressed="false">
+                    <button type="button" class="sifre-goz" data-sifre-hedef="password" aria-label="Şifreyi göster" aria-pressed="false">
                         @include('partials.icon-eye')
                     </button>
                 </div>

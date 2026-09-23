@@ -22,12 +22,22 @@
                 <input type="email" name="email" value="{{ old('email', $email) }}" required style="width:100%;padding:14px 16px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:15px;outline:none;transition:all 0.2s;">
             </div>
             <div class="form-group" style="margin-bottom:20px;">
-                <label style="font-size:14px;font-weight:600;color:#334155;margin-bottom:8px;display:block;">Yeni Şifre</label>
-                <input type="password" name="password" required autocomplete="new-password" style="width:100%;padding:14px 16px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:15px;outline:none;transition:all 0.2s;">
+                <label for="password" style="font-size:14px;font-weight:600;color:#334155;margin-bottom:8px;display:block;">Yeni Şifre</label>
+                <div class="sifre-sar">
+                    <input type="password" id="password" name="password" required autocomplete="new-password" style="width:100%;padding:14px 48px 14px 16px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:15px;outline:none;transition:all 0.2s;">
+                    <button type="button" class="sifre-goz" data-sifre-hedef="password" aria-label="Şifreyi göster" aria-pressed="false">
+                        @include('partials.icon-eye')
+                    </button>
+                </div>
             </div>
             <div class="form-group" style="margin-bottom:28px;">
-                <label style="font-size:14px;font-weight:600;color:#334155;margin-bottom:8px;display:block;">Yeni Şifre (Tekrar)</label>
-                <input type="password" name="password_confirmation" required autocomplete="new-password" style="width:100%;padding:14px 16px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:15px;outline:none;transition:all 0.2s;">
+                <label for="password_confirmation" style="font-size:14px;font-weight:600;color:#334155;margin-bottom:8px;display:block;">Yeni Şifre (Tekrar)</label>
+                <div class="sifre-sar">
+                    <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" style="width:100%;padding:14px 48px 14px 16px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:15px;outline:none;transition:all 0.2s;">
+                    <button type="button" class="sifre-goz" data-sifre-hedef="password_confirmation" aria-label="Şifre tekrarını göster" aria-pressed="false">
+                        @include('partials.icon-eye')
+                    </button>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:16px;font-weight:700;border-radius:12px;box-shadow:0 4px 12px rgba(13, 116, 144, 0.3);">Şifreyi Güncelle</button>
         </form>
