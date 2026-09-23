@@ -161,7 +161,6 @@
 @endsection
 
 @section('styles')
-<style>
     .container.kayit-sayfa { max-width:1180px; padding-top:44px; padding-bottom:72px; }
 
     .kayit-kart {
@@ -347,7 +346,6 @@
         .kayit-ikili { grid-template-columns:1fr; gap:0; }
         .kayit-tip__not { display:none; }
     }
-</style>
 @endsection
 
 @push('scripts')

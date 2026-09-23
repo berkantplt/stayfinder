@@ -2,7 +2,6 @@
 @section('title', 'Kategori Yetkileri — Acenta Paneli')
 
 @section('styles')
-<style>
     /* KYM sayfa stilleri: renkler layout token'larından; sarı/kırmızı/mor
        durum renkleri için token yok, yalnız burada sınıf olarak tanımlı. */
     .kym-baslik { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
@@ -65,7 +64,6 @@
     .kym-siparis .tarih { font-size:11.5px; color:var(--text-meta); margin-top:3px; }
     .kym-siparis .tutar { font-size:14px; font-weight:800; color:var(--text); white-space:nowrap; }
     .kym-eslesme-yok { display:none; }
-</style>
 @endsection
 
 @section('content')

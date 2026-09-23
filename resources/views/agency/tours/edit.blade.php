@@ -2,7 +2,6 @@
 @section('title', 'Tur Düzenle — Acenta Paneli')
 
 @section('styles')
-<style>
     .pricing-option-card {
         border: 1px solid var(--border);
         border-radius: var(--radius);
@@ -215,7 +214,6 @@
             grid-template-columns: 1fr;
         }
     }
-</style>
 @endsection
 
 @section('content')

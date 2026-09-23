@@ -831,6 +831,8 @@
             padding-bottom:calc(26px + var(--fab-h) + var(--cta-h) + var(--tepsi-h) + var(--dip-aralik) * 2);
         }
 
+        {{-- Sayfalar buraya ÇIPLAK CSS basar (home gibi); <style> sarmalı basılırsa iç içe
+             <style> oluşur ve o sayfanın İLK kuralı sessizce düşer (2026-09 /kayit'ta yaşandı). --}}
         @yield('styles')
     </style>
     <script>

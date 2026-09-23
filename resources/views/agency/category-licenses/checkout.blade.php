@@ -2,7 +2,6 @@
 @section('title', 'Ödeme — Kategori Yetkileri')
 
 @section('styles')
-<style>
     #iyzico-checkout-form .form-input {
         width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px;
         background:var(--white); font-size:14px; outline:none; margin-top:6px;
@@ -18,7 +17,6 @@
     [data-buyer-tab].is-active { background:var(--white); color:var(--text); box-shadow:0 2px 6px rgba(15,23,42,.08); }
     /* Dar ekranda sepet özeti formun üstüne çıkar: ne ödendiği önce görülsün */
     @media(max-width:900px){ .kym-odeme-ozet { order:-1; } }
-</style>
 @endsection
 
 @section('content')
