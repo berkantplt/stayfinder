@@ -24,6 +24,7 @@ use App\Http\Controllers\Agency\TourImportController;
 use App\Http\Controllers\AgencyController;
 use App\Http\Controllers\AiSearchController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\ChatV2Controller;
 use App\Http\Controllers\Customer\AccountActivityController;
 use App\Http\Controllers\Customer\CouponController;
@@ -32,7 +33,6 @@ use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DiscoveryGuideController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
-use App\Support\LoginReturn;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -45,10 +45,13 @@ use App\Http\Controllers\TourController;
 use App\Http\Middleware\EnsureAiChatV2Enabled;
 use App\Http\Middleware\EnsureDiscoveryGuideEnabled;
 use App\Models\Agency;
+use App\Models\SocialAccount;
 use App\Models\Tour;
 use App\Models\TourClick;
 use App\Models\User;
 use App\Support\LandingSlug;
+use App\Support\LoginFlow;
+use App\Support\LoginReturn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -165,6 +168,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profilim/guvenlik', [ProfileController::class, 'security'])->name('profile.security');
     Route::put('/profilim', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profilim/sifre', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::delete('/profilim/baglanti/{provider}', [SocialAuthController::class, 'destroy'])
+        ->whereIn('provider', SocialAccount::PROVIDERS)
+        ->name('social.destroy');
     // D5: e-posta değişikliği onayı (yeniden gönder / iptal)
     Route::post('/profilim/eposta/yeniden-gonder', [ProfileController::class, 'resendEmailChange'])
         ->middleware('throttle:3,10')
@@ -219,29 +225,9 @@ Route::post('/giris', function (Request $request) {
 
     if (Auth::attempt($credentials)) {
         $request->session()->regenerate();
-        $user = auth()->user();
 
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-        if ($user->isAgency()) {
-            if (! $user->agencyApproved()) {
-                return redirect()->route('agency.application.status');
-            }
-
-            return redirect()->route('agency.dashboard');
-        }
-
-        // D4: 30 günlük bekleme içinde giriş, silme talebini iptal eder
-        if ($user->deletion_requested_at !== null && $user->anonymized_at === null) {
-            app(\App\Services\Account\AccountDeletionService::class)->cancel($user);
-
-            return LoginReturn::redirectAfter($user, $request)
-                ->with('success', 'Hoş geldiniz — hesap silme talebiniz iptal edildi, hesabınız açık kalıyor.');
-        }
-
-        // Ziyaretçi: bekleyen favori tamamlanır, geldiği tura dönülür (bkz. LoginReturn)
-        return LoginReturn::redirectAfter($user, $request);
+        // Yönlendirme mantığı sosyal girişle ortak (bkz. LoginFlow)
+        return LoginFlow::redirectAfterLogin(auth()->user(), $request);
     }
 
     return back()->withErrors(['email' => 'Geçersiz e-posta veya şifre.']);
@@ -253,6 +239,20 @@ Route::get('/profilim/eposta/onayla/{user}/{hash}', [ProfileController::class, '
     ->whereNumber('user')
     ->middleware(['signed', 'throttle:6,1'])
     ->name('profile.email.verify');
+
+/*
+ | Sosyal giriş (Google / Apple). Tek route çifti hem giriş/kayıt hem de
+ | profilden bağlama için çalışır; hangi mod olduğuna SocialIntent karar verir.
+ | Callback POST'u da kabul eder: Apple sonucu form_post ile gönderir.
+ */
+Route::get('/giris/{provider}', [SocialAuthController::class, 'redirect'])
+    ->whereIn('provider', SocialAccount::PROVIDERS)
+    ->middleware('throttle:social')
+    ->name('social.redirect');
+Route::match(['get', 'post'], '/giris/{provider}/callback', [SocialAuthController::class, 'callback'])
+    ->whereIn('provider', SocialAccount::PROVIDERS)
+    ->middleware('throttle:social')
+    ->name('social.callback');
 
 // Şifre sıfırlama (guest)
 Route::middleware('guest')->group(function () {
@@ -310,6 +310,7 @@ Route::post('/kayit', function (Request $request) {
             ]);
         });
 
+        $user->markPasswordSet();
         Auth::login($user);
 
         return redirect()
@@ -331,6 +332,9 @@ Route::post('/kayit', function (Request $request) {
         'role' => User::ROLE_VISITOR,
     ]);
 
+    // Şifreyi kendisi belirledi — sosyal giriş ile açılan hesapta bu boş kalır
+    // ve profilde "Şifre belirle" dalı açılır (bkz. User::hasPassword).
+    $user->markPasswordSet();
     Auth::login($user);
 
     // Kalpten gelen ziyaretçi kayıt olunca da favorisi eklenir ve tura döner

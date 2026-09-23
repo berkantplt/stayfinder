@@ -51,6 +51,11 @@ class AccountDeletionService
             $user->savedSearches()->delete();
             $user->notifications()->delete();
 
+            // Sosyal bağlantılar KOPARILIR: kalsaydı kullanıcı Google/Apple ile
+            // tekrar giriş yaptığında provider_user_id hâlâ eşleşir ve
+            // anonimleştirilmiş hesaba "Silinmiş Kullanıcı" olarak girerdi.
+            $user->socialAccounts()->delete();
+
             // Analitik izler kalır ama kişiden koparılır
             AiSearchLog::where('user_id', $user->id)->update(['user_id' => null]);
             DiscoveryGuide::where('user_id', $user->id)->update(['user_id' => null]);
@@ -74,6 +79,7 @@ class AccountDeletionService
                 'pending_email_requested_at' => null,
                 'remember_token' => null,
                 'email_verified_at' => null,
+                'password_set_at' => null,
                 'anonymized_at' => now(),
             ])->save();
         });

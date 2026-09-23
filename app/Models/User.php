@@ -39,6 +39,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'birth_date' => 'date',
             'announcements_seen_at' => 'datetime',
+            'password_set_at' => 'datetime', // sosyal giriş: kendi şifresini belirledi mi
             'pending_email_requested_at' => 'datetime', // D5
             'deletion_requested_at' => 'datetime', // D4
             'anonymized_at' => 'datetime', // D4
@@ -83,6 +84,42 @@ class User extends Authenticatable
     public function savedSearches()
     {
         return $this->hasMany(SavedSearch::class);
+    }
+
+    /** Bağlı Google / Apple hesapları. */
+    public function socialAccounts()
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
+    /**
+     * Kullanıcı kendi şifresini belirledi mi?
+     *
+     * password kolonuna bakmak YETMEZ: sosyal giriş ile açılan hesapta da dolu
+     * (rastgele hash — bkz. add_password_set_at_to_users_table migration'ı).
+     */
+    public function hasPassword(): bool
+    {
+        return $this->password_set_at !== null;
+    }
+
+    /** Kendi şifresini belirledi/değiştirdi (kayıt, sıfırlama, profil). */
+    public function markPasswordSet(): void
+    {
+        $this->forceFill(['password_set_at' => now()])->save();
+    }
+
+    /**
+     * Mevcut şifre sorulmadan şifre belirleyebilir mi?
+     *
+     * Yalnız "sosyal hesabı bağlı VE hiç şifre belirlememiş" kullanıcı. İkinci
+     * koşul bilerek var: ileride bir kayıt yolu password_set_at yazmayı unutursa
+     * sıradan bir hesapta mevcut-şifre kontrolü sessizce atlanmasın (çalınmış bir
+     * oturum şifreyi değiştirebilirdi).
+     */
+    public function canSetPasswordWithoutCurrent(): bool
+    {
+        return ! $this->hasPassword() && $this->socialAccounts()->exists();
     }
 
     public function reviews()

@@ -43,6 +43,8 @@
             <a href="{{ route('password.request') }}" style="color:var(--accent);font-weight:600;">Şifremi unuttum</a>
         </div>
 
+        @include('partials.social-auth-buttons', ['mode' => 'login'])
+
         <div style="text-align:center;margin-top:28px;font-size:14px;color:#475569;">
             Hesabınız yok mu? <a href="{{ route('register', array_filter(['next' => \App\Support\LoginReturn::safePath(request('next')), 'favori' => ctype_digit((string) request('favori')) ? request('favori') : null])) }}" style="color:var(--accent);font-weight:700;">Kayıt Ol</a>
         </div>

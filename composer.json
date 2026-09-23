@@ -9,9 +9,11 @@
         "php": "^8.2",
         "iyzico/iyzipay-php": "^2.0",
         "laravel/framework": "^12.0",
+        "laravel/socialite": "^5.31",
         "laravel/tinker": "^2.10.1",
         "openai-php/laravel": "^0.19.1",
-        "predis/predis": "^3.4"
+        "predis/predis": "^3.4",
+        "socialiteproviders/apple": "^6.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

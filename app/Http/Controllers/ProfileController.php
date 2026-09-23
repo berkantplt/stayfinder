@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AiSearchLog;
+use App\Models\CouponUsage;
+use App\Models\DiscoveryGuide;
 use App\Models\Review;
 use App\Models\TourView;
 use App\Models\User;
@@ -9,13 +12,13 @@ use App\Notifications\EmailChangeVerificationNotification;
 use App\Services\Account\AccountDeletionService;
 use App\Support\TurkishCities;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -43,7 +46,13 @@ class ProfileController extends Controller
     /** D1 — Güvenlik sekmesi: şifre (ileride e-posta onayı, veri indirme, hesap silme). */
     public function security()
     {
-        return view('profile.security', ['user' => auth()->user()]);
+        $user = auth()->user();
+
+        return view('profile.security', [
+            'user' => $user,
+            // provider => SocialAccount|null (bağlı olmayan sağlayıcı da listelensin)
+            'socialAccounts' => $user->socialAccounts()->get()->keyBy('provider'),
+        ]);
     }
 
     public function update(Request $request)
@@ -117,16 +126,16 @@ class ProfileController extends Controller
             'kayitli_aramalar' => $user->savedSearches()->get()->map(fn ($s) => [
                 'ad' => $s->name, 'filtreler' => $s->params, 'tarih' => $s->created_at?->toIso8601String(),
             ])->values(),
-            'kupon_kullanimlari' => \App\Models\CouponUsage::with('coupon')->where('user_id', $user->id)->get()->map(fn ($u) => [
+            'kupon_kullanimlari' => CouponUsage::with('coupon')->where('user_id', $user->id)->get()->map(fn ($u) => [
                 'kod' => $u->coupon?->code, 'tarih' => $u->used_at?->toIso8601String(), 'indirim' => $u->discount_amount,
             ])->values(),
             'bildirimler' => $user->notifications()->latest()->take(200)->get()->map(fn ($n) => [
                 'baslik' => $n->data['title'] ?? null, 'mesaj' => $n->data['message'] ?? null, 'tarih' => $n->created_at?->toIso8601String(), 'okundu' => $n->read_at?->toIso8601String(),
             ])->values(),
-            'ai_aramalari' => \App\Models\AiSearchLog::where('user_id', $user->id)->latest()->take(500)->get(['raw_query', 'created_at'])->map(fn ($l) => [
+            'ai_aramalari' => AiSearchLog::where('user_id', $user->id)->latest()->take(500)->get(['raw_query', 'created_at'])->map(fn ($l) => [
                 'sorgu' => $l->raw_query, 'tarih' => $l->created_at?->toIso8601String(),
             ])->values(),
-            'kesif_rehberleri' => \App\Models\DiscoveryGuide::where('user_id', $user->id)->latest()->get(['destination_input', 'duration_days', 'status', 'created_at'])->map(fn ($g) => [
+            'kesif_rehberleri' => DiscoveryGuide::where('user_id', $user->id)->latest()->get(['destination_input', 'duration_days', 'status', 'created_at'])->map(fn ($g) => [
                 'sehir' => $g->destination_input, 'gun' => $g->duration_days, 'durum' => $g->status, 'tarih' => $g->created_at?->toIso8601String(),
             ])->values(),
         ];
@@ -147,13 +156,28 @@ class ProfileController extends Controller
 
         abort_unless($user->isCustomer(), 403, 'Acenta ve yönetici hesapları bu yoldan silinemez.');
 
-        $request->validate([
-            'password' => ['required', 'current_password'],
-            'onay' => ['accepted'],
-        ], [
-            'password.current_password' => 'Şifre hatalı.',
-            'onay.accepted' => 'Silme sonuçlarını okuyup onaylamanız gerekir.',
-        ]);
+        // Google/Apple ile açılmış, hiç şifre belirlememiş hesapta "mevcut şifre"
+        // sorulamaz — sorulsaydı kullanıcı KVKK kapsamındaki silme hakkını hiç
+        // kullanamazdı. Onun yerine kendi e-posta adresini yazması istenir:
+        // yanlışlıkla silmeye karşı aynı işi görür.
+        if (! $user->hasPassword()) {
+            $request->merge(['eposta_onay' => mb_strtolower(trim((string) $request->input('eposta_onay')))]);
+        }
+
+        $request->validate($user->hasPassword()
+            ? ['password' => ['required', 'current_password'], 'onay' => ['accepted']]
+            : [
+                // Karşılaştırma kullanıcının KENDİ adresiyle yapılır; formdaki
+                // gizli bir alanla değil (onu istemci değiştirebilirdi).
+                'eposta_onay' => ['required', Rule::in([mb_strtolower((string) $user->email)])],
+                'onay' => ['accepted'],
+            ],
+            [
+                'password.current_password' => 'Şifre hatalı.',
+                'eposta_onay.in' => 'E-posta adresinizi birebir yazın.',
+                'onay.accepted' => 'Silme sonuçlarını okuyup onaylamanız gerekir.',
+            ]
+        );
 
         $service->request($user);
 
@@ -238,16 +262,27 @@ class ProfileController extends Controller
 
     public function updatePassword(Request $request)
     {
+        $user = auth()->user();
+
+        // Google/Apple ile açılan hesapta kullanıcının bileceği bir şifre yoktur
+        // (kayıtta rastgele bir hash yazılır), mevcut şifre sorulamaz. Bu dal
+        // yalnız "sosyal hesabı bağlı VE hiç şifre belirlememiş" kullanıcıya açık
+        // — bkz. User::canSetPasswordWithoutCurrent.
+        $settingFirstPassword = $user->canSetPasswordWithoutCurrent();
+
         $request->validate([
-            'current_password' => 'required',
+            'current_password' => $settingFirstPassword ? 'nullable' : 'required',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        if (! Hash::check($request->current_password, auth()->user()->password)) {
+        if (! $settingFirstPassword && ! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Mevcut şifre hatalı.']);
         }
 
-        auth()->user()->update(['password' => Hash::make($request->password)]);
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+            'password_set_at' => now(),
+        ])->save();
 
         // D6: ele geçirilmiş hesapta şifre değişse bile saldırganın oturumu açık
         // kalıyordu. Diğer cihazlar kapatılır (AuthenticateSession middleware'i
@@ -255,6 +290,8 @@ class ProfileController extends Controller
         Auth::logoutOtherDevices($request->password);
         $request->session()->regenerate();
 
-        return redirect()->route('profile.security')->with('success', 'Şifreniz güncellendi; diğer cihazlardaki oturumlarınız kapatıldı.');
+        return redirect()->route('profile.security')->with('success', $settingFirstPassword
+            ? 'Şifreniz belirlendi. Artık e-posta ve şifrenizle de giriş yapabilirsiniz.'
+            : 'Şifreniz güncellendi; diğer cihazlardaki oturumlarınız kapatıldı.');
     }
 }

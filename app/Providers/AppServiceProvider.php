@@ -14,7 +14,10 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use SocialiteProviders\Apple\Provider as AppleProvider;
+use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,6 +54,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Girişte anonim AI arama loglarını yeni kimliğe bağla (sahipsiz kalmasın)
         Event::listen(Login::class, MigrateAnonymousAiSearchLogs::class);
+
+        // Apple, Socialite'ın yerleşik sürücülerinden değil: SocialiteProviders
+        // paketi sürücüyü bu olayla kaydeder (Laravel 11+ yöntemi).
+        Event::listen(function (SocialiteWasCalled $event) {
+            $event->extendSocialite('apple', AppleProvider::class);
+        });
     }
 
     /**
@@ -69,7 +78,7 @@ class AppServiceProvider extends ServiceProvider
         // http://127.0.0.1 üzerinden girilir, şema zorlanırsa yerel bağlantılar kırılır.
         if ($this->app->environment('production')
             && str_starts_with((string) config('app.url'), 'https://')) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            URL::forceScheme('https');
         }
     }
 }

@@ -52,6 +52,9 @@ class PasswordResetController extends Controller
             function ($user, string $password) {
                 $user->forceFill([
                     'password' => Hash::make($password),
+                    // Sosyal giriş ile açılan hesapta şifre rastgeleydi; sıfırlama
+                    // kullanıcının kendi şifresini belirlediği andır.
+                    'password_set_at' => now(),
                     'remember_token' => Str::random(60),
                 ])->save();
 

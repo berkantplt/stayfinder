@@ -9,7 +9,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -39,15 +41,21 @@ return Application::configure(basePath: dirname(__DIR__))
         // D6 — Şifre değişince diğer cihazlardaki oturumlar düşsün: bu middleware
         // oturumda saklanan şifre hash'ini her istekte kullanıcınınkiyle karşılaştırır;
         // Auth::logoutOtherDevices() ve şifre sıfırlama bu sayede etkili olur.
-        $middleware->web(append: [\Illuminate\Session\Middleware\AuthenticateSession::class]);
+        $middleware->web(append: [AuthenticateSession::class]);
 
         // A5 — Güvenlik başlıkları (X-Frame-Options, nosniff, Referrer-Policy,
         // HSTS yalnız canlı+HTTPS, CSP report-only). Bkz. SecurityHeaders.
         $middleware->append(SecurityHeaders::class);
 
         // iyzico kendi session'umuzu bilmiyor; callback POST'unu CSRF'den muaf tut.
+        // Apple da aynı durumda: kimlik doğrulama sonucunu form_post ile, çapraz
+        // site bir POST olarak gönderir — bizim CSRF jetonumuz o istekte olamaz.
+        // Korumasız kalmaz: sürücü stateless+cookieNonce ile çalışır ve nonce,
+        // girişi başlatan tarayıcıya bağlı şifreli bir çerezde taşınır
+        // (bkz. SocialAuthController::driver).
         $middleware->validateCsrfTokens(except: [
             'iyzico-callback/*',
+            'giris/apple/callback',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -56,7 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // beklediği için onlara 419 aynen döner (istemci kendi ele alır).
         // Not: framework TokenMismatchException'ı render callback'lerinden
         // ÖNCE HttpException(419)'a çevirir — o yüzden statü koduyla yakalanır.
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e, Request $request) {
+        $exceptions->render(function (HttpExceptionInterface $e, Request $request) {
             if ($e->getStatusCode() !== 419) {
                 return null; // diğer HTTP hataları normal akışında kalsın
             }
@@ -143,6 +151,20 @@ return Application::configure(basePath: dirname(__DIR__))
         */
         RateLimiter::for('register', function (Request $request) {
             return Limit::perMinute(6)->by('register:ip:'.$request->ip());
+        });
+
+        /*
+        |----------------------------------------------------------------------
+        | Rate Limiter: social
+        |----------------------------------------------------------------------
+        |
+        | Google/Apple yönlendirme ve callback'i. Normal kullanımda bir giriş
+        | 2 istek eder; sınır, callback'i tekrar tekrar oynatma denemelerine ve
+        | sağlayıcıya bizim üzerimizden trafik bindirmeye karşı. IP başına 20/dk.
+        |
+        */
+        RateLimiter::for('social', function (Request $request) {
+            return Limit::perMinute(20)->by('social:ip:'.$request->ip());
         });
 
         /*
