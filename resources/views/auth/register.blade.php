@@ -134,7 +134,7 @@
                     <div class="kayit-alan kayit-sifre">
                         <label for="password_confirmation">Şifre tekrar</label>
                         <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" placeholder="Şifreyi tekrar yazın">
-                        <button type="button" class="kayit-goz" data-sifre-hedef="password_confirmation" aria-label="Şifreyi göster" aria-pressed="false">
+                        <button type="button" class="kayit-goz" data-sifre-hedef="password_confirmation" aria-label="Şifre tekrarını göster" aria-pressed="false">
                             @include('partials.icon-eye')
                         </button>
                     </div>
@@ -278,15 +278,12 @@
     .kayit-sifre { position:relative; }
     .kayit-sifre input { padding-right:48px; }
     .kayit-goz {
-        position:absolute; right:7px; bottom:7px; width:38px; height:38px;
-        border:none; background:none; color:#94a3b8; cursor:pointer; border-radius:10px;
+        position:absolute; right:7px; bottom:5px; width:38px; height:38px;
+        border:none; background:none; color:#64748b; cursor:pointer; border-radius:10px;
         display:flex; align-items:center; justify-content:center;
         transition:color .15s ease, background .15s ease;
     }
     .kayit-goz:hover { color:#0f766e; background:#f1f5f9; }
-    .kayit-goz .goz-kapa { display:none; }
-    .kayit-goz--acik .goz-ac { display:none; }
-    .kayit-goz--acik .goz-kapa { display:block; }
 
     .kayit-bilgi {
         padding:14px 16px; border-radius:14px; background:#f0fdfa;
@@ -410,25 +407,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Şifre göz düğmeleri: type değişince tarayıcı odağı kaybetmesin diye
-    // odak alana geri veriliyor (imleç sona konumlanır).
-    document.querySelectorAll('.kayit-goz').forEach((button) => {
-        button.addEventListener('click', function () {
-            const field = document.getElementById(this.dataset.sifreHedef);
-            if (!field) {
-                return;
-            }
-
-            const acik = field.type === 'text';
-            field.type = acik ? 'password' : 'text';
-            this.setAttribute('aria-pressed', acik ? 'false' : 'true');
-            this.setAttribute('aria-label', acik ? 'Şifreyi göster' : 'Şifreyi gizle');
-            this.classList.toggle('kayit-goz--acik', !acik);
-            field.focus();
-            const uzunluk = field.value.length;
-            try { field.setSelectionRange(uzunluk, uzunluk); } catch (e) { /* type=email değil, sorun yok */ }
-        });
-    });
+    // Şifre göz düğmeleri layouts/app.blade.php'deki ortak [data-sifre-hedef] dinleyicisinde.
 
     syncForm(accountTypeInput.value || 'visitor');
 });

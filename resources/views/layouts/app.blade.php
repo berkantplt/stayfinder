@@ -831,6 +831,14 @@
             padding-bottom:calc(26px + var(--fab-h) + var(--cta-h) + var(--tepsi-h) + var(--dip-aralik) * 2);
         }
 
+        /* Şifre göz düğmesi (partials/icon-eye): ikon değişimi ortak, konumlandırma
+           sayfaya özel (.kayit-goz, .giris-goz). Sınıfı aşağıdaki ortak JS ekler. */
+        [data-sifre-hedef] .goz-kapa { display:none; }
+        [data-sifre-hedef].sifre-acik .goz-ac { display:none; }
+        [data-sifre-hedef].sifre-acik .goz-kapa { display:block; }
+        /* Edge yazı girilince kendi göz düğmesini basar; bizimkiyle yan yana iki göz olmasın */
+        input[type="password"]::-ms-reveal { display:none; }
+
         {{-- Sayfalar buraya ÇIPLAK CSS basar (home gibi); <style> sarmalı basılırsa iç içe
              <style> oluşur ve o sayfanın İLK kuralı sessizce düşer (2026-09 /kayit'ta yaşandı). --}}
         @yield('styles')
@@ -2465,6 +2473,48 @@
                 btn.setAttribute('aria-pressed', acik ? 'false' : 'true');
             });
         });
+    })();
+    </script>
+
+    {{-- Şifre göster/gizle: /giris ve /kayit'taki göz düğmeleri (partials/icon-eye).
+         Düğme data-sifre-hedef ile alanın id'sini taşır; davranış yalnız burada,
+         ikon değişimi yukarıdaki .sifre-acik kuralında — sayfalar sadece konumlandırır. --}}
+    <script>
+    (function () {
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-sifre-hedef]');
+            if (!btn) return;
+            var field = document.getElementById(btn.dataset.sifreHedef);
+            if (!field) return;
+            var acik = field.type === 'text';
+            field.type = acik ? 'password' : 'text';
+            btn.classList.toggle('sifre-acik', !acik);
+            // Etiket sabit kalır, durumu yalnız aria-pressed taşır: "Şifreyi gizle + basılı"
+            // ekran okuyucuda ters anlaşılıyordu.
+            btn.setAttribute('aria-pressed', acik ? 'false' : 'true');
+            // Fare/dokunma tıklaması odağı düğmeye almıştı: alana geri ver, imleç sona.
+            // Klavyeyle (Space/Enter, e.detail 0) tetiklenince odak düğmede kalır ki
+            // ikinci basış şifreye boşluk yazmasın / formu göndermesin.
+            if (e.detail > 0) {
+                field.focus();
+                var son = field.value.length;
+                try { field.setSelectionRange(son, son); } catch (err) { /* desteklemeyen tip yok */ }
+            }
+        });
+
+        // Açık bırakılan şifre form gönderilirken ve bfcache'ten (Geri) dönüşte kapanır:
+        // sayfa geri geldiğinde şifre ekranda düz yazı durmasın, tarayıcı da alanı
+        // gönderim anında sıradan metin alanı saymasın.
+        function sifreleriKapat() {
+            document.querySelectorAll('[data-sifre-hedef].sifre-acik').forEach(function (btn) {
+                var field = document.getElementById(btn.dataset.sifreHedef);
+                if (field) field.type = 'password';
+                btn.classList.remove('sifre-acik');
+                btn.setAttribute('aria-pressed', 'false');
+            });
+        }
+        document.addEventListener('submit', sifreleriKapat);
+        window.addEventListener('pageshow', function (e) { if (e.persisted) sifreleriKapat(); });
     })();
     </script>
 

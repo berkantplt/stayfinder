@@ -1,7 +1,8 @@
 {{--
     Şifre göster/gizle ikonu. İki SVG de basılır; hangisinin görüneceğini
-    saran düğmedeki .kayit-goz--acik sınıfı belirler (JS yalnız sınıf ekler,
-    ikon kurmaz — böylece ikon işaretlemesi tek yerde durur).
+    saran düğmedeki .sifre-acik sınıfı belirler. Sınıfı ve type değişimini
+    layouts/app.blade.php'deki ortak [data-sifre-hedef] dinleyicisi yapar;
+    sayfa yalnız düğmeyi konumlandırır (.kayit-goz, .giris-goz).
 --}}
 <svg class="goz-ac" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/>
