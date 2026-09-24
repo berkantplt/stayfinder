@@ -414,13 +414,19 @@
         .dgm-spin { width: 38px; height: 38px; border: 4px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 14px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* ===== Tur Danışmanı: karttan açılınca köşe balonu yerine ORTADA yatay pencere ===== */
-        #cv2.cv2-orta::before { content: ''; position: fixed; inset: 0; background: rgba(15, 23, 42, .45); }
-        #cv2.cv2-orta #cv2-trigger { visibility: hidden; }
-        #cv2.cv2-orta #cv2-panel {
-            position: fixed !important; left: 50% !important; top: 50% !important;
-            right: auto !important; bottom: auto !important; transform: translate(-50%, -50%);
-            width: min(760px, 94vw) !important; height: min(500px, 85vh) !important;
+        /* ===== Tur Danışmanı: karttan açılınca köşe balonu yerine ORTADA yatay pencere =====
+           YALNIZ masaüstü. Mobilde layout'un `cv2-acik` kuralı paneli tam ekran yapar
+           (left/top 0, %100) ama buradaki transform:translate(-50%,-50%) onu ezmiyordu:
+           tam ekran panel yarım ekran sola-yukarı kayıyor, yalnız sağ-alt çeyreği
+           görünüyordu (canlı telefon ekran görüntüsü, 2026-09-24). */
+        @media (min-width: 769px) {
+            #cv2.cv2-orta::before { content: ''; position: fixed; inset: 0; background: rgba(15, 23, 42, .45); }
+            #cv2.cv2-orta #cv2-trigger { visibility: hidden; }
+            #cv2.cv2-orta #cv2-panel {
+                position: fixed !important; left: 50% !important; top: 50% !important;
+                right: auto !important; bottom: auto !important; transform: translate(-50%, -50%);
+                width: min(760px, 94vw) !important; height: min(500px, 85vh) !important;
+            }
         }
     </style>
     <div class="ai-hub-wrap">
