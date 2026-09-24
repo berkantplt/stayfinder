@@ -387,4 +387,19 @@ class ChatV2StreamTest extends TestCase
         config(['ai.chat_v2_enabled' => false]);
         $this->get('/')->assertOk()->assertDontSee('id="cv2-trigger"', false);
     }
+
+    /** Balon askısı (2026-09-24): tetik DOM'da kalır, kap görünmezlik sınıfı alır. */
+    public function test_balon_askidayken_tetik_domda_kalir_ama_gizlenir(): void
+    {
+        config(['ai.chat_v2_enabled' => true, 'ai.chat_v2_balloon_enabled' => false]);
+        $r = $this->get('/')->assertOk();
+        $r->assertSee('id="cv2-trigger"', false);           // kart + "Canlı Destek" tıklayabilsin
+        $r->assertSee('id="cv2" class="cv2-balonsuz"', false);
+
+        // Sınıf adı CSS kuralında her zaman geçer; imza KAP ÖZNİTELİĞİ olmalı.
+        config(['ai.chat_v2_balloon_enabled' => true]);
+        $this->get('/')->assertOk()
+            ->assertSee('id="cv2-trigger"', false)
+            ->assertDontSee('id="cv2" class="cv2-balonsuz"', false);
+    }
 }

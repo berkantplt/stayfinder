@@ -2030,11 +2030,14 @@
         // Kural TEK yerde: ana sayfadaki "Tur Danışmanı AI" kartı da aynı sınıfı
         // çağırır — koşul burada değişirse kart otomatik uyum sağlar (ölü buton olmaz).
         $showChatV2 = \App\Support\ChatV2Visibility::visible(request());
+        // Balon askıda mı (ai.chat_v2_balloon_enabled)? Tetik DOM'da KALIR, yalnız
+        // görünmez olur: kart + "Canlı Destek" onu programatik tıklar.
+        $cv2BalonAcik = (bool) config('ai.chat_v2_balloon_enabled');
     @endphp
 
     @if($showChatV2)
     {{-- Chatbot v2 — araç çağırma mimarisi (CHATBOT_V2.md) --}}
-    <div id="cv2" style="position:fixed; bottom:24px; right:24px; z-index:2000; font-family:var(--font); max-width:calc(100vw - 32px);">
+    <div id="cv2" @class(['cv2-balonsuz' => ! $cv2BalonAcik]) style="position:fixed; bottom:24px; right:24px; z-index:2000; font-family:var(--font); max-width:calc(100vw - 32px);">
         <button type="button" id="cv2-trigger" aria-label="Tur danışmanını aç" aria-expanded="false"
             style="display:flex; align-items:center; gap:10px; background:rgba(15,23,42,0.9); backdrop-filter:blur(20px); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:10px 18px; border-radius:100px; cursor:pointer; box-shadow:0 10px 40px rgba(0,0,0,0.25); font-family:inherit;">
             <span style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#0d9488,#2dd4bf); display:flex; align-items:center; justify-content:center; font-size:16px;">🤖</span>
@@ -2094,6 +2097,10 @@
         #cv2-msgs .cv2-cards > * { flex:0 0 220px; }
         #cv2-trigger:hover { transform:translateY(-2px); }
         #cv2-trigger { transition:transform .25s; }
+        /* ⏸️ Balon askıda (ai.chat_v2_balloon_enabled=false): visibility, display
+           DEĞİL — panelKonumla() tetiğin dikdörtgenini kullanır; display:none sıfır
+           dikdörtgen verip paneli sol üste fırlatırdı. Görünmez öğe tık da almaz. */
+        #cv2.cv2-balonsuz #cv2-trigger { visibility:hidden; }
         /* Mobil: yazı yok, yalnız yuvarlak amblem (satır içi stiller olduğu
            için ezmeler !important). */
         @media(max-width:768px) {

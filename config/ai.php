@@ -31,6 +31,14 @@ return [
     // (deploy gerekmez, yalnız config cache temizliği).
     'chat_v2_enabled' => env('AI_CHAT_V2_ENABLED', true),
 
+    // ⏸️ Yüzen "Tur danışmanı" balonu ASKIDA (2026-09-24, kullanıcı kararı):
+    // sağ alttaki pill düğmesi görünmez (visibility:hidden) ama DOM'da kalır —
+    // ana sayfa kartındaki "Sohbete Başla" ve footer "Canlı Destek" aynı paneli
+    // açmaya devam eder (ikisi de tetiği programatik tıklar; panel konumu
+    // tetiğin dikdörtgenine göre hesaplandığından display:none DEĞİL).
+    // Geri açmak için .env'e AI_CHAT_V2_BALLOON_ENABLED=true yazmak yeterli.
+    'chat_v2_balloon_enabled' => env('AI_CHAT_V2_BALLOON_ENABLED', false),
+
     // ⏸️ Tur eşleştirme testi ASKIDA (2026-08-11, kullanıcı kararı): ana sayfadaki
     // "Hangi tur sana uygun?" girişi gizlendi. Kod, rubrik ve testler yerinde;
     // geri açmak için .env'e AI_QUIZ_ENABLED=true yazmak yeterli.
