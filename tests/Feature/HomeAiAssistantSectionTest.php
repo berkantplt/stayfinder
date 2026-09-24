@@ -112,5 +112,8 @@ class HomeAiAssistantSectionTest extends TestCase
         // Path typo'su veya commit'e girmeyen asset 404 görsel üretir; suite yakalasın
         self::assertFileExists(public_path('images/ai/kesif-rehberi-ai.webp'));
         self::assertFileExists(public_path('images/ai/tur-danismani-ai.webp'));
+        // Mobil avatar kesitleri (2026-09-24)
+        self::assertFileExists(public_path('images/ai/kesif-rehberi-ai-kafa.webp'));
+        self::assertFileExists(public_path('images/ai/tur-danismani-ai-kafa.webp'));
     }
 }

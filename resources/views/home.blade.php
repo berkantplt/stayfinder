@@ -346,16 +346,31 @@
         /* 769-1000px bandında üçlü tek satıra sığmaz; intro tam satıra alınır,
            iki kart altta yan yana kalır (tek kartın kocaman sarması önlenir). */
         @media (max-width: 1000px) { .ai-hub-intro { flex-basis: 100%; } }
+        /* Mobil kısa alt yazı: yalnız ≤768px'de görünür (uzun <p> orada gizli). */
+        .ai-hub-kisa { display: none; }
         @media (max-width: 768px) {
-            .ai-hub-wrap { margin: 18px 0 6px; }
-            .ai-hub { padding: 18px 16px 16px; gap: 12px; border-radius: 20px; }
-            .ai-hub-intro h2 { font-size: 19px; }
-            .ai-hub-intro p { font-size: 12.5px; }
-            .ai-hub-card { flex: 1 1 100%; min-width: 0; }
-            .ai-hub-figure { flex: 0 0 30%; max-width: 120px; }
-            .ai-hub-figure img { min-height: 140px; }
-            .ai-hub-body { padding: 12px 12px 12px 0; }
+            /* Mobil: kompakt liste — yuvarlak avatar + ad + kısa alt yazı + buton,
+               her asistan tek satır (~230px; eski boy-boy kartlar 551px tutuyordu
+               ve 2,8 ekran aşağıda kalıyordu). Uzun açıklama ve örnek çipler gizli:
+               açılan pencerelerin içinde zaten örnekler var. */
+            .ai-hub-wrap { margin: 16px 0 0; }
+            .ai-hub { padding: 14px 12px 12px; gap: 8px; border-radius: 18px; }
+            .ai-hub-intro { margin-bottom: 2px; }
+            .ai-hub-intro h2 { font-size: 15px; letter-spacing: -.3px; }
+            .ai-hub-intro h2 br { display: none; }
+            .ai-hub-intro p { display: none; }
+            .ai-hub-card { flex: 1 1 100%; min-width: 0; align-items: center; gap: 11px; padding: 9px 10px 9px 9px; border-radius: 14px; box-shadow: 0 6px 16px rgba(4,24,21,.05); }
+            /* Avatar: <picture> mobilde kafa kesitini seçer (kaynak PNG'den kırpıldı,
+               scratchpad sips+cwebp); kare görsel daireyi doğrudan doldurur. */
+            .ai-hub-figure { flex: 0 0 54px; width: 54px; height: 54px; max-width: none; border-radius: 50%; overflow: hidden; background: #e6f6f2; }
+            .ai-hub-figure picture { display: block; width: 100%; height: 100%; }
+            .ai-hub-figure img { min-height: 0; object-position: center; }
+            .ai-hub-body { padding: 0; min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "ad btn" "kisa btn"; align-items: center; column-gap: 10px; row-gap: 1px; }
+            .ai-hub-body h3 { grid-area: ad; font-size: 13.5px; align-self: end; }
             .ai-hub-body p { display: none; }
+            .ai-hub-body .ai-hub-kisa { display: block; grid-area: kisa; margin: 0; font-size: 11px; line-height: 1.35; color: var(--text-sec); align-self: start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .ai-hub-chips { display: none; }
+            .ai-hub-body .btn { grid-area: btn; align-self: center; padding: 9px 13px; font-size: 12px; white-space: nowrap; }
         }
 
         /* ===== Keşif Rehberi penceresi: sayfa değiştirmeyen yatay <dialog> ===== */
@@ -411,17 +426,23 @@
     <div class="ai-hub-wrap">
         <div class="ai-hub">
             <div class="ai-hub-intro">
-                <h2>Seyahatini planlamana<br>AI asistanlarımız yardımcı olsun ✨</h2>
+                <h2>Seyahatini planlamana <br>AI asistanlarımız yardımcı olsun ✨</h2>
                 <p>Kişiye özel öneriler al, planını kolayca oluştur.</p>
             </div>
             @if($aiKesifAcik)
             <div class="ai-hub-card">
                 <div class="ai-hub-figure">
-                    <img src="{{ asset('images/ai/kesif-rehberi-ai.webp') }}" alt="Keşif Rehberi AI karakteri" width="432" height="540" loading="lazy" decoding="async">
+                    {{-- Mobil: yalnız kafa kesiti (160×160, şeffaf); masaüstü: boy-boy karakter.
+                         <picture> ile tarayıcı yalnız uyan dosyayı indirir. --}}
+                    <picture>
+                        <source media="(max-width: 768px)" srcset="{{ asset('images/ai/kesif-rehberi-ai-kafa.webp') }}" width="160" height="160">
+                        <img src="{{ asset('images/ai/kesif-rehberi-ai.webp') }}" alt="Keşif Rehberi AI karakteri" width="432" height="540" loading="lazy" decoding="async">
+                    </picture>
                 </div>
                 <div class="ai-hub-body">
                     <h3>Keşif Rehberi AI</h3>
                     <p>Destinasyonuna, sürene ve ilgi alanlarına göre sana özel gün gün plan ve öneriler sunar.</p>
+                    <p class="ai-hub-kisa">Gün gün seyahat planı</p>
                     <div class="ai-hub-chips" aria-label="Örnek istekler">
                         <button type="button" class="ai-hub-chip" data-kesif-yer="Paris" data-kesif-gun="4">Paris'te 4 günlük romantik plan</button>
                         <button type="button" class="ai-hub-chip" data-kesif-yer="Kapadokya" data-kesif-gun="2">Kapadokya'da 2 gün</button>
@@ -437,11 +458,15 @@
             @if($aiDanismanAcik)
             <div class="ai-hub-card">
                 <div class="ai-hub-figure">
-                    <img src="{{ asset('images/ai/tur-danismani-ai.webp') }}" alt="Tur Danışmanı AI karakteri" width="444" height="540" loading="lazy" decoding="async">
+                    <picture>
+                        <source media="(max-width: 768px)" srcset="{{ asset('images/ai/tur-danismani-ai-kafa.webp') }}" width="160" height="160">
+                        <img src="{{ asset('images/ai/tur-danismani-ai.webp') }}" alt="Tur Danışmanı AI karakteri" width="444" height="540" loading="lazy" decoding="async">
+                    </picture>
                 </div>
                 <div class="ai-hub-body">
                     <h3>Tur Danışmanı AI</h3>
                     <p>Turlar hakkında sor, karşılaştır, en uygun seçeneği birlikte bulalım.</p>
+                    <p class="ai-hub-kisa">Turları sor, karşılaştır</p>
                     <div class="ai-hub-chips" aria-label="Örnek sorular">
                         <button type="button" class="ai-hub-chip" data-sohbet="Kapadokya turlarının farklarını göster">Kapadokya turlarının farklarını göster</button>
                         <button type="button" class="ai-hub-chip" data-sohbet="İstanbul'dan kalkan vizesiz turlar hangileri?">İstanbul'dan kalkan vizesiz turlar</button>
@@ -1444,16 +1469,18 @@
             .m-only { display:inline; }
             .m-hide { display:none; }
 
-            /* Tasarım sırası: hero+arama+güven → storyler → kategori pill'leri →
-               turlar → kategori ızgarası → fırsat afişi → sayaçlar */
+            /* Sıra (2026-09-24): hero+arama+güven → AI asistanlar → kategori ızgarası →
+               storyler → kategori pill'leri → tur şeridi (+ tümü CTA + garanti kartı) →
+               fırsat afişi → sayaçlar. AI bölümü 2,8 ekran aşağıdaydı; site farkı
+               olduğu için ilk ekranın hemen altına alındı. */
             #homeMain { display:flex; flex-direction:column; }
             #homeMain > * { order:9; }
             #homeMain > .m-home { order:1; }
-            #homeMain > #storiesSection { order:2; }
-            #homeMain > .filter-bar-wrapper { order:3; }
-            #homeMain > #tours-section { order:4; }
-            @if($aiKesifAcik || $aiDanismanAcik) #homeMain > .ai-hub-wrap { order:5; } @endif {{-- bölüm yokken sınıf adı sayfada geçmesin --}}
-            #homeMain > .m-cats { order:6; }
+            @if($aiKesifAcik || $aiDanismanAcik) #homeMain > .ai-hub-wrap { order:2; } @endif {{-- bölüm yokken sınıf adı sayfada geçmesin --}}
+            #homeMain > .m-cats { order:3; }
+            #homeMain > #storiesSection { order:4; }
+            #homeMain > .filter-bar-wrapper { order:5; }
+            #homeMain > #tours-section { order:6; }
             #homeMain > .m-promo { order:7; }
             #homeMain > .m-stats { order:8; }
             .hero-carousel { display:none; }
@@ -1507,12 +1534,18 @@
             .category-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:none; }
             .filter-select-group { display:none; }
 
-            /* ---- Tur kartları: 2 sütun dikey ---- */
+            /* ---- Tur kartları: yatay kaydırmalı şerit (Malitur "Haftanın Turu" kalıbı).
+               2 sütun × 4 satır ~1500px tutuyordu, şerit ~420px. Kart %68 genişlikte:
+               sıradaki kartın kenarı görünür, kaydırılabildiği anlaşılır. Kenardan
+               kenara kaydırma için container'ın 16px'i negatif margin ile geri alınır;
+               .grid-4 AJAX filtreyle yeniden basılsa da seçici sarmalayıcıya bağlı. ---- */
             #tours-section .section-header h2 { font-size:17px; letter-spacing:-.5px; font-family:'Manrope',var(--font); }
-            #tour-grid-container .grid-4 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+            #tour-grid-container .grid-4 { display:flex; gap:12px; overflow-x:auto; margin:0 -16px; padding:2px 16px 8px; scroll-snap-type:x mandatory; scroll-padding-left:16px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+            #tour-grid-container .grid-4::-webkit-scrollbar { display:none; }
             .m-cardwrap { position:relative; display:flex; }
+            #tour-grid-container .grid-4 > .m-cardwrap { flex:0 0 68%; max-width:260px; scroll-snap-align:start; }
             #tour-grid-container .card { flex:1; min-width:0; display:flex; flex-direction:column; border-radius:16px; border:1px solid rgba(15,36,33,.08); background:#fff; overflow:hidden; box-shadow:0 8px 20px rgba(4,24,21,.05); }
-            #tour-grid-container .card-img { width:100%; height:112px; object-fit:cover; }
+            #tour-grid-container .card-img { width:100%; height:128px; object-fit:cover; }
             #tour-grid-container .card-body { flex:1; display:flex; flex-direction:column; gap:4px; padding:10px 11px 12px; }
             #tour-grid-container .card-title { font-size:12.5px; font-weight:800; line-height:1.3; color:#0f2421; margin-bottom:0; font-family:'Manrope',var(--font); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
             #tour-grid-container .card-meta { font-size:9.8px; font-weight:600; color:#7d938d; margin-bottom:0; }
@@ -1529,7 +1562,7 @@
             .m-guarantee p { font-size:12px; color:rgba(255,255,255,.6); margin:3px 0 0; line-height:1.5; }
 
             /* ---- Kategori ızgarası (6 kısayol) ---- */
-            .m-cats { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:22px; }
+            .m-cats { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:14px; }
             .m-cat { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; background:#fff; border:1px solid rgba(15,36,33,.08); border-radius:16px; padding:15px 5px; text-decoration:none; font-family:'Manrope',var(--font); }
             .m-cat svg { width:25px; height:25px; color:var(--accent); }
             .m-cat span { font-size:10.5px; font-weight:700; color:#42544f; text-align:center; letter-spacing:-.2px; }
