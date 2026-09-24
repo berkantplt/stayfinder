@@ -7,6 +7,13 @@ use Illuminate\Support\Str;
 
 class Post extends Model
 {
+    /**
+     * Yönetim formundaki seçenekler + doğrulama listesi (tek kaynak).
+     * Eski kayıtların listede olmayan kategorileri Admin\BlogController::kategoriler()
+     * ile birleştirilir; burada değişiklik o kayıtları bozmaz.
+     */
+    public const CATEGORIES = ['Rehber', 'Seyahat İpuçları', 'Destinasyon', 'Tur Haberleri'];
+
     protected $fillable = [
         'title', 'slug', 'excerpt', 'content', 'image',
         'category', 'meta_description', 'is_published', 'published_at',
