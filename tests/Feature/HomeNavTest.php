@@ -12,11 +12,15 @@ use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
- * Ana sayfa gezinme bloğu: mega menü + filtre barı (config/ui.php: home_nav).
+ * Ana sayfa gezinme bloğu: kategori ağacı (mega menü) + filtre barı
+ * (config/ui.php: home_nav).
  *
  * En önemli bekçi: hiçbir mod KOD SİLMİYOR — 'filter' moduna dönüldüğünde
  * eski bar aynen çalışıyor olmalı. Fikir değişirse geri alma commit'i değil,
  * tek env satırı yetsin diye.
+ *
+ * Menü iki katman (2026-09-25): kapalı şerit = üst kategoriler, açık panel =
+ * alt kategoriler + kart görseli. Ara "kova" katmanı yok.
  */
 class HomeNavTest extends TestCase
 {
@@ -125,7 +129,7 @@ class HomeNavTest extends TestCase
             ->assertSee(LandingSlug::urlForCategory(Category::where('slug','kayak-menu')->first()), false);
     }
 
-    public function test_alt_kategoriler_panelin_orta_sutununda_listelenir(): void
+    public function test_alt_kategoriler_ust_kategorinin_panelinde_listelenir(): void
     {
         $ust = Category::create(['name' => 'Doğa Turları', 'slug' => 'doga-menu', 'is_active' => true]);
         Category::create(['name' => 'Kamp ve Yayla', 'slug' => 'kamp-menu', 'parent_id' => $ust->id, 'is_active' => true]);
@@ -135,69 +139,68 @@ class HomeNavTest extends TestCase
 
         $r = $this->get(route('home'))->assertOk();
 
-        // Ana kategori sol rayda, alt kategorisi orta sütunda
+        // Üst kategori şeritte, alt kategorisi panelde
         $r->assertSee('Doğa Turları');
         $r->assertSee('Kamp ve Yayla');
         $r->assertSee(LandingSlug::urlForCategory(Category::where('slug', 'kamp-menu')->first()), false);
-        // Sol raydaki kart hangi paneli açacağını data-show ile söyler
-        $r->assertSee('data-show="mega-diger-doga-menu"', false);
+        // Şeritteki düğme hangi paneli açacağını aria-controls ile söyler
+        $r->assertSee('aria-controls="mega-panel-doga-menu"', false);
+        $r->assertSee('id="mega-panel-doga-menu"', false);
     }
 
     /**
-     * Ray → orta sütun bağı: her dalın kendi paneli var ve panelin ilk satırı
-     * "Tüm {ana kategori}" — alt kırılım seçmek istemeyen kullanıcı tüm dalı
-     * tek tıkla görebilmeli.
+     * Her üst kategorinin kendi paneli var; panel başlığındaki "Tümünü gör"
+     * üst kategorinin landing adresine gider — alt kırılım seçmek istemeyen
+     * kullanıcı tüm dalı tek tıkla görebilmeli.
      */
-    public function test_her_dalin_kendi_paneli_ve_tumu_linki_olur(): void
+    public function test_her_ust_kategorinin_kendi_paneli_ve_tumunu_gor_linki_olur(): void
     {
         $ust = Category::create(['name' => 'Doğa Turları', 'slug' => 'doga-menu', 'is_active' => true]);
         Category::create(['name' => 'Kamp ve Yayla', 'slug' => 'kamp-menu', 'parent_id' => $ust->id, 'is_active' => true]);
 
         MegaMenu::forget();
-        $dallar = collect(MegaMenu::build())->pluck('rail')->flatten(1)->keyBy('key');
+        $agac = collect(MegaMenu::build())->keyBy('key');
 
-        $this->assertSame('Tüm Doğa Turları', $dallar['doga-menu']['links'][0]['label']);
-        $this->assertSame('Kamp ve Yayla', $dallar['doga-menu']['links'][1]['label']);
-        $this->assertSame(
-            LandingSlug::urlForCategory($ust),
-            $dallar['doga-menu']['links'][0]['url']
-        );
+        $this->assertSame(LandingSlug::urlForCategory($ust), $agac['doga-menu']['url']);
+        $this->assertSame('Kamp ve Yayla', $agac['doga-menu']['children'][0]['name']);
+
+        config(['ui.home_nav' => 'both']);
+        $this->get(route('home'))->assertOk()->assertSee('Tümünü gör');
     }
 
     /**
-     * config/mega_menu.php'de bir kovaya yazılmamış ana kategori KAYBOLMAZ,
-     * "Diğer Turlar" kovasına düşer. Admin yeni kategori açtığında menüden
-     * sessizce silinmesin diye.
+     * Şerit = admin'in kurduğu ağacın üst kategorileri, sort_order sırasıyla.
+     * Ara bir gruplama katmanı yok; alt kategori şeritte görünmez.
      */
-    public function test_kovaya_yazilmamis_kategori_diger_kovasina_duser(): void
+    public function test_serit_ust_kategorileri_sirali_verir_alt_kategori_seritte_yoktur(): void
     {
-        config(['ui.home_nav' => 'both', 'mega_menu.buckets' => []]);
+        $sonraki = Category::create(['name' => 'Gemi Turları', 'slug' => 'gemi-menu', 'sort_order' => 9, 'is_active' => true]);
+        $onceki = Category::create(['name' => 'Yurt Dışı Turları', 'slug' => 'yurtdisi-menu', 'sort_order' => 3, 'is_active' => true]);
+        Category::create(['name' => 'Avrupa', 'slug' => 'avrupa-menu', 'parent_id' => $onceki->id, 'is_active' => true]);
+
         MegaMenu::forget();
+        $anahtarlar = collect(MegaMenu::build())->pluck('key')->all();
 
-        $kovalar = MegaMenu::build();
-
-        $this->assertCount(1, $kovalar);
-        $this->assertSame('diger', $kovalar[0]['key']);
-        $this->assertContains('kultur-menu', collect($kovalar[0]['rail'])->pluck('key')->all());
+        $this->assertSame(['kultur-menu', 'yurtdisi-menu', 'gemi-menu'], $anahtarlar);
+        $this->assertNotContains('avrupa-menu', $anahtarlar);
     }
 
-    public function test_kova_tanimliysa_kategorileri_o_kovaya_girer(): void
+    /**
+     * Panelin sağındaki kart üst kategorinin "Kart görseli"ni kullanır; görsel
+     * yoksa turkuaz zemin + ikon (mega-card-bos).
+     */
+    public function test_panel_karti_ust_kategorinin_gorselini_kullanir(): void
     {
-        config([
-            'ui.home_nav' => 'both',
-            'mega_menu.buckets' => [[
-                'key' => 'kultur-sehir',
-                'label' => 'Kültür & Şehir',
-                'icon' => '🏛️',
-                'categories' => ['kultur-menu'],
-            ]],
-        ]);
+        Category::create(['name' => 'Gemi Turları', 'slug' => 'gemi-menu', 'image' => 'https://cdn.example.com/gemi.jpg', 'is_active' => true]);
+
+        config(['ui.home_nav' => 'both']);
         MegaMenu::forget();
 
-        $kovalar = collect(MegaMenu::build())->keyBy('key');
+        $r = $this->get(route('home'))->assertOk();
 
-        $this->assertSame('Kültür & Şehir', $kovalar['kultur-sehir']['label']);
-        $this->assertSame(['kultur-menu'], collect($kovalar['kultur-sehir']['rail'])->pluck('key')->all());
+        $r->assertSee("background-image:url('https://cdn.example.com/gemi.jpg');", false);
+        // setUp'taki Kültür'ün görseli yok → boş kart sınıfı
+        $r->assertSee('mega-card-bos', false);
     }
 
     public function test_pasif_kategori_menuye_girmez(): void
@@ -224,11 +227,10 @@ class HomeNavTest extends TestCase
         $this->tur('Bodrum Tekne Turu', 'Bodrum', false, $alt->id);
 
         MegaMenu::forget();
-        $dallar = collect(MegaMenu::build())->pluck('rail')->flatten(1)->keyBy('key');
+        $agac = collect(MegaMenu::build())->keyBy('key');
 
-        $this->assertSame(1, $dallar['deniz-menu']['count']);
-        // links[0] = "Tüm Deniz Turları", links[1] = alt kategori
-        $this->assertSame(1, $dallar['deniz-menu']['links'][1]['count']);
+        $this->assertSame(1, $agac['deniz-menu']['count']);
+        $this->assertSame(1, $agac['deniz-menu']['children'][0]['count']);
     }
 
     public function test_menu_linkleri_mevcut_filtre_urllerine_gider(): void
