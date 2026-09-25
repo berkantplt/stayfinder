@@ -48,6 +48,7 @@
                         <option value="">Tümü</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Sadece Aktifler</option>
                         <option value="passive" {{ request('status') === 'passive' ? 'selected' : '' }}>Sadece Pasifler</option>
+                        <option value="archived" {{ request('status') === 'archived' ? 'selected' : '' }}>Arşivdekiler</option>
                     </select>
                 </div>
                 <div class="form-group" style="width:210px;margin-bottom:0;">
@@ -111,17 +112,36 @@
                                         <span class="badge badge-green">Onaylı</span>
                                     @endif
                                 </td>
-                                <td><span class="badge {{ $a->is_active ? 'badge-green' : '' }}" style="{{ !$a->is_active ? 'background:#fef2f2;color:#991b1b;' : '' }}">{{ $a->is_active ? 'Aktif' : 'Pasif' }}</span></td>
+                                <td>
+                                    @if($a->trashed())
+                                        <span class="badge" style="background:#f1f5f9;color:#475569;border:none;" title="Arşivlenme: {{ $a->deleted_at->format('d.m.Y H:i') }}">Arşivde</span>
+                                    @else
+                                        <span class="badge {{ $a->is_active ? 'badge-green' : '' }}" style="{{ !$a->is_active ? 'background:#fef2f2;color:#991b1b;' : '' }}">{{ $a->is_active ? 'Aktif' : 'Pasif' }}</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                         <a href="{{ route('admin.agencies.show', $a) }}" class="btn btn-outline btn-sm">Görüntüle</a>
-                                        @if(($a->approval_status ?? 'approved') === 'pending')
-                                            <a href="{{ route('admin.agency-applications') }}" class="btn btn-outline btn-sm">Başvuruya Git</a>
+                                        @if($a->trashed())
+                                            {{-- Arşivli acenta: yalnız geri alma --}}
+                                            <form method="POST" action="{{ route('admin.agencies.restore', $a) }}">
+                                                @csrf
+                                                <button type="submit" class="btn btn-primary btn-sm">↩ Geri Al</button>
+                                            </form>
+                                        @else
+                                            @if(($a->approval_status ?? 'approved') === 'pending')
+                                                <a href="{{ route('admin.agency-applications') }}" class="btn btn-outline btn-sm">Başvuruya Git</a>
+                                            @endif
+                                            <form method="POST" action="{{ route('admin.agencies.toggle', $a) }}">
+                                                @csrf
+                                                <button type="submit" class="btn btn-outline btn-sm">{{ $a->is_active ? 'Pasif Yap' : 'Aktif Yap' }}</button>
+                                            </form>
+                                            {{-- Silme = arşivleme (A10); onay metni etkiyi sayılarla söyler --}}
+                                            <form method="POST" action="{{ route('admin.agencies.archive', $a) }}" onsubmit="return confirm({{ \Illuminate\Support\Js::from(\App\Models\Agency::archiveConfirmText($a->name, (int) $a->tours_count, (int) $a->users_count)) }})">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Arşive taşı — geri alınabilir">Arşivle</button>
+                                            </form>
                                         @endif
-                                        <form method="POST" action="{{ route('admin.agencies.toggle', $a) }}">
-                                            @csrf
-                                            <button type="submit" class="btn btn-outline btn-sm">{{ $a->is_active ? 'Pasif Yap' : 'Aktif Yap' }}</button>
-                                        </form>
                                     </div>
                                 </td>
                             </tr>

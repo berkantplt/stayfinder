@@ -77,6 +77,7 @@ class AdminController extends Controller
         $query = Agency::withCount([
             'tours',
             'activeTours as active_tours_count',
+            'users', // arşivleme onay metni için
         ]);
 
         if (CategoryLicensing::schemaReady()) {
@@ -99,6 +100,8 @@ class AdminController extends Controller
                 $query->where('is_active', true);
             } elseif ($request->status === 'passive') {
                 $query->where('is_active', false);
+            } elseif ($request->status === 'archived') {
+                $query->onlyTrashed();
             }
         }
 
@@ -156,7 +159,10 @@ class AdminController extends Controller
         $agency->loadCount([
             'tours',
             'activeTours as active_tours_count',
+            'users',
         ]);
+
+        $archiveConfirmText = Agency::archiveConfirmText($agency->name, (int) $agency->tours_count, (int) $agency->users_count);
 
         $hasCategoryLicensing = CategoryLicensing::schemaReady();
 
@@ -279,7 +285,8 @@ class AdminController extends Controller
             'recentOrders',
             'recentTours',
             'stats',
-            'grantableCategories'
+            'grantableCategories',
+            'archiveConfirmText'
         ));
     }
 
@@ -575,6 +582,28 @@ class AdminController extends Controller
 
         return redirect()->route('admin.agencies')
             ->with('success', $agency->name.' '.($agency->is_active ? 'aktifleştirildi' : 'pasifleştirildi').'.');
+    }
+
+    /**
+     * Silme = arşiv: acenta + turları soft delete (Agency::archiveWithTours).
+     * Kalıcı silme bilerek yok — sipariş/abonelik FK'leri cascade olduğundan
+     * mali geçmiş giderdi.
+     */
+    public function archiveAgency(Agency $agency)
+    {
+        $agency->archiveWithTours();
+
+        return redirect()->route('admin.agencies')
+            ->with('success', $agency->name.' arşive taşındı; turları yayından kalktı. "Arşivdekiler" filtresinden geri alabilirsiniz.');
+    }
+
+    /** Arşivden geri alma (rota withTrashed ile bağlar). */
+    public function restoreAgency(Agency $agency)
+    {
+        $agency->restoreWithTours();
+
+        return redirect()->route('admin.agencies.show', $agency)
+            ->with('success', $agency->name.' arşivden geri alındı; birlikte arşivlenen turları da yayına döndü.');
     }
 
     public function tours(Request $request)

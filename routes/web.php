@@ -437,9 +437,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/acentalar', [AdminController::class, 'agencies'])->name('agencies');
     Route::get('/acenta-basvurulari', [AdminController::class, 'agencyApplications'])->name('agency-applications');
     Route::get('/acentalar/ekle', [AdminController::class, 'createAgency'])->name('agencies.create');
-    Route::get('/acentalar/{agency}', [AdminController::class, 'showAgency'])->name('agencies.show');
+    Route::get('/acentalar/{agency}', [AdminController::class, 'showAgency'])->withTrashed()->name('agencies.show'); // arşivli acenta da açılır
     Route::post('/acentalar', [AdminController::class, 'storeAgency'])->name('agencies.store');
     Route::post('/acentalar/{agency}/toggle', [AdminController::class, 'toggleAgency'])->name('agencies.toggle');
+    // Silme = arşiv (soft delete, turlarıyla birlikte); geri alma rotası silinmiş kaydı bağlasın diye withTrashed
+    Route::delete('/acentalar/{agency}', [AdminController::class, 'archiveAgency'])->name('agencies.archive');
+    Route::post('/acentalar/{agency}/geri-al', [AdminController::class, 'restoreAgency'])->withTrashed()->name('agencies.restore');
     Route::post('/acentalar/{agency}/kategori-ekle', [AdminController::class, 'grantCategory'])->name('agencies.categories.grant');
     Route::post('/acentalar/{agency}/kategori-iptal/{subscription}', [AdminController::class, 'revokeCategory'])->name('agencies.categories.revoke');
     Route::post('/acenta-basvurulari/{agency}/onayla', [AdminController::class, 'approveAgencyApplication'])->name('agency-applications.approve');

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Agency extends Model
@@ -48,13 +49,33 @@ class Agency extends Model
             return parent::resolveRouteBinding($value, $field);
         }
 
-        $bySlug = $this->newQuery()->where('slug', $value)->first();
+        return $this->findByRouteValue($value, withTrashed: false);
+    }
+
+    /**
+     * `->withTrashed()` rotalarda (admin detay / geri al) Laravel bu metodu
+     * çağırır; slug + sayısal ID kabulü burada da korunur (rapor bağlantıları ID ile).
+     */
+    public function resolveSoftDeletableRouteBinding($value, $field = null)
+    {
+        if ($field !== null) {
+            return parent::resolveSoftDeletableRouteBinding($value, $field);
+        }
+
+        return $this->findByRouteValue($value, withTrashed: true);
+    }
+
+    private function findByRouteValue($value, bool $withTrashed): ?self
+    {
+        $query = $withTrashed ? $this->newQuery()->withTrashed() : $this->newQuery();
+
+        $bySlug = (clone $query)->where('slug', $value)->first();
         if ($bySlug !== null) {
             return $bySlug;
         }
 
         return ctype_digit((string) $value)
-            ? $this->newQuery()->whereKey($value)->first()
+            ? (clone $query)->whereKey($value)->first()
             : null;
     }
 
@@ -67,7 +88,9 @@ class Agency extends Model
                 $slug = $baseSlug;
                 $suffix = 1;
 
-                while (static::where('slug', $slug)->exists()) {
+                // Arşivdeki acentanın slug'ı da dolu sayılır: yoksa unique index patlar,
+                // geri alma imkânsızlaşır.
+                while (static::withTrashed()->where('slug', $slug)->exists()) {
                     $slug = $baseSlug . '-' . $suffix;
                     $suffix++;
                 }
@@ -76,14 +99,75 @@ class Agency extends Model
             }
         });
 
-        // Acenta pasifleşince turları görünmez olur — chatbot envanteri ve
-        // bilinen destinasyon listesi bayat kalmasın
+        // Acenta pasifleşince/arşivlenince turları görünmez olur — chatbot envanteri
+        // ve bilinen destinasyon listesi bayat kalmasın
         static::updated(function (Agency $agency) {
             if ($agency->wasChanged('is_active')) {
-                cache()->forget('ai_search_known_destinations_v1');
-                \App\Services\AiSearch\DestinationKnowledgeService::flushInventory();
+                static::flushInventoryCaches();
             }
         });
+        static::deleted(fn () => static::flushInventoryCaches());
+        static::restored(fn () => static::flushInventoryCaches());
+    }
+
+    private static function flushInventoryCaches(): void
+    {
+        cache()->forget('ai_search_known_destinations_v1');
+        \App\Services\AiSearch\DestinationKnowledgeService::flushInventory();
+    }
+
+    /**
+     * Admin "Sil" = arşiv: acenta ve yayındaki turları birlikte soft delete edilir.
+     * Turlar tek tek silinir ki TourObserver@deleted RAG chunk'larını temizlesin;
+     * abonelik/sipariş kayıtlarına dokunulmaz (mali iz). Sıra önemli: önce acenta,
+     * sonra turlar — restoreWithTours turları deleted_at >= acenta.deleted_at ile ayırır.
+     */
+    public function archiveWithTours(): void
+    {
+        DB::transaction(function () {
+            $this->delete();
+            $this->tours()->get()->each->delete();
+        });
+    }
+
+    /**
+     * Arşivden geri alma: yalnız arşivlemeyle birlikte giden turlar döner;
+     * acentanın daha önce kendi arşivlediği turlar arşivde kalır.
+     */
+    public function restoreWithTours(): void
+    {
+        if (! $this->trashed()) {
+            return;
+        }
+
+        DB::transaction(function () {
+            $archivedAt = $this->deleted_at;
+            $this->restore();
+
+            $this->tours()->onlyTrashed()
+                ->where('deleted_at', '>=', $archivedAt)
+                ->get()
+                ->each->restore();
+        });
+    }
+
+    /** Arşivleme onay metni: etkiyi sayılarla söyler (C18 tur kalıbı). */
+    public static function archiveConfirmText(string $name, int $tourCount, int $userCount): string
+    {
+        $etki = [];
+        if ($tourCount > 0) {
+            $etki[] = $tourCount.' turu yayından kalkacak';
+        }
+        if ($userCount > 0) {
+            $etki[] = $userCount.' kullanıcısı panele giremeyecek';
+        }
+
+        $metin = '"'.$name.'" arşive taşınacak';
+        if ($etki !== []) {
+            $metin .= ': '.implode(', ', $etki);
+        }
+
+        return $metin.'. Abonelik ve sipariş kayıtları silinmez; "Arşivdekiler" filtresinden geri alabilirsiniz. Devam edilsin mi?';
     }
 
     public function tours(): HasMany

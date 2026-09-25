@@ -78,9 +78,14 @@
                                     @foreach($activeSubscriptions as $subscription)
                                         <tr>
                                             <td>
-                                                <a href="{{ route('admin.agencies.show', $subscription->agency) }}" style="color:#0f172a;text-decoration:none;font-weight:600;">
-                                                    {{ $subscription->agency->name }}
-                                                </a>
+                                                @if($subscription->agency)
+                                                    <a href="{{ route('admin.agencies.show', $subscription->agency) }}" style="color:#0f172a;text-decoration:none;font-weight:600;">
+                                                        {{ $subscription->agency->name }}
+                                                    </a>
+                                                @else
+                                                    {{-- acenta arşivlendi: belongsTo soft-deleted kaydı getirmez --}}
+                                                    <span style="color:#94a3b8;">Arşivlenmiş acenta</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div style="font-weight:700;color:#0f172a;">{{ $subscription->category->icon }} {{ $subscription->category->name }}</div>

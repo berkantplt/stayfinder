@@ -22,9 +22,13 @@
                         @else
                             <span class="badge badge-green">Onaylı</span>
                         @endif
-                        <span class="badge {{ $agency->is_active ? 'badge-green' : '' }}" style="{{ !$agency->is_active ? 'background:#fef2f2;color:#991b1b;border:none;' : '' }}">
-                            {{ $agency->is_active ? 'Aktif' : 'Pasif' }}
-                        </span>
+                        @if($agency->trashed())
+                            <span class="badge" style="background:#f1f5f9;color:#475569;border:none;">Arşivde</span>
+                        @else
+                            <span class="badge {{ $agency->is_active ? 'badge-green' : '' }}" style="{{ !$agency->is_active ? 'background:#fef2f2;color:#991b1b;border:none;' : '' }}">
+                                {{ $agency->is_active ? 'Aktif' : 'Pasif' }}
+                            </span>
+                        @endif
                         @if($agency->legacy_category_access)
                             <span class="badge" style="background:#fff7ed;color:#9a3412;border:none;">Geçiş erişimi</span>
                         @endif
@@ -40,8 +44,27 @@
                     @if($agency->website_url)
                         <a href="{{ $agency->website_url }}" class="btn btn-primary" target="_blank" rel="noopener">Siteyi Aç</a>
                     @endif
+                    @if($agency->trashed())
+                        <form method="POST" action="{{ route('admin.agencies.restore', $agency) }}" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="btn btn-primary">↩ Arşivden Geri Al</button>
+                        </form>
+                    @else
+                        {{-- Silme = arşivleme (A10); onay metni etkiyi sayılarla söyler --}}
+                        <form method="POST" action="{{ route('admin.agencies.archive', $agency) }}" onsubmit="return confirm({{ \Illuminate\Support\Js::from($archiveConfirmText) }})" style="margin:0;">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-danger" title="Arşive taşı — geri alınabilir">Arşivle</button>
+                        </form>
+                    @endif
                 </div>
             </div>
+
+            @if($agency->trashed())
+                <div style="max-width:94%;margin:0 auto 24px;padding:14px 16px;border-radius:16px;background:#f1f5f9;border:1px solid #cbd5e1;color:#334155;font-size:13px;line-height:1.6;">
+                    Bu acenta {{ $agency->deleted_at->format('d.m.Y H:i') }} tarihinde arşivlendi: turları yayında değil, kullanıcıları panele giremiyor.
+                    Abonelik ve sipariş kayıtları duruyor. Birlikte arşivlenen turlar 30 gün sonra kalıcı silinir; "Arşivden Geri Al" ile acenta ve turları geri döner.
+                </div>
+            @endif
 
             @if(!$hasCategoryLicensing)
                 <div class="alert alert-error" style="max-width:94%;margin:0 auto 24px;">
