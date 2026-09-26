@@ -823,6 +823,11 @@
 
         /* Cerez bandi sekme barinin ustunde bitsin, sekmeler tiklanabilir kalsin */
         #cerez-banner { bottom:var(--tabbar-h) !important; z-index:var(--z-banner) !important; }
+        /* Sohbet açıkken çerez bandı gizli (kullanıcı kararı, 2026-09-26): z-banner >
+           z-panel olduğundan mobil tam ekran sohbetin ve masaüstü köşe panelinin giriş
+           çubuğunu örtüyordu. Kardeş seçici: #cv2 ve #cerez-banner body'nin çocukları,
+           #cv2 önce gelir. Kapanınca band kendiliğinden geri gelir (JS'e dokunulmadı). */
+        #cv2.cv2-acik ~ #cerez-banner { display:none !important; }
 
         /* Footer'in son satiri (.ftr-made / sosyal ikonlar) balon ve tepsinin
            altinda kaliyordu: olculen ortusme %45 ve %100. */
