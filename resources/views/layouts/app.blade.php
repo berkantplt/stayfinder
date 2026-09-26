@@ -2,7 +2,10 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    {{-- viewport-fit=cover ŞART: ana ekran uygulaması / uygulama-içi tarayıcıda içerik durum çubuğunun
+         altına uzanır; bu olmadan env(safe-area-inset-top) hep 0 kalır, yapışkan başlık çubuğun
+         altında "kopuk" durur (canlı telefon görüntüsü, 2026-09-24). --}}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'turXtur — Tur Karşılaştırma')</title>
     <meta name="description" content="@yield('description', 'Türkiye\'nin en iyi tur acentalarından fiyatları karşılaştırın.')">
@@ -705,28 +708,48 @@
             .card-img { height:140px; }
 
             /* ===== Mobil iskelet (turXtur Mobil 3 tasarımı) ===== */
-            .nav { height:auto; padding:0; flex-direction:column; align-items:stretch; }
+            .nav { height:auto; padding:0; flex-direction:column; align-items:stretch; background:transparent; border-bottom:none; } /* zemin+çizgi .m-head'de */
             .nav-inner { display:none !important; }
             /* Üst koyu güven şeridi tasarımdan kalktı — yerine hero hapı + güven barı */
             .m-trust { display:none; }
 
-            .m-head { position:relative; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:calc(9px + env(safe-area-inset-top)) 14px 9px; background:var(--white); }
-            .m-head-btn { width:42px; height:42px; flex:none; padding:0; border-radius:14px; border:1px solid rgba(15,36,33,.10); background:#fff; color:#0f2421; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+            .m-head { position:relative; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:calc(9px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 9px calc(14px + env(safe-area-inset-left)); background:var(--white); border-bottom:1px solid var(--border-light); transition:padding .2s ease, background .2s ease, box-shadow .2s ease, border-color .2s ease; }
+            .m-head-btn { width:42px; height:42px; flex:none; padding:0; border-radius:14px; border:1px solid rgba(15,36,33,.10); background:#fff; color:#0f2421; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:width .2s ease, height .2s ease, background .2s ease, border-color .2s ease; }
             .m-head-left { display:flex; align-items:center; gap:8px; }
-            .m-head-logo { position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; }
+            .m-head-logo { position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; transition:transform .2s ease; }
+            /* Kaydırınca kompakt şerit — masaüstü .scrolled'ın mobil karşılığı (JS her
+               sayfada .nav'a .scrolled basar): düğme kutuları düzleşir, logo küçülür,
+               yarı saydam blur zemin + gölge çizgisi. Zemin .m-head'de, nav'da değil.
+               ⚠️ KUTU YÜKSEKLİĞİ DEĞİŞMEZ (padding ve düğme ölçüsü sabit): hero dışı mobil
+               sayfalarda .nav akış içi sticky; 12px kısalma içeriği eşikte sıçratıyor,
+               Chromium scroll-anchoring ile 24-36px bandında sınıf aç/kapa döngüsüne
+               giriyordu (2026-09-26 hasım inceleme, repro ile). Kompaktlık yalnız görsel. */
+            .nav.scrolled .m-head { background:rgba(255,255,255,.88); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-bottom-color:rgba(15,36,33,.08); box-shadow:0 6px 18px -12px rgba(4,24,21,.28); }
+            .nav.scrolled .m-head-btn { background:transparent; border-color:transparent; }
+            .nav.scrolled .m-head-logo { transform:translateX(-50%) scale(.88); }
             .m-head-right { display:flex; align-items:center; gap:2px; }
             .m-head-ico { position:relative; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#0f2421; text-decoration:none; }
             .m-head-dot { position:absolute; top:7px; right:8px; width:8px; height:8px; border-radius:50%; background:#e0563a; border:1.5px solid #fff; }
 
             /* Hero'lu sayfalarda (ana sayfa) header fotoğrafın üstüne saydam biner */
-            body.m-hero-head .nav { position:absolute; top:0; left:0; right:0; background:transparent; border-bottom:none; box-shadow:none; }
-            body.m-hero-head .m-head { background:transparent; }
+            /* FIXED (absolute değil): hero'nun üstünde saydam durur, kaydırınca yerinde
+               kalıp beyaz şeride döner — masaüstü nav-float ile aynı davranış. */
+            body.m-hero-head .nav { position:fixed; top:0; left:0; right:0; background:transparent; border-bottom:none; box-shadow:none; }
+            body.m-hero-head .m-head { background:transparent; border-bottom-color:transparent; }
+            body.m-hero-head .nav.scrolled .m-head { background:rgba(255,255,255,.88); border-bottom-color:rgba(15,36,33,.08); }
+            body.m-hero-head .nav.scrolled .m-head-btn { background:transparent; border-color:transparent; color:#0f2421; backdrop-filter:none; -webkit-backdrop-filter:none; }
+            body.m-hero-head .nav.scrolled .m-head-ico { color:#0f2421; }
+            body.m-hero-head .nav.scrolled .m-head-dot { border-color:#fff; }
+            /* Logo inline SVG (partials/logo, $light=beyaz): CSS fill/stroke sunum niteliğini ezer */
+            body.m-hero-head .nav.scrolled .m-head-logo text { fill:#0f172a; }
+            body.m-hero-head .nav.scrolled .m-head-logo line { stroke:#0f172a; }
+            body.m-hero-head .nav.scrolled .m-head-logo path { fill:#0d9488; }
             body.m-hero-head .m-head-btn { background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.32); color:#fff; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
             body.m-hero-head .m-head-ico { color:#fff; }
             body.m-hero-head .m-head-dot { border-color:#0a2b28; }
 
             /* Alt sekme barı: 5 sekme, çizgi ikonlar */
-            .m-tabbar { display:grid; position:fixed; bottom:0; left:0; right:0; z-index:1500; background:rgba(255,255,255,.94); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-top:1px solid rgba(15,36,33,.08); grid-template-columns:repeat(5,1fr); padding:8px 2px calc(10px + env(safe-area-inset-bottom)); }
+            .m-tabbar { display:grid; position:fixed; bottom:0; left:0; right:0; z-index:1500; background:rgba(255,255,255,.94); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-top:1px solid rgba(15,36,33,.08); grid-template-columns:repeat(5,1fr); padding:8px calc(2px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(2px + env(safe-area-inset-left)); }
             .m-tabbar a { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; font-weight:600; color:#8a9a95; text-decoration:none; font-family:'Manrope',var(--font); letter-spacing:-.2px; }
             .m-tabbar a svg { width:22px; height:22px; }
             .m-tabbar a.active { color:var(--accent-ink); font-weight:800; }
@@ -2140,6 +2163,7 @@
                 width:100% !important; height:100% !important; max-width:none !important;
                 border:none !important; border-radius:0 !important; box-shadow:none !important;
                 background:#0f172a !important;   /* tam ekranda arka sayfa hafifçe sızmasın */
+                padding-top:env(safe-area-inset-top) !important;   /* viewport-fit=cover: başlık durum çubuğu altına girmesin */
                 padding-bottom:env(safe-area-inset-bottom) !important;
             }
         }
@@ -2671,12 +2695,16 @@
     }
     </script>
 
-    {{-- Yüzen hap menü: kaydırınca beyaz şeride dönüşsün (yalnız ana sayfa) --}}
+    {{-- Kaydırınca başlık şekil değiştirir: masaüstü ana sayfada yüzen hap → beyaz şerit
+         (.nav-float.scrolled CSS'i); mobilde HER sayfada kompakt blur şerit (.nav.scrolled,
+         ≤768px CSS'i). Masaüstü diğer sayfalarda sınıfın CSS karşılığı yok, zararsız.
+         Eşik mobilde daha küçük: başlık 60px, 40px geç kalıyordu. --}}
     <script>
     (function () {
-        var navEl = document.querySelector('.nav.nav-float');
+        var navEl = document.querySelector('.nav');
         if (!navEl) return;
-        var tick = function () { navEl.classList.toggle('scrolled', window.scrollY > 40); };
+        var dar = window.matchMedia('(max-width: 768px)');
+        var tick = function () { navEl.classList.toggle('scrolled', window.scrollY > (dar.matches ? 24 : 40)); };
         tick();
         window.addEventListener('scroll', tick, { passive: true });
     })();
