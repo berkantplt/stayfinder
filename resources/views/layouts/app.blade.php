@@ -2181,6 +2181,12 @@
             #cv2.cv2-acik #cv2-panel {
                 top:var(--cv2-ust, 0px) !important; height:var(--cv2-boy, 100%) !important; bottom:auto !important;
             }
+            /* Panel zemini = başlık/giriş çubuğu tonu (#132038), mesaj listesi koyu (#0f172a):
+               viewport-fit=cover ile durum çubuğu (padding-top) ve alt güvenli alan bantları
+               panel zeminini gösterir; koyu kalsaydı ana ekran uygulamasında başlığın üstünde
+               farklı tonda bir şerit görünürdü (hasım inceleme, 2026-09-26). */
+            #cv2.cv2-acik #cv2-panel { background:#132038 !important; }
+            #cv2.cv2-acik #cv2-msgs { background:#0f172a; }
             /* Başlık: ‹ geri + avatar + ad/çevrimiçi + sıfırla */
             #cv2.cv2-acik #cv2-baslik { padding:6px 12px 6px 4px !important; gap:6px !important; background:#132038; border-bottom-color:rgba(255,255,255,.08) !important; }
             #cv2.cv2-acik #cv2-close { order:-1; width:40px; height:40px; padding:0 !important; color:#fff !important; border-radius:50%; flex:0 0 auto; }
