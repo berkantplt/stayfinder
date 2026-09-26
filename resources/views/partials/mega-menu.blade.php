@@ -56,7 +56,7 @@
                                 <p class="mega-empty">Bu başlıkta henüz alt kırılım yok. <a href="{{ $ust['url'] }}">Tüm turlara göz at →</a></p>
                             @else
                                 <span class="mega-eyebrow">Alt kategoriler</span>
-                                <ul class="mega-links {{ $altSayisi > 5 ? 'mega-links-2' : '' }}">
+                                <ul class="mega-links {{ $altSayisi > 14 ? 'mega-links-3' : ($altSayisi > 5 ? 'mega-links-2' : '') }}">
                                     @foreach($ust['children'] as $alt)
                                         <li>
                                             <a href="{{ $alt['url'] }}">
@@ -121,33 +121,39 @@
 /* ── Açık görünüm: şeridin altındaki panel ── */
 .mega-panel {
     position:absolute; top:calc(100% + 12px); left:0; right:0; z-index:60; display:none;
-    background:#fff; border:1px solid var(--border-light); border-radius:18px; padding:26px 32px 30px;
+    background:#fff; border:1px solid var(--border-light); border-radius:18px; padding:18px 24px 22px;
+    /* Emniyet: çok alt kategorili başlıkta panel ekrana sığmazsa kendi içinde kayar,
+       sayfadan taşmaz (300px ≈ üst menü + şerit + boşluk). Kompaktlaştırma 2026-09-26:
+       canlıda 22 alt kategorili panel ~715px'ti, dizüstü ekranına sığmıyordu. */
+    max-height:calc(100vh - 300px); overflow-y:auto;
     box-shadow:0 34px 64px -26px rgba(15,23,42,.32), 0 2px 6px rgba(15,23,42,.05);
 }
 .mega-item.open .mega-panel { display:block; }
 .mega.no-js .mega-item:hover .mega-panel { display:block; }
 
-.mega-head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding-bottom:18px; border-bottom:1px solid var(--border-light); }
+.mega-head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding-bottom:12px; border-bottom:1px solid var(--border-light); }
 .mega-head-text { min-width:0; }
-.mega-head h3 { margin:0; font-size:26px; font-weight:800; letter-spacing:-.5px; color:#0f172a; line-height:1.15; }
-.mega-head p { margin:5px 0 0; font-size:14.5px; color:var(--text-meta); }
-.mega-all { display:inline-flex; align-items:center; gap:8px; margin-top:8px; font-size:14.5px; font-weight:700; color:var(--accent-ink); text-decoration:none; white-space:nowrap; transition:color .15s; }
+.mega-head h3 { margin:0; font-size:21px; font-weight:800; letter-spacing:-.5px; color:#0f172a; line-height:1.15; }
+.mega-head p { margin:3px 0 0; font-size:13.5px; color:var(--text-meta); }
+.mega-all { display:inline-flex; align-items:center; gap:8px; margin-top:4px; font-size:14px; font-weight:700; color:var(--accent-ink); text-decoration:none; white-space:nowrap; transition:color .15s; }
 .mega-all:hover { color:var(--accent-deep); }
 
-.mega-body { display:grid; grid-template-columns:minmax(0,1fr) 30%; gap:32px; padding-top:22px; }
-.mega-eyebrow { display:block; margin:0 0 10px 8px; font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--text-meta); }
+.mega-body { display:grid; grid-template-columns:minmax(0,1fr) 26%; gap:24px; padding-top:14px; }
+.mega-eyebrow { display:block; margin:0 0 6px 8px; font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--text-meta); }
 .mega-links { list-style:none; margin:0; padding:0; }
-.mega-links-2 { columns:2; column-gap:40px; }
+.mega-links-2 { columns:2; column-gap:32px; }
+/* 14+ alt kategoride 3 sütun: 22 kategori 11 yerine 8 satıra iner (kaydırmasız görünüm). */
+.mega-links-3 { columns:3; column-gap:28px; }
 .mega-links li { break-inside:avoid; border-bottom:1px solid var(--border-light); }
 .mega-links a {
-    display:flex; align-items:center; gap:10px; padding:12px 10px; border-radius:12px;
-    font-size:15.5px; font-weight:500; color:#1e293b; text-decoration:none; transition:background .12s, color .12s;
+    display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:10px;
+    font-size:14.5px; font-weight:500; color:#1e293b; text-decoration:none; transition:background .12s, color .12s;
 }
 .mega-links a:hover { background:rgba(13,148,136,.09); color:var(--accent-ink); font-weight:700; }
 .mega-link-name { flex:1; min-width:0; }
 .mega-count {
-    font-style:normal; font-size:12.5px; font-weight:800; color:var(--accent-ink); background:var(--accent-light);
-    border-radius:100px; min-width:26px; text-align:center; padding:3px 8px; font-variant-numeric:tabular-nums;
+    font-style:normal; font-size:12px; font-weight:800; color:var(--accent-ink); background:var(--accent-light);
+    border-radius:100px; min-width:24px; text-align:center; padding:2px 7px; font-variant-numeric:tabular-nums;
 }
 .mega-link-caret { flex:none; color:#94a3b8; transition:color .12s; }
 .mega-links a:hover .mega-link-caret { color:var(--accent-ink); }
@@ -156,7 +162,7 @@
 
 /* Sağdaki görsel kart */
 .mega-card {
-    position:relative; display:flex; flex-direction:column; justify-content:flex-end; min-height:360px;
+    position:relative; display:flex; flex-direction:column; justify-content:flex-end; min-height:240px;
     border-radius:16px; overflow:hidden; background:#0f766e center/cover no-repeat; color:#fff; text-decoration:none;
     transition:transform .2s;
 }
@@ -169,13 +175,13 @@
     border-radius:100px; background:rgba(255,255,255,.93); color:var(--accent-ink); font-size:11.5px; font-weight:800;
     letter-spacing:.08em; text-transform:uppercase;
 }
-.mega-card-body { position:relative; z-index:2; padding:22px; }
-.mega-card-body strong { display:block; font-size:24px; font-weight:800; letter-spacing:-.4px; line-height:1.15; }
+.mega-card-body { position:relative; z-index:2; padding:18px; }
+.mega-card-body strong { display:block; font-size:20px; font-weight:800; letter-spacing:-.4px; line-height:1.15; }
 .mega-card-body > span { display:inline-flex; align-items:center; gap:6px; margin-top:7px; font-size:14.5px; font-weight:600; }
 
 @media (max-width:1100px) {
     .mega-body { grid-template-columns:1fr; }
-    .mega-links-2 { columns:1; }
+    .mega-links-2, .mega-links-3 { columns:1; }
     .mega-card { min-height:220px; }
 }
 @media (max-width:768px) { .mega { display:none; } }
