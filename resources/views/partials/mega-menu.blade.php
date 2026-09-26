@@ -56,7 +56,7 @@
                                 <p class="mega-empty">Bu başlıkta henüz alt kırılım yok. <a href="{{ $ust['url'] }}">Tüm turlara göz at →</a></p>
                             @else
                                 <span class="mega-eyebrow">Alt kategoriler</span>
-                                <ul class="mega-links {{ $altSayisi > 14 ? 'mega-links-3' : ($altSayisi > 5 ? 'mega-links-2' : '') }}">
+                                <ul class="mega-links {{ $altSayisi >= 14 ? 'mega-links-3' : ($altSayisi > 5 ? 'mega-links-2' : '') }}">
                                     @foreach($ust['children'] as $alt)
                                         <li>
                                             <a href="{{ $alt['url'] }}">
@@ -125,7 +125,7 @@
     /* Emniyet: çok alt kategorili başlıkta panel ekrana sığmazsa kendi içinde kayar,
        sayfadan taşmaz (300px ≈ üst menü + şerit + boşluk). Kompaktlaştırma 2026-09-26:
        canlıda 22 alt kategorili panel ~715px'ti, dizüstü ekranına sığmıyordu. */
-    max-height:calc(100vh - 300px); overflow-y:auto;
+    max-height:max(280px, calc(100vh - 300px)); overflow-y:auto;   /* 280px taban: yatay telefon / yarım pencerede sıfıra inmesin */
     box-shadow:0 34px 64px -26px rgba(15,23,42,.32), 0 2px 6px rgba(15,23,42,.05);
 }
 .mega-item.open .mega-panel { display:block; }
