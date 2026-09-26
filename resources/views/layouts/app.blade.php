@@ -151,6 +151,16 @@
 
         body { font-family:var(--font); background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
         a { color:inherit; text-decoration:none; }
+
+        /* iOS Safari, 16px'ten küçük yazılı bir alana odaklanınca sayfayı kendiliğinden
+           yakınlaştırır (sohbet paneli vakası, 2026-09-26: panel taşıyor, düğmeler
+           kesiliyordu). Mobilde odak alabilen HER metin alanı en az 16px; !important
+           şart, çünkü alanların çoğu satır içi stil ya da özgül seçiciyle 13-14px.
+           Onay kutusu/radyo/düğme türleri dışarıda: odakta yakınlaştırma yapmazlar. */
+        @media (max-width:768px) {
+            input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]):not([type=file]):not([type=range]):not([type=color]):not([type=hidden]):not([type=image]),
+            textarea, select { font-size:16px !important; }
+        }
         img { max-width:100%; }
         .container { max-width:1280px; margin:0 auto; padding:0 20px; }
 
