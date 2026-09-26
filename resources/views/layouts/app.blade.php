@@ -2048,14 +2048,24 @@
              ezip paneli kapanmaz hale getiriyordu. Açılış togglePanel'de yapılır. --}}
         <div id="cv2-panel" role="dialog" aria-modal="true" aria-label="Tur danışmanı" hidden
             style="position:absolute; bottom:56px; right:0; width:min(420px, calc(100vw - 32px)); height:min(600px, calc(100vh - 120px)); background:rgba(15,23,42,0.97); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.15); border-radius:20px; box-shadow:0 24px 64px rgba(0,0,0,0.4); display:none; flex-direction:column; overflow:hidden;">
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.1);">
-                <span style="color:#fff; font-size:14px; font-weight:700;">🧭 Tur danışmanı</span>
-                <span>
-                    <button type="button" id="cv2-reset" title="Konuşmayı sıfırla" aria-label="Konuşmayı sıfırla"
-                        style="background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer; font-size:12px; padding:4px 8px;">sıfırla</button>
-                    <button type="button" id="cv2-close" aria-label="Kapat"
-                        style="background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer; font-size:18px; padding:4px 8px;">×</button>
-                </span>
+            {{-- Başlık: masaüstünde eskisi gibi "🧭 Tur danışmanı … sıfırla ×". Mobilde
+                 (≤768px, aşağıdaki CSS) WhatsApp sohbet başlığı: solda geri oku (kapatır),
+                 yuvarlak avatar, ad + "çevrimiçi", sağda sıfırla. Kapat düğmesi tek ve iki
+                 yüzlü (× / ‹): id ve handler aynı kalır. Avatar alt="" bilerek — süs;
+                 "Tur Danışmanı AI" metni testlerde kart imzası. --}}
+            <div id="cv2-baslik" style="display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.1); flex-shrink:0;">
+                <img class="cv2-avatar" src="{{ asset('images/ai/tur-danismani-ai-kafa.webp') }}" alt="" width="40" height="40" decoding="async">
+                <div style="flex:1; min-width:0;">
+                    <div class="cv2-baslik-ad" style="color:#fff; font-size:14px; font-weight:700;"><span class="cv2-baslik-emoji">🧭 </span>Tur danışmanı</div>
+                    <div class="cv2-durum"><span class="cv2-durum-nokta"></span>çevrimiçi</div>
+                </div>
+                <button type="button" id="cv2-reset" title="Konuşmayı sıfırla" aria-label="Konuşmayı sıfırla"
+                    style="background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer; font-size:12px; padding:4px 8px;">sıfırla</button>
+                <button type="button" id="cv2-close" aria-label="Kapat"
+                    style="background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer; font-size:18px; padding:4px 8px; display:flex; align-items:center; justify-content:center;">
+                    <span class="cv2-kapat-x">×</span>
+                    <svg class="cv2-kapat-geri" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+                </button>
             </div>
 
             <div id="cv2-msgs" aria-live="polite" style="flex:1; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px;">
@@ -2068,7 +2078,7 @@
                 </div>
             </div>
 
-            <div style="padding:12px 14px; border-top:1px solid rgba(255,255,255,0.1);">
+            <div id="cv2-alt" style="padding:12px 14px; border-top:1px solid rgba(255,255,255,0.1); flex-shrink:0;">
                 <form id="cv2-form" style="display:flex; gap:8px; align-items:flex-end;">
                     <textarea id="cv2-input" rows="1" required aria-label="Mesajınız" placeholder="Hayalindeki tatili anlat..."
                         style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:10px 12px; color:#fff; font-size:14px; font-family:inherit; resize:none; max-height:110px; outline:none;"></textarea>
@@ -2118,6 +2128,38 @@
                 padding-bottom:env(safe-area-inset-bottom) !important;
             }
         }
+        /* ===== Mobil: WhatsApp sohbet çerçevesi (2026-09-26) =====
+           Kök neden: iOS Safari 16px'ten küçük yazılı alana odaklanınca sayfayı
+           kendiliğinden yakınlaştırır (14px → %14): panel ekrandan taşıyor, başlık
+           yukarıda, gönder düğmesi sağda kesiliyordu (canlı telefon görüntüsü).
+           Giriş alanı 16px → yakınlaştırma yok. Çerçeve: üst/boy JS'ten
+           (visualViewport, cerceveGuncelle) CSS değişkeniyle gelir — kural
+           !important olduğundan satır içi top/height yenilirdi. Klavye açılınca
+           başlık üstte kalır, giriş çubuğu klavyenin üstüne oturur, yalnız mesaj
+           listesi kayar. Masaüstü görünümü DEĞİŞMEDİ (avatar/durum/geri oku gizli). */
+        .cv2-avatar, .cv2-durum, .cv2-kapat-geri { display:none; }
+        @media(max-width:768px) {
+            #cv2.cv2-acik #cv2-panel {
+                top:var(--cv2-ust, 0px) !important; height:var(--cv2-boy, 100%) !important; bottom:auto !important;
+            }
+            /* Başlık: ‹ geri + avatar + ad/çevrimiçi + sıfırla */
+            #cv2.cv2-acik #cv2-baslik { padding:6px 12px 6px 4px !important; gap:6px !important; background:#132038; border-bottom-color:rgba(255,255,255,.08) !important; }
+            #cv2.cv2-acik #cv2-close { order:-1; width:40px; height:40px; padding:0 !important; color:#fff !important; border-radius:50%; flex:0 0 auto; }
+            #cv2.cv2-acik .cv2-kapat-x { display:none; }
+            #cv2.cv2-acik .cv2-kapat-geri { display:block; }
+            #cv2.cv2-acik .cv2-avatar { display:block; width:40px; height:40px; border-radius:50%; object-fit:cover; background:#1e293b; border:1px solid rgba(45,212,191,.35); flex:0 0 auto; }
+            #cv2.cv2-acik .cv2-baslik-emoji { display:none; }
+            #cv2.cv2-acik .cv2-baslik-ad { font-size:16px !important; text-transform:capitalize; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            #cv2.cv2-acik .cv2-durum { display:flex; align-items:center; gap:5px; font-size:12px; color:#94a3b8; line-height:1.2; margin-top:2px; }
+            #cv2.cv2-acik .cv2-durum-nokta { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,.25); }
+            #cv2.cv2-acik #cv2-reset { font-size:13px !important; color:rgba(255,255,255,.7) !important; padding:8px 10px !important; }
+            /* Mesaj listesi: kaydırma zinciri arkadaki sayfaya geçmesin */
+            #cv2.cv2-acik #cv2-msgs { overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:14px 12px !important; }
+            /* Giriş çubuğu: hap alan + yuvarlak gönder düğmesi. 16px ŞART (iOS yakınlaştırma). */
+            #cv2.cv2-acik #cv2-alt { padding:8px 10px !important; background:#132038; border-top-color:rgba(255,255,255,.08) !important; }
+            #cv2.cv2-acik #cv2-input { font-size:16px !important; line-height:1.35; border-radius:22px !important; padding:11px 16px !important; background:rgba(255,255,255,.08) !important; }
+            #cv2.cv2-acik #cv2-send { width:44px !important; height:44px !important; border-radius:50% !important; font-size:20px !important; font-weight:700; }
+        }
         /* Sürüklenebilir tetik: parmak/fare hareketi sayfayı kaydırmasın */
         #cv2-trigger { touch-action:none; -webkit-user-select:none; user-select:none; }
         #cv2.cv2-suruklenirken #cv2-trigger { transition:none; transform:none !important; cursor:grabbing; }
@@ -2155,9 +2197,16 @@
             panel.style.display = open ? 'flex' : 'none';
             trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
             kap.classList.toggle('cv2-acik', open);
-            // Tam ekran sohbette arkadaki sayfa kaymasın
-            document.body.style.overflow = (open && tamEkranMi()) ? 'hidden' : '';
-            if (open) { panelKonumla(); input.focus(); }
+            if (open && tamEkranMi()) {
+                // Mobil: WhatsApp gibi klavyesiz açılır (odak verilmez, kullanıcı
+                // kutuya dokununca klavye gelir), arkadaki sayfa kilitlenir,
+                // çerçeve görünür alana oturur.
+                govdeKilitle(true);
+                cerceveGuncelle();
+            } else {
+                govdeKilitle(false);
+                if (open) { panelKonumla(); input.focus(); }
+            }
         }
         trigger.onclick = () => togglePanel(! acikMi());
         // Sürükleme bitişi tık sayılmasın. Süre ile: fare imleci butondan çıkarak
@@ -2207,6 +2256,39 @@
             panel.style.top = ust + 'px';
             panel.style.right = 'auto';
             panel.style.bottom = 'auto';
+        }
+
+        // ---- Mobil çerçeve: görünür alana kilitli (WhatsApp hissi) ----
+        // iOS Safari klavye açılınca layout viewport'u değil yalnız görsel
+        // viewport'u küçültür ve onu kaydırır; %100 boylu sabit panel klavyeden
+        // habersiz kalır, başlık yukarı kaçar. Panel üst/boyunu visualViewport'tan
+        // alır (CSS değişkeni; mobil kural !important, satır içi top/height yenilirdi).
+        const vv = window.visualViewport;
+        function cerceveGuncelle() {
+            if (!tamEkranMi() || !acikMi()) return;
+            const ust = vv ? vv.offsetTop : 0;
+            const boy = vv ? vv.height : window.innerHeight;
+            panel.style.setProperty('--cv2-ust', Math.round(ust) + 'px');
+            panel.style.setProperty('--cv2-boy', Math.round(boy) + 'px');
+            msgs.scrollTop = msgs.scrollHeight;          // klavye açılınca son mesaj görünür kalsın
+        }
+        if (vv) { vv.addEventListener('resize', cerceveGuncelle); vv.addEventListener('scroll', cerceveGuncelle); }
+
+        // body overflow:hidden iOS'ta sayfayı kilitlemiyordu; gövde sabitlenir,
+        // kaydırma konumu saklanıp kapanınca geri verilir.
+        let govdeKilidi = null;
+        function govdeKilitle(kilitle) {
+            const b = document.body;
+            if (kilitle) {
+                if (govdeKilidi !== null) return;
+                govdeKilidi = window.scrollY;
+                b.style.position = 'fixed'; b.style.top = -govdeKilidi + 'px';
+                b.style.left = '0'; b.style.right = '0'; b.style.width = '100%'; b.style.overflow = 'hidden';
+            } else if (govdeKilidi !== null) {
+                const y = govdeKilidi; govdeKilidi = null;
+                b.style.position = ''; b.style.top = ''; b.style.left = ''; b.style.right = ''; b.style.width = ''; b.style.overflow = '';
+                window.scrollTo(0, y);
+            }
         }
 
         // ---- Sürüklenebilir tetik: bırakınca en yakın yan kenara yaslanır ----
@@ -2278,7 +2360,11 @@
         trigger.addEventListener('pointerup', surumuBitir);
         trigger.addEventListener('pointercancel', surumuBitir);
 
-        window.addEventListener('resize', () => { konumUygula(); panelKonumla(); });
+        // Kırılım değişince (tablet döndürme) kilit/çerçeve açık panelle uyumlu kalsın
+        window.addEventListener('resize', () => {
+            konumUygula(); panelKonumla();
+            if (acikMi()) { govdeKilitle(tamEkranMi()); cerceveGuncelle(); }
+        });
         document.getElementById('cv2-close').onclick = () => { togglePanel(false); trigger.focus(); };
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && acikMi()) { togglePanel(false); trigger.focus(); } });
 
@@ -2303,11 +2389,15 @@
 
         function setSending(on) {
             sending = on;
-            input.disabled = on;
+            // Mobilde alan kapatılmaz: iOS odaklı alanı disabled yapınca klavyeyi
+            // kapatır (WhatsApp'ta açık kalır); çift gönderimi zaten `sending` bekçisi tutar.
+            input.disabled = on && !tamEkranMi();
             sendBtn.disabled = on;
             sendBtn.textContent = on ? '…' : '↑';
-            if (!on) input.focus();
+            if (!on && !tamEkranMi()) input.focus();
         }
+        // Gönder'e dokununca alan odağını yitirmesin: iOS klavyeyi kapatırdı.
+        sendBtn.addEventListener('mousedown', (e) => e.preventDefault());
 
         // "Diğerleri": chat'teki ilk 5'ten sonraki turları getirir. LLM'e gitmez —
         // sunucu oturumdaki profili yeniden kullanır, sıralama birebir tutarlı kalır.
