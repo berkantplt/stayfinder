@@ -156,28 +156,29 @@
         .lp-sort select { appearance: none; -webkit-appearance: none; border: none; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right center; padding: 0 20px 0 0; font: inherit; font-size: 13px; font-weight: 800; color: var(--text); cursor: pointer; }
 
         /* Kartlar */
-        .lp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        /* 3'lü satır (2026-10-01 kullanıcı isteği); dar pencerede 2'ye düşer */
+        .lp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
         .lp-card { position: relative; display: flex; flex-direction: column; background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: transform .2s, box-shadow .2s, border-color .2s; }
         .lp-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: #cbd5e1; }
         .lp-card-link { display: flex; flex-direction: column; color: inherit; flex: 1; }
         .lp-card-media { position: relative; aspect-ratio: 16 / 9; background: linear-gradient(135deg, #e0f2fe, #f0fdf4); display: grid; place-items: center; font-size: 40px; }
         .lp-card-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        .lp-card-body { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .lp-card-title { font-size: 17px; font-weight: 800; letter-spacing: -.3px; line-height: 1.3; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .lp-card-body { padding: 13px 14px 10px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .lp-card-title { font-size: 16px; font-weight: 800; letter-spacing: -.3px; line-height: 1.3; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .lp-card-agency { font-size: 13px; color: var(--text-meta); }
         .lp-card-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-size: 13px; color: var(--text-sec); }
         .lp-card-meta span { display: inline-flex; align-items: center; gap: 5px; }
         .lp-card-meta svg { width: 14px; height: 14px; color: var(--text-meta); }
-        .lp-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 14px; }
+        .lp-card-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 10px; margin-top: auto; padding-top: 12px; }
         .lp-price { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
-        .lp-price strong { font-family: 'Manrope', var(--font); font-size: 23px; font-weight: 800; letter-spacing: -.6px; color: var(--text); }
+        .lp-price strong { font-family: 'Manrope', var(--font); font-size: 21px; font-weight: 800; letter-spacing: -.6px; color: var(--text); }
         .lp-price strong.kampanya { color: var(--green); }
         .lp-price s { font-size: 12.5px; color: var(--text-muted); }
         .lp-price small { font-size: 12.5px; color: var(--text-meta); }
-        .lp-cta { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border-radius: 11px; background: var(--accent-light); color: var(--accent-deep); font-size: 13.5px; font-weight: 800; white-space: nowrap; transition: background .15s, color .15s; }
+        .lp-cta { display: inline-flex; align-items: center; gap: 6px; padding: 9px 13px; border-radius: 11px; background: var(--accent-light); color: var(--accent-deep); font-size: 13.5px; font-weight: 800; white-space: nowrap; transition: background .15s, color .15s; }
         .lp-cta svg { width: 14px; height: 14px; }
         .lp-card:hover .lp-cta { background: var(--accent-ink); color: #fff; }
-        .lp-cmp { display: flex; align-items: center; gap: 7px; padding: 0 16px 14px; font-size: 12.5px; color: var(--text-meta); cursor: pointer; }
+        .lp-cmp { display: flex; align-items: center; gap: 7px; padding: 0 14px 12px; font-size: 12.5px; color: var(--text-meta); cursor: pointer; }
         .lp-cmp input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent-ink); }
         .lp-cmp input:checked + span { color: var(--accent-deep); font-weight: 700; }
         .lp-card .m-fav { top: 12px; right: 12px; width: 36px; height: 36px; }
@@ -224,6 +225,9 @@
         .lp-subcats a { border: 1px solid var(--border); background: var(--white); border-radius: 999px; padding: 8px 16px; font-size: 13.5px; font-weight: 600; color: var(--text-sec); }
         .lp-subcats a:hover { border-color: var(--accent); color: var(--accent-ink); }
 
+        @media (max-width: 1100px) {
+            .lp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
         @media (max-width: 1024px) {
             .lp-main { grid-template-columns: 200px minmax(0, 1fr); }
             .lp-hero-title { font-size: 38px; }
