@@ -1040,25 +1040,13 @@
          Eskiden 6 elle yazılmış kısayol vardı ve hepsi /turlar filtresine gidiyordu
          ("Yurt İçi" → tüm yurt içi turlar). Şimdi kart = üst kategori; dokununca
          alttan panel (m-pick) alt kategorileri tur sayısıyla listeler, JS yoksa
-         kartın href'i üst kategorinin kendi sayfasına gider. 4. kart "Özel Dönem
-         Turları": config/special_periods.php'deki yaklaşan dönemler (2026-10-01). --}}
+         kartın href'i üst kategorinin kendi sayfasına gider (2026-10-01).
+         Kartlar YALNIZ admin ağacından gelir — "Özel Dönem Turları" dahil (admin'de
+         üst kategori olarak var). config/special_periods.php'den üretilen sentetik
+         bir kart denendi ve aynı adlı ikinci kart çıkınca kaldırıldı; özel gün
+         tarih kısayolları arama paneli ve /turlar filtresinde yaşamaya devam eder. --}}
     @php
         $mUstler = \App\Support\MegaMenu::build();
-
-        // Yaklaşan özel dönemler: her dönemin bitişi geçmemiş İLK aralığı, başlangıca göre.
-        $mOzelDonemler = collect(config('special_periods', []))
-            ->flatMap(fn ($p, $k) => collect($p['ranges'])->map(fn ($r) => ['key' => $k, 'label' => $p['label'], 'start' => $r[0], 'end' => $r[1]]))
-            ->filter(fn ($r) => $r['end'] >= now()->toDateString())
-            ->sortBy('start')
-            ->unique('key')
-            ->values();
-        $mOzel = $mOzelDonemler->first();
-        $mTarih = function (string $start, string $end): string {
-            $b = \Carbon\Carbon::parse($start); $e = \Carbon\Carbon::parse($end);
-            return $b->month === $e->month
-                ? $b->day.'–'.$e->translatedFormat('j F Y')
-                : $b->translatedFormat('j M').' – '.$e->translatedFormat('j M Y');
-        };
     @endphp
     <div class="m-cats" id="mCats">
         @foreach($mUstler as $ust)
@@ -1076,15 +1064,6 @@
                 <span class="m-cat-alt">@if(count($ust['children'])){{ count($ust['children']) }} alt kategori · @endif{{ $ust['count'] }} tur</span>
             </a>
         @endforeach
-        @if($mOzel)
-            <a href="{{ route('tours.index', ['date_start' => $mOzel['start'], 'date_end' => $mOzel['end']]) }}" class="m-cat" data-m-cat="_ozel-donem">
-                <span class="m-cat-ik" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2L9.1 15l2-.3z"/></svg>
-                </span>
-                <span class="m-cat-ad">Özel Dönem Turları</span>
-                <span class="m-cat-alt">{{ $mOzelDonemler->count() }} dönem · ilki {{ $mOzel['label'] }}</span>
-            </a>
-        @endif
     </div>
 
     {{-- Panel içerikleri: sunucuda basılır, <template> içinde inert durur (görseller
@@ -1117,22 +1096,6 @@
             </a>
         </template>
     @endforeach
-    @if($mOzel)
-        {{-- Anahtar "_" ile başlar: Str::slug hiçbir admin kategorisine bu slug'ı veremez, id çakışmaz --}}
-        <template id="m-cat-sheet-_ozel-donem" data-title="Özel Dönem Turları">
-            <div class="m-cat-list">
-                @foreach($mOzelDonemler as $donem)
-                    <a href="{{ route('tours.index', ['date_start' => $donem['start'], 'date_end' => $donem['end']]) }}" class="m-cat-row">
-                        <span class="m-cat-row-ik" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
-                        </span>
-                        <span class="m-cat-row-ad">{{ $donem['label'] }}<small>{{ $mTarih($donem['start'], $donem['end']) }}</small></span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                    </a>
-                @endforeach
-            </div>
-        </template>
-    @endif
 
     {{-- ===== Mobil: fırsat afişi (≤768px) ===== --}}
     <a href="{{ route('tours.index', ['sort' => 'price_asc']) }}" class="m-promo">
@@ -1628,7 +1591,7 @@
             .m-guarantee b { display:block; font-size:14px; font-weight:800; color:#fff; }
             .m-guarantee p { font-size:12px; color:rgba(255,255,255,.6); margin:3px 0 0; line-height:1.5; }
 
-            /* ---- Kategori kartları: admin üst kategorileri + Özel Dönem (2 sütun) ---- */
+            /* ---- Kategori kartları: admin üst kategorileri (2 sütun) ---- */
             .m-cats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px; }
             .m-cat { display:flex; flex-direction:column; align-items:flex-start; gap:10px; min-height:112px; background:#fff; border:1px solid rgba(15,36,33,.08); border-radius:18px; padding:14px 14px 13px; text-decoration:none; font-family:'Manrope',var(--font); }
             .m-cat:active { background:#f0f6f4; }
@@ -1646,7 +1609,6 @@
             .m-cat-row-ik img { width:100%; height:100%; object-fit:cover; display:block; }
             .m-cat-row-ik svg { width:20px; height:20px; color:var(--accent); }
             .m-cat-row-ad { flex:1; min-width:0; font-size:14.5px; font-weight:700; line-height:1.3; }
-            .m-cat-row-ad small { display:block; font-size:11.5px; font-weight:600; color:#5f7570; margin-top:2px; }
             .m-cat-row-say { font-size:11.5px; font-weight:800; color:var(--accent-deep); background:var(--accent-light); border-radius:100px; padding:4px 9px; white-space:nowrap; }
             .m-cat-row > svg { width:16px; height:16px; color:#94a3b8; flex:none; }
             .m-cat-row.bos { color:#64748b; }

@@ -12,8 +12,8 @@ use Tests\TestCase;
 
 /**
  * Mobil ana sayfa kategori kartları (2026-10-01): elle yazılmış 6 kısayol yerine
- * admin'in üst kategorileri (web mega menüsüyle AYNI kaynak) + "Özel Dönem
- * Turları". Her kartın alt kategori paneli sunucuda <template> olarak basılır.
+ * admin'in üst kategorileri (web mega menüsüyle AYNI kaynak). Her kartın alt
+ * kategori paneli sunucuda <template> olarak basılır.
  */
 class HomeMobileCategoryCardsTest extends TestCase
 {
@@ -106,88 +106,21 @@ class HomeMobileCategoryCardsTest extends TestCase
         $this->get(route('home'))->assertOk()->assertSee(asset('storage/categories/balkan.jpg'), false);
     }
 
-    public function test_ozel_donem_karti_yalniz_yaklasan_donemleri_listeler(): void
+    public function test_kartlar_yalniz_admin_agacindan_gelir_sentetik_ozel_donem_karti_yok(): void
     {
-        $b1 = today()->addDays(40)->toDateString();
-        $e1 = today()->addDays(44)->toDateString();
-        $b2 = today()->addDays(90)->toDateString();
-        $e2 = today()->addDays(95)->toDateString();
-        config(['special_periods' => [
-            'yilbasi' => ['label' => 'Yılbaşı', 'ranges' => [[$b2, $e2]]],
-            'somestr' => ['label' => 'Sömestr tatili', 'ranges' => [['2020-01-18', '2020-02-01'], [$b1, $e1]]],
-            'gecmis' => ['label' => 'Geçmiş Bayram', 'ranges' => [['2020-05-01', '2020-05-05']]],
-        ]]);
-
-        $html = $this->get(route('home'))->assertOk()->getContent();
-
-        $this->assertStringContainsString('data-m-cat="_ozel-donem"', $html);
-        $this->assertStringContainsString('Özel Dönem Turları', $html);
-        // İlk yaklaşan dönem Sömestr (daha erken başlıyor)
-        $this->assertStringContainsString('2 dönem · ilki Sömestr tatili', $html);
-        // JS'siz yedek: kart ilk yaklaşan dönemin tarih aralığına gider
-        $this->assertStringContainsString(
-            '<a href="'.e(route('tours.index', ['date_start' => $b1, 'date_end' => $e1])).'" class="m-cat" data-m-cat="_ozel-donem"',
-            $html
-        );
-
-        // Panel şablonuna SINIRLI kontrol: masaüstü filtre barı tüm dönemleri (geçmiş dahil) basar
-        $this->assertMatchesRegularExpression('/<template id="m-cat-sheet-_ozel-donem" data-title="Özel Dönem Turları">(.*?)<\/template>/s', $html);
-        preg_match('/<template id="m-cat-sheet-_ozel-donem"[^>]*>(.*?)<\/template>/s', $html, $m);
-        $this->assertNotEmpty($m, 'Özel Dönem şablonu yok');
-        $panel = $m[1];
-        // Panel sırası başlangıç tarihine göre: Sömestr (40 gün sonra) Yılbaşı'ndan (90) önce
-        $this->assertLessThan(strpos($panel, 'Yılbaşı'), strpos($panel, 'Sömestr tatili'));
-        $this->assertStringContainsString('date_start='.$b1.'&amp;date_end='.$e1, $panel);
-        $this->assertStringContainsString('date_start='.$b2.'&amp;date_end='.$e2, $panel);
-        $this->assertStringContainsString('Sömestr tatili', $panel);
-        $this->assertStringContainsString('Yılbaşı', $panel);
-        $this->assertStringNotContainsString('Geçmiş Bayram', $panel);
-        $this->assertStringNotContainsString('date_start=2020-01-18', $panel);
-    }
-
-    public function test_yaklasan_donem_yoksa_ozel_donem_karti_basilmaz(): void
-    {
-        config(['special_periods' => [
-            'eski' => ['label' => 'Eski Dönem', 'ranges' => [['2020-01-01', '2020-01-05']]],
-        ]]);
-
-        $html = $this->get(route('home'))->assertOk()->getContent();
-
-        $this->assertStringNotContainsString('data-m-cat="_ozel-donem"', $html);
-        $this->assertStringNotContainsString('Özel Dönem Turları', $html);
-    }
-
-    public function test_ozel_donem_tarih_etiketi_ayni_ay_ve_ay_gecisi(): void
-    {
-        config(['special_periods' => [
-            'kurban' => ['label' => 'Kurban Bayramı', 'ranges' => [['2027-05-16', '2027-05-21']]],
-            'yilbasi' => ['label' => 'Yılbaşı', 'ranges' => [['2027-12-29', '2028-01-02']]],
-        ]]);
-
-        $html = $this->get(route('home'))->assertOk()->getContent();
-        preg_match('/<template id="m-cat-sheet-_ozel-donem"[^>]*>(.*?)<\/template>/s', $html, $m);
-        $panel = $m[1] ?? '';
-
-        $this->assertStringContainsString('16–21 Mayıs 2027', $panel);   // aynı ay
-        $this->assertStringContainsString('29 Ara – 2 Oca 2028', $panel); // ay geçişi
-    }
-
-    public function test_ozel_donem_adli_admin_kategorisi_ile_id_cakismaz(): void
-    {
-        // Admin "Özel Dönem" üst kategorisi açarsa slug'ı 'ozel-donem' olur; sentetik
-        // kartın anahtarı '_' ile başladığı için şablon id'leri ve data-m-cat tekil kalır.
-        Category::create(['name' => 'Özel Dönem', 'slug' => 'ozel-donem']);
+        // Canlıda "Özel Dönem Turları" admin'de gerçek bir üst kategori; config'ten
+        // üretilen ikinci bir kart yan yana iki "Özel Dönem" çıkarıyordu (2026-10-01).
+        Category::create(['name' => 'Özel Dönem Turları', 'slug' => 'ozel-donem-turlari']);
         config(['special_periods' => [
             'yilbasi' => ['label' => 'Yılbaşı', 'ranges' => [[today()->addDays(60)->toDateString(), today()->addDays(64)->toDateString()]]],
         ]]);
 
         $html = $this->get(route('home'))->assertOk()->getContent();
 
-        preg_match_all('/data-m-cat="([^"]+)"/', $html, $k);
-        $this->assertSame(count($k[1]), count(array_unique($k[1])), 'data-m-cat anahtarları tekil olmalı');
-        $this->assertContains('ozel-donem', $k[1]);
-        $this->assertContains('_ozel-donem', $k[1]);
-        $this->assertSame(1, substr_count($html, 'id="m-cat-sheet-_ozel-donem"'));
+        $this->assertSame(1, count($this->kartAdresleri($html)));
+        $this->assertSame(1, substr_count($html, 'class="m-cat-ad">Özel Dönem Turları</span>'));
+        $this->assertStringNotContainsString('data-m-cat="_ozel-donem"', $html);
+        $this->assertStringNotContainsString('dönem · ilki', $html);
     }
 
     public function test_alt_kategorisi_olmayan_ust_icin_sablon_basilmaz_kart_dogrudan_gider(): void
