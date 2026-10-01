@@ -123,7 +123,7 @@
         /* auth/* ve admin/* altindaki form alanlari style="...outline:none..."
            tasiyor; satir ici bildirim her seciciyi yener, tek cikis yolu
            !important. Kapsam bilerek input/select/textarea ile sinirli — boylece
-           mega-menu.blade.php'deki .mega-trigger:focus-visible kurali korunuyor. */
+           mega-menu.blade.php'deki tetikleyici focus-visible kurali korunuyor. */
         input:focus-visible,
         select:focus-visible,
         textarea:focus-visible {

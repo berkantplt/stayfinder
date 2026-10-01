@@ -1035,43 +1035,104 @@
         </div>
     </div>
 
-    {{-- ===== Mobil: kategori ızgarası (≤768px) — 6 kısayol, hepsi /turlar filtresine gider ===== --}}
+    {{-- ===== Mobil: kategori kartları (≤768px) =====
+         Web mega menüsüyle AYNI kaynak: admin'in üst kategorileri (App\Support\MegaMenu).
+         Eskiden 6 elle yazılmış kısayol vardı ve hepsi /turlar filtresine gidiyordu
+         ("Yurt İçi" → tüm yurt içi turlar). Şimdi kart = üst kategori; dokununca
+         alttan panel (m-pick) alt kategorileri tur sayısıyla listeler, JS yoksa
+         kartın href'i üst kategorinin kendi sayfasına gider. 4. kart "Özel Dönem
+         Turları": config/special_periods.php'deki yaklaşan dönemler (2026-10-01). --}}
     @php
-        // Yaklaşan ilk özel dönem (config/special_periods.php); yoksa kutu gizlenir.
-        $mOzel = collect(config('special_periods', []))
-            ->flatMap(fn ($p, $k) => collect($p['ranges'])->map(fn ($r) => ['label' => $p['label'], 'start' => $r[0], 'end' => $r[1]]))
+        $mUstler = \App\Support\MegaMenu::build();
+
+        // Yaklaşan özel dönemler: her dönemin bitişi geçmemiş İLK aralığı, başlangıca göre.
+        $mOzelDonemler = collect(config('special_periods', []))
+            ->flatMap(fn ($p, $k) => collect($p['ranges'])->map(fn ($r) => ['key' => $k, 'label' => $p['label'], 'start' => $r[0], 'end' => $r[1]]))
             ->filter(fn ($r) => $r['end'] >= now()->toDateString())
             ->sortBy('start')
-            ->first();
+            ->unique('key')
+            ->values();
+        $mOzel = $mOzelDonemler->first();
+        $mTarih = function (string $start, string $end): string {
+            $b = \Carbon\Carbon::parse($start); $e = \Carbon\Carbon::parse($end);
+            return $b->month === $e->month
+                ? $b->day.'–'.$e->translatedFormat('j F Y')
+                : $b->translatedFormat('j M').' – '.$e->translatedFormat('j M Y');
+        };
     @endphp
-    <div class="m-cats">
-        <a href="{{ route('tours.index', ['yurt' => 'ic']) }}" class="m-cat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V10l6-4 6 4v10"/><path d="M10 20v-5h4v5"/></svg>
-            <span>Yurt İçi</span>
-        </a>
-        <a href="{{ route('tours.index', ['yurt' => 'dis']) }}" class="m-cat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5 3 11.2l1.6-1.6 5 .8 3.2-3.2-6.6-3.4L7.9 2l8.4 2.2 2.6-2.6a2 2 0 0 1 2.8 2.8l-2.6 2.6L21.3 15l-1.8 1.8-3.4-6.6-3.2 3.2.8 5-1.6 1.6z"/></svg>
-            <span>Yurt Dışı</span>
-        </a>
-        <a href="{{ route('tours.index', ['category' => 'gemi-cruise']) }}" class="m-cat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18.5c1.6 0 1.6 1.4 3.2 1.4s1.6-1.4 3.2-1.4 1.6 1.4 3.2 1.4 1.6-1.4 3.2-1.4 1.6 1.4 3.2 1.4"/><path d="M4.5 15.5 6 10h12l1.5 5.5"/><path d="M9 10V6.5h6V10"/><path d="M12 3v3.5"/></svg>
-            <span>Gemi Turları</span>
-        </a>
-        <a href="{{ route('tours.index', ['category' => 'kultur-turlari']) }}" class="m-cat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 9h16L12 4z"/><path d="M6.5 9v9M11 9v9M15.5 9v9M20 9v9"/></svg>
-            <span>Kültür Turları</span>
-        </a>
-        <a href="{{ route('tours.index', ['visa' => 'vizesiz']) }}" class="m-cat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.4 9.5h17.2M3.4 14.5h17.2"/><path d="M12 3c-2.4 2.5-3.6 5.5-3.6 9s1.2 6.5 3.6 9c2.4-2.5 3.6-5.5 3.6-9S14.4 5.5 12 3z"/></svg>
-            <span>Vizesiz</span>
-        </a>
+    <div class="m-cats" id="mCats">
+        @foreach($mUstler as $ust)
+            <a href="{{ $ust['url'] }}" class="m-cat" data-m-cat="{{ $ust['key'] }}">
+                <span class="m-cat-ik" aria-hidden="true">
+                    @if($ust['image'])
+                        <img src="{{ $ust['image'] }}" alt="" loading="lazy">
+                    @elseif($ust['icon'])
+                        {{ $ust['icon'] }}
+                    @else
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="m15.5 8.5-2.2 5.8-4.8 1.2 2.2-5.8z"/></svg>
+                    @endif
+                </span>
+                <span class="m-cat-ad">{{ $ust['name'] }}</span>
+                <span class="m-cat-alt">@if(count($ust['children'])){{ count($ust['children']) }} alt kategori · @endif{{ $ust['count'] }} tur</span>
+            </a>
+        @endforeach
         @if($mOzel)
-        <a href="{{ route('tours.index', ['date_start' => $mOzel['start'], 'date_end' => $mOzel['end']]) }}" class="m-cat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2L9.1 15l2-.3z"/></svg>
-            <span>Özel Dönem</span>
-        </a>
+            <a href="{{ route('tours.index', ['date_start' => $mOzel['start'], 'date_end' => $mOzel['end']]) }}" class="m-cat" data-m-cat="_ozel-donem">
+                <span class="m-cat-ik" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2L9.1 15l2-.3z"/></svg>
+                </span>
+                <span class="m-cat-ad">Özel Dönem Turları</span>
+                <span class="m-cat-alt">{{ $mOzelDonemler->count() }} dönem · ilki {{ $mOzel['label'] }}</span>
+            </a>
         @endif
     </div>
+
+    {{-- Panel içerikleri: sunucuda basılır, <template> içinde inert durur (görseller
+         açılana kadar inmez), dokununca mPickOpenHtml ile panele kopyalanır. --}}
+    @foreach($mUstler as $ust)
+        {{-- Alt kategorisi olmayan üst için panel gereksiz ara adım: şablon basılmaz, kart doğrudan sayfaya gider --}}
+        @continue(empty($ust['children']))
+        <template id="m-cat-sheet-{{ $ust['key'] }}" data-title="{{ $ust['name'] }}">
+            <div class="m-cat-list">
+                @foreach($ust['children'] as $alt)
+                    {{-- Turu olmayan alt kategori de listede kalır (web menüsüyle aynı kural): soluk + "Yakında" --}}
+                    <a href="{{ $alt['url'] }}" class="m-cat-row {{ $alt['count'] ? '' : 'bos' }}">
+                        <span class="m-cat-row-ik" aria-hidden="true">
+                            @if($alt['image'])
+                                <img src="{{ $alt['image'] }}" alt="" loading="lazy">
+                            @elseif($alt['icon'])
+                                {{ $alt['icon'] }}
+                            @else
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            @endif
+                        </span>
+                        <span class="m-cat-row-ad">{{ $alt['name'] }}</span>
+                        <span class="m-cat-row-say">{{ $alt['count'] ? $alt['count'].' tur' : 'Yakında' }}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    </a>
+                @endforeach
+            </div>
+            <a href="{{ $ust['url'] }}" class="m-cat-all">Tümünü gör · {{ $ust['count'] }} tur
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+        </template>
+    @endforeach
+    @if($mOzel)
+        {{-- Anahtar "_" ile başlar: Str::slug hiçbir admin kategorisine bu slug'ı veremez, id çakışmaz --}}
+        <template id="m-cat-sheet-_ozel-donem" data-title="Özel Dönem Turları">
+            <div class="m-cat-list">
+                @foreach($mOzelDonemler as $donem)
+                    <a href="{{ route('tours.index', ['date_start' => $donem['start'], 'date_end' => $donem['end']]) }}" class="m-cat-row">
+                        <span class="m-cat-row-ik" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+                        </span>
+                        <span class="m-cat-row-ad">{{ $donem['label'] }}<small>{{ $mTarih($donem['start'], $donem['end']) }}</small></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    </a>
+                @endforeach
+            </div>
+        </template>
+    @endif
 
     {{-- ===== Mobil: fırsat afişi (≤768px) ===== --}}
     <a href="{{ route('tours.index', ['sort' => 'price_asc']) }}" class="m-promo">
@@ -1194,7 +1255,7 @@
 @endphp
 <script id="mPickData" type="application/json">{!! json_encode($mPickData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) !!}</script>
 <div id="mPickBack" class="m-pick-back" onclick="mPickClose()"></div>
-<div id="mPick" class="m-pick" role="dialog" aria-label="Arama seçimi">
+<div id="mPick" class="m-pick" role="dialog" aria-modal="true" aria-labelledby="mPickTitle" aria-hidden="true" inert>
     <div class="m-pick-grab"></div>
     <div class="m-pick-head">
         <span id="mPickTitle">Seçim</span>
@@ -1567,11 +1628,32 @@
             .m-guarantee b { display:block; font-size:14px; font-weight:800; color:#fff; }
             .m-guarantee p { font-size:12px; color:rgba(255,255,255,.6); margin:3px 0 0; line-height:1.5; }
 
-            /* ---- Kategori ızgarası (6 kısayol) ---- */
-            .m-cats { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:14px; }
-            .m-cat { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; background:#fff; border:1px solid rgba(15,36,33,.08); border-radius:16px; padding:15px 5px; text-decoration:none; font-family:'Manrope',var(--font); }
-            .m-cat svg { width:25px; height:25px; color:var(--accent); }
-            .m-cat span { font-size:10.5px; font-weight:700; color:#42544f; text-align:center; letter-spacing:-.2px; }
+            /* ---- Kategori kartları: admin üst kategorileri + Özel Dönem (2 sütun) ---- */
+            .m-cats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px; }
+            .m-cat { display:flex; flex-direction:column; align-items:flex-start; gap:10px; min-height:112px; background:#fff; border:1px solid rgba(15,36,33,.08); border-radius:18px; padding:14px 14px 13px; text-decoration:none; font-family:'Manrope',var(--font); }
+            .m-cat:active { background:#f0f6f4; }
+            .m-cat-ik { width:40px; height:40px; border-radius:12px; background:rgba(13,148,136,.1); display:flex; align-items:center; justify-content:center; font-size:20px; line-height:1; overflow:hidden; flex:none; }
+            .m-cat-ik img { width:100%; height:100%; object-fit:cover; display:block; }
+            .m-cat-ik svg { width:22px; height:22px; color:var(--accent); }
+            .m-cat-ad { font-size:14.5px; font-weight:800; color:#0f2421; letter-spacing:-.2px; line-height:1.25; }
+            .m-cat-alt { font-size:11.5px; font-weight:600; color:#5f7570; margin-top:-5px; }
+            /* Alt kategori paneli (m-pick içinde) */
+            .m-cat-list { display:flex; flex-direction:column; }
+            .m-cat-row { display:flex; align-items:center; gap:12px; min-height:56px; padding:10px 8px; border-bottom:1px solid #f1f5f9; text-decoration:none; color:#0f2421; }
+            .m-cat-row:last-child { border-bottom:none; }
+            .m-cat-row:active { background:#f0f6f4; }
+            .m-cat-row-ik { width:52px; height:40px; border-radius:10px; background:rgba(13,148,136,.1); display:flex; align-items:center; justify-content:center; font-size:20px; line-height:1; overflow:hidden; flex:none; }
+            .m-cat-row-ik img { width:100%; height:100%; object-fit:cover; display:block; }
+            .m-cat-row-ik svg { width:20px; height:20px; color:var(--accent); }
+            .m-cat-row-ad { flex:1; min-width:0; font-size:14.5px; font-weight:700; line-height:1.3; }
+            .m-cat-row-ad small { display:block; font-size:11.5px; font-weight:600; color:#5f7570; margin-top:2px; }
+            .m-cat-row-say { font-size:11.5px; font-weight:800; color:var(--accent-deep); background:var(--accent-light); border-radius:100px; padding:4px 9px; white-space:nowrap; }
+            .m-cat-row > svg { width:16px; height:16px; color:#94a3b8; flex:none; }
+            .m-cat-row.bos { color:#64748b; }
+            .m-cat-row.bos .m-cat-row-say { color:#64748b; background:#f1f5f9; }
+            .m-cat-row.bos .m-cat-row-ik { opacity:.55; }
+            .m-cat-all { display:flex; align-items:center; justify-content:center; gap:8px; margin:12px 4px 4px; height:48px; border-radius:14px; background:linear-gradient(135deg,#0d9488,#0c6e63); color:#fff; font-size:14.5px; font-weight:800; text-decoration:none; }
+            .m-cat-all svg { width:16px; height:16px; }
 
             /* ---- Fırsat afişi ---- */
             .m-promo { position:relative; display:block; overflow:hidden; min-height:132px; margin-top:18px; padding:20px 18px 22px; border-radius:18px; background:linear-gradient(120deg,#0f6d63,#0a3b36); text-decoration:none; font-family:'Manrope',var(--font); }
@@ -2072,6 +2154,21 @@ window.prevStory = prevStory;
     var sheet = document.getElementById('mPick');
     var body = document.getElementById('mPickBody');
     var current = null;
+    var sonOdak = null;
+    var kapatBtn = sheet.querySelector('.m-pick-head button');
+
+    // Tek aç/kapa yolu: kapalıyken panel inert (ekran dışı bağlantılar Tab/ekran
+    // okuyucu sırasına girmez), açılınca odak panele taşınır, kapanınca geri verilir.
+    function mPickShow() {
+        sonOdak = document.activeElement;
+        body.scrollTop = 0;
+        sheet.inert = false;
+        sheet.removeAttribute('aria-hidden');
+        back.classList.add('open');
+        sheet.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        if (kapatBtn) kapatBtn.focus({ preventScroll: true });
+    }
 
     function esc(v) {
         return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -2131,10 +2228,7 @@ window.prevStory = prevStory;
             mDateLabel();
             window.mPickClose();
         });
-        body.scrollTop = 0;
-        back.classList.add('open');
-        sheet.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        mPickShow();
     }
 
     window.mPickOpen = function (key) {
@@ -2155,17 +2249,44 @@ window.prevStory = prevStory;
                 + esc(it.t) + (it.c ? '<em>' + esc(it.c) + ' tur</em>' : '') + '</button>';
         });
         body.innerHTML = html;
-        body.scrollTop = 0;
-        back.classList.add('open');
-        sheet.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        mPickShow();
     };
 
     window.mPickClose = function () {
+        var acikti = sheet.classList.contains('open');
         back.classList.remove('open');
         sheet.classList.remove('open');
+        sheet.inert = true;
+        sheet.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
+        if (acikti && sonOdak && typeof sonOdak.focus === 'function') sonOdak.focus({ preventScroll: true });
+        sonOdak = null;
     };
+
+    // Escape paneli kapatır (yalnız açıkken; başka kısayollara karışmaz)
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && sheet.classList.contains('open')) { e.preventDefault(); window.mPickClose(); }
+    });
+
+    // Hazır HTML ile panel (kategori kartları): seçenek tıklaması yok, bağlantılar
+    // doğrudan gider. current='html' → aşağıdaki .m-pick-opt işleyicisi devreye girmez.
+    window.mPickOpenHtml = function (title, html) {
+        current = 'html';
+        document.getElementById('mPickTitle').textContent = title;
+        body.innerHTML = html;
+        mPickShow();
+    };
+
+    // Kategori kartı: alt kategori panelini açar; şablon yoksa href'e gider (yedek)
+    document.querySelectorAll('.m-cat[data-m-cat]').forEach(function (kart) {
+        var tpl = document.getElementById('m-cat-sheet-' + kart.dataset.mCat);
+        if (!tpl) return; // şablon yok → kart düz bağlantı (alt kategorisiz üst)
+        kart.setAttribute('aria-haspopup', 'dialog');
+        kart.addEventListener('click', function (e) {
+            e.preventDefault();
+            window.mPickOpenHtml(tpl.dataset.title || '', tpl.innerHTML);
+        });
+    });
 
     body.addEventListener('click', function (e) {
         var opt = e.target.closest('.m-pick-opt');

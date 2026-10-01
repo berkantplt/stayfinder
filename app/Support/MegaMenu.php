@@ -35,8 +35,9 @@ class MegaMenu
      * Aksi halde deploy sonrası eski biçimdeki önbellek okunur ve şablon
      * "Undefined array key" ile 500 verir (bir kez yaşandı).
      * v6: kova katmanı kalktı, kök = üst kategoriler (image/description eklendi).
+     * v7: alt kategorilere image eklendi (mobil kategori paneli küçük görsel basar).
      */
-    public const CACHE_KEY = 'home_mega_menu_v6';
+    public const CACHE_KEY = 'home_mega_menu_v7';
 
     public static function forget(): void
     {
@@ -49,7 +50,7 @@ class MegaMenu
      * @return array<int, array{
      *     key:string, name:string, icon:?string, description:?string, image:?string,
      *     count:int, url:string,
-     *     children:array<int, array{key:string, name:string, icon:?string, count:int, url:string}>
+     *     children:array<int, array{key:string, name:string, icon:?string, image:?string, count:int, url:string}>
      * }>
      */
     public static function build(): array
@@ -83,6 +84,7 @@ class MegaMenu
                     'key' => $alt->slug,
                     'name' => $alt->name,
                     'icon' => $alt->icon,
+                    'image' => $alt->image_url,
                     'count' => self::toplam($alt, $tumKategoriler, $sayimlar),
                     'url' => LandingSlug::urlForCategory($alt),
                 ])->values()->all(),

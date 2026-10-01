@@ -30,6 +30,23 @@ class Category extends Model
         'extra_tour_price' => 'decimal:2',
     ];
 
+    /**
+     * Admin kategori ekler/düzenler/pasife alır/siler (görsel dahil; applyImage
+     * forceFill->save ile geçer) → ana sayfa mega menüsü ve mobil kategori kartları
+     * (ikisi de MegaMenu::build okur) ile filtre barı facet'leri 5 dk önbelleği
+     * beklemeden yenilensin. TourObserver yalnız tur değişiminde düşürüyordu.
+     */
+    protected static function booted(): void
+    {
+        $temizle = static function (): void {
+            \App\Support\MegaMenu::forget();
+            \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\HomeController::FACETS_CACHE_KEY);
+        };
+
+        static::saved($temizle);
+        static::deleted($temizle);
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
