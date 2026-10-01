@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\CategoryBannerController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryLicenseController as AdminCategoryLicenseController;
@@ -512,6 +513,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::put('/bannerlar/{banner}', [BannerController::class, 'update'])->name('banners.update');
     Route::patch('/bannerlar/{banner}/toggle', [BannerController::class, 'toggle'])->name('banners.toggle');
     Route::delete('/bannerlar/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
+
+    // Kategori banner yönetimi — kategori landing sayfalarının (/balkan-turlari)
+    // hero'su. Yukarıdaki ana sayfa karuseli (bannerlar) ile AYRI tablo, ayrı sayfa.
+    Route::get('/kategori-bannerlari', [CategoryBannerController::class, 'index'])->name('category-banners.index');
+    Route::post('/kategori-bannerlari', [CategoryBannerController::class, 'store'])->name('category-banners.store');
+    Route::put('/kategori-bannerlari/{categoryBanner}', [CategoryBannerController::class, 'update'])->name('category-banners.update');
+    Route::patch('/kategori-bannerlari/{categoryBanner}/toggle', [CategoryBannerController::class, 'toggle'])->name('category-banners.toggle');
+    Route::delete('/kategori-bannerlari/{categoryBanner}', [CategoryBannerController::class, 'destroy'])->name('category-banners.destroy');
 
     // Featured Cities (Story) management
     Route::get('/one-cikan-sehirler', [FeaturedCityController::class, 'index'])->name('featured_cities.index');

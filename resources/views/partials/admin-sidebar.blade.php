@@ -90,6 +90,9 @@
         <a href="{{ route('admin.banners.index') }}" class="sidebar-link {{ request()->routeIs('admin.banners*') ? 'active' : '' }}">
             <span class="sidebar-icon">🖼️</span> Banner Yönetimi
         </a>
+        <a href="{{ route('admin.category-banners.index') }}" class="sidebar-link {{ request()->routeIs('admin.category-banners*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🏞️</span> Kategori Bannerları
+        </a>
         <a href="{{ route('admin.featured_cities.index') }}" class="sidebar-link {{ request()->routeIs('admin.featured_cities*') ? 'active' : '' }}">
             <span class="sidebar-icon">🏙️</span> Öne Çıkan Şehirler
         </a>

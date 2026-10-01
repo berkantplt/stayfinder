@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Tour;
+use App\Support\CategoryHero;
 use App\Support\DestinationFilter;
+use App\Support\LandingFilter;
 use App\Support\LandingProfile;
 use App\Support\LandingSlug;
 use App\Support\LandingStats;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 /**
@@ -21,6 +24,12 @@ use Illuminate\Http\Request;
  * Envanteri biten sayfa KAPATILMAZ. Gruppal'ın /kayak-turlari sayfası Ağustos'ta
  * 0 ürün listeliyor ama H1, metin, SSS ve breadcrumb'ıyla canlı duruyor; 404'e
  * düşürmek o adresin biriktirdiği değeri çöpe atardı.
+ *
+ * Sayfa üç katman: hero (admin'in kategori banner'ı — App\Support\CategoryHero),
+ * sayfanın kendi envanterinden türeyen filtreler (App\Support\LandingFilter) ve
+ * veri-tabanlı SEO blokları (App\Support\LandingStats). İstatistik ve facet'ler
+ * her zaman FİLTRELENMEMİŞ kümeden gelir: kullanıcı daraltınca sayfa metni ve
+ * seçenekler değişmez, yalnız liste değişir.
  */
 class LandingController extends Controller
 {
@@ -58,25 +67,10 @@ class LandingController extends Controller
             ->whereHas('agency', fn ($q) => $q->active())
             ->whereIn('category_id', $ids);
 
-        $tours = (clone $base)
-            ->with('agency')
-            ->orderBy('price_try')
-            ->paginate(24)
-            ->withQueryString();
-
-        return view('landing.show', [
-            'model' => $category,
-            'tur' => 'category',
-            'tours' => $tours,
-            // İstatistikler SAYFALANMAMIŞ kümeden: 2. sayfada da aynı rakamlar.
-            'stats' => LandingStats::build($base),
+        return $this->render($request, $category, 'category', $base, [
             // Kategori bir şehir değil; şehir profili yalnız destinasyonlarda.
             'profil' => null,
             'altKategoriler' => $category->children()->active()->orderBy('sort_order')->get(),
-            'breadcrumb' => [
-                ['name' => 'Turlar', 'url' => route('tours.index')],
-                ['name' => LandingSlug::heading($category)],
-            ],
         ]);
     }
 
@@ -87,24 +81,49 @@ class LandingController extends Controller
             $destination->name
         );
 
-        $tours = (clone $base)
-            ->with('agency')
-            ->orderBy('price_try')
-            ->paginate(24)
-            ->withQueryString();
-
-        return view('landing.show', [
-            'model' => $destination,
-            'tur' => 'destination',
-            'tours' => $tours,
-            'stats' => LandingStats::build($base),
+        return $this->render($request, $destination, 'destination', $base, [
             // Şehir bilgisi mevcut DestinationProfile'dan gelir — 55 şehir için
             // zaten üretilmiş, yeni LLM çağrısı yok.
             'profil' => LandingProfile::forName($destination->name),
             'altKategoriler' => collect(),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function render(Request $request, Category|Destination $model, string $tur, Builder $base, array $extra)
+    {
+        $filtre = LandingFilter::parse($request->query());
+
+        $sorgu = LandingFilter::apply((clone $base)->with('agency'), $filtre);
+        $tours = LandingFilter::sort($sorgu, $filtre['sirala'])
+            ->paginate(24)
+            ->withQueryString();
+
+        // Facet'ler ve istatistikler SAYFALANMAMIŞ + FİLTRELENMEMİŞ kümeden:
+        // 2. sayfada ve daraltılmış listede de aynı seçenekler, aynı rakamlar.
+        $facets = LandingFilter::facets($base);
+        $stats = LandingStats::build($base);
+
+        $hero = $model instanceof Category
+            ? CategoryHero::forCategory($model, $facets['ilkGorsel'])
+            : CategoryHero::forDestination($model, $facets['ilkGorsel']);
+
+        return view('landing.show', $extra + [
+            'model' => $model,
+            'tur' => $tur,
+            'tours' => $tours,
+            'stats' => $stats,
+            'facets' => $facets,
+            'filtre' => $filtre,
+            'filtreAktif' => LandingFilter::isActive($filtre),
+            'filtreSayisi' => LandingFilter::count($filtre),
+            'hero' => $hero,
+            'toplamTur' => $stats['turSayisi'] ?? 0,
             'breadcrumb' => [
                 ['name' => 'Turlar', 'url' => route('tours.index')],
-                ['name' => LandingSlug::heading($destination)],
+                ['name' => LandingSlug::heading($model)],
             ],
         ]);
     }
