@@ -16,8 +16,12 @@ use Illuminate\Support\Collection;
  *
  * Parametreler (Türkçe, kısa — adres çubuğunda okunur):
  *   kalkis=İstanbul        ay[]=9            sure[]=5
- *   acenta[]=12            min_fiyat=5000    max_fiyat=20000
+ *   gece=4                 acenta[]=12       min_fiyat=5000    max_fiyat=20000
  *   sirala=fiyat_azalan
+ *
+ * gece: kullanıcının yazdığı gece sayısı (mobil panel, 2026-10-03 kullanıcı kararı —
+ * hazır seçeneklerden seçmek yerine serbest sayı). duration_nights eşleşir; gece
+ * girilmemiş eski turlarda gün-1 kuralı (Tour::duration_label ile aynı).
  */
 final class LandingFilter
 {
@@ -33,7 +37,7 @@ final class LandingFilter
      * İstek parametrelerini normalize eder; geçersiz değerler sessizce düşer.
      *
      * @param  array<string, mixed>  $query
-     * @return array{kalkis: ?string, ay: int[], sure: int[], acenta: int[], min_fiyat: ?float, max_fiyat: ?float, sirala: string}
+     * @return array{kalkis: ?string, ay: int[], sure: int[], gece: ?int, acenta: int[], min_fiyat: ?float, max_fiyat: ?float, sirala: string}
      */
     public static function parse(array $query): array
     {
@@ -49,6 +53,7 @@ final class LandingFilter
             'kalkis' => $kalkis,
             'ay' => self::ints($query['ay'] ?? null, 1, 12),
             'sure' => self::ints($query['sure'] ?? null, 1, 365),
+            'gece' => self::ints($query['gece'] ?? null, 0, 365)[0] ?? null,
             'acenta' => self::ints($query['acenta'] ?? null, 1, PHP_INT_MAX),
             'min_fiyat' => self::money($query['min_fiyat'] ?? null),
             'max_fiyat' => self::money($query['max_fiyat'] ?? null),
@@ -62,6 +67,7 @@ final class LandingFilter
         return $f['kalkis'] !== null
             || $f['ay'] !== []
             || $f['sure'] !== []
+            || $f['gece'] !== null
             || $f['acenta'] !== []
             || $f['min_fiyat'] !== null
             || $f['max_fiyat'] !== null;
@@ -71,6 +77,7 @@ final class LandingFilter
     public static function count(array $f): int
     {
         return ($f['kalkis'] !== null ? 1 : 0)
+            + ($f['gece'] !== null ? 1 : 0)
             + count($f['ay']) + count($f['sure']) + count($f['acenta'])
             + ($f['min_fiyat'] !== null || $f['max_fiyat'] !== null ? 1 : 0);
     }
@@ -91,6 +98,17 @@ final class LandingFilter
 
         if ($f['sure'] !== []) {
             $query->whereIn('duration_days', $f['sure']);
+        }
+
+        // Gece sayısı: duration_nights; girilmemişse (eski turlar) gün-1 kuralı
+        if ($f['gece'] !== null) {
+            $gece = $f['gece'];
+            $query->where(function ($q) use ($gece) {
+                $q->where('duration_nights', $gece)
+                    ->orWhere(function ($q2) use ($gece) {
+                        $q2->whereNull('duration_nights')->where('duration_days', $gece + 1);
+                    });
+            });
         }
 
         if ($f['acenta'] !== []) {

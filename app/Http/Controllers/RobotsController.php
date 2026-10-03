@@ -74,6 +74,7 @@ class RobotsController extends Controller
         '/*?*date_start=',
         '/*?*date_end=',
         '/*?*agency_id=',
+        '/*?*sayac=',       // landing mobil filtre panelinin canlı sayaç JSON ucu
         '/*?*utm_',
         '/*?*fbclid=',
         '/*?*gclid=',

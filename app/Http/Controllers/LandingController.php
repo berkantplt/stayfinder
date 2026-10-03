@@ -101,11 +101,20 @@ class LandingController extends Controller
         // Mobil filtre panelinin canlı sayacı ("N turu göster"): aynı filtre dili,
         // yalnız adet. Sayfa render edilmez, HTML üretilmez.
         if ($request->boolean('sayac')) {
-            return response()->json(['adet' => (clone $sorgu)->count()]);
+            return response()->json(['adet' => (clone $sorgu)->count()])
+                ->header('X-Robots-Tag', 'noindex');
         }
 
         $tours = LandingFilter::sort(
-            $sorgu->with('agency')
+            $sorgu->with([
+                'agency',
+                // Kart kampanya rozeti: Tour::activeCampaign erişimcisi tur başına sorgu
+                // atıyordu ve iki gövde (masaüstü + mobil) bunu ikiye katlıyordu; aynı
+                // koşullarla tek IN sorgusu, görünüm $tour->campaigns->first() okur.
+                'campaigns' => fn ($q) => $q->where('is_active', true)
+                    ->where('starts_at', '<=', now())
+                    ->where('ends_at', '>=', now()),
+            ])
                 // Mobil kartta puan rozeti: tur başına ayrı sorgu yerine tek çekim
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating'),

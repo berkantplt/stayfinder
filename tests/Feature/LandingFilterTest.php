@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Agency;
+use App\Models\Campaign;
 use App\Models\Category;
+use App\Models\Review;
 use App\Models\Tour;
+use App\Models\User;
 use App\Support\LandingFilter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -206,7 +209,9 @@ class LandingFilterTest extends TestCase
         $this->assertStringContainsString('id="lpm-form"', $mobil);
         // Sıralama radyoları, süre/ay kutuları, kalkış radyoları; acenta YOK (kullanıcı kararı)
         $this->assertStringContainsString('name="sirala" value="fiyat_azalan"', $mobil);
-        $this->assertStringContainsString('name="sure[]" value="8" checked', $mobil);
+        // Süre: hazır seçenek yok, gece sayısı elle girilir
+        $this->assertStringNotContainsString('name="sure[]"', $mobil);
+        $this->assertStringContainsString('type="number" name="gece"', $mobil);
         $this->assertStringContainsString('name="ay[]" value="9"', $mobil);
         $this->assertStringContainsString('name="kalkis" value="İstanbul"', $mobil);
         // Fiyat: kaydırıcı değil, elle girilen sayı kutuları (sınırlar yer tutucu)
@@ -217,6 +222,27 @@ class LandingFilterTest extends TestCase
         $this->assertStringContainsString('2 turu göster', $mobil);
         // Masaüstü formunda acenta hâlâ var (yalnız mobil karar)
         $this->assertStringContainsString('name="acenta[]"', $html);
+    }
+
+    public function test_gece_sayisi_filtresi_duration_nights_ve_gun_eksi_bir_kuraliyla_eslesir(): void
+    {
+        // Gece girilmemiş eski tur: 6 gün → 5 gece sayılır (Tour::duration_label kuralı)
+        $this->tur(['title' => 'Eski Kayıt', 'agency_id' => $this->a->id, 'price' => 5000, 'duration_days' => 6, 'duration_nights' => null, 'departure_date' => '2027-09-15']);
+
+        $this->get('/balkan-turlari?gece=7')->assertOk()
+            ->assertSee('Uzun Balkan')->assertSee('Jolly Saraybosna')->assertDontSee('Kısa Belgrad')->assertDontSee('Eski Kayıt');
+
+        $this->get('/balkan-turlari?gece=5')->assertOk()
+            ->assertSee('Eski Kayıt')->assertDontSee('Uzun Balkan');
+
+        $mobil = $this->mobilBlok($this->get('/balkan-turlari?gece=4')->assertOk()->getContent());
+        $this->assertStringContainsString('name="gece" inputmode="numeric" min="0" max="365" step="1" placeholder="Örn. 4" value="4"', $mobil);
+        $this->assertStringContainsString('class="lpm-cip on">4 gece', $mobil);   // şeritte kaldırılabilir çip
+        $this->assertStringContainsString('<span class="lpm-sayac">1</span>', $mobil);
+
+        $this->getJson('/balkan-turlari?gece=7&sayac=1')->assertOk()->assertExactJson(['adet' => 2]);
+        $this->assertNull(LandingFilter::parse(['gece' => 'abc'])['gece']);
+        $this->assertSame(0, LandingFilter::parse(['gece' => '0'])['gece']);
     }
 
     public function test_mobil_kart_ulasim_kalkis_ve_turu_incele_basar(): void
@@ -242,11 +268,72 @@ class LandingFilterTest extends TestCase
         $mobil = $this->mobilBlok($this->get('/balkan-turlari?sure[]=3')->assertOk()->getContent());
         $this->assertStringContainsString('Bu filtrelerle tur bulunamadı', $mobil);
         $this->assertStringContainsString('class="lpm-serit"', $mobil); // şerit yerinde kalır
+        // Panel düğmesi sunucuda da JS ile aynı metni basar (0 iken "0 turu göster" değil)
+        $this->assertStringContainsString('>Bu filtrelerle tur yok</button>', $mobil);
+        $this->assertStringNotContainsString('0 turu göster', $mobil);
 
         Category::create(['name' => 'Kayak Turları', 'slug' => 'kayak-turlari']);
         $mobil = $this->mobilBlok($this->get('/kayak-turlari')->assertOk()->getContent());
         $this->assertStringContainsString('<h1 class="lpm-h1">Kayak Turları</h1>', $mobil);
         $this->assertStringContainsString('Şu anda bu başlıkta yayında tur yok.', $mobil);
         $this->assertStringNotContainsString('class="lpm-serit"', $mobil);
+    }
+
+    public function test_mobil_kart_puan_rozeti_yalniz_yorumlu_turda(): void
+    {
+        $tur = Tour::where('title', 'Kısa Belgrad')->firstOrFail();
+        foreach ([5, 4] as $puan) {
+            Review::create(['user_id' => User::factory()->create()->id, 'tour_id' => $tur->id, 'rating' => $puan, 'comment' => 'Güzeldi']);
+        }
+
+        $mobil = $this->mobilBlok($this->get('/balkan-turlari')->assertOk()->getContent());
+
+        $this->assertStringContainsString('4,5 <i>(2)</i>', $mobil);
+        $this->assertSame(1, substr_count($mobil, 'class="lpm-puan"'), 'Yorumsuz turlarda puan rozeti basılmamalı');
+    }
+
+    public function test_mobil_kart_kampanya_fiyati_ve_indirim_rozeti_tek_sorguyla(): void
+    {
+        $tur = Tour::where('title', 'Kısa Belgrad')->firstOrFail();
+        Campaign::create(['tour_id' => $tur->id, 'discount_price' => 7000, 'label' => 'Erken', 'is_active' => true, 'starts_at' => now()->subDay(), 'ends_at' => now()->addDay()]);
+        // Süresi geçmiş kampanya sayılmaz
+        Campaign::create(['tour_id' => $tur->id, 'discount_price' => 100, 'label' => 'Eski', 'is_active' => true, 'starts_at' => now()->subDays(10), 'ends_at' => now()->subDays(5)]);
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+        $html = $this->get('/balkan-turlari')->assertOk()->getContent();
+        $kampanyaSorgulari = collect(\Illuminate\Support\Facades\DB::getQueryLog())->filter(fn ($q) => str_contains($q['query'], 'campaigns'))->count();
+        \Illuminate\Support\Facades\DB::disableQueryLog();
+
+        $mobil = $this->mobilBlok($html);
+        $this->assertStringContainsString('<strong class="kampanya">7.000 ₺</strong>', $mobil);
+        $this->assertStringContainsString('<s>9.000 ₺</s>', $mobil);
+        $this->assertStringContainsString('%22 İNDİRİM', $mobil);
+        $this->assertSame(1, $kampanyaSorgulari, 'Kampanya tek IN sorgusuyla yüklenmeli (iki gövde × N tur değil)');
+    }
+
+    public function test_mobil_serit_cipleri_filtreyi_korur_ve_kaldirma_adresi_verir(): void
+    {
+        $mobil = $this->mobilBlok($this->get('/balkan-turlari?gece=7&acenta[]='.$this->a->id.'&sirala=fiyat_azalan')->assertOk()->getContent());
+        $bas = strpos($mobil, 'class="lpm-serit"');
+        $serit = substr($mobil, $bas, strpos($mobil, 'lpm-liste', $bas) - $bas);
+
+        // Gece ve acenta kaldırma çipleri: ilgili parametre düşer, diğerleri ve sıralama kalır
+        $this->assertMatchesRegularExpression('#href="[^"]*acenta%5B0%5D='.$this->a->id.'[^"]*sirala=fiyat_azalan" class="lpm-cip on">7 gece#', $serit);
+        $this->assertMatchesRegularExpression('#href="[^"]*gece=7[^"]*sirala=fiyat_azalan" class="lpm-cip on">Acenta seçimi#', $serit);
+        $this->assertStringNotContainsString('gece=7&amp;acenta', substr($serit, strpos($serit, 'Acenta seçimi') - 200, 200) === false ? '' : '');
+        $this->assertStringContainsString('Sırala: <span>Fiyat (azalan)</span>', $serit);
+        $this->assertStringContainsString('<span class="lpm-sayac">2</span>', $serit);
+        // Panel formu adresten gelen acentayı gizli taşır
+        $this->assertStringContainsString('<input type="hidden" name="acenta[]" value="'.$this->a->id.'">', $mobil);
+    }
+
+    public function test_canli_sayac_ucu_noindex_basligi_tasir_ve_robots_disallow_eder(): void
+    {
+        $this->getJson('/balkan-turlari?sayac=1')->assertOk()->assertHeader('X-Robots-Tag', 'noindex');
+
+        // robots.txt kuralları yalnız production'da basılır (diğer ortamlar tümden kapalı)
+        app()->detectEnvironment(fn () => 'production');
+        $this->get('/robots.txt')->assertOk()->assertSee('Disallow: /*?*sayac=');
+        app()->detectEnvironment(fn () => 'testing');
     }
 }

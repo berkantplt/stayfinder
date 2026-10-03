@@ -24,6 +24,7 @@
         'kalkis' => $filtre['kalkis'],
         'ay' => $filtre['ay'],
         'sure' => $filtre['sure'],
+        'gece' => $filtre['gece'],
         'acenta' => $filtre['acenta'],
         'min_fiyat' => $filtre['min_fiyat'] !== null ? (int) $filtre['min_fiyat'] : null,
         'max_fiyat' => $filtre['max_fiyat'] !== null ? (int) $filtre['max_fiyat'] : null,
@@ -247,7 +248,7 @@
             .lpm-baslik { background: linear-gradient(135deg, #5eead4 0%, #0d9488 60%, #0f766e 100%); border-radius: 20px; padding: 3px; margin-bottom: 10px; }
             .lpm-baslik-ic { background: var(--white); border-radius: 17px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
             .lpm-baslik-ust { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px; }
-            .lpm-etiket { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; }
+            .lpm-etiket { display: inline-flex; align-items: center; min-height: 34px; padding: 0 8px; margin-left: -8px; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; }
             .lpm-ikon { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex: none; }
             .lpm-ikon svg { width: 18px; height: 18px; color: var(--accent-ink); }
             .lpm-h1 { font-family: 'Manrope', var(--font); font-size: 28px; font-weight: 800; letter-spacing: -.8px; line-height: 1.1; margin: -4px 0 0; }
@@ -261,9 +262,9 @@
             .lpm-altkat a { flex: none; display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--white); border: 1px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text-sec); text-decoration: none; white-space: nowrap; }
 
             /* Yapışkan şerit */
-            .lpm-serit { position: sticky; top: 0; z-index: var(--z-sticky-nav); background: rgba(248,250,252,.96); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); margin: 0 -16px; padding: 8px 16px 10px; display: flex; gap: 8px; align-items: center; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+            .lpm-serit { position: sticky; top: var(--lpm-ust, 61px); z-index: var(--z-sticky-nav); background: rgba(248,250,252,.96); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); margin: 0 -16px; padding: 8px 16px 10px; display: flex; gap: 8px; align-items: center; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
             .lpm-serit::-webkit-scrollbar { display: none; }
-            .lpm-filtrele { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border-radius: 999px; border: none; background: var(--accent); color: #fff; font-family: var(--font); font-size: 13px; font-weight: 700; flex: none; cursor: pointer; }
+            .lpm-filtrele { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border-radius: 999px; border: none; background: var(--accent-ink); color: #fff; font-family: var(--font); font-size: 13px; font-weight: 700; flex: none; cursor: pointer; }
             .lpm-filtrele svg { width: 15px; height: 15px; }
             .lpm-sayac { background: #5eead4; color: #0f2421; border-radius: 999px; padding: 1px 7px; font-size: 11px; }
             .lpm-cip { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 999px; background: var(--white); border: 1px solid var(--border); font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-sec); white-space: nowrap; flex: none; text-decoration: none; cursor: pointer; }
@@ -286,7 +287,7 @@
             .lpm-kart-acenta .card-agency { margin: 0; }
             .lpm-puan { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 700; color: var(--text); }
             .lpm-puan svg { width: 12px; height: 12px; }
-            .lpm-puan i { font-style: normal; color: var(--text-muted); font-weight: 500; }
+            .lpm-puan i { font-style: normal; color: var(--text-meta); font-weight: 500; }
             .lpm-kart-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--text-sec); }
             .lpm-kart-meta span { display: inline-flex; align-items: center; gap: 4px; }
             .lpm-kart-meta svg { width: 13px; height: 13px; flex: none; }
@@ -294,11 +295,13 @@
             .lpm-fiyat { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
             .lpm-fiyat strong { font-family: 'Manrope', var(--font); font-size: 20px; font-weight: 800; letter-spacing: -.5px; color: var(--text); }
             .lpm-fiyat strong.kampanya { color: var(--green); }
-            .lpm-fiyat s { font-size: 12px; color: var(--text-muted); }
+            .lpm-fiyat s { font-size: 12px; color: var(--text-meta); }
             .lpm-fiyat small { font-size: 12px; color: var(--text-meta); }
             .lpm-cta { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 11px; background: var(--accent-light); color: var(--accent-deep); font-size: 13px; font-weight: 800; white-space: nowrap; flex: none; }
             .lpm-cta svg { width: 13px; height: 13px; }
             .lpm-sayfalama { margin: 20px 0 8px; }
+            .lpm-sayfalama nav[role="navigation"] > div { flex-wrap: wrap; justify-content: center; }
+            .lpm-gizli { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
             .lpm-bos { background: var(--white); border: 1px dashed #cbd5e1; border-radius: 16px; padding: 32px 16px; text-align: center; margin-top: 12px; }
 
             /* Alttan açılan filtre paneli (m-pick kalıbı: 2500/2600) */
@@ -310,9 +313,9 @@
             .lpm-tutamac { width: 36px; height: 4px; border-radius: 3px; background: #cbd5e1; margin: 10px auto 0; flex: none; }
             .lpm-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px 12px 20px; border-bottom: 1px solid #eef2f1; flex: none; }
             .lpm-sheet-head h2 { font-family: 'Manrope', var(--font); font-size: 18px; font-weight: 800; letter-spacing: -.3px; margin: 0; }
-            .lpm-temizle { font-size: 13px; font-weight: 700; color: var(--accent-ink); margin-right: 12px; text-decoration: none; }
+            .lpm-temizle { display: inline-flex; align-items: center; min-height: 36px; padding: 0 10px; margin-right: 2px; font-size: 13px; font-weight: 700; color: var(--accent-ink); text-decoration: none; }
             .lpm-kapat { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--white); color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; }
-            .lpm-sheet-govde { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 20px 0; -webkit-overflow-scrolling: touch; }
+            .lpm-sheet-govde { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 20px 0; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
             .lpm-grup { border: none; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--border-light); min-width: 0; }
             .lpm-grup:last-child { border-bottom: none; }
             .lpm-grup legend { font-size: 14px; font-weight: 800; padding: 0; margin-bottom: 10px; color: var(--text); }
@@ -328,13 +331,23 @@
             .lpm-secim { position: relative; }
             .lpm-secim input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
             .lpm-secim span { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 13px; border-radius: 999px; background: var(--white); border: 1px solid var(--border); font-size: 12.5px; font-weight: 600; color: var(--text-sec); cursor: pointer; }
-            .lpm-secim span small { color: var(--text-muted); font-size: 11.5px; }
+            .lpm-secim span small { color: var(--text-meta); font-size: 11.5px; }
             .lpm-secim input:checked + span { background: var(--accent-light); border-color: #5eead4; color: var(--accent-deep); font-weight: 700; }
             .lpm-secim input:checked + span small { color: var(--accent-ink); }
             .lpm-secim input:focus-visible + span { outline: 2px solid var(--odak-halka); outline-offset: 2px; }
             .lpm-sheet-alt { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid #eef2f1; flex: none; }
             .lpm-uygula { width: 100%; height: 50px; border: none; border-radius: 14px; background: linear-gradient(135deg, #0d9488, #0c6e63); color: #fff; font-family: 'Manrope', var(--font); font-size: 15px; font-weight: 800; cursor: pointer; }
             body.lpm-kilit { overflow: hidden; }
+
+            /* Liste altı bölümler (fiyat özeti, kaç gün, kalkış ayları, SSS, hakkında):
+               her başlık kendi kutucuğunda, çevresi ince neon şerit (kullanıcı isteği, 2026-10-03) */
+            .lp-editorial { margin: 16px 0 28px; }
+            .lp-editorial section { border: 2px solid transparent; border-radius: 18px; background: linear-gradient(var(--white), var(--white)) padding-box, linear-gradient(135deg, #5eead4 0%, #0d9488 60%, #0f766e 100%) border-box; padding: 16px 16px 14px; margin-bottom: 12px; }
+            .lp-editorial section:last-child { margin-bottom: 0; }
+            .lp-editorial h2 { font-size: 18px; letter-spacing: -.3px; margin-bottom: 8px; }
+            .lp-editorial p { font-size: 14px; line-height: 1.7; }
+            .lp-editorial .lp-table-wrap { border-radius: 12px; }
+            .lp-mobil-sss details { margin-bottom: 8px; }
         }
     </style>
 @endpush
@@ -556,7 +569,7 @@
                 <div class="lp-grid">
                     @forelse($tours as $tour)
                         @php
-                            $campaign = $tour->activeCampaign;
+                            $campaign = $tour->campaigns->first(); // controller'da aktif pencereyle eager yüklendi
                             $mIndirim = ($campaign && $tour->price > 0 && $campaign->discount_price < $tour->price)
                                 ? (int) round((1 - $campaign->discount_price / $tour->price) * 100)
                                 : null;
@@ -763,15 +776,18 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
                     Filtrele{{ '' }}@if($filtreSayisi) <span class="lpm-sayac">{{ $filtreSayisi }}</span>@endif
                 </button>
-                <button type="button" class="lpm-cip lpm-cip-sirala" data-lpm-ac="sirala" aria-haspopup="dialog" aria-controls="lpm-sheet">
+                <button type="button" class="lpm-cip lpm-cip-sirala" data-lpm-ac="sirala" aria-haspopup="dialog" aria-controls="lpm-sheet" aria-expanded="false">
                     Sırala: <span>{{ $siralaEtiket }}</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
-                @foreach(array_slice($facets['sureler'], 0, 3) as $s)
-                    @php [$secili, $url] = $cip('sure', $s['gun']); @endphp
-                    <a href="{{ $url }}" class="lpm-cip {{ $secili ? 'on' : '' }}">{{ $s['etiket'] }}@if($secili) <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>@endif</a>
-                @endforeach
-                @foreach(array_slice($facets['aylar'], 0, 2) as $a)
+                {{-- Süre çipleri bilerek yok: gece sayısı panelde elle girilir (kullanıcı kararı) --}}
+                @if($filtre['acenta'] !== [])
+                    <a href="{{ $adres(['acenta' => []]) }}" class="lpm-cip on">Acenta seçimi <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+                @endif
+                @if($filtre['gece'] !== null)
+                    <a href="{{ $adres(['gece' => null]) }}" class="lpm-cip on">{{ $filtre['gece'] }} gece <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+                @endif
+                @foreach(array_slice($facets['aylar'], 0, 3) as $a)
                     @php [$secili, $url] = $cip('ay', $a['ay']); @endphp
                     <a href="{{ $url }}" class="lpm-cip {{ $secili ? 'on' : '' }}">{{ $a['ad'] }}@if($secili) <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>@endif</a>
                 @endforeach
@@ -782,7 +798,7 @@
                 <div class="lpm-liste">
                     @foreach($tours as $tour)
                         @php
-                            $campaign = $tour->activeCampaign;
+                            $campaign = $tour->campaigns->first(); // controller'da aktif pencereyle eager yüklendi
                             $mIndirim = ($campaign && $tour->price > 0 && $campaign->discount_price < $tour->price)
                                 ? (int) round((1 - $campaign->discount_price / $tour->price) * 100)
                                 : null;
@@ -792,7 +808,8 @@
                             <a href="{{ route('tours.show', $tour) }}" class="lpm-kart-link">
                                 <div class="lpm-kart-gorsel">
                                     @if($tour->image)
-                                        <img src="{{ $tour->image }}" alt="{{ $tour->title }}" loading="lazy">
+                                        {{-- İlk kart mobilde LCP adayı: lazy değil, öncelikli --}}
+                                        <img src="{{ $tour->image }}" alt="{{ $tour->title }}" @if($loop->first) loading="eager" fetchpriority="high" decoding="async" @else loading="lazy" @endif>
                                     @else
                                         <span aria-hidden="true">🏖️</span>
                                     @endif
@@ -864,9 +881,14 @@
 
             {{-- 4. Alttan açılan filtre paneli: KENDİ formu (masaüstü formu gizli ama DOM'da; onun
                  alanları gönderilmesin). Acenta filtresi bilerek yok (kullanıcı kararı). --}}
+            <template id="lpm-sheet-tpl">
             <div class="lpm-ortu" data-lpm-kapat></div>
             <div class="lpm-sheet" id="lpm-sheet" role="dialog" aria-modal="true" aria-labelledby="lpm-sheet-baslik" aria-hidden="true" inert>
                 <form method="GET" action="{{ $temelUrl }}" id="lpm-form" class="lpm-form" data-lpm-form data-lpm-sayac-url="{{ $temelUrl }}">
+                    {{-- Mobilde acenta arayüzü bilerek yok; adresten gelen seçim gönderimde ve canlı sayaçta korunur --}}
+                    @foreach($filtre['acenta'] as $acentaId)
+                        <input type="hidden" name="acenta[]" value="{{ $acentaId }}">
+                    @endforeach
                     <div class="lpm-tutamac" aria-hidden="true"></div>
                     <div class="lpm-sheet-head">
                         <h2 id="lpm-sheet-baslik">Filtrele</h2>
@@ -904,16 +926,17 @@
                             </fieldset>
                         @endif
 
-                        @if(count($facets['sureler']))
-                            <fieldset class="lpm-grup">
-                                <legend>Tur süresi</legend>
-                                <div class="lpm-cipler">
-                                    @foreach($facets['sureler'] as $s)
-                                        <label class="lpm-secim"><input type="checkbox" name="sure[]" value="{{ $s['gun'] }}" @checked(in_array($s['gun'], $filtre['sure'], true))><span>{{ $s['etiket'] }} <small>{{ $s['adet'] }}</small></span></label>
-                                    @endforeach
-                                </div>
-                            </fieldset>
-                        @endif
+                        {{-- Tur süresi: hazır seçenek değil, kullanıcının yazdığı gece sayısı (kullanıcı kararı) --}}
+                        <fieldset class="lpm-grup">
+                            <legend>Tur süresi <small class="lpm-grup-not">kaç gece kalmak istiyorsun?</small></legend>
+                            <div class="lpm-fiyat-kutular">
+                                <label class="lpm-sayi">
+                                    <span class="lpm-sayi-etiket">Gece</span>
+                                    <input type="number" name="gece" inputmode="numeric" min="0" max="365" step="1" placeholder="Örn. 4" value="{{ $filtre['gece'] ?? '' }}" aria-label="Gece sayısı">
+                                    <span class="lpm-sayi-birim">gece</span>
+                                </label>
+                            </div>
+                        </fieldset>
 
                         @if(count($facets['aylar']))
                             <fieldset class="lpm-grup">
@@ -939,10 +962,12 @@
                         @endif
                     </div>
                     <div class="lpm-sheet-alt">
-                        <button type="submit" class="lpm-uygula" data-lpm-uygula data-sablon=":n turu göster">{{ $sayi }} turu göster</button>
+                        <button type="submit" class="lpm-uygula" data-lpm-uygula data-sablon=":n turu göster">{{ $sayi > 0 ? $sayi.' turu göster' : 'Bu filtrelerle tur yok' }}</button>
+                        <span class="lpm-gizli" data-lpm-duyuru role="status" aria-live="polite" aria-atomic="true"></span>
                     </div>
                 </form>
             </div>
+            </template>
         @else
             <div class="card" style="padding:40px;text-align:center;margin:12px 0 32px;">
                 <div style="font-size:40px;margin-bottom:12px;">🗓️</div>
@@ -1174,23 +1199,107 @@
     });
 })();
 
-/* ── Mobil filtre paneli (≤768px) — masaüstü formundan BAĞIMSIZ kendi formu ── */
+/* ── Mobil filtre paneli (≤768px) — masaüstü formundan BAĞIMSIZ kendi formu.
+   Panel <template> içinde durur, ilk açılışta gövdeye takılır (DOM hafif kalsın;
+   JS'siz kullanılamaz, hızlı çipler <a> olduğundan filtre JS'siz de çalışır). ── */
 (function () {
-    var sheet = document.getElementById('lpm-sheet');
-    var form = document.querySelector('[data-lpm-form]');
-    if (!sheet || !form) return;
-    var ortu = document.querySelector('.lpm-ortu');
-    var kapatBtn = sheet.querySelector('.lpm-kapat');
-    var uygula = form.querySelector('[data-lpm-uygula]');
-    var sonOdak = null;
+    var tpl = document.getElementById('lpm-sheet-tpl');
+    var serit = document.getElementById('lpm-serit');
+    if (!tpl || !serit) return;
+
+    // Yapışkan şerit mobil üst barın (.nav, akış içi sticky) ALTINA yapışmalı; bar
+    // top:0'da ve daha yüksek z-index'te olduğundan ofset verilmezse şeridi örter.
+    (function () {
+        var navUst = function () {
+            var nav = document.querySelector('.nav');
+            if (!nav) return 0;
+            var st = window.getComputedStyle(nav);
+            return (st.position === 'sticky' || st.position === 'fixed') ? Math.round(nav.getBoundingClientRect().height) : 0;
+        };
+        var ayarla = function () { serit.style.setProperty('--lpm-ust', navUst() + 'px'); };
+        ayarla();
+        window.addEventListener('resize', ayarla);
+    })();
+
+    var sheet = null, form = null, ortu = null, kapatBtn = null, uygula = null, duyuru = null;
+    var sonOdak = null, govdeKilidi = null, zamanlayici = null, sonIstek = 0;
+
+    // iOS Safari body'de overflow:hidden'ı yok sayar: sohbet panelindeki kalıp (position:fixed + scrollY)
+    function govdeKilitle(kilitle) {
+        var b = document.body;
+        if (kilitle) {
+            if (govdeKilidi !== null) return;
+            govdeKilidi = window.scrollY;
+            b.style.position = 'fixed'; b.style.top = -govdeKilidi + 'px';
+            b.style.left = '0'; b.style.right = '0'; b.style.width = '100%'; b.style.overflow = 'hidden';
+        } else if (govdeKilidi !== null) {
+            var y = govdeKilidi; govdeKilidi = null;
+            b.style.position = ''; b.style.top = ''; b.style.left = ''; b.style.right = ''; b.style.width = ''; b.style.overflow = '';
+            window.scrollTo(0, y);
+        }
+    }
+
+    // Temiz adres: boş değer, varsayılan sıralama ve "Tümü" kalkış gönderilmez
+    function gonderilecek(el) {
+        if (!el.name || el.disabled) return false;
+        if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return false;
+        if (el.value === '') return false;
+        if (el.name === 'sirala' && el.value === 'onerilen') return false;
+        return true;
+    }
+
+    // Canlı sayaç: seçim değişince "N turu göster" (aynı filtre dili, ?sayac=1 → JSON)
+    function sayacGuncelle() {
+        var p = new URLSearchParams();
+        Array.prototype.forEach.call(form.elements, function (el) {
+            if (gonderilecek(el)) p.append(el.name, el.value);
+        });
+        p.set('sayac', '1');
+        var istek = ++sonIstek;
+        fetch(form.getAttribute('data-lpm-sayac-url') + '?' + p.toString(), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+                if (!d || istek !== sonIstek || !uygula) return;
+                var n = Number(d.adet);
+                var metin = n > 0 ? (uygula.getAttribute('data-sablon') || ':n turu göster').replace(':n', n) : 'Bu filtrelerle tur yok';
+                uygula.textContent = metin;
+                if (duyuru) duyuru.textContent = metin; // ekran okuyucuya duyur
+            })
+            .catch(function () {});
+    }
+    function sayacPlanla() {
+        clearTimeout(zamanlayici);
+        zamanlayici = setTimeout(sayacGuncelle, 300);
+    }
+
+    function kur() {
+        if (sheet) return;
+        document.body.appendChild(tpl.content.cloneNode(true));
+        sheet = document.getElementById('lpm-sheet');
+        form = document.querySelector('[data-lpm-form]');
+        ortu = document.querySelector('.lpm-ortu');
+        kapatBtn = sheet.querySelector('.lpm-kapat');
+        uygula = form.querySelector('[data-lpm-uygula]');
+        duyuru = form.querySelector('[data-lpm-duyuru]');
+        document.querySelectorAll('[data-lpm-kapat]').forEach(function (b) { b.addEventListener('click', kapat); });
+        form.addEventListener('submit', function () {
+            Array.prototype.forEach.call(form.elements, function (el) {
+                if (el.name && !gonderilecek(el)) el.disabled = true;
+            });
+        });
+        form.addEventListener('change', sayacPlanla);
+        // Sayı kutuları yazarken de güncellensin (change yalnız odak çıkınca gelir)
+        form.querySelectorAll('input[type=number]').forEach(function (el) { el.addEventListener('input', sayacPlanla); });
+    }
 
     function ac(hedefGrup) {
+        kur();
         sonOdak = document.activeElement;
         sheet.inert = false;
         sheet.removeAttribute('aria-hidden');
-        ortu.classList.add('open');
-        sheet.classList.add('open');
-        document.body.classList.add('lpm-kilit');
+        // Sınıf bir sonraki karede: template'ten yeni takılan panel kayarak gelsin
+        requestAnimationFrame(function () { ortu.classList.add('open'); sheet.classList.add('open'); });
+        govdeKilitle(true);
         document.querySelectorAll('[data-lpm-ac][aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'true'); });
         if (hedefGrup) {
             var g = document.getElementById('lpm-grup-' + hedefGrup);
@@ -1199,64 +1308,37 @@
         if (kapatBtn) kapatBtn.focus({ preventScroll: true });
     }
     function kapat() {
+        if (!sheet) return;
         var acikti = sheet.classList.contains('open');
         ortu.classList.remove('open');
         sheet.classList.remove('open');
         sheet.inert = true;
         sheet.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('lpm-kilit');
+        govdeKilitle(false);
         document.querySelectorAll('[data-lpm-ac][aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
         if (acikti && sonOdak && typeof sonOdak.focus === 'function') sonOdak.focus({ preventScroll: true });
         sonOdak = null;
     }
+    function odaklanabilirler() {
+        return Array.prototype.filter.call(
+            sheet.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+            function (el) { return !el.disabled && el.offsetParent !== null; }
+        );
+    }
+    // Escape kapatır; Tab panel içinde döner (aria-modal'ın gerçek karşılığı)
+    document.addEventListener('keydown', function (e) {
+        if (!sheet || !sheet.classList.contains('open')) return;
+        if (e.key === 'Escape') { e.preventDefault(); kapat(); return; }
+        if (e.key !== 'Tab') return;
+        var liste = odaklanabilirler();
+        if (!liste.length) return;
+        var ilk = liste[0], son = liste[liste.length - 1], disarida = !sheet.contains(document.activeElement);
+        if (e.shiftKey && (document.activeElement === ilk || disarida)) { e.preventDefault(); son.focus(); }
+        else if (!e.shiftKey && (document.activeElement === son || disarida)) { e.preventDefault(); ilk.focus(); }
+    });
     document.querySelectorAll('[data-lpm-ac]').forEach(function (b) {
         b.addEventListener('click', function () { ac(b.getAttribute('data-lpm-ac') || null); });
     });
-    document.querySelectorAll('[data-lpm-kapat]').forEach(function (b) { b.addEventListener('click', kapat); });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && sheet.classList.contains('open')) { e.preventDefault(); kapat(); }
-    });
-
-    // Temiz adres: uçtaki kaydırıcı, varsayılan sıralama ve "Tümü" kalkış gönderilmez
-    function gonderilecek(el) {
-        if (!el.name || el.disabled) return false;
-        if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return false;
-        if (el.value === '') return false;
-        if (el.name === 'sirala' && el.value === 'onerilen') return false;
-        return true;
-    }
-    form.addEventListener('submit', function () {
-        Array.prototype.forEach.call(form.elements, function (el) {
-            if (el.name && !gonderilecek(el)) el.disabled = true;
-        });
-    });
-
-    // Canlı sayaç: seçim değişince "N turu göster" (aynı filtre dili, ?sayac=1 → JSON)
-    var sayacUrl = form.getAttribute('data-lpm-sayac-url');
-    var zamanlayici = null, sonIstek = 0;
-    function sayacGuncelle() {
-        var p = new URLSearchParams();
-        Array.prototype.forEach.call(form.elements, function (el) {
-            if (gonderilecek(el)) p.append(el.name, el.value);
-        });
-        p.set('sayac', '1');
-        var istek = ++sonIstek;
-        fetch(sayacUrl + '?' + p.toString(), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (d) {
-                if (!d || istek !== sonIstek || !uygula) return;
-                var n = Number(d.adet);
-                uygula.textContent = n > 0 ? (uygula.getAttribute('data-sablon') || ':n turu göster').replace(':n', n) : 'Bu filtrelerle tur yok';
-            })
-            .catch(function () {});
-    }
-    function sayacPlanla() {
-        clearTimeout(zamanlayici);
-        zamanlayici = setTimeout(sayacGuncelle, 300);
-    }
-    form.addEventListener('change', sayacPlanla);
-    // Fiyat kutuları yazarken de güncellensin (change yalnız odak çıkınca gelir)
-    form.querySelectorAll('input[type=number]').forEach(function (el) { el.addEventListener('input', sayacPlanla); });
 })();
 </script>
 @endpush
