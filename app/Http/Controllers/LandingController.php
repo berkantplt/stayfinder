@@ -96,8 +96,21 @@ class LandingController extends Controller
     {
         $filtre = LandingFilter::parse($request->query());
 
-        $sorgu = LandingFilter::apply((clone $base)->with('agency'), $filtre);
-        $tours = LandingFilter::sort($sorgu, $filtre['sirala'])
+        $sorgu = LandingFilter::apply(clone $base, $filtre);
+
+        // Mobil filtre panelinin canlı sayacı ("N turu göster"): aynı filtre dili,
+        // yalnız adet. Sayfa render edilmez, HTML üretilmez.
+        if ($request->boolean('sayac')) {
+            return response()->json(['adet' => (clone $sorgu)->count()]);
+        }
+
+        $tours = LandingFilter::sort(
+            $sorgu->with('agency')
+                // Mobil kartta puan rozeti: tur başına ayrı sorgu yerine tek çekim
+                ->withCount('reviews')
+                ->withAvg('reviews', 'rating'),
+            $filtre['sirala']
+        )
             ->paginate(24)
             ->withQueryString();
 

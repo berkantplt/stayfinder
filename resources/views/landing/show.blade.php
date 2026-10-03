@@ -45,6 +45,14 @@
 
     $fiyatAraligi = $facets['fiyat'] ?? null;
     $fiyatKaydirici = $fiyatAraligi && $fiyatAraligi['max'] > $fiyatAraligi['min'];
+    // Fiyat kaydırıcısı sınırları (masaüstü kenar çubuğu + mobil panel aynı değerleri okur).
+    // step=1: adım >1 olunca tarayıcı değeri adıma yuvarlar, uç değer max'a eşit olmaz ve
+    // "uçta → gönderme" kuralı kaçar (9768 ≠ 9800).
+    $fMin = $fiyatKaydirici ? (int) $fiyatAraligi['min'] : 0;
+    $fMax = $fiyatKaydirici ? (int) $fiyatAraligi['max'] : 0;
+    $fAdim = 1;
+    $fSecMin = $filtre['min_fiyat'] !== null ? max($fMin, min($fMax, (int) $filtre['min_fiyat'])) : $fMin;
+    $fSecMax = $filtre['max_fiyat'] !== null ? max($fMin, min($fMax, (int) $filtre['max_fiyat'])) : $fMax;
     $landingFaq = \App\Support\LandingStats::faq($stats, $baslik);
 @endphp
 
@@ -69,10 +77,11 @@
         /* ── Landing (kategori / destinasyon) sayfası ──
            Sayfaya özgü sınıflar lp- önekli; tema renkleri layout'taki :root'tan.
 
-           İKİ GÖVDE: .lp-desk (yeni tasarım, >768px) ve .lp-mobil (eski sade
-           görünüm, ≤768px). Mobil ayrıca tasarlanacak (2026-10-01 kullanıcı
-           kararı); o güne kadar telefonda yeni masaüstü düzeni GÖSTERİLMEZ.
-           Kırılma noktası sitenin geneliyle aynı (layouts/app 768px). */
+           İKİ GÖVDE: .lp-desk (masaüstü tasarımı, >768px) ve .lp-mobil (mobil
+           tasarımı, ≤768px — 2026-10-03: hero YOK, degrade çerçeveli başlık
+           bloğu, yapışkan filtre şeridi + alttan filtre paneli, tam genişlik
+           kartlar; acenta filtresi bilerek yok). Kırılma noktası sitenin
+           geneliyle aynı (layouts/app 768px). */
         .lp { padding-bottom: 8px; }
         .lp-crumb { padding: 18px 0 4px; }
         .lp-mobil { display: none; }
@@ -232,6 +241,101 @@
             .lp-main { grid-template-columns: 200px minmax(0, 1fr); }
             .lp-hero-title { font-size: 38px; }
         }
+
+        /* ── Mobil gövde (lpm-): başlık bloğu, yapışkan şerit, kartlar, alttan filtre paneli ── */
+        @media (max-width: 768px) {
+            .lpm-baslik { background: linear-gradient(135deg, #5eead4 0%, #0d9488 60%, #0f766e 100%); border-radius: 20px; padding: 3px; margin-bottom: 10px; }
+            .lpm-baslik-ic { background: var(--white); border-radius: 17px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+            .lpm-baslik-ust { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px; }
+            .lpm-etiket { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; }
+            .lpm-ikon { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex: none; }
+            .lpm-ikon svg { width: 18px; height: 18px; color: var(--accent-ink); }
+            .lpm-h1 { font-family: 'Manrope', var(--font); font-size: 28px; font-weight: 800; letter-spacing: -.8px; line-height: 1.1; margin: -4px 0 0; }
+            .lpm-satir { font-size: 13.5px; color: var(--text-sec); line-height: 1.45; margin: 0; }
+            .lpm-rozetler { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+            .lpm-rozet { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 999px; background: #f0f6f4; font-size: 12px; font-weight: 700; color: #0f2421; }
+            .lpm-rozet svg { width: 13px; height: 13px; color: var(--accent-ink); flex: none; }
+            .lpm-rozet-vurgu { background: var(--accent-light); color: var(--accent-deep); font-weight: 800; }
+            .lpm-altkat { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 2px; padding: 2px 16px 6px; }
+            .lpm-altkat::-webkit-scrollbar { display: none; }
+            .lpm-altkat a { flex: none; display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--white); border: 1px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text-sec); text-decoration: none; white-space: nowrap; }
+
+            /* Yapışkan şerit */
+            .lpm-serit { position: sticky; top: 0; z-index: var(--z-sticky-nav); background: rgba(248,250,252,.96); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); margin: 0 -16px; padding: 8px 16px 10px; display: flex; gap: 8px; align-items: center; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+            .lpm-serit::-webkit-scrollbar { display: none; }
+            .lpm-filtrele { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border-radius: 999px; border: none; background: var(--accent); color: #fff; font-family: var(--font); font-size: 13px; font-weight: 700; flex: none; cursor: pointer; }
+            .lpm-filtrele svg { width: 15px; height: 15px; }
+            .lpm-sayac { background: #5eead4; color: #0f2421; border-radius: 999px; padding: 1px 7px; font-size: 11px; }
+            .lpm-cip { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 999px; background: var(--white); border: 1px solid var(--border); font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-sec); white-space: nowrap; flex: none; text-decoration: none; cursor: pointer; }
+            .lpm-cip.on { background: var(--accent-light); border-color: #5eead4; color: var(--accent-deep); font-weight: 700; }
+            .lpm-cip svg { width: 12px; height: 12px; flex: none; }
+            .lpm-cip-sirala { color: var(--text); }
+            .lpm-cip-sirala span { font-weight: 500; }
+
+            /* Kartlar */
+            .lpm-liste { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+            .lpm-kart { position: relative; background: var(--white); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+            .lpm-kart-link { display: flex; flex-direction: column; color: inherit; text-decoration: none; }
+            .lpm-kart-gorsel { position: relative; height: 176px; background: linear-gradient(135deg, #e0f2fe, #f0fdf4); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+            .lpm-kart-gorsel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+            .lpm-kart .m-fav { top: 12px; right: 12px; width: 36px; height: 36px; }
+            .lpm-kart .m-drop-badge { top: 12px; left: 12px; }
+            .lpm-kart-govde { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+            .lpm-kart-baslik { font-size: 16px; font-weight: 800; line-height: 1.3; letter-spacing: -.2px; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+            .lpm-kart-acenta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+            .lpm-kart-acenta .card-agency { margin: 0; }
+            .lpm-puan { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 700; color: var(--text); }
+            .lpm-puan svg { width: 12px; height: 12px; }
+            .lpm-puan i { font-style: normal; color: var(--text-muted); font-weight: 500; }
+            .lpm-kart-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--text-sec); }
+            .lpm-kart-meta span { display: inline-flex; align-items: center; gap: 4px; }
+            .lpm-kart-meta svg { width: 13px; height: 13px; flex: none; }
+            .lpm-kart-alt { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border-light); }
+            .lpm-fiyat { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+            .lpm-fiyat strong { font-family: 'Manrope', var(--font); font-size: 20px; font-weight: 800; letter-spacing: -.5px; color: var(--text); }
+            .lpm-fiyat strong.kampanya { color: var(--green); }
+            .lpm-fiyat s { font-size: 12px; color: var(--text-muted); }
+            .lpm-fiyat small { font-size: 12px; color: var(--text-meta); }
+            .lpm-cta { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 11px; background: var(--accent-light); color: var(--accent-deep); font-size: 13px; font-weight: 800; white-space: nowrap; flex: none; }
+            .lpm-cta svg { width: 13px; height: 13px; }
+            .lpm-sayfalama { margin: 20px 0 8px; }
+            .lpm-bos { background: var(--white); border: 1px dashed #cbd5e1; border-radius: 16px; padding: 32px 16px; text-align: center; margin-top: 12px; }
+
+            /* Alttan açılan filtre paneli (m-pick kalıbı: 2500/2600) */
+            .lpm-ortu { position: fixed; inset: 0; z-index: 2500; background: rgba(4,24,21,.45); opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+            .lpm-ortu.open { opacity: 1; pointer-events: auto; }
+            .lpm-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2600; max-height: 86vh; background: var(--white); border-radius: 22px 22px 0 0; box-shadow: 0 -12px 40px rgba(4,24,21,.3); transform: translateY(105%); transition: transform .3s ease; }
+            .lpm-sheet.open { transform: translateY(0); }
+            .lpm-form { display: flex; flex-direction: column; max-height: 86vh; margin: 0; }
+            .lpm-tutamac { width: 36px; height: 4px; border-radius: 3px; background: #cbd5e1; margin: 10px auto 0; flex: none; }
+            .lpm-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px 12px 20px; border-bottom: 1px solid #eef2f1; flex: none; }
+            .lpm-sheet-head h2 { font-family: 'Manrope', var(--font); font-size: 18px; font-weight: 800; letter-spacing: -.3px; margin: 0; }
+            .lpm-temizle { font-size: 13px; font-weight: 700; color: var(--accent-ink); margin-right: 12px; text-decoration: none; }
+            .lpm-kapat { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--white); color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; }
+            .lpm-sheet-govde { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 20px 0; -webkit-overflow-scrolling: touch; }
+            .lpm-grup { border: none; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--border-light); min-width: 0; }
+            .lpm-grup:last-child { border-bottom: none; }
+            .lpm-grup legend { font-size: 14px; font-weight: 800; padding: 0; margin-bottom: 10px; color: var(--text); }
+            .lpm-cipler { display: flex; flex-wrap: wrap; gap: 8px; }
+            .lpm-grup-not { display: block; font-size: 12px; font-weight: 600; color: var(--text-meta); margin-top: 2px; }
+            .lpm-fiyat-kutular { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .lpm-sayi { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 12px; background: #f8fafc; }
+            .lpm-sayi:focus-within { border-color: var(--accent); background: var(--white); }
+            .lpm-sayi-etiket { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-meta); flex: none; }
+            .lpm-sayi input { flex: 1; min-width: 0; width: 100%; border: none; background: transparent; font-family: var(--font); font-size: 16px; font-weight: 700; color: var(--text); outline: none; -moz-appearance: textfield; appearance: textfield; }
+            .lpm-sayi input::-webkit-outer-spin-button, .lpm-sayi input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+            .lpm-sayi-birim { font-size: 13px; font-weight: 700; color: var(--text-meta); flex: none; }
+            .lpm-secim { position: relative; }
+            .lpm-secim input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+            .lpm-secim span { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 13px; border-radius: 999px; background: var(--white); border: 1px solid var(--border); font-size: 12.5px; font-weight: 600; color: var(--text-sec); cursor: pointer; }
+            .lpm-secim span small { color: var(--text-muted); font-size: 11.5px; }
+            .lpm-secim input:checked + span { background: var(--accent-light); border-color: #5eead4; color: var(--accent-deep); font-weight: 700; }
+            .lpm-secim input:checked + span small { color: var(--accent-ink); }
+            .lpm-secim input:focus-visible + span { outline: 2px solid var(--odak-halka); outline-offset: 2px; }
+            .lpm-sheet-alt { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid #eef2f1; flex: none; }
+            .lpm-uygula { width: 100%; height: 50px; border: none; border-radius: 14px; background: linear-gradient(135deg, #0d9488, #0c6e63); color: #fff; font-family: 'Manrope', var(--font); font-size: 15px; font-weight: 800; cursor: pointer; }
+            body.lpm-kilit { overflow: hidden; }
+        }
     </style>
 @endpush
 
@@ -361,15 +465,6 @@
                     </div>
 
                     @if($fiyatKaydirici)
-                        @php
-                            $fMin = (int) $fiyatAraligi['min'];
-                            $fMax = (int) $fiyatAraligi['max'];
-                            // step=1: adım >1 olunca tarayıcı değeri adıma yuvarlar, uç değer
-                            // max'a eşit olmaz ve "uçta → gönderme" kuralı kaçar (9768 ≠ 9800).
-                            $fAdim = 1;
-                            $fSecMin = $filtre['min_fiyat'] !== null ? max($fMin, min($fMax, (int) $filtre['min_fiyat'])) : $fMin;
-                            $fSecMax = $filtre['max_fiyat'] !== null ? max($fMin, min($fMax, (int) $filtre['max_fiyat'])) : $fMax;
-                        @endphp
                         <details class="lp-fg" open>
                             <summary>Fiyat aralığı <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
                             <div class="lp-range" data-lp-range data-min="{{ $fMin }}" data-max="{{ $fMax }}">
@@ -612,60 +707,244 @@
          hero ve SSS bandı yok; liste filtreden etkilenmiş hâliyle basılır.
          ════════════════════════════════════════════════════════════════════ --}}
     <div class="lp-mobil">
-        <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.6px;margin-bottom:8px;">
-            {{ $baslik }}
-            @if($sayi)<span style="font-weight:600;color:var(--text-muted);font-size:24px;">({{ $sayi }})</span>@endif
-        </h1>
+        @php
+            // Üst kategori etiketi yalnız alt kategori sayfasında (destinasyon/üst kategoride yok)
+            $ustKategori = $model instanceof \App\Models\Category ? $model->parent : null;
+            // Kısa satır: admin banner'ına alt başlık girildiyse o; yoksa karşılaştırma vaadi
+            $kisaSatir = $hero['banner']?->subtitle
+                ?: ($toplam ? $acentaSayisi.' acentanın fiyatı karşılaştırmalı' : 'Yeni turlar eklendiğinde burada listelenecek.');
+            $siralaEtiket = LandingFilter::SORTS[$filtre['sirala']] ?? 'Önerilen';
+        @endphp
+
+        {{-- 1. Başlık bloğu: degrade çerçeve, üst kategori etiketi + ikon, H1, kısa satır, rozetler --}}
+        <div class="lpm-baslik">
+            <div class="lpm-baslik-ic">
+                <div class="lpm-baslik-ust">
+                    @if($ustKategori)
+                        <a href="{{ LandingSlug::urlForCategory($ustKategori) }}" class="lpm-etiket">{{ $ustKategori->name }}</a>
+                    @else
+                        <span></span>
+                    @endif
+                    <span class="lpm-ikon" aria-hidden="true">
+                        @if(!empty($model->icon))
+                            {{ $model->icon }}
+                        @else
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="m15.5 8.5-2.2 5.8-4.8 1.2 2.2-5.8z"/></svg>
+                        @endif
+                    </span>
+                </div>
+                <h1 class="lpm-h1">{{ $baslik }}</h1>
+                <p class="lpm-satir">{{ $kisaSatir }}</p>
+                @if($toplam)
+                    <div class="lpm-rozetler">
+                        <span class="lpm-rozet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>{{ $toplam }} tur</span>
+                        <span class="lpm-rozet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4.5-6.2"/></svg>{{ $acentaSayisi }} acenta</span>
+                        @if($facets['baslangic'])
+                            <span class="lpm-rozet lpm-rozet-vurgu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>En düşük {{ $facets['baslangic'] }}</span>
+                        @endif
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Alt kategori kırılımı (iç link ağı): yatay kaydırmalı çipler --}}
+        @if($altKategoriler->count())
+            <nav class="lpm-altkat" aria-label="Alt kategoriler">
+                @foreach($altKategoriler as $alt)
+                    <a href="{{ LandingSlug::urlForCategory($alt) }}">{{ $alt->name }}</a>
+                @endforeach
+            </nav>
+        @endif
 
         @if($toplam)
-            <p style="color:var(--text-sec);font-size:15px;margin-bottom:24px;">
-                {{ $acentaSayisi }} acentanın fiyatı karşılaştırmalı
-                @if($enDusuk)
-                    · <strong>{{ number_format($enDusuk, 0, ',', '.') }} ₺</strong>'den başlayan fiyatlar
+            {{-- 2. Yapışkan filtre şeridi: Filtrele (panel) + Sırala (panel) + hızlı çipler (bağlantı) --}}
+            <div class="lpm-serit" id="lpm-serit">
+                <button type="button" class="lpm-filtrele" data-lpm-ac aria-haspopup="dialog" aria-controls="lpm-sheet" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                    Filtrele{{ '' }}@if($filtreSayisi) <span class="lpm-sayac">{{ $filtreSayisi }}</span>@endif
+                </button>
+                <button type="button" class="lpm-cip lpm-cip-sirala" data-lpm-ac="sirala" aria-haspopup="dialog" aria-controls="lpm-sheet">
+                    Sırala: <span>{{ $siralaEtiket }}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                @foreach(array_slice($facets['sureler'], 0, 3) as $s)
+                    @php [$secili, $url] = $cip('sure', $s['gun']); @endphp
+                    <a href="{{ $url }}" class="lpm-cip {{ $secili ? 'on' : '' }}">{{ $s['etiket'] }}@if($secili) <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>@endif</a>
+                @endforeach
+                @foreach(array_slice($facets['aylar'], 0, 2) as $a)
+                    @php [$secili, $url] = $cip('ay', $a['ay']); @endphp
+                    <a href="{{ $url }}" class="lpm-cip {{ $secili ? 'on' : '' }}">{{ $a['ad'] }}@if($secili) <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>@endif</a>
+                @endforeach
+            </div>
+
+            {{-- 3. Tur kartları: tam genişlik --}}
+            @if($sayi)
+                <div class="lpm-liste">
+                    @foreach($tours as $tour)
+                        @php
+                            $campaign = $tour->activeCampaign;
+                            $mIndirim = ($campaign && $tour->price > 0 && $campaign->discount_price < $tour->price)
+                                ? (int) round((1 - $campaign->discount_price / $tour->price) * 100)
+                                : null;
+                            $favori = in_array($tour->id, $favIds, true);
+                        @endphp
+                        <article class="lpm-kart">
+                            <a href="{{ route('tours.show', $tour) }}" class="lpm-kart-link">
+                                <div class="lpm-kart-gorsel">
+                                    @if($tour->image)
+                                        <img src="{{ $tour->image }}" alt="{{ $tour->title }}" loading="lazy">
+                                    @else
+                                        <span aria-hidden="true">🏖️</span>
+                                    @endif
+                                    @if($mIndirim)
+                                        <span class="m-drop-badge">%{{ $mIndirim }} İNDİRİM</span>
+                                    @endif
+                                </div>
+                                <div class="lpm-kart-govde">
+                                    <h3 class="lpm-kart-baslik">{{ $tour->title }}</h3>
+                                    <div class="lpm-kart-acenta">
+                                        @include('partials.tour_card_agency', ['tour' => $tour])
+                                        @if(($tour->reviews_count ?? 0) > 0)
+                                            <span class="lpm-puan">
+                                                <svg viewBox="0 0 24 24" fill="#f59e0b" aria-hidden="true"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8z"/></svg>
+                                                {{ number_format((float) $tour->reviews_avg_rating, 1, ',', '') }} <i>({{ $tour->reviews_count }})</i>
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div class="lpm-kart-meta">
+                                        @if($tour->duration_label)
+                                            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>{{ $tour->duration_label }}</span>
+                                        @endif
+                                        @if($tour->transport_short_label)
+                                            <span>
+                                                @if($tour->transport_type === 'ucak')
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14l8-2 4-8 2 1-2 8 6 3-1 2-7-1-3 4-2-1 1-5z"/></svg>
+                                                @else
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 10h16M8 18v2M16 18v2"/></svg>
+                                                @endif
+                                                {{ $tour->transport_short_label }}
+                                            </span>
+                                        @endif
+                                        @if($tour->departure_label)
+                                            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{{ $tour->departure_label }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="lpm-kart-alt">
+                                        <div class="lpm-fiyat">
+                                            @if($campaign)
+                                                <strong class="kampanya">{{ $campaign->formatted_discount_price }}</strong>
+                                                <s>{{ $tour->formatted_price }}</s>
+                                            @else
+                                                <strong>{{ $tour->formatted_price }}</strong>
+                                            @endif
+                                            <small>kişi başı</small>
+                                        </div>
+                                        <span class="lpm-cta">Turu incele <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+                                    </div>
+                                </div>
+                            </a>
+                            <button type="button" class="m-fav {{ $favori ? 'on' : '' }}" data-tour="{{ $tour->id }}"
+                                aria-label="Favorilere ekle" aria-pressed="{{ $favori ? 'true' : 'false' }}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>
+                            </button>
+                        </article>
+                    @endforeach
+                </div>
+                @if($tours->hasPages())
+                    <div class="lpm-sayfalama">{{ $tours->links() }}</div>
                 @endif
-            </p>
-        @endif
+            @else
+                <div class="lpm-bos">
+                    <div style="font-size:36px;opacity:.6;">🧭</div>
+                    <p style="font-weight:700;margin:8px 0 4px;">Bu filtrelerle tur bulunamadı</p>
+                    <p style="color:var(--text-meta);font-size:14px;margin:0 0 14px;">Seçimlerden birini kaldırınca liste yeniden dolacak.</p>
+                    <a href="{{ $temelUrl }}" class="btn btn-primary">Filtreleri temizle</a>
+                </div>
+            @endif
 
-        @if($altKategoriler->count())
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;">
-                @foreach($altKategoriler as $alt)
-                    <a href="{{ LandingSlug::urlForCategory($alt) }}"
-                       style="border:1px solid var(--border);background:var(--white);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:600;color:var(--text-sec);">
-                        {{ $alt->name }}
-                    </a>
-                @endforeach
-            </div>
-        @endif
-
-        @if($sayi)
-            <div class="grid-4" style="margin-bottom:32px;">
-                @foreach($tours as $tour)
-                    <a href="{{ route('tours.show', $tour) }}" class="card">
-                        @if($tour->image)
-                            <img src="{{ $tour->image }}" alt="{{ $tour->title }}" class="card-img" loading="lazy">
-                        @else
-                            <div class="card-img" style="background:linear-gradient(135deg,#e0f2fe,#f0fdf4);display:flex;align-items:center;justify-content:center;font-size:36px;">🏖️</div>
-                        @endif
-                        <div class="card-body">
-                            <div class="card-title">{{ $tour->title }}</div>
-                            <div class="card-meta">{{ $tour->agency->name ?? '' }} · {{ $tour->duration_label }}</div>
-                            <div class="card-price-row" style="margin-top:8px;">
-                                <span class="price-tag" style="font-size:18px;">{{ $tour->formatted_price }}</span>
-                                <span class="price-sm"> / kişi başı</span>
-                            </div>
+            {{-- 4. Alttan açılan filtre paneli: KENDİ formu (masaüstü formu gizli ama DOM'da; onun
+                 alanları gönderilmesin). Acenta filtresi bilerek yok (kullanıcı kararı). --}}
+            <div class="lpm-ortu" data-lpm-kapat></div>
+            <div class="lpm-sheet" id="lpm-sheet" role="dialog" aria-modal="true" aria-labelledby="lpm-sheet-baslik" aria-hidden="true" inert>
+                <form method="GET" action="{{ $temelUrl }}" id="lpm-form" class="lpm-form" data-lpm-form data-lpm-sayac-url="{{ $temelUrl }}">
+                    <div class="lpm-tutamac" aria-hidden="true"></div>
+                    <div class="lpm-sheet-head">
+                        <h2 id="lpm-sheet-baslik">Filtrele</h2>
+                        <div style="display:flex;align-items:center;">
+                            <a href="{{ $temelUrl }}" class="lpm-temizle">Temizle</a>
+                            <button type="button" class="lpm-kapat" data-lpm-kapat aria-label="Filtreleri kapat">×</button>
                         </div>
-                    </a>
-                @endforeach
-            </div>
+                    </div>
+                    <div class="lpm-sheet-govde">
+                        <fieldset class="lpm-grup" id="lpm-grup-sirala">
+                            <legend>Sırala</legend>
+                            <div class="lpm-cipler">
+                                @foreach(LandingFilter::SORTS as $anahtar => $etiket)
+                                    <label class="lpm-secim"><input type="radio" name="sirala" value="{{ $anahtar }}" @checked($filtre['sirala'] === $anahtar)><span>{{ $etiket }}</span></label>
+                                @endforeach
+                            </div>
+                        </fieldset>
 
-            <div style="margin-bottom:40px;">{{ $tours->links() }}</div>
-        @elseif($toplam)
-            <div class="card" style="padding:32px;text-align:center;margin-bottom:32px;">
-                <p style="font-weight:600;margin-bottom:6px;">Bu filtrelerle tur bulunamadı.</p>
-                <a href="{{ $temelUrl }}" class="btn btn-primary">Filtreleri temizle</a>
+                        @if($fiyatKaydirici)
+                            {{-- Elle girilen min / max (kullanıcı kararı: kaydırıcı değil, sayı). Boş = sınır yok. --}}
+                            <fieldset class="lpm-grup">
+                                <legend>Fiyat aralığı <small class="lpm-grup-not">bu kategoride {{ $tl($fMin) }} – {{ $tl($fMax) }}</small></legend>
+                                <div class="lpm-fiyat-kutular">
+                                    <label class="lpm-sayi">
+                                        <span class="lpm-sayi-etiket">Min</span>
+                                        <input type="number" name="min_fiyat" inputmode="numeric" min="0" step="1" placeholder="{{ $fMin }}" value="{{ $filtre['min_fiyat'] !== null ? (int) $filtre['min_fiyat'] : '' }}" aria-label="En düşük fiyat (₺)">
+                                        <span class="lpm-sayi-birim">₺</span>
+                                    </label>
+                                    <label class="lpm-sayi">
+                                        <span class="lpm-sayi-etiket">Max</span>
+                                        <input type="number" name="max_fiyat" inputmode="numeric" min="0" step="1" placeholder="{{ $fMax }}" value="{{ $filtre['max_fiyat'] !== null ? (int) $filtre['max_fiyat'] : '' }}" aria-label="En yüksek fiyat (₺)">
+                                        <span class="lpm-sayi-birim">₺</span>
+                                    </label>
+                                </div>
+                            </fieldset>
+                        @endif
+
+                        @if(count($facets['sureler']))
+                            <fieldset class="lpm-grup">
+                                <legend>Tur süresi</legend>
+                                <div class="lpm-cipler">
+                                    @foreach($facets['sureler'] as $s)
+                                        <label class="lpm-secim"><input type="checkbox" name="sure[]" value="{{ $s['gun'] }}" @checked(in_array($s['gun'], $filtre['sure'], true))><span>{{ $s['etiket'] }} <small>{{ $s['adet'] }}</small></span></label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                        @endif
+
+                        @if(count($facets['aylar']))
+                            <fieldset class="lpm-grup">
+                                <legend>Kalkış ayı</legend>
+                                <div class="lpm-cipler">
+                                    @foreach($facets['aylar'] as $a)
+                                        <label class="lpm-secim"><input type="checkbox" name="ay[]" value="{{ $a['ay'] }}" @checked(in_array($a['ay'], $filtre['ay'], true))><span>{{ $a['ad'] }} <small>{{ $a['adet'] }}</small></span></label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                        @endif
+
+                        @if(count($facets['kalkislar']))
+                            <fieldset class="lpm-grup">
+                                <legend>Kalkış noktası</legend>
+                                <div class="lpm-cipler">
+                                    <label class="lpm-secim"><input type="radio" name="kalkis" value="" @checked($filtre['kalkis'] === null)><span>Tümü</span></label>
+                                    @foreach($facets['kalkislar'] as $k)
+                                        <label class="lpm-secim"><input type="radio" name="kalkis" value="{{ $k['ad'] }}" @checked($filtre['kalkis'] === $k['ad'])><span>{{ $k['ad'] }} <small>{{ $k['adet'] }}</small></span></label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                        @endif
+                    </div>
+                    <div class="lpm-sheet-alt">
+                        <button type="submit" class="lpm-uygula" data-lpm-uygula data-sablon=":n turu göster">{{ $sayi }} turu göster</button>
+                    </div>
+                </form>
             </div>
         @else
-            <div class="card" style="padding:40px;text-align:center;margin-bottom:32px;">
+            <div class="card" style="padding:40px;text-align:center;margin:12px 0 32px;">
                 <div style="font-size:40px;margin-bottom:12px;">🗓️</div>
                 <p style="font-weight:600;margin-bottom:6px;">Şu anda bu başlıkta yayında tur yok.</p>
                 <p style="color:var(--text-muted);font-size:14px;margin-bottom:20px;">
@@ -893,6 +1172,91 @@
         var tetik = document.getElementById('cv2-trigger');
         if (tetik) { e.preventDefault(); tetik.click(); }
     });
+})();
+
+/* ── Mobil filtre paneli (≤768px) — masaüstü formundan BAĞIMSIZ kendi formu ── */
+(function () {
+    var sheet = document.getElementById('lpm-sheet');
+    var form = document.querySelector('[data-lpm-form]');
+    if (!sheet || !form) return;
+    var ortu = document.querySelector('.lpm-ortu');
+    var kapatBtn = sheet.querySelector('.lpm-kapat');
+    var uygula = form.querySelector('[data-lpm-uygula]');
+    var sonOdak = null;
+
+    function ac(hedefGrup) {
+        sonOdak = document.activeElement;
+        sheet.inert = false;
+        sheet.removeAttribute('aria-hidden');
+        ortu.classList.add('open');
+        sheet.classList.add('open');
+        document.body.classList.add('lpm-kilit');
+        document.querySelectorAll('[data-lpm-ac][aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'true'); });
+        if (hedefGrup) {
+            var g = document.getElementById('lpm-grup-' + hedefGrup);
+            if (g) g.scrollIntoView({ block: 'start' });
+        }
+        if (kapatBtn) kapatBtn.focus({ preventScroll: true });
+    }
+    function kapat() {
+        var acikti = sheet.classList.contains('open');
+        ortu.classList.remove('open');
+        sheet.classList.remove('open');
+        sheet.inert = true;
+        sheet.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('lpm-kilit');
+        document.querySelectorAll('[data-lpm-ac][aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+        if (acikti && sonOdak && typeof sonOdak.focus === 'function') sonOdak.focus({ preventScroll: true });
+        sonOdak = null;
+    }
+    document.querySelectorAll('[data-lpm-ac]').forEach(function (b) {
+        b.addEventListener('click', function () { ac(b.getAttribute('data-lpm-ac') || null); });
+    });
+    document.querySelectorAll('[data-lpm-kapat]').forEach(function (b) { b.addEventListener('click', kapat); });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && sheet.classList.contains('open')) { e.preventDefault(); kapat(); }
+    });
+
+    // Temiz adres: uçtaki kaydırıcı, varsayılan sıralama ve "Tümü" kalkış gönderilmez
+    function gonderilecek(el) {
+        if (!el.name || el.disabled) return false;
+        if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return false;
+        if (el.value === '') return false;
+        if (el.name === 'sirala' && el.value === 'onerilen') return false;
+        return true;
+    }
+    form.addEventListener('submit', function () {
+        Array.prototype.forEach.call(form.elements, function (el) {
+            if (el.name && !gonderilecek(el)) el.disabled = true;
+        });
+    });
+
+    // Canlı sayaç: seçim değişince "N turu göster" (aynı filtre dili, ?sayac=1 → JSON)
+    var sayacUrl = form.getAttribute('data-lpm-sayac-url');
+    var zamanlayici = null, sonIstek = 0;
+    function sayacGuncelle() {
+        var p = new URLSearchParams();
+        Array.prototype.forEach.call(form.elements, function (el) {
+            if (gonderilecek(el)) p.append(el.name, el.value);
+        });
+        p.set('sayac', '1');
+        var istek = ++sonIstek;
+        fetch(sayacUrl + '?' + p.toString(), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+                if (!d || istek !== sonIstek || !uygula) return;
+                var n = Number(d.adet);
+                uygula.textContent = n > 0 ? (uygula.getAttribute('data-sablon') || ':n turu göster').replace(':n', n) : 'Bu filtrelerle tur yok';
+            })
+            .catch(function () {});
+    }
+    function sayacPlanla() {
+        clearTimeout(zamanlayici);
+        zamanlayici = setTimeout(sayacGuncelle, 300);
+    }
+    form.addEventListener('change', sayacPlanla);
+    // Fiyat kutuları yazarken de güncellensin (change yalnız odak çıkınca gelir)
+    form.querySelectorAll('input[type=number]').forEach(function (el) { el.addEventListener('input', sayacPlanla); });
 })();
 </script>
 @endpush

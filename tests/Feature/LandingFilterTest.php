@@ -167,4 +167,86 @@ class LandingFilterTest extends TestCase
             ->assertOk()
             ->assertSee('<link rel="canonical" href="'.url('/balkan-turlari').'">', false);
     }
+
+    // ── Mobil gövde (≤768px): başlık bloğu + yapışkan şerit + alttan filtre paneli ──
+
+    /** Mobil gövde: .lp-mobil açılışından editoryal bloğa kadar (Blade yorumu çıktıya basılmaz). */
+    private function mobilBlok(string $html): string
+    {
+        $start = strpos($html, '<div class="lp-mobil">');
+        $end = strpos($html, 'class="lp-editorial"', $start) ?: strlen($html);
+
+        return substr($html, $start, $end - $start);
+    }
+
+    public function test_mobil_baslik_blogu_ust_kategori_etiketi_ve_rozetleri_basar(): void
+    {
+        $ust = Category::create(['name' => 'Yurt Dışı Turlar', 'slug' => 'yurt-disi-turlar']);
+        $this->kategori->update(['parent_id' => $ust->id, 'icon' => '🌍']);
+
+        $html = $this->get('/balkan-turlari')->assertOk()->getContent();
+        $mobil = $this->mobilBlok($html);
+
+        $this->assertStringContainsString('class="lpm-etiket">Yurt Dışı Turlar</a>', $mobil);
+        $this->assertStringContainsString('<h1 class="lpm-h1">Balkan Turları</h1>', $mobil);
+        $this->assertStringContainsString('3 tur</span>', $mobil);
+        $this->assertStringContainsString('2 acenta</span>', $mobil);
+        $this->assertStringContainsString('En düşük 9.000 ₺', $mobil);
+        $this->assertStringContainsString('2 acentanın fiyatı karşılaştırmalı', $mobil);
+        $this->assertStringContainsString('🌍', $mobil);
+    }
+
+    public function test_mobil_filtre_paneli_kendi_formu_ve_acenta_filtresi_yok(): void
+    {
+        $html = $this->get('/balkan-turlari?sure[]=8')->assertOk()->getContent();
+        $mobil = $this->mobilBlok($html);
+
+        $this->assertStringContainsString('class="lpm-filtrele"', $mobil);
+        $this->assertStringContainsString('<span class="lpm-sayac">1</span>', $mobil);
+        $this->assertStringContainsString('id="lpm-form"', $mobil);
+        // Sıralama radyoları, süre/ay kutuları, kalkış radyoları; acenta YOK (kullanıcı kararı)
+        $this->assertStringContainsString('name="sirala" value="fiyat_azalan"', $mobil);
+        $this->assertStringContainsString('name="sure[]" value="8" checked', $mobil);
+        $this->assertStringContainsString('name="ay[]" value="9"', $mobil);
+        $this->assertStringContainsString('name="kalkis" value="İstanbul"', $mobil);
+        // Fiyat: kaydırıcı değil, elle girilen sayı kutuları (sınırlar yer tutucu)
+        $this->assertStringContainsString('type="number" name="min_fiyat" inputmode="numeric" min="0" step="1" placeholder="9000"', $mobil);
+        $this->assertStringContainsString('type="number" name="max_fiyat" inputmode="numeric" min="0" step="1" placeholder="21000"', $mobil);
+        $this->assertStringNotContainsString('type="range"', $mobil);
+        $this->assertStringNotContainsString('name="acenta[]"', $mobil);
+        $this->assertStringContainsString('2 turu göster', $mobil);
+        // Masaüstü formunda acenta hâlâ var (yalnız mobil karar)
+        $this->assertStringContainsString('name="acenta[]"', $html);
+    }
+
+    public function test_mobil_kart_ulasim_kalkis_ve_turu_incele_basar(): void
+    {
+        $html = $this->get('/balkan-turlari')->assertOk()->getContent();
+        $mobil = $this->mobilBlok($html);
+
+        $this->assertStringContainsString('<h3 class="lpm-kart-baslik">Kısa Belgrad</h3>', $mobil);
+        $this->assertStringContainsString('İstanbul çıkışlı', $mobil);
+        $this->assertStringContainsString('Turu incele', $mobil);
+        $this->assertStringContainsString('class="m-fav', $mobil);
+    }
+
+    public function test_canli_sayac_ucu_filtreli_adedi_json_doner(): void
+    {
+        $this->getJson('/balkan-turlari?sayac=1')->assertOk()->assertExactJson(['adet' => 3]);
+        $this->getJson('/balkan-turlari?sure[]=5&sayac=1')->assertOk()->assertExactJson(['adet' => 1]);
+        $this->getJson('/balkan-turlari?acenta[]='.$this->b->id.'&kalkis=Ankara&sayac=1')->assertOk()->assertExactJson(['adet' => 0]);
+    }
+
+    public function test_mobil_bos_filtre_sonucu_ve_tursuz_kategori_mesajlari(): void
+    {
+        $mobil = $this->mobilBlok($this->get('/balkan-turlari?sure[]=3')->assertOk()->getContent());
+        $this->assertStringContainsString('Bu filtrelerle tur bulunamadı', $mobil);
+        $this->assertStringContainsString('class="lpm-serit"', $mobil); // şerit yerinde kalır
+
+        Category::create(['name' => 'Kayak Turları', 'slug' => 'kayak-turlari']);
+        $mobil = $this->mobilBlok($this->get('/kayak-turlari')->assertOk()->getContent());
+        $this->assertStringContainsString('<h1 class="lpm-h1">Kayak Turları</h1>', $mobil);
+        $this->assertStringContainsString('Şu anda bu başlıkta yayında tur yok.', $mobil);
+        $this->assertStringNotContainsString('class="lpm-serit"', $mobil);
+    }
 }
