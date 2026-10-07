@@ -25,6 +25,7 @@ class Agency extends Model
         'name', 'slug', 'logo', 'website_url',
         'phone', 'email', 'address', 'description', 'is_active', 'approval_status',
         'approval_notes', 'approved_at', 'approved_by', 'legacy_category_access',
+        'import_batch',
     ];
 
     protected $casts = [

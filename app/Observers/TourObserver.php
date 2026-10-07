@@ -20,6 +20,35 @@ use Illuminate\Support\Facades\Notification;
 class TourObserver
 {
     /**
+     * Toplu içe aktarımda (app:bulk-import-tours) yüzlerce "Yeni Tur Eklendi!"
+     * duyurusu üretilmesin: komut bu bayrakla duyuruyu susturur, diğer yan etkiler
+     * (embedding, karakter, rubrik, RAG) normal çalışır. Varsayılan AÇIK; yalnız
+     * withoutNewTourAnnouncements() kapsamında kapanır.
+     */
+    private static bool $announceNewTours = true;
+
+    /**
+     * Verilen işlem boyunca yeni tur duyurularını kapatır; istisna fırlasa da
+     * bayrak eski değerine döner.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function withoutNewTourAnnouncements(callable $callback)
+    {
+        $previous = self::$announceNewTours;
+        self::$announceNewTours = false;
+
+        try {
+            return $callback();
+        } finally {
+            self::$announceNewTours = $previous;
+        }
+    }
+
+    /**
      * Yeni tur oluşturulduğunda embedding, destinasyon profili ve knowledge chunk
      * üret.
      */
@@ -116,7 +145,7 @@ class TourObserver
      */
     private function announceNewTour(Tour $tour): void
     {
-        if (! $tour->is_active) {
+        if (! $tour->is_active || ! self::$announceNewTours) {
             return;
         }
 

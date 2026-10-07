@@ -1,0 +1,45 @@
+{
+  "_not": "app:bulk-import-agencies girdisi. Panel e-postaları ve telefonlar BİLEREK uydurma (kullanıcı kararı, 2026-10-03); turperisi@gmail.com acentanın gerçek adresi olduğu için turperisitur kullanıldı. categories = canlı ALT kategori slug'ları.",
+  "agencies": [
+    {
+      "slug": "malitur",
+      "name": "Malitur",
+      "website_url": "https://malitur.com",
+      "phone": "0555 111 11 11",
+      "email": "malitur@gmail.com",
+      "panel_email": "malitur@gmail.com",
+      "description": "Yurt içi kültür turları ile Balkan, Dubai ve Avrupa programları; İstanbul ve Ankara çıkışlı.",
+      "categories": ["kapadokya-turlari", "karadeniz-turlari", "gap-turlari", "balkan-turlari", "dubai-turlari"]
+    },
+    {
+      "slug": "tatilciniz",
+      "name": "Tatilciniz",
+      "website_url": "https://tatilciniz.com.tr/tr",
+      "phone": "0555 222 22 22",
+      "email": "tatilciniz@gmail.com",
+      "panel_email": "tatilciniz@gmail.com",
+      "description": "Balkan ve Dubai turları, yurt içi kültür ve Ege programları.",
+      "categories": ["balkan-turlari", "dubai-turlari", "gap-turlari", "ege-turlari", "kapadokya-turlari"]
+    },
+    {
+      "slug": "tur-rotasi",
+      "name": "Tur Rotası",
+      "website_url": "https://www.turrotasi.com",
+      "phone": "0555 333 33 33",
+      "email": "turrotasi@gmail.com",
+      "panel_email": "turrotasi@gmail.com",
+      "description": "Yurt içi ve yurt dışı paket turlar; GAP, Balkan, Sharm El Sheikh, Dubai ve Avrupa programları.",
+      "categories": ["gap-turlari", "balkan-turlari", "sharm-el-sheikh-turlari", "dubai-turlari", "avrupa-turlari"]
+    },
+    {
+      "slug": "tur-perisi",
+      "name": "Tur Perisi",
+      "website_url": "https://turperisi.com/tr",
+      "phone": "0555 444 44 44",
+      "email": "turperisitur@gmail.com",
+      "panel_email": "turperisitur@gmail.com",
+      "description": "Günübirlik ve konaklamalı yurt içi turlar, Ege ve Akdeniz otel paketleri, Sharm El Sheikh ve Balkan programları.",
+      "categories": ["bodrum-turlari", "ege-akdeniz-turlari", "sharm-el-sheikh-turlari", "gap-turlari", "balkan-turlari"]
+    }
+  ]
+}

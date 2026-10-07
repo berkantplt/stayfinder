@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\Agency\TourController;
-use App\Services\TourImage\TourImageService;
+use App\Services\Tours\TourPayloadBuilder;
 use Tests\TestCase;
 
+/**
+ * URL temizliği ve program normalizasyonu — eskiden TourController'ın private
+ * metotlarını reflection ile çağırıyordu; mantık TourPayloadBuilder'a taşındı.
+ */
 class TourUrlCleaningTest extends TestCase
 {
     private function clean(?string $url): ?string
     {
-        $method = new \ReflectionMethod(TourController::class, 'cleanTourUrl');
-        $method->setAccessible(true);
-
-        return $method->invoke(new TourController(new TourImageService), $url);
+        return app(TourPayloadBuilder::class)->cleanTourUrl($url);
     }
 
     public function test_strips_tracking_params_keeps_path(): void
@@ -40,10 +40,7 @@ class TourUrlCleaningTest extends TestCase
 
     private function normalizeItinerary($input)
     {
-        $method = new \ReflectionMethod(TourController::class, 'normalizeItinerary');
-        $method->setAccessible(true);
-
-        return $method->invoke(new TourController(new TourImageService), $input);
+        return app(TourPayloadBuilder::class)->normalizeItinerary($input);
     }
 
     public function test_itinerary_drops_empty_days_and_keeps_filled(): void

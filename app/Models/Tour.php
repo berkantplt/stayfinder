@@ -65,6 +65,7 @@ class Tour extends Model
         'cancellation_policy', 'guide_info', 'frequency', 'pricing_blocks',
         'departure_city', 'stop_cities',
         'character_summary', 'pace_score', 'character_version',
+        'import_batch',
     ];
 
     protected $casts = [
