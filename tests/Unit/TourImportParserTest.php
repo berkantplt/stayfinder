@@ -780,6 +780,7 @@ class TourImportParserTest extends TestCase
         $this->assertSame('EUR', $out['currency']);
         $this->assertNotEmpty($out['blocks']);
         $this->assertSame(['2026-11-14'], $out['blocks'][0]['dates']);
+        $this->assertCount(1, $out['blocks'][0]['packages'], 'Mobil+masaüstü çift tablo tek paket');
 
         $pkg = $out['blocks'][0]['packages'][0];
         $this->assertSame(559.0, $pkg['prices']['double_pp']['old']);
@@ -799,6 +800,42 @@ class TourImportParserTest extends TestCase
                 }
             }
         }
+    }
+
+    /**
+     * Malitur sayfası fiyat tablosunu iki kez basar (mobil dikey liste + masaüstü
+     * yatay tablo). Yatay tabloda iki yaş bandı TEK satırdaydı ("3 - 5,99 Yaş
+     * 7 - 11,99 Yaş"); tek sütun sayılınca 5 değer 4 sütuna dağılıp tek kişilik
+     * oda eski/yeni çifti sanılıyor, kaymış kopya mobil listeyle birleşemeyip
+     * ikinci paket kalıyordu (canlı: tek paketli tur 2 paketle girdi).
+     */
+    public function test_malitur_cift_tablo_tek_paket_birlesir(): void
+    {
+        $text = (string) file_get_contents(__DIR__.'/../Fixtures/import/malitur_gap_cift_tablo.txt');
+        $out = $this->invoke('deterministicPricingBlocks', [$text]);
+
+        $this->assertSame('TRY', $out['currency']);
+        $this->assertNotEmpty($out['blocks']);
+        foreach ($out['blocks'] as $block) {
+            $this->assertCount(1, $block['packages'], 'Mobil+masaüstü kopyası tek pakete inmeli: '.implode(',', $block['dates']));
+        }
+        $pkg = $out['blocks'][0]['packages'][0];
+        $this->assertSame('Bölge Otelleri', $pkg['hotel']);
+        $this->assertSame(9999.0, $pkg['prices']['double_pp']['new']);
+        $this->assertNull($pkg['prices']['single']['old'], 'Tek kişilik oda eski/yeni çifti değil');
+        $this->assertSame(14999.0, $pkg['prices']['single']['new']);
+        $this->assertSame(9999.0, $pkg['prices']['extra_bed']['new']);
+        $this->assertSame(4999.0, $pkg['prices']['child_3_5']['new']);
+        $this->assertSame(7249.0, $pkg['prices']['child_7_11']['new']);
+    }
+
+    public function test_room_type_columns_from_label_line_splits_combined_age_bands(): void
+    {
+        $this->assertSame([['child_3_5'], ['child_7_11']], $this->invoke('roomTypeColumnsFromLabelLine', ['3 - 5,99 yas 7 - 11,99 yas']));
+        $this->assertSame([['child_0_2'], ['child_3_5', 'child_7_11']], $this->invoke('roomTypeColumnsFromLabelLine', ['0 - 0,99 yas 2 - 10,99 yas']));
+        $this->assertSame([['child_3_5']], $this->invoke('roomTypeColumnsFromLabelLine', ['3 - 5,99 yas']));
+        $this->assertSame([['single']], $this->invoke('roomTypeColumnsFromLabelLine', ['tek kisilik oda']));
+        $this->assertSame([], $this->invoke('roomTypeColumnsFromLabelLine', ['paket adi']));
     }
 
     public function test_price_tokens_from_line_ayri_okur_kur_cevrimini_atar(): void

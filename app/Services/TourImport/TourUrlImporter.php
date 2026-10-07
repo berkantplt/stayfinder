@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 22;
+    private const CACHE_VERSION = 23;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -3302,9 +3302,15 @@ JS;
         $i = $start;
         while ($i < $count) {
             $fold = $this->foldTr($lines[$i]);
-            $types = $this->roomTypesFromLabel($fold);
-            if ($types !== []) {
-                $columns[] = $types;
+            // Masaüstü tabloda iki yaş bandı TEK satıra sıkışabiliyor ("3 - 5,99 Yaş
+            // 7 - 11,99 Yaş", Malitur): tek sütun sayılınca 5 değer 4 sütuna
+            // dağıtılıyor, tek kişilik oda "eski/yeni" çifti sanılıyordu — kaymış
+            // kopya paket mobil listeyle birleşemeyip İKİNCİ paket olarak kalıyordu.
+            $labelColumns = $this->roomTypeColumnsFromLabelLine($fold);
+            if ($labelColumns !== []) {
+                foreach ($labelColumns as $types) {
+                    $columns[] = $types;
+                }
                 $labelLines++;
                 $i++;
 
@@ -3488,6 +3494,34 @@ JS;
         }
 
         return null;
+    }
+
+    /**
+     * Bir başlık satırındaki sütunlar: normalde tek etiket → tek sütun; satırda
+     * birden çok yaş bandı varsa ("3 - 5,99 yas 7 - 11,99 yas") her band ayrı sütun.
+     *
+     * @return array<int, array<int, string>>
+     */
+    private function roomTypeColumnsFromLabelLine(string $fold): array
+    {
+        if (str_contains($fold, 'yas')
+            && preg_match_all('/\d{1,2}(?:[.,]\d{1,2})?\s*-\s*\d{1,2}(?:[.,]\d{1,2})?\s*yas/u', $fold, $m)
+            && count($m[0]) >= 2) {
+            $columns = [];
+            foreach ($m[0] as $segment) {
+                $types = $this->roomTypesFromLabel($segment);
+                if ($types !== []) {
+                    $columns[] = $types;
+                }
+            }
+            if (count($columns) >= 2) {
+                return $columns;
+            }
+        }
+
+        $types = $this->roomTypesFromLabel($fold);
+
+        return $types !== [] ? [$types] : [];
     }
 
     /**
