@@ -97,11 +97,13 @@ class DiscoveryGuideController extends Controller
 
         $validated = $request->validate(self::preferenceRules());
 
-        $this->guides->personalize($guide, $validated);
+        $guide = $this->guides->personalize($guide, $validated);
 
+        // Hazır içerik bulunduysa rehber kuyruksuz tamamlanmıştır; arayüz
+        // sayfayı yeniler ve doğrudan sonucu görür.
         return response()->json([
             'uuid' => $guide->uuid,
-            'status' => DiscoveryGuide::STATUS_PENDING,
+            'status' => $guide->status,
         ]);
     }
 }

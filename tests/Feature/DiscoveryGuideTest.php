@@ -7,6 +7,8 @@ use App\Models\Agency;
 use App\Models\DiscoveryGuide;
 use App\Models\Tour;
 use App\Models\User;
+use App\Services\Discovery\DiscoveryGuideAiService;
+use App\Services\Discovery\DiscoveryGuideService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -190,6 +192,152 @@ class DiscoveryGuideTest extends TestCase
         $guide->refresh();
         $this->assertTrue($guide->isFailed());
         $this->assertStringContainsString('uzun sürdü', (string) $guide->error_message);
+    }
+
+    // ---------------------------------------------------------------
+    // Dispatch ÖNCESİ yeniden kullanım: hazır içerik varsa kuyruk atlanır
+    // ---------------------------------------------------------------
+
+    public function test_cache_isabetinde_rehber_kuyruksuz_tamamlanir(): void
+    {
+        $ai = app(DiscoveryGuideAiService::class);
+        $anahtar = $ai->cacheKey(new DiscoveryGuide([
+            'destination_input' => 'Paris', 'duration_days' => 4,
+            'traveler_type' => null, 'interests' => null, 'pace' => 'normal', 'budget' => 'standard',
+        ]));
+        $ai->rememberPayload($anahtar, $this->hazirPayload());
+
+        $r = $this->postJson(route('discovery.store'), $this->payload());
+
+        $r->assertCreated()->assertJsonPath('status', DiscoveryGuide::STATUS_COMPLETED);
+
+        $guide = DiscoveryGuide::firstOrFail();
+        $this->assertTrue($guide->isCompleted());
+        $this->assertSame('Paris', $guide->guide_payload['destination']['name']);
+        Queue::assertNotPushed(GenerateDiscoveryGuideJob::class);
+    }
+
+    public function test_ayni_girdili_tamamlanmis_rehber_veritabanindan_yeniden_kullanilir(): void
+    {
+        // Başka kullanıcının, farklı yazımla ("PARİS") tamamlanmış rehberi;
+        // cache boş (deploy sonrası cache:clear senaryosu).
+        $sahip = User::factory()->create();
+        $kaynak = DiscoveryGuide::create([
+            'user_id' => $sahip->id,
+            'destination_input' => 'PARİS',
+            'duration_days' => 4,
+            'pace' => 'normal',
+            'budget' => 'standard',
+            'status' => DiscoveryGuide::STATUS_COMPLETED,
+            'guide_payload' => $this->hazirPayload(),
+        ]);
+
+        // Okuyucu giriş yapmış: misafir oturum çerezi test istemcisinde
+        // istekler arası taşınmadığı için sonuç sayfası sahiplik kontrolünü
+        // login'li kullanıcıyla geçer (AiConversationAccessTest kalıbı).
+        $okuyucu = User::factory()->create();
+        $r = $this->actingAs($okuyucu)->postJson(route('discovery.store'), $this->payload());
+
+        $r->assertCreated()->assertJsonPath('status', DiscoveryGuide::STATUS_COMPLETED);
+
+        $yeni = DiscoveryGuide::whereKeyNot($kaynak->id)->firstOrFail();
+        $this->assertSame($kaynak->guide_payload, $yeni->guide_payload);
+        Queue::assertNotPushed(GenerateDiscoveryGuideJob::class);
+
+        // Cache ısıtıldı: bir sonraki istek DB taramasına bile girmez
+        $ai = app(DiscoveryGuideAiService::class);
+        $this->assertNotNull($ai->cachedPayload($ai->cacheKey($yeni)));
+
+        // Sonuç sayfası doğrudan tamamlanmış içeriği basar (polling yok)
+        $this->actingAs($okuyucu)->get($r->json('redirect_url'))
+            ->assertOk()
+            ->assertSee('Işık şehri Paris.');
+    }
+
+    public function test_eski_veya_farkli_parametreli_rehber_yeniden_kullanilmaz(): void
+    {
+        $eski = DiscoveryGuide::create([
+            'destination_input' => 'Paris', 'duration_days' => 4, 'pace' => 'normal', 'budget' => 'standard',
+            'status' => DiscoveryGuide::STATUS_COMPLETED, 'guide_payload' => $this->hazirPayload(),
+        ]);
+        DB::table('discovery_guides')->where('id', $eski->id)
+            ->update(['updated_at' => now()->subDays(DiscoveryGuideService::REUSE_DAYS + 10)]);
+
+        // Taze ama 3 günlük — gün sayısı farklı, eşleşmemeli
+        DiscoveryGuide::create([
+            'destination_input' => 'Paris', 'duration_days' => 3, 'pace' => 'normal', 'budget' => 'standard',
+            'status' => DiscoveryGuide::STATUS_COMPLETED, 'guide_payload' => $this->hazirPayload(),
+        ]);
+
+        // Taze, aynı parametreler ama ilgi alanı farklı — eşleşmemeli
+        DiscoveryGuide::create([
+            'destination_input' => 'Paris', 'duration_days' => 4, 'pace' => 'normal', 'budget' => 'standard',
+            'interests' => ['gastronomy'],
+            'status' => DiscoveryGuide::STATUS_COMPLETED, 'guide_payload' => $this->hazirPayload(),
+        ]);
+
+        $this->postJson(route('discovery.store'), $this->payload())
+            ->assertCreated()
+            ->assertJsonPath('status', DiscoveryGuide::STATUS_PENDING);
+
+        Queue::assertPushed(GenerateDiscoveryGuideJob::class, 1);
+    }
+
+    public function test_kisisellestirmede_hazir_icerik_kuyruksuz_tamamlanir(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson(route('discovery.store'), $this->payload())->assertCreated();
+        $guide = DiscoveryGuide::firstOrFail();
+        $this->simuleJobTamamlandi($guide);
+
+        // "Çocuklarla" tercihi için hazır içerik cache'te
+        $ai = app(DiscoveryGuideAiService::class);
+        $hedef = (clone $guide)->fill(['traveler_type' => 'with_kids']);
+        $ai->rememberPayload($ai->cacheKey($hedef), $this->hazirPayload());
+
+        $this->actingAs($user)->postJson(route('discovery.personalize', $guide), ['traveler_type' => 'with_kids'])
+            ->assertOk()
+            ->assertJsonPath('status', DiscoveryGuide::STATUS_COMPLETED);
+
+        $guide->refresh();
+        $this->assertSame('with_kids', $guide->traveler_type);
+        $this->assertTrue($guide->isCompleted());
+        $this->assertNotNull($guide->guide_payload);
+
+        Queue::assertPushed(GenerateDiscoveryGuideJob::class, 1); // yalnız create
+    }
+
+    /** Sonuç sayfasının render edebileceği asgari geçerli rehber payload'u. */
+    private function hazirPayload(): array
+    {
+        $gunler = [];
+        foreach (range(1, 4) as $gun) {
+            $gunler[] = [
+                'day' => $gun,
+                'title' => 'Gün '.$gun,
+                'theme' => 'Tema',
+                'morning' => [['name' => 'Sabah durağı', 'description' => 'Açıklama']],
+                'afternoon' => [['name' => 'Öğle durağı', 'description' => 'Açıklama']],
+                'evening' => [['name' => 'Akşam durağı', 'description' => 'Açıklama']],
+                'foods_to_try' => ['Kruvasan'],
+                'daily_tip' => 'Erken çıkın.',
+            ];
+        }
+
+        return [
+            'destination' => ['name' => 'Paris', 'country' => 'Fransa', 'summary' => 'Işık şehri Paris.'],
+            'assumptions' => ['traveler_type' => null, 'pace' => 'normal', 'budget' => 'standard', 'visit_type' => 'first_visit_general'],
+            'unknown_destination' => false,
+            'highlights' => [['name' => 'Eyfel Kulesi', 'category' => 'landmark', 'description' => 'Simge.', 'why_visit' => 'Manzara.']],
+            'things_to_do' => [['name' => 'Seine turu', 'description' => 'Tekne gezisi.']],
+            'historical_places' => [['name' => 'Notre-Dame', 'description' => 'Katedral.']],
+            'museums' => [['name' => 'Louvre', 'description' => 'Müze.']],
+            'local_foods' => [['name' => 'Croissant', 'description' => 'Hamur işi.', 'when_to_try' => 'Kahvaltı']],
+            'daily_plan' => $gunler,
+            'travel_tips' => ['Metro kartı alın.'],
+            'related_destination_keywords' => ['Paris'],
+        ];
     }
 
     /** Gerçek job'ın başarı yolunu taklit eder: status completed + kilit bırakılır. */

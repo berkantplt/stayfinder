@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\GenerateDiscoveryGuideJob;
 use App\Models\DiscoveryGuide;
 use App\Services\Discovery\DestinationContentService;
+use App\Services\Discovery\DiscoveryCityBaseService;
 use App\Services\Discovery\DiscoveryGuideAiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -38,6 +39,7 @@ class GenerateDiscoveryGuideJobTest extends TestCase
         (new GenerateDiscoveryGuideJob($guide->id))->handle(
             app(DiscoveryGuideAiService::class),
             app(DestinationContentService::class),
+            app(DiscoveryCityBaseService::class),
         );
     }
 
@@ -204,5 +206,18 @@ class GenerateDiscoveryGuideJobTest extends TestCase
         $aileli = $this->makeGuide(['traveler_type' => 'family']);
 
         $this->assertNotSame($ai->cacheKey($genel), $ai->cacheKey($aileli));
+    }
+
+    public function test_cache_anahtari_yazim_farklarini_normalize_eder(): void
+    {
+        $ai = app(DiscoveryGuideAiService::class);
+
+        $anahtarlar = array_map(
+            fn (string $yazim) => $ai->cacheKey($this->makeGuide(['destination_input' => $yazim])),
+            ['İstanbul', 'istanbul', 'ISTANBUL', '  Istanbul ', 'ıstanbul'],
+        );
+
+        $this->assertCount(1, array_unique($anahtarlar), 'Aynı şehrin yazımları tek anahtara düşmeli');
+        $this->assertNotSame($anahtarlar[0], $ai->cacheKey($this->makeGuide(['destination_input' => 'İzmir'])));
     }
 }

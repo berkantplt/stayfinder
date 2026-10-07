@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryLicenseController as AdminCategoryLicenseController;
 use App\Http\Controllers\Admin\DepartureCityController;
 use App\Http\Controllers\Admin\DestinationProfileController;
+use App\Http\Controllers\Admin\DiscoveryCityBaseController;
 use App\Http\Controllers\Admin\FeaturedCityController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RubricReviewController;
@@ -491,6 +492,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::put('/destinasyon-profilleri/{profile}', [DestinationProfileController::class, 'update'])->name('destination-profiles.update');
     Route::post('/destinasyon-profilleri/{profile}/yeniden-uret', [DestinationProfileController::class, 'regenerate'])->name('destination-profiles.regenerate');
     Route::delete('/destinasyon-profilleri/{profile}', [DestinationProfileController::class, 'destroy'])->name('destination-profiles.destroy');
+    // Keşif Rehberi şehir tabanları (parametresiz etiketli havuz): listele / yenile / sil
+    Route::get('/kesif-tabanlari', [DiscoveryCityBaseController::class, 'index'])->name('discovery-city-bases.index');
+    Route::post('/kesif-tabanlari/{base}/yeniden-uret', [DiscoveryCityBaseController::class, 'regenerate'])->name('discovery-city-bases.regenerate');
+    Route::delete('/kesif-tabanlari/{base}', [DiscoveryCityBaseController::class, 'destroy'])->name('discovery-city-bases.destroy');
     Route::post('/kategoriler/{category}/toggle', [CategoryController::class, 'toggle'])->name('categories.toggle');
 
     // Blog management

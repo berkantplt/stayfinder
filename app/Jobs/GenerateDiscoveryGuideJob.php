@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\DiscoveryGuide;
 use App\Services\Discovery\DestinationContentService;
+use App\Services\Discovery\DiscoveryCityBaseService;
 use App\Services\Discovery\DiscoveryGuideAiService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Log;
  * frontend status'u poll eder. Durum makinesi: pending → processing →
  * completed | failed. Hatalı/eksik AI içeriği kullanıcıya asla gösterilmez —
  * doğrulama servis katmanında, buraya yalnız geçerli payload düşer.
+ *
+ * Şehir tabanı: taze taban varsa yalnız günlük plan üretilir (6-8 sn);
+ * yoksa tam üretim yapılır ve taban ARKADAN kurulur (BuildDiscoveryCityBaseJob)
+ * — ilk kullanıcı beklemez, sonraki kullanıcılar hızlı alır.
  */
 class GenerateDiscoveryGuideJob extends AiQueueJob
 {
@@ -30,8 +35,11 @@ class GenerateDiscoveryGuideJob extends AiQueueJob
 
     public function __construct(public readonly int $guideId) {}
 
-    public function handle(DiscoveryGuideAiService $ai, DestinationContentService $content): void
-    {
+    public function handle(
+        DiscoveryGuideAiService $ai,
+        DestinationContentService $content,
+        DiscoveryCityBaseService $bases,
+    ): void {
         $guide = DiscoveryGuide::find($this->guideId);
         if (! $guide || $guide->isCompleted()) {
             $this->releaseDispatchLock();
@@ -59,7 +67,8 @@ class GenerateDiscoveryGuideJob extends AiQueueJob
             $context = $content->promptContext($lookup['destination'], $lookup['profile']);
 
             $usedKey = $ai->cacheKey($guide);
-            $payload = $ai->generateCached($guide, $context);
+            $base = $bases->findFresh($guide->destination_input);
+            $payload = $ai->generateCached($guide, $context, $base);
 
             // Üretim sürerken kullanıcı tercihleri değiştiyse (personalize,
             // dispatch kilidine takıldığı için yeni job atmamıştır) bayat
@@ -77,6 +86,14 @@ class GenerateDiscoveryGuideJob extends AiQueueJob
                 'guide_payload' => $payload,
                 'error_message' => null,
             ]);
+
+            if ($base !== null) {
+                $bases->recordHit($base);
+            } elseif (empty($payload['unknown_destination'])) {
+                // Şehrin tabanı yok: arkadan kur, bir sonraki rehber hızlı gelsin.
+                // Tanınmayan destinasyon asla taban olmaz.
+                $bases->queueBuild($guide->destination_input);
+            }
 
             $this->releaseDispatchLock();
         } catch (\Throwable $e) {

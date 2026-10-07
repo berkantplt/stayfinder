@@ -196,17 +196,25 @@ Schedule::command('app:prune-analytics')
 |--------------------------------------------------------------------------
 |
 | Plesk'te supervisor/daemon olmadığı için worker scheduler üzerinden
-| çalışır: her dakika başlar, kuyruğu boşaltır, kendini kapatır
-| (--stop-when-empty). --max-time=50 bir sonraki dakikayla çakışmayı
-| önler. Embedding, destinasyon zenginleştirme ve bilgi tabanı job'ları
-| en fazla ~1 dk gecikmeyle işlenir.
+| çalışır: her dakika arka planda başlar, 55 sn boyunca kuyruğu 1 sn
+| aralıkla dinler, sonra kendini kapatır (--max-time). Böylece yeni job
+| en geç ~1 sn içinde alınır; eski --stop-when-empty düzeninde kuyruk
+| boşalır boşalmaz çıkıldığı için sonraki job bir sonraki dakikayı
+| bekliyordu (Keşif Rehberi'nde 0-60 sn görünür gecikme).
+|
+| withoutOverlapping BİLEREK yok: dakika sınırında job çalışıyorsa worker
+| bitişini bekler (max-time job arasında kontrol edilir), o sırada yeni
+| dakikanın worker'ı kilide takılıp atlanırdı ve 45 sn'ye varan boşluk
+| doğardı. Kısa süreli üst üste binme (en fazla birkaç worker, her biri
+| max-time + süren job kadar yaşar) kabul edilen bedeldir.
+|
+| runInBackground ŞART: aksi halde schedule:run bu komutta 55 sn bloke
+| olur ve aynı dakikadaki diğer zamanlanmış işler gecikir.
 |
 */
-Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
+Schedule::command('queue:work --max-time=55 --sleep=1 --tries=3')
     ->everyMinute()
-    // 5 dk expiry: worker süreci beklenmedik şekilde ölürse kilit varsayılan
-    // 24 saat yerine en fazla 5 dk sürede düşer, kuyruk saatlerce donmaz.
-    ->withoutOverlapping(5)
+    ->runInBackground()
     ->name('queue-worker');
 
 // A10 — Arşivdeki (soft-deleted) turlar 30 gün sonra kalıcı silinir (Tour::prunable).

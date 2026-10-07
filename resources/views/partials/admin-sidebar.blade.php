@@ -108,6 +108,9 @@
         <a href="{{ route('admin.destination-profiles.index') }}" class="sidebar-link {{ request()->routeIs('admin.destination-profiles*') ? 'active' : '' }}">
             <span class="sidebar-icon">🌐</span> Destinasyon Profilleri
         </a>
+        <a href="{{ route('admin.discovery-city-bases.index') }}" class="sidebar-link {{ request()->routeIs('admin.discovery-city-bases*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🧭</span> Keşif Tabanları
+        </a>
         <hr class="p-sb-ayrac">
         <a href="{{ route('home') }}" class="sidebar-link">
             <span class="sidebar-icon">🌍</span> Siteye Dön
