@@ -20,7 +20,7 @@ class TourUrlImporter
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 21;
+    private const CACHE_VERSION = 22;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -3021,27 +3021,42 @@ JS;
                 }
 
                 if ($next !== null && $this->isPriceLine($next)) {
-                    $first = $this->priceFloat($next);
-                    $firstCur = $this->currencyFromLine($next);
+                    // Satır birden çok para birimli fiyat taşıyabilir: Malitur 2026-10
+                    // şablonu ESKİ+YENİ'yi aynı satıra basıyor ("559,00 € 531,05 €"),
+                    // kur çevrimini parantezde ekliyor ("(29.632,59 TRY)"). Satırın
+                    // tümünü priceFloat'a vermek rakamları birleştiriyordu (5590053105).
+                    $tokens = $this->priceTokensFromLine($next);
+                    $first = $tokens['values'][0] ?? null;
+                    $firstCur = $tokens['currency'] ?? $this->currencyFromLine($next);
                     $old = null;
                     $new = $first;
                     $priceLine = $next;
                     $consumed = 1;
 
-                    // İNDİRİMLİ SAYFA: etiketin altında ARDIŞIK İKİ fiyat satırı
-                    // (üstü çizili ESKİ + indirimli YENİ) olur. İkinci satır ancak
-                    // aynı para birimindeyse VE ilkinden KÜÇÜKSE indirimli fiyattır —
-                    // böylece kur çevrimi satırı (€ altındaki TL karşılığı) karışmaz.
-                    $second = $lines[$i + 2] ?? null;
-                    if ($second !== null && $this->isPriceLine($second)) {
-                        $secondVal = $this->priceFloat($second);
-                        $secondCur = $this->currencyFromLine($second);
-                        $sameCurrency = $firstCur === null || $secondCur === null || $firstCur === $secondCur;
-                        if ($first !== null && $secondVal !== null && $sameCurrency && $secondVal < $first) {
+                    if (count($tokens['values']) >= 2) {
+                        // Aynı satırda iki fiyat: küçük olan indirimli (YENİ), büyük ESKİ.
+                        // İkinci fiyat küçük değilse indirim çifti değildir → ilki kalır.
+                        if ($tokens['values'][1] < $first) {
                             $old = $first;
-                            $new = $secondVal;
-                            $priceLine = $second;
-                            $consumed = 2;
+                            $new = $tokens['values'][1];
+                        }
+                    } else {
+                        // İNDİRİMLİ SAYFA: etiketin altında ARDIŞIK İKİ fiyat satırı
+                        // (üstü çizili ESKİ + indirimli YENİ) olur. İkinci satır ancak
+                        // aynı para birimindeyse VE ilkinden KÜÇÜKSE indirimli fiyattır —
+                        // böylece kur çevrimi satırı (€ altındaki TL karşılığı) karışmaz.
+                        $second = $lines[$i + 2] ?? null;
+                        if ($second !== null && $this->isPriceLine($second)) {
+                            $secondTokens = $this->priceTokensFromLine($second);
+                            $secondVal = $secondTokens['values'][0] ?? null;
+                            $secondCur = $secondTokens['currency'] ?? $this->currencyFromLine($second);
+                            $sameCurrency = $firstCur === null || $secondCur === null || $firstCur === $secondCur;
+                            if ($first !== null && $secondVal !== null && $sameCurrency && $secondVal < $first) {
+                                $old = $first;
+                                $new = $secondVal;
+                                $priceLine = $second;
+                                $consumed = 2;
+                            }
                         }
                     }
 
@@ -3338,8 +3353,14 @@ JS;
                 $j = $i;
                 while ($j < $count && ($this->isPriceLine($lines[$j]) || $this->isUnavailableCell($lines[$j]))) {
                     if ($this->isPriceLine($lines[$j])) {
-                        $values[] = $this->priceFloat($lines[$j]);
-                        if ($cur = $this->currencyFromLine($lines[$j])) {
+                        // Satırda birden çok fiyat olabilir ("559,00 € 531,05 € (29.632,59 TRY)"):
+                        // aynı para birimindekiler sırayla koşuya girer (eski, yeni), kur
+                        // çevrimi atılır. assignHorizontalPrices eski>yeni çiftini kendisi kurar.
+                        $tokens = $this->priceTokensFromLine($lines[$j]);
+                        foreach ($tokens['values'] as $value) {
+                            $values[] = $value;
+                        }
+                        if ($cur = ($tokens['currency'] ?? $this->currencyFromLine($lines[$j]))) {
                             $currencyVotes[$cur] = ($currencyVotes[$cur] ?? 0) + 1;
                         }
                     } else {
@@ -3546,6 +3567,51 @@ JS;
     }
 
     /** Satır bir fiyat mı? (para birimi sembollü ya da salt sayı; ≥1). Yaş/etiket satırları elenir. */
+    /**
+     * Bir fiyat satırındaki para birimli fiyatları AYRI AYRI okur.
+     *
+     * Satır tek fiyat taşıyorsa davranış eskisiyle aynı ([priceFloat]). Birden
+     * çok taşıyorsa (Malitur 2026-10: "559,00 € 531,05 € (29.632,59 TRY)") ilk
+     * fiyatın para birimindekiler sırayla döner, farklı para birimi (kur
+     * çevrimi) atılır. Para birimi sembolü/kodu olmayan düz sayı satırı
+     * ("4.999") eski yoldan tek değer döner.
+     *
+     * @return array{values: array<int, float>, currency: ?string}
+     */
+    private function priceTokensFromLine(string $line): array
+    {
+        $money = '#(\d{1,3}(?:\.\d{3})+|\d+)(?:\s*,\s*(\d{1,2}))?\s*(€|₺|\$|£|\b(?:EUR|EURO|USD|TL|TRY|GBP|SAR|AED)\b)#iu';
+
+        if (! preg_match_all($money, $line, $mm, PREG_SET_ORDER)) {
+            $single = $this->priceFloat($line);
+
+            return ['values' => $single !== null ? [$single] : [], 'currency' => $this->currencyFromLine($line)];
+        }
+
+        $values = [];
+        $currency = null;
+        foreach ($mm as $m) {
+            $cur = $this->currencyFromLine(' '.$m[3]);
+            if ($currency === null) {
+                $currency = $cur;
+            } elseif ($cur !== $currency) {
+                continue; // kur çevrimi / ikinci para birimi
+            }
+            $val = $this->priceFloat($m[1].(($m[2] ?? '') !== '' ? ','.$m[2] : ''));
+            if ($val !== null) {
+                $values[] = $val;
+            }
+        }
+
+        if ($values === []) {
+            $single = $this->priceFloat($line);
+
+            return ['values' => $single !== null ? [$single] : [], 'currency' => $currency];
+        }
+
+        return ['values' => $values, 'currency' => $currency];
+    }
+
     private function isPriceLine(string $line): bool
     {
         $t = trim($line);

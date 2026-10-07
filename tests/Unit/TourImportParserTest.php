@@ -765,4 +765,54 @@ class TourImportParserTest extends TestCase
         $this->assertTrue($konsolosluk['requires_visa']);
         $this->assertFalse($konsolosluk['visa_on_arrival']);
     }
+
+    /**
+     * Malitur 2026-10 şablonu: ESKİ ve YENİ fiyat aynı satırda ("559,00 € 531,05 €"),
+     * yatay tabloda kur çevrimi parantezde ("(29.632,59 TRY)"). Eskiden satırın
+     * tümü priceFloat'a gidiyor, rakamlar birleşiyordu (5590053105) — canlıda
+     * tours.price taşması ve toplu içe aktarımda "Fiyat anormal" düşüşü.
+     */
+    public function test_malitur_ayni_satirda_eski_yeni_fiyat_ve_kur_cevrimi(): void
+    {
+        $text = (string) file_get_contents(__DIR__.'/../Fixtures/import/malitur_balkan_cift_fiyat.txt');
+        $out = $this->invoke('deterministicPricingBlocks', [$text]);
+
+        $this->assertSame('EUR', $out['currency']);
+        $this->assertNotEmpty($out['blocks']);
+        $this->assertSame(['2026-11-14'], $out['blocks'][0]['dates']);
+
+        $pkg = $out['blocks'][0]['packages'][0];
+        $this->assertSame(559.0, $pkg['prices']['double_pp']['old']);
+        $this->assertSame(531.05, $pkg['prices']['double_pp']['new']);
+        $this->assertSame(759.0, $pkg['prices']['single']['old']);
+        $this->assertSame(721.05, $pkg['prices']['single']['new']);
+        $this->assertSame(531.05, $pkg['prices']['extra_bed']['new']);
+        $this->assertSame(190.0, $pkg['prices']['child_0_2']['new']);
+        $this->assertSame(521.55, $pkg['prices']['child_3_5']['new']);
+
+        foreach ($this->allPackages($out['blocks']) as $package) {
+            foreach ($package['prices'] as $type => $cell) {
+                foreach (['old', 'new'] as $k) {
+                    if ($cell[$k] !== null) {
+                        $this->assertLessThan(10000, $cell[$k], "{$type}.{$k} rakam birleşmesi: {$cell[$k]}");
+                    }
+                }
+            }
+        }
+    }
+
+    public function test_price_tokens_from_line_ayri_okur_kur_cevrimini_atar(): void
+    {
+        $this->assertSame(
+            ['values' => [559.0, 531.05], 'currency' => 'EUR'],
+            $this->invoke('priceTokensFromLine', ['559,00 € 531,05 € (29.632,59 TRY)'])
+        );
+        $this->assertSame(['values' => [531.05], 'currency' => 'EUR'], $this->invoke('priceTokensFromLine', ['531,05 € (29.632,59 TRY)']));
+        $this->assertSame(['values' => [12500.0], 'currency' => 'TRY'], $this->invoke('priceTokensFromLine', ['12.500 TL']));
+        $this->assertSame(['values' => [1099.0], 'currency' => 'EUR'], $this->invoke('priceTokensFromLine', ['1.099,00 EUR']));
+        $this->assertSame(['values' => [649.0], 'currency' => 'EUR'], $this->invoke('priceTokensFromLine', ['649 ,00 €']), 'span bölünmesi');
+        // Para birimi yoksa eski yol: düz sayı tek değer
+        $this->assertSame(['values' => [4999.0], 'currency' => null], $this->invoke('priceTokensFromLine', ['4.999']));
+        $this->assertSame(['values' => [], 'currency' => null], $this->invoke('priceTokensFromLine', ['Kabul Edilemez']));
+    }
 }
