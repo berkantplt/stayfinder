@@ -41,7 +41,7 @@ class BulkImportTours extends Command
             return self::FAILURE;
         }
 
-        $path = (string) $this->argument('file');
+        $path = self::resolveInputPath((string) $this->argument('file'));
         if (! is_file($path)) {
             $this->error("Dosya bulunamadı: {$path}");
 
@@ -78,7 +78,7 @@ class BulkImportTours extends Command
         $dry = (bool) $this->option('dry');
         $limit = max(0, (int) $this->option('limit'));
         $sleep = max(0, (int) $this->option('sleep'));
-        $report = $this->option('report') ? (string) $this->option('report') : null;
+        $report = $this->option('report') ? self::resolveOutputPath((string) $this->option('report')) : null;
 
         if ($dry) {
             $this->warn('KURU ÇALIŞMA: sayfalar okunur (LLM çağrısı yapılır) ama hiçbir şey yazılmaz. 30 dk içinde gerçek koşu önbellekten yararlanır.');
@@ -230,6 +230,27 @@ class BulkImportTours extends Command
         }
 
         return [$entries, array_values(array_unique($problems)), $warnings];
+    }
+
+    /**
+     * Girdi dosyası: önce verildiği gibi (çalışma dizinine göre), yoksa uygulama
+     * köküne göre. Plesk "PHP betiği çalıştır" görevi artisan'ı belirsiz bir
+     * çalışma dizininden koşturuyor; göreli yol orada kökten çözülmeli.
+     */
+    public static function resolveInputPath(string $path): string
+    {
+        if ($path === '' || is_file($path) || str_starts_with($path, '/')) {
+            return $path;
+        }
+        $alt = base_path($path);
+
+        return is_file($alt) ? $alt : $path;
+    }
+
+    /** Çıktı dosyası (rapor): göreli yol her zaman uygulama köküne göre. */
+    public static function resolveOutputPath(string $path): string
+    {
+        return str_starts_with($path, '/') ? $path : base_path($path);
     }
 
     /** Parti etiketi: temizlik ve iz için zorunlu; dosya adı/etiket olarak güvenli olmalı. */

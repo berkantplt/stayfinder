@@ -352,6 +352,30 @@ class BulkImportToursCommandTest extends TestCase
         $this->assertSame('İstanbul', Tour::where('tour_url', 'https://malitur.com/gap-turu-3-gece')->first()->departure_city);
     }
 
+    public function test_relative_paths_resolve_against_app_root_when_cwd_differs(): void
+    {
+        // Plesk "PHP betiği çalıştır" görevi: çalışma dizini uygulama kökü değil
+        $relativeList = 'storage/app/bulk-test-'.uniqid().'.txt';
+        $relativeReport = 'storage/app/bulk-test-'.uniqid().'.tsv';
+        file_put_contents(base_path($relativeList), "malitur;gap-turlari;https://malitur.com/gap-turu\n");
+        $this->mockImporter($this->fixture());
+
+        $cwd = getcwd();
+        chdir(sys_get_temp_dir());
+        try {
+            $this->artisan('app:bulk-import-tours', ['file' => $relativeList, '--batch' => 'b1', '--sleep' => 0, '--report' => $relativeReport])
+                ->expectsOutputToContain('[eklendi]')
+                ->assertSuccessful();
+        } finally {
+            chdir($cwd);
+            @unlink(base_path($relativeList));
+        }
+
+        $this->assertSame(1, Tour::count());
+        $this->assertFileExists(base_path($relativeReport), 'Rapor uygulama köküne göre yazılır');
+        @unlink(base_path($relativeReport));
+    }
+
     public function test_report_tsv_and_limit_and_access_warning(): void
     {
         $noAccess = Category::create(['name' => 'Dubai Turları', 'slug' => 'dubai-turlari', 'parent_id' => $this->gap->parent_id, 'is_active' => true, 'monthly_price' => 1500]);

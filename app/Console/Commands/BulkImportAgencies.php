@@ -33,7 +33,7 @@ class BulkImportAgencies extends Command
             return self::FAILURE;
         }
 
-        $path = (string) $this->argument('file');
+        $path = BulkImportTours::resolveInputPath((string) $this->argument('file'));
         if (! is_file($path)) {
             $this->error("Dosya bulunamadı: {$path}");
 
