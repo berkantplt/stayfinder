@@ -196,6 +196,7 @@
     .prog-day.kisa .inc-caret { display:none; }
     .prog-day.kisa .prog-day-head { cursor:default; }
     .prog-day-plain { padding:11px 0; font-weight:700; color:#0f172a; font-size:14px; }
+    .prog-day-head { scroll-margin-top:96px; } /* akordeon kaydırmasında yapışkan menü payı */
 </style>
 @endpush
 
@@ -1000,6 +1001,26 @@ window.incToggle = function (btn) {
     if (box.classList.contains('kisa')) return;
     var acik = box.classList.toggle('acik');
     box.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', acik); });
+
+    // Program günleri AKORDEON (2026-10-04, kullanıcı kararı; mobil/masaüstü aynı):
+    // bir gün açılınca açık duran diğer gün kapanır, aynı anda tek gün okunur.
+    // Dahil/hariç kutuları (.inc-box) bağımsız kalır.
+    if (acik && box.classList.contains('prog-day') && box.parentElement) {
+        var ustteKapandi = false;
+        box.parentElement.querySelectorAll('.prog-day.acik').forEach(function (diger) {
+            if (diger === box) return;
+            diger.classList.remove('acik');
+            diger.querySelectorAll('[aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
+            if (diger.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING) ustteKapandi = true;
+        });
+        // Üstteki gün kapanınca içerik yukarı kayar; açılan günün başlığı yapışkan
+        // menünün altına kaçmasın. Kapanma geçişi .35s → bitince kontrol edilir.
+        if (ustteKapandi) {
+            setTimeout(function () {
+                if (btn.getBoundingClientRect().top < 96) btn.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            }, 380);
+        }
+    }
 };
 document.querySelectorAll('.inc-box .inc-body, .prog-day .prog-day-body').forEach(function (body) {
     if (body.scrollHeight <= body.clientHeight) body.closest('.inc-box, .prog-day').classList.add('kisa');

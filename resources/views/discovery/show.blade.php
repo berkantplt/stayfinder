@@ -22,6 +22,7 @@
     .dg-day-body { padding: 18px 20px; position: relative; }
     /* Kapalı hâl: ilk birkaç satır görünür, altı karta doğru şeffaflaşır.
        JS kapalıysa aşağıdaki <noscript> bu sınırı kaldırır — içerik saklı kalmaz. */
+    .dg-day { scroll-margin-top: 96px; } /* akordeon kaydırmasında yapışkan menü payı */
     .dg-day-body.dg-kapali { max-height: 150px; overflow: hidden; }
     .dg-day-body.dg-kapali::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 88px; background: linear-gradient(to bottom, rgba(255,255,255,0), var(--white) 82%); pointer-events: none; }
     .dg-day-ac { width: 100%; border: 0; border-top: 1px solid var(--border); background: var(--white); color: var(--accent-dark); font-family: inherit; font-size: 13px; font-weight: 700; padding: 11px 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .15s; }
@@ -351,8 +352,32 @@
             const acik = ! govde.classList.toggle('dg-kapali');
             btn.setAttribute('aria-expanded', acik ? 'true' : 'false');
             btn.querySelector('.dg-ac-yazi').textContent = acik ? 'Daha az göster' : 'Günün tamamını gör';
-            // Kapanırken kart ekranın dışında kalmasın (uzun günlerde sayfa zıplaması).
-            if (! acik) btn.scrollIntoView({ block: 'nearest' });
+
+            if (! acik) {
+                // Kapanırken kart ekranın dışında kalmasın (uzun günlerde sayfa zıplaması).
+                btn.scrollIntoView({ block: 'nearest' });
+                return;
+            }
+
+            // AKORDEON (2026-10-04, kullanıcı kararı; mobil/masaüstü aynı): bir gün
+            // açılınca açık duran diğer günler kapanır, aynı anda tek gün okunur.
+            let ustteKapandi = false;
+            document.querySelectorAll('.dg-day-ac[aria-expanded="true"]').forEach(function (digerBtn) {
+                if (digerBtn === btn) return;
+                const digerGovde = document.getElementById(digerBtn.getAttribute('aria-controls'));
+                if (digerGovde) digerGovde.classList.add('dg-kapali');
+                digerBtn.setAttribute('aria-expanded', 'false');
+                digerBtn.querySelector('.dg-ac-yazi').textContent = 'Günün tamamını gör';
+                if (digerBtn.compareDocumentPosition(btn) & Node.DOCUMENT_POSITION_FOLLOWING) ustteKapandi = true;
+            });
+
+            // Düğme kartın ALTINDA: açılan içerik düğmenin üstüne doğru büyür. Üstteki
+            // gün kapanıp sayfa kaydıysa ya da kartın başı ekran dışındaysa okumaya
+            // kartın başından başlanır (yapışkan menü payı scroll-margin-top ile).
+            const kart = govde.closest('.dg-day') || govde;
+            if (ustteKapandi || kart.getBoundingClientRect().top < 96) {
+                kart.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            }
         });
     });
 })();
