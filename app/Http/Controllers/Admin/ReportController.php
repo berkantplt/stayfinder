@@ -20,7 +20,9 @@ use App\Models\TourView;
 use App\Models\User;
 use App\Notifications\CategorySubscriptionRenewalFailedNotification;
 use App\Services\Matching\Rubric;
+use App\Support\CategoryLicensing;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -31,13 +33,28 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * çekim, acenta/kategori başına gelir) hiçbir yerde toplanmıyordu ve KYM Genel
  * Bakış ile Siparişler ekranı farklı ciro gösteriyordu.
  *
+ * 2026-10 yeniden tasarım (mantık düzeltmeleri):
+ *  - ÜCRETLİ hat ile MANUEL/BEDAVA hat ayrıldı: admin'in elle verdiği ve toplu
+ *    içe aktarımın açtığı abonelikler status=paid, 0 TL, payment_provider=manual
+ *    siparişle doğar. MRR bunları zaten dışlıyordu ama tahsilat sayacı ve
+ *    kategori/acenta tabloları dışlamıyordu → gelir tabloları gelir olmayan
+ *    satırlarla doluyordu. Artık tahsilat yalnız ücretli; tablolar "manuel"
+ *    sütunu taşır; CSV'ler de.
+ *  - "Yenilenen" eklendi: ücretli lisans kaleminin aboneliği siparişten önce
+ *    başlamışsa (finalizer uzatmada started_at'i korur) yenilemedir.
+ *  - "Dolan" yalnız iptal edilmemiş abonelikleri sayar; acenta iptali + dönem
+ *    sonu expire aynı aboneliği iki kez (iptal + dolan) sayıyordu.
+ *  - Kuyruk sayaçları önbellek DIŞINDA: 5 dk eski "en eski X dk" canlı sanılıyordu.
+ *  - Yaşam boyu sayaç Dashboard/Trafik ile aynı kural (arşivdeki turlar hariç).
+ *  - 7 gün favori oranı yalnız penceresi kapanan kayıtlar üzerinden.
+ *
  * Kurallar:
  *  - Para YALNIZ status=PAID siparişlerden, ödemenin gerçekleştiği an (paid_at) ile.
  *    purchased_at ve pending/failed/cancelled asla ciroya girmez.
  *  - Dönem takvim bazlı (bu ay / geçen ay); "son 90 gün" kayan pencere.
  *  - Ham trafik tabloları 180 günde budanır (PruneAnalytics); daha eski dönem
  *    seçilince uyarı gösterilir, yaşam boyu sayaçlar ayrı satırdır.
- *  - Sonuç 5 dk önbellekte: ekran anlık ağır hesap yapmaz.
+ *  - Sonuç 5 dk önbellekte (hesaplanma saati ekranda; ?yenile=1 tazeler).
  */
 class ReportController extends Controller
 {
@@ -54,12 +71,17 @@ class ReportController extends Controller
     /** PruneAnalytics ai_search_logs tablosunu bu kadar gün sonra siler. */
     private const AI_RETENTION_DAYS = 90;
 
+    private const CACHE_TTL = 300;
+
     public function index(Request $request)
     {
         [$donem, $start, $end] = $this->resolvePeriod($request);
 
-        $cacheKey = 'admin:rapor:'.$donem.':'.$start->toDateString().':'.$end->toDateString();
-        $rapor = cache()->remember($cacheKey, 300, fn () => $this->build($start, $end));
+        $cacheKey = 'admin:rapor:v2:'.$donem.':'.$start->toDateString().':'.$end->toDateString();
+        if ($request->boolean('yenile')) {
+            cache()->forget($cacheKey);
+        }
+        $rapor = cache()->remember($cacheKey, self::CACHE_TTL, fn () => $this->build($start, $end));
 
         return view('admin.reports.index', [
             'donem' => $donem,
@@ -67,12 +89,17 @@ class ReportController extends Controller
             'start' => $start,
             'end' => $end,
             'rapor' => $rapor,
+            'hesaplandi' => CarbonImmutable::parse($rapor['hesaplandi']),
+            // Kuyruk anlık okunur — önbelleğe GİRMEZ (bekleyen iş / en eski dk canlı olmalı)
+            'kuyruk' => $this->kuyruk(),
         ]);
     }
 
     /**
      * CSV dışa aktarma (muhasebe / Excel). Noktalı virgül ayraç + UTF-8 BOM:
      * Türkçe Excel doğrudan açar. Aynı dönem çözümlemesi, aynı PAID kuralı.
+     * Manuel (0 TL) siparişler satır olarak kalır ama ödeme yöntemi / manuel
+     * sütunuyla işaretlidir — muhasebe ayıklayabilsin.
      */
     public function export(Request $request): StreamedResponse
     {
@@ -132,6 +159,7 @@ class ReportController extends Controller
                 'to' => 'required|date|after_or_equal:from',
             ], [
                 'from.required' => 'Özel aralık için başlangıç tarihi girin.',
+                'to.required' => 'Özel aralık için bitiş tarihi girin.',
                 'from.before_or_equal' => 'Başlangıç tarihi bugünden ileri olamaz.',
                 'to.after_or_equal' => 'Bitiş tarihi başlangıçtan önce olamaz.',
             ]);
@@ -153,6 +181,7 @@ class ReportController extends Controller
     private function build(CarbonImmutable $start, CarbonImmutable $end): array
     {
         return [
+            'hesaplandi' => CarbonImmutable::now()->toIso8601String(),
             'gelir' => $this->gelir($start, $end),
             'trafik' => $this->trafik($start, $end),
             'urun' => $this->urun($start, $end),
@@ -162,24 +191,43 @@ class ReportController extends Controller
 
     // ───────────────────────── Gelir ─────────────────────────
 
+    /** Ücretli sipariş: ödeme yöntemi manuel olmayan (iyzico vb.). */
+    private function ucretliSiparis(Builder $q): Builder
+    {
+        return $q->where('payment_provider', '!=', AgencyCategoryOrder::PROVIDER_MANUAL);
+    }
+
     private function gelir(CarbonImmutable $start, CarbonImmutable $end): array
     {
         $paid = AgencyCategoryOrder::query()
             ->where('status', AgencyCategoryOrder::STATUS_PAID)
             ->whereBetween('paid_at', [$start, $end]);
 
-        $tahsilat = (clone $paid)->selectRaw('COUNT(*) as adet, COALESCE(SUM(subtotal), 0) as tutar')->first();
-        $otomatik = (clone $paid)->where('auto_renewal', true)->count();
+        // Tahsilat YALNIZ ücretli siparişlerden (manuel 0 TL sipariş gelir değildir)
+        $tahsilat = $this->ucretliSiparis(clone $paid)
+            ->selectRaw('COUNT(*) as adet, COALESCE(SUM(subtotal), 0) as tutar')->first();
+        $otomatik = $this->ucretliSiparis(clone $paid)->where('auto_renewal', true)->count();
         $manuelSiparis = (clone $paid)->where('payment_provider', AgencyCategoryOrder::PROVIDER_MANUAL)->count();
 
         // Admin'in bedava verdiği (manuel, 0 TL sipariş) abonelikler monthly_price'ı
         // tarife fiyatıyla taşır ama gelir değildir — MRR ve eğriden hariç, ayrı sayaç.
         $ucretli = fn ($q) => $q->whereDoesntHave('lastOrder', fn ($o) => $o->where('payment_provider', AgencyCategoryOrder::PROVIDER_MANUAL));
+        $manuel = fn ($q) => $q->whereHas('lastOrder', fn ($o) => $o->where('payment_provider', AgencyCategoryOrder::PROVIDER_MANUAL));
 
-        // MRR: bugün aktif, ücretli aboneliklerin aylık ücret toplamı
+        // MRR: bugün aktif, ücretli aboneliklerin aylık LİSANS ücreti toplamı
         $mrr = (float) $ucretli(AgencyCategorySubscription::active())->sum('monthly_price');
-        $manuelAbonelik = AgencyCategorySubscription::active()
-            ->whereHas('lastOrder', fn ($o) => $o->where('payment_provider', AgencyCategoryOrder::PROVIDER_MANUAL))->count();
+        $ucretliAbonelik = (int) $ucretli(AgencyCategorySubscription::active())->count();
+        $manuelAbonelik = (int) $manuel(AgencyCategorySubscription::active())->count();
+
+        // Ekstra tur hakkı geliri: yenileme ücreti = lisans + hak × ekstra fiyat.
+        // MRR eğrisiyle tutarlılık için lisans MRR'ına katılmaz, ayrı satırda gösterilir.
+        $mrrEkstra = 0.0;
+        if (CategoryLicensing::slotSchemaReady()) {
+            $mrrEkstra = (float) $ucretli(AgencyCategorySubscription::active())
+                ->join('categories', 'categories.id', '=', 'agency_category_subscriptions.category_id')
+                ->selectRaw('COALESCE(SUM(agency_category_subscriptions.extra_tour_slots * categories.extra_tour_price), 0) as tutar')
+                ->value('tutar');
+        }
 
         // 12 aylık MRR eğrisi. Abonelik satırı geçmiş tutmaz (yenileme expires_at'i
         // uzatır); "o ay sonunda aktif miydi" = started_at <= gün <= expires_at.
@@ -201,11 +249,28 @@ class ReportController extends Controller
             ];
         }
 
+        $autoRenew = CategoryLicensing::autoRenewSchemaReady();
+        // whereDate: date kolonu sqlite'ta "Y-m-d 00:00:00" saklanır; düz string
+        // BETWEEN üst sınır gününü kaçırır (MySQL DATE'te sorun yok, test ortamında var)
+        $yeniBase = AgencyCategorySubscription::query()
+            ->whereDate('started_at', '>=', $start->toDateString())
+            ->whereDate('started_at', '<=', $end->toDateString());
+
         $hareket = [
-            'yeni' => AgencyCategorySubscription::whereBetween('started_at', [$start->toDateString(), $end->toDateString()])->count(),
-            'iptal' => AgencyCategorySubscription::whereBetween('cancelled_at', [$start, $end])->count(),
+            // yeni = dönemde başlayan abonelik (manuel/bedava dahil; kaçı manuel ayrıca)
+            'yeni' => (clone $yeniBase)->count(),
+            'yeniManuel' => $manuel(clone $yeniBase)->count(),
+            // yenilenen = ücretli lisans kalemi, aboneliği siparişten ÖNCE başlamış
+            // (uzatmada finalizer started_at'i korur; kesintili yeniden başlatma yeni'dir)
+            'yenilenen' => $this->yenilenenSayisi($start, $end),
+            // iptal = yenileme kapatıldı (acenta) veya admin iptali — cancelled_at yazılır
+            'iptal' => $autoRenew ? AgencyCategorySubscription::whereBetween('cancelled_at', [$start, $end])->count() : 0,
+            // dolan = iptal edilmeden süresi bitti (iptal edilen zaten "iptal"de sayıldı)
             'dolan' => AgencyCategorySubscription::where('status', AgencyCategorySubscription::STATUS_EXPIRED)
-                ->whereBetween('expires_at', [$start->toDateString(), $end->toDateString()])->count(),
+                ->whereDate('expires_at', '>=', $start->toDateString())
+                ->whereDate('expires_at', '<=', $end->toDateString())
+                ->when($autoRenew, fn ($q) => $q->whereNull('cancelled_at'))
+                ->count(),
         ];
 
         // Başarısız otomatik çekim: komut her denemede acenta kullanıcılarına bildirim
@@ -242,12 +307,14 @@ class ReportController extends Controller
 
         return [
             'mrr' => round($mrr, 2),
+            'mrrEkstra' => round($mrrEkstra, 2),
             'mrrEgri' => $mrrEgri,
             'tahsilat' => ['adet' => (int) $tahsilat->adet, 'tutar' => round((float) $tahsilat->tutar, 2)],
             'otomatikYenileme' => $otomatik,
             'manuelSiparis' => $manuelSiparis,
             'hareket' => $hareket,
             'aktifAbonelik' => AgencyCategorySubscription::active()->count(),
+            'ucretliAbonelik' => $ucretliAbonelik,
             'manuelAbonelik' => $manuelAbonelik,
             'legacyAcenta' => Agency::where('legacy_category_access', true)->count(),
             'basarisizCekim' => array_slice($basarisiz, 0, 20),
@@ -257,15 +324,45 @@ class ReportController extends Controller
         ];
     }
 
+    /**
+     * Ücretli lisans kalemi + aynı acenta/kategori aboneliği siparişten önce
+     * başlamışsa yenilemedir. (Ekstra hak kalemleri yenileme sayılmaz.)
+     */
+    private function yenilenenSayisi(CarbonImmutable $start, CarbonImmutable $end): int
+    {
+        $q = AgencyCategoryOrderItem::query()
+            ->join('agency_category_orders as o', 'o.id', '=', 'agency_category_order_items.order_id')
+            ->join('agency_category_subscriptions as s', function ($join) {
+                $join->on('s.agency_id', '=', 'o.agency_id')
+                    ->on('s.category_id', '=', 'agency_category_order_items.category_id');
+            })
+            ->where('o.status', AgencyCategoryOrder::STATUS_PAID)
+            ->where('o.payment_provider', '!=', AgencyCategoryOrder::PROVIDER_MANUAL)
+            ->whereBetween('o.paid_at', [$start, $end])
+            // DATE() hem MySQL hem sqlite'ta var; aynı gün başlayan abonelik yeni'dir
+            ->whereRaw('DATE(s.started_at) < DATE(o.paid_at)');
+
+        if (CategoryLicensing::slotSchemaReady()) {
+            $q->where(fn ($w) => $w->whereNull('agency_category_order_items.item_type')
+                ->orWhere('agency_category_order_items.item_type', AgencyCategoryOrderItem::TYPE_LICENSE));
+        }
+
+        return (int) $q->count();
+    }
+
     private function kategoriGelir(CarbonImmutable $start, CarbonImmutable $end)
     {
         return AgencyCategoryOrderItem::query()
             ->join('agency_category_orders as o', 'o.id', '=', 'agency_category_order_items.order_id')
             ->where('o.status', AgencyCategoryOrder::STATUS_PAID)
             ->whereBetween('o.paid_at', [$start, $end])
-            ->selectRaw('agency_category_order_items.category_name as kategori, COUNT(*) as kalem, COALESCE(SUM(agency_category_order_items.unit_price), 0) as tutar')
+            ->selectRaw('agency_category_order_items.category_name as kategori, COUNT(*) as kalem, '
+                .'SUM(CASE WHEN o.payment_provider = ? THEN 1 ELSE 0 END) as manuel, '
+                .'COALESCE(SUM(agency_category_order_items.unit_price), 0) as tutar', [AgencyCategoryOrder::PROVIDER_MANUAL])
             ->groupBy('agency_category_order_items.category_name')
             ->orderByDesc('tutar')
+            ->orderByDesc('kalem')
+            ->orderBy('kategori')
             ->get();
     }
 
@@ -275,9 +372,13 @@ class ReportController extends Controller
             ->join('agencies', 'agencies.id', '=', 'agency_category_orders.agency_id')
             ->where('agency_category_orders.status', AgencyCategoryOrder::STATUS_PAID)
             ->whereBetween('agency_category_orders.paid_at', [$start, $end])
-            ->selectRaw('agencies.id as agency_id, agencies.name as acenta, agencies.deleted_at as silinme, COUNT(*) as siparis, COALESCE(SUM(agency_category_orders.subtotal), 0) as tutar')
+            ->selectRaw('agencies.id as agency_id, agencies.name as acenta, agencies.deleted_at as silinme, COUNT(*) as siparis, '
+                .'SUM(CASE WHEN agency_category_orders.payment_provider = ? THEN 1 ELSE 0 END) as manuel, '
+                .'COALESCE(SUM(agency_category_orders.subtotal), 0) as tutar', [AgencyCategoryOrder::PROVIDER_MANUAL])
             ->groupBy('agencies.id', 'agencies.name', 'agencies.deleted_at')
-            ->orderByDesc('tutar');
+            ->orderByDesc('tutar')
+            ->orderByDesc('siparis')
+            ->orderBy('acenta');
 
         return $limit ? $q->limit($limit)->get() : $q->get();
     }
@@ -293,7 +394,7 @@ class ReportController extends Controller
             ->selectRaw('tour_id, COUNT(*) as adet')
             ->groupBy('tour_id')->orderByDesc('adet')->limit(10)->get();
         $ids = $topViews->pluck('tour_id');
-        $tours = $ids->isEmpty() ? collect() : Tour::withTrashed()->whereIn('id', $ids)->get(['id', 'title', 'slug', 'destination'])->keyBy('id');
+        $tours = $ids->isEmpty() ? collect() : Tour::withTrashed()->whereIn('id', $ids)->get(['id', 'title', 'slug', 'destination', 'deleted_at'])->keyBy('id');
         $clickMap = $ids->isEmpty() ? collect() : TourClick::whereIn('tour_id', $ids)->whereBetween('clicked_at', [$start, $end])
             ->selectRaw('tour_id, COUNT(*) as adet')->groupBy('tour_id')->pluck('adet', 'tour_id');
 
@@ -324,9 +425,10 @@ class ReportController extends Controller
             'enCok' => $enCok,
             'destinasyon' => $destinasyon,
             'kategori' => $kategori,
+            // Dashboard ve Trafik sayfasıyla AYNI kaynak/kural (arşivdeki turlar hariç)
             'yasamBoyu' => [
-                'views' => (int) Tour::withTrashed()->sum('views_count'),
-                'clicks' => (int) Tour::withTrashed()->sum('clicks_count'),
+                'views' => (int) Tour::sum('views_count'),
+                'clicks' => (int) Tour::sum('clicks_count'),
             ],
         ];
     }
@@ -354,12 +456,16 @@ class ReportController extends Controller
         $kesif = DiscoveryGuide::whereBetween('created_at', [$start, $end])
             ->selectRaw('status, COUNT(*) as adet')->groupBy('status')->pluck('adet', 'status');
 
-        $kayitIds = User::where('role', User::ROLE_VISITOR)->whereBetween('created_at', [$start, $end])->pluck('created_at', 'id');
-        $ilkFavori = $kayitIds->isEmpty() ? collect() : DB::table('favorites')
-            ->whereIn('user_id', $kayitIds->keys())
+        // 7 gün içinde favori: yalnız penceresi KAPANMIŞ kayıtlar (kayıt + 7 gün <= şimdi)
+        // ölçülür; dün kayıt olan henüz favori eklememiş diye orana girmesin.
+        $kayitlar = User::where('role', User::ROLE_VISITOR)->whereBetween('created_at', [$start, $end])->pluck('created_at', 'id');
+        $pencereSiniri = CarbonImmutable::now()->subDays(7);
+        $uygun = $kayitlar->filter(fn ($zaman) => CarbonImmutable::parse($zaman)->lte($pencereSiniri));
+        $ilkFavori = $uygun->isEmpty() ? collect() : DB::table('favorites')
+            ->whereIn('user_id', $uygun->keys())
             ->selectRaw('user_id, MIN(created_at) as ilk')->groupBy('user_id')->pluck('ilk', 'user_id');
         $yediGunAktif = 0;
-        foreach ($kayitIds as $userId => $kayitZamani) {
+        foreach ($uygun as $userId => $kayitZamani) {
             $ilk = $ilkFavori[$userId] ?? null;
             if ($ilk !== null && CarbonImmutable::parse($ilk)->lte(CarbonImmutable::parse($kayitZamani)->addDays(7))) {
                 $yediGunAktif++;
@@ -378,6 +484,7 @@ class ReportController extends Controller
                 'toplam' => (int) $kesif->sum(),
                 'tamamlanan' => (int) ($kesif[DiscoveryGuide::STATUS_COMPLETED] ?? 0),
                 'basarisiz' => (int) ($kesif[DiscoveryGuide::STATUS_FAILED] ?? 0),
+                'bekleyen' => (int) (($kesif[DiscoveryGuide::STATUS_PENDING] ?? 0) + ($kesif[DiscoveryGuide::STATUS_PROCESSING] ?? 0)),
             ],
             'kupon' => [
                 'tanimlanan' => Coupon::whereBetween('created_at', [$start, $end])->count(),
@@ -386,9 +493,10 @@ class ReportController extends Controller
                 'tukenen' => Coupon::whereNotNull('max_uses')->whereColumn('used_count', '>=', 'max_uses')->count(),
             ],
             'kullanici' => [
-                'kayit' => $kayitIds->count(),
+                'kayit' => $kayitlar->count(),
+                'yediGunUygun' => $uygun->count(),
                 'yediGunFavori' => $yediGunAktif,
-                'yediGunOran' => $kayitIds->count() > 0 ? round($yediGunAktif / $kayitIds->count() * 100, 1) : null,
+                'yediGunOran' => $uygun->count() > 0 ? round($yediGunAktif / $uygun->count() * 100, 1) : null,
             ],
         ];
     }
@@ -408,8 +516,6 @@ class ReportController extends Controller
 
         $puanliTurIds = TourRubricScore::where('rubric_version', Rubric::VERSION)->select('tour_id');
 
-        $enEskiIs = DB::table('jobs')->orderBy('available_at')->value('available_at');
-
         return [
             'bekleyenBasvuru' => Agency::pendingApproval()->count(),
             'donemdeOnaylanan' => $onaylanan->count(),
@@ -419,12 +525,19 @@ class ReportController extends Controller
             'aktifTur' => Tour::active()->count(),
             'puansizTur' => Tour::active()->whereNotIn('tours.id', $puanliTurIds)->count(),
             'quizAcik' => (bool) config('ai.quiz_enabled'),
-            'kuyruk' => [
-                'bekleyen' => DB::table('jobs')->count(),
-                'enEskiDakika' => $enEskiIs ? max(0, (int) round((time() - (int) $enEskiIs) / 60)) : null,
-                'basarisiz' => DB::table('failed_jobs')->count(),
-                'sonBasarisiz' => DB::table('failed_jobs')->max('failed_at'),
-            ],
+        ];
+    }
+
+    /** Kuyruk anlık durumu — önbelleksiz, her açılışta okunur. */
+    private function kuyruk(): array
+    {
+        $enEskiIs = DB::table('jobs')->orderBy('available_at')->value('available_at');
+
+        return [
+            'bekleyen' => DB::table('jobs')->count(),
+            'enEskiDakika' => $enEskiIs ? max(0, (int) round((time() - (int) $enEskiIs) / 60)) : null,
+            'basarisiz' => DB::table('failed_jobs')->count(),
+            'sonBasarisiz' => DB::table('failed_jobs')->max('failed_at'),
         ];
     }
 
@@ -453,17 +566,17 @@ class ReportController extends Controller
 
     private function acentaGelirSatirlari(CarbonImmutable $start, CarbonImmutable $end): iterable
     {
-        yield ['Acenta', 'Ödenmiş Sipariş', 'Tutar (TL)'];
+        yield ['Acenta', 'Ödenmiş Sipariş', 'Manuel (0 TL)', 'Tutar (TL)'];
         foreach ($this->acentaGelir($start, $end, null) as $r) {
-            yield [$r->acenta, (int) $r->siparis, number_format((float) $r->tutar, 2, ',', '')];
+            yield [$r->acenta, (int) $r->siparis, (int) $r->manuel, number_format((float) $r->tutar, 2, ',', '')];
         }
     }
 
     private function kategoriGelirSatirlari(CarbonImmutable $start, CarbonImmutable $end): iterable
     {
-        yield ['Kategori', 'Kalem', 'Tutar (TL)'];
+        yield ['Kategori', 'Kalem', 'Manuel (0 TL)', 'Tutar (TL)'];
         foreach ($this->kategoriGelir($start, $end) as $r) {
-            yield [$r->kategori, (int) $r->kalem, number_format((float) $r->tutar, 2, ',', '')];
+            yield [$r->kategori, (int) $r->kalem, (int) $r->manuel, number_format((float) $r->tutar, 2, ',', '')];
         }
     }
 }
