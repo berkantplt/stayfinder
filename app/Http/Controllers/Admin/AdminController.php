@@ -469,17 +469,25 @@ class AdminController extends Controller
         // rastgele, kimsenin bilmediği bir hash ile yaratılır; acenta parolasını tek
         // kullanımlık "parola belirle" bağlantısıyla kendisi seçer (posta çalışıyorsa
         // e-postayla gider, yoksa bağlantı admine bir kez gösterilir).
+        //
+        // 2026-10: admin isterse parolayı formdan kendisi de belirleyebilir. O durumda
+        // bağlantı üretilmez; parola yine de oturuma/ekrana YAZILMAZ (admin zaten biliyor).
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
             'email' => 'required|email|max:255|unique:users,email',
-            'website_url' => 'nullable|url',
+            'website_url' => 'nullable|url|max:255',
             'description' => 'nullable|string',
+            'password' => 'nullable|string|min:8|max:72', // 72 = bcrypt sınırı
         ]);
+
+        // Parola acenta tablosuna gitmesin; yalnız kullanıcı kaydında kullanılır.
+        $password = $validated['password'] ?? null;
+        unset($validated['password']);
 
         // Acenta + kullanıcı tek işlemde: kullanıcı oluşturma patlarsa
         // sahipsiz (girilemeyen) bir acenta kaydı kalmasın.
-        [$agency, $user] = DB::transaction(function () use ($validated) {
+        [$agency, $user] = DB::transaction(function () use ($validated, $password) {
             $agency = Agency::create(array_merge($validated, [
                 'approval_status' => Agency::STATUS_APPROVED,
                 'approved_at' => now(),
@@ -489,31 +497,46 @@ class AdminController extends Controller
             $user = User::create([
                 'name' => $agency->name.' Yönetici',
                 'email' => $validated['email'],
-                'password' => Hash::make(Str::random(40)), // bilinmeyen; bağlantıyla değiştirilecek
+                // Parola verilmediyse bilinmeyen rastgele hash; bağlantıyla belirlenecek.
+                'password' => Hash::make($password ?? Str::random(40)),
                 'role' => User::ROLE_AGENCY,
                 'agency_id' => $agency->id,
             ]);
 
+            // Admin parolayı belirlediyse hesap "parolası var" sayılır: sosyal giriş
+            // istisnası mevcut parolayı sormadan değiştirmeye izin vermesin (User::hasPassword).
+            if ($password !== null) {
+                $user->markPasswordSet();
+            }
+
             return [$agency, $user];
         });
 
-        $credentials = ['agency' => $agency->name, 'email' => $user->email, 'mailed' => false];
+        $credentials = [
+            'agency' => $agency->name,
+            'email' => $user->email,
+            'mailed' => false,
+            'password_set' => $password !== null,
+        ];
 
-        // Posta çalışıyorsa bağlantı acentaya e-postayla (Türkçe ResetPasswordNotification) gider.
-        if (! in_array(config('mail.default'), ['log', 'array'], true)) {
-            try {
-                $credentials['mailed'] = Password::sendResetLink(['email' => $user->email]) === Password::RESET_LINK_SENT;
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('[AdminController] Parola bağlantısı e-postayla gönderilemedi: '.$e->getMessage());
+        // Admin parolayı belirlediyse bağlantıya gerek yok; parola oturuma yazılmaz.
+        if ($password === null) {
+            // Posta çalışıyorsa bağlantı acentaya e-postayla (Türkçe ResetPasswordNotification) gider.
+            if (! in_array(config('mail.default'), ['log', 'array'], true)) {
+                try {
+                    $credentials['mailed'] = Password::sendResetLink(['email' => $user->email]) === Password::RESET_LINK_SENT;
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('[AdminController] Parola bağlantısı e-postayla gönderilemedi: '.$e->getMessage());
+                }
             }
-        }
 
-        // Posta yoksa/gönderilemediyse: tek kullanımlık bağlantı admine BİR kez gösterilir
-        // (parola değil: süresi dolar, bir kez kullanılır, parola belirlenince geçersizleşir).
-        if (! $credentials['mailed']) {
-            $token = Password::broker()->createToken($user);
-            $credentials['setup_url'] = route('password.reset', ['token' => $token, 'email' => $user->email]);
-            $credentials['expires_minutes'] = (int) config('auth.passwords.users.expire', 60);
+            // Posta yoksa/gönderilemediyse: tek kullanımlık bağlantı admine BİR kez gösterilir
+            // (parola değil: süresi dolar, bir kez kullanılır, parola belirlenince geçersizleşir).
+            if (! $credentials['mailed']) {
+                $token = Password::broker()->createToken($user);
+                $credentials['setup_url'] = route('password.reset', ['token' => $token, 'email' => $user->email]);
+                $credentials['expires_minutes'] = (int) config('auth.passwords.users.expire', 60);
+            }
         }
 
         return redirect()->route('admin.agencies')

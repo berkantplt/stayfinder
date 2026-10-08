@@ -23,7 +23,9 @@
                 {{-- B15: parola yok; tek kullanımlık "parola belirle" bağlantısı --}}
                 <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">Giriş e-postası</div>
                 <div style="font-family:monospace;font-size:15px;font-weight:700;margin-bottom:12px;">{{ $creds['email'] }}</div>
-                @if(!empty($creds['mailed']))
+                @if(!empty($creds['password_set']))
+                    <p style="font-size:13px;color:#475569;margin:0;">Parolayı siz belirlediniz; güvenlik gereği burada gösterilmez. E-posta ve parolayı acentaya güvenli bir kanaldan iletin. Acenta parolasını panelden ya da "Şifremi unuttum" ile değiştirebilir.</p>
+                @elseif(!empty($creds['mailed']))
                     <p style="font-size:13px;color:#475569;margin:0;">Parola belirleme bağlantısı acentanın e-postasına gönderildi; acenta parolasını kendisi seçecek. Bağlantı gelmezse acenta "Şifremi unuttum" ile yenisini alabilir.</p>
                 @else
                     <p style="font-size:13px;color:#475569;margin-bottom:8px;">
