@@ -41,6 +41,11 @@ class PasswordEyeToggleTest extends TestCase
         $this->assertHerSifreAlanindaGozVar($this->get('/kayit')->assertOk()->getContent(), 2);
     }
 
+    public function test_acenta_kayit_sayfasinda_iki_alanda_goz_var(): void
+    {
+        $this->assertHerSifreAlanindaGozVar($this->get('/acenta-kayit')->assertOk()->getContent(), 2);
+    }
+
     public function test_sifre_sifirlama_sayfasinda_goz_var(): void
     {
         $html = $this->get('/sifre-sifirla/ornek-token?email=a%40b.com')->assertOk()->getContent();

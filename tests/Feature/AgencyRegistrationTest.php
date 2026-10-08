@@ -13,8 +13,8 @@ class AgencyRegistrationTest extends TestCase
 
     public function test_agency_can_register_from_public_form(): void
     {
-        $response = $this->post(route('register.post'), [
-            'account_type' => 'agency',
+        // Acenta başvurusu kendi ucunda (/acenta-kayit); bireysel kayıt ucu acenta açmaz.
+        $response = $this->post(route('agency.register.post'), [
             'agency_name' => 'Yeni Dunya Travel',
             'name' => 'Ayse Yilmaz',
             'email' => 'acenta@example.com',

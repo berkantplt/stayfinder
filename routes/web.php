@@ -268,60 +268,67 @@ Route::middleware('guest')->group(function () {
         ->name('password.update');
 });
 
-Route::get('/kayit', function () {
+// Kayıt: bireysel (/kayit) ve acenta (/acenta-kayit) AYRI sayfa + AYRI uç.
+// 2026-10-08'e kadar tek formda Bireysel/Acenta anahtarı vardı; footer "Acenta Ol"
+// /kayit?type=agency'ye düşüyordu. Artık acenta başvurusu kendi sayfasında.
+Route::get('/kayit', function (Request $request) {
+    // Eski bağlantılar (/kayit?type=agency) yeni acenta sayfasına gider
+    if ($request->query('type') === 'agency') {
+        return redirect()->route('agency.register');
+    }
+
     return view('auth.register');
 })->name('register');
 Route::get('/acenta-kayit', function () {
-    return redirect()->route('register', ['type' => 'agency']);
+    return view('auth.agency-register');
 })->name('agency.register');
-Route::post('/kayit', function (Request $request) {
-    $accountType = $request->input('account_type', 'visitor');
 
-    if ($accountType === 'agency') {
-        $validated = $request->validate([
-            'account_type' => 'required|in:agency,visitor',
-            'agency_name' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:50',
-            'website_url' => 'nullable|url|max:255',
-            'description' => 'nullable|string|max:2000',
-            'password' => 'required|string|min:8|confirmed',
+Route::post('/acenta-kayit', function (Request $request) {
+    $validated = $request->validate([
+        'agency_name' => 'required|string|max:255',
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'phone' => 'nullable|string|max:50',
+        'website_url' => 'nullable|url|max:255',
+        'description' => 'nullable|string|max:2000',
+        'password' => 'required|string|min:8|confirmed',
+    ]);
+
+    $user = DB::transaction(function () use ($validated) {
+        cache()->forget('admin:bekleyen-sayaclar'); // A7: admin rozeti
+        $agency = Agency::create([
+            'name' => $validated['agency_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'website_url' => $validated['website_url'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'is_active' => false,
+            'approval_status' => Agency::STATUS_PENDING,
+            'legacy_category_access' => false,
         ]);
 
-        $user = DB::transaction(function () use ($validated) {
-            cache()->forget('admin:bekleyen-sayaclar'); // A7: admin rozeti
-            $agency = Agency::create([
-                'name' => $validated['agency_name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'website_url' => $validated['website_url'] ?? null,
-                'description' => $validated['description'] ?? null,
-                'is_active' => false,
-                'approval_status' => Agency::STATUS_PENDING,
-                'legacy_category_access' => false,
-            ]);
+        return User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => User::ROLE_AGENCY,
+            'agency_id' => $agency->id,
+            'phone' => $validated['phone'] ?? null,
+        ]);
+    });
 
-            return User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => User::ROLE_AGENCY,
-                'agency_id' => $agency->id,
-                'phone' => $validated['phone'] ?? null,
-            ]);
-        });
+    $user->markPasswordSet();
+    Auth::login($user);
 
-        $user->markPasswordSet();
-        Auth::login($user);
+    return redirect()
+        ->route('agency.application.status')
+        ->with('success', 'Acenta başvurunuz alındı. Admin onayı sonrası paneliniz açılacak.');
+})->middleware('throttle:register')->name('agency.register.post');
 
-        return redirect()
-            ->route('agency.application.status')
-            ->with('success', 'Acenta başvurunuz alındı. Admin onayı sonrası paneliniz açılacak.');
-    }
-
+// Yalnız bireysel hesap: account_type=agency gönderilse bile acenta AÇMAZ,
+// acenta başvurusu agency.register.post ucundadır.
+Route::post('/kayit', function (Request $request) {
     $validated = $request->validate([
-        'account_type' => 'required|in:agency,visitor',
         'name' => 'required|string|max:255',
         'email' => 'required|email|unique:users,email',
         'password' => 'required|string|min:8|confirmed',

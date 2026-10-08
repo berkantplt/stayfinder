@@ -1,35 +1,32 @@
 @extends('layouts.app')
-@section('title', 'Kayıt Ol — turXtur')
+@section('title', 'Acenta Başvurusu — turXtur')
 
 @section('content')
-{{-- Tam ekran fotoğraf zemini (partials.auth-background) bu sayfada BİLEREK yok:
-     fotoğraf kartın sol panelinde, sayfa zemini sade kalıyor.
-     Giriş / şifre sayfaları eski zeminde — onlar ayrı karar.
-
-     Bu sayfa YALNIZ bireysel (gezgin) kaydıdır. Acenta başvurusu ayrı sayfada
-     (/acenta-kayit, auth/agency-register) — eskiden ikisi aynı formda
-     Bireysel/Acenta anahtarıyla duruyordu, 2026-10-08'de ayrıldı.
-     Ortak kart stili: auth/_kayit-stil. --}}
+{{-- Acenta kayıt sayfası (/acenta-kayit). Bireysel kayıttan (/kayit, auth/register)
+     2026-10-08'de ayrıldı: footer "Acenta Ol", giriş sayfasındaki "Acenta hesabı
+     oluşturun" ve yasal sayfalar buraya gelir. Aynı kart tasarımı, acenta metni;
+     sosyal giriş BİLEREK yok (Google/Apple acenta adı, iletişim ve admin onayı
+     bilgilerini getirmez). Ortak kart stili: auth/_kayit-stil. --}}
 
 <div class="container kayit-sayfa">
     <div class="kayit-kart">
         <aside class="kayit-gorsel">
             <div class="kayit-gorsel__ic">
                 <span class="kayit-gorsel__cizgi"></span>
-                <h2>Yeni rotalar,<br>yeni hikâyeler.</h2>
-                <p>Bir sonraki seyahatin burada başlasın.</p>
+                <h2>Turunuzu binlerce<br>gezginle buluşturun.</h2>
+                <p>turXtur acentası olun, turlarınızı yayınlayın.</p>
                 <ul>
                     <li>
                         <span class="kayit-tik" aria-hidden="true">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         </span>
-                        Turları karşılaştır
+                        Daha fazla gezgine ulaş
                     </li>
                     <li>
                         <span class="kayit-tik" aria-hidden="true">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         </span>
-                        Favorilerini sakla
+                        Satışlarını artır
                     </li>
                 </ul>
             </div>
@@ -40,25 +37,47 @@
         </aside>
 
         <div class="kayit-form">
-            <h1 id="register-title">Hesabını oluştur</h1>
-            <p class="kayit-form__alt">Ücretsiz katıl, sana uyan turları keşfet.</p>
+            <h1 id="register-title">Acenta başvurusu</h1>
+            <p class="kayit-form__alt">Başvurunu gönder, admin onayı sonrası panelin açılsın.</p>
 
             @include('partials.form-errors', ['style' => 'margin-bottom:22px;'])
 
-            <form method="POST" action="{{ route('register.post') }}" id="register-form">
+            <form method="POST" action="{{ route('agency.register.post') }}" id="agency-register-form">
                 @csrf
-                {{-- Bağlam (giriş sayfasıyla aynı): kayıt sonrası aynı tura dönüş + bekleyen favori --}}
-                <input type="hidden" name="next" value="{{ \App\Support\LoginReturn::safePath(request('next')) }}">
-                <input type="hidden" name="favori" value="{{ ctype_digit((string) request('favori')) ? request('favori') : '' }}">
 
-                <div class="kayit-alan">
-                    <label for="name">Ad Soyad</label>
-                    <input type="text" id="name" name="name" value="{{ old('name') }}" required autofocus autocomplete="name" placeholder="Adınız ve soyadınız">
+                <div class="kayit-bilgi">
+                    Başvuru gönderildiğinde sizin için bir acenta profili ve yetkili kullanıcı hesabı oluşturulur. Admin onayı sonrası kategori satın alıp tur paylaşmaya başlayabilirsiniz.
                 </div>
 
                 <div class="kayit-alan">
-                    <label for="email">E-posta</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autocomplete="email" placeholder="ornek@eposta.com">
+                    <label for="agency_name">Acenta Adı</label>
+                    <input type="text" id="agency_name" name="agency_name" value="{{ old('agency_name') }}" required autofocus autocomplete="organization" placeholder="Acentanızın ticari adı">
+                </div>
+
+                <div class="kayit-alan">
+                    <label for="name">Yetkili Ad Soyad</label>
+                    <input type="text" id="name" name="name" value="{{ old('name') }}" required autocomplete="name" placeholder="Adınız ve soyadınız">
+                </div>
+
+                <div class="kayit-alan">
+                    <label for="email">Yetkili E-posta</label>
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autocomplete="email" placeholder="ornek@acenta.com">
+                </div>
+
+                <div class="kayit-ikili">
+                    <div class="kayit-alan">
+                        <label for="phone">Telefon</label>
+                        <input type="text" id="phone" name="phone" value="{{ old('phone') }}" autocomplete="tel" placeholder="0212 000 00 00">
+                    </div>
+                    <div class="kayit-alan">
+                        <label for="website_url">Web Sitesi</label>
+                        <input type="url" id="website_url" name="website_url" value="{{ old('website_url') }}" autocomplete="url" placeholder="https://...">
+                    </div>
+                </div>
+
+                <div class="kayit-alan">
+                    <label for="description">Kısa Açıklama</label>
+                    <textarea id="description" name="description" rows="3" placeholder="Acentanızı birkaç cümleyle tanıtın">{{ old('description') }}</textarea>
                 </div>
 
                 <div class="kayit-ikili">
@@ -80,19 +99,16 @@
                 </div>
 
                 <button type="submit" class="kayit-gonder">
-                    <span>Ücretsiz hesap oluştur</span>
+                    <span>Acenta başvurusu gönder</span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
                 </button>
             </form>
 
-            {{-- Sosyal kayıt yalnız bireysel hesap içindir; acenta sayfasında yok. --}}
-            @include('partials.social-auth-buttons', ['mode' => 'register'])
-
             <div class="kayit-giris">
-                Zaten hesabın var mı? <a href="{{ route('login', array_filter(['next' => \App\Support\LoginReturn::safePath(request('next')), 'favori' => ctype_digit((string) request('favori')) ? request('favori') : null])) }}">Giriş yap</a>
+                Zaten acenta hesabın var mı? <a href="{{ route('login') }}">Giriş yap</a>
             </div>
             <div class="kayit-giris kayit-giris--ikincil">
-                Acenta mısınız? <a href="{{ route('agency.register') }}">Acenta başvurusu yapın</a>
+                Gezgin misiniz? <a href="{{ route('register') }}">Bireysel hesap oluşturun</a>
             </div>
         </div>
     </div>
@@ -103,5 +119,4 @@
     @include('auth._kayit-stil')
 @endsection
 
-{{-- Şifre göz düğmeleri layouts/app.blade.php'deki ortak [data-sifre-hedef] dinleyicisinde;
-     bu sayfanın kendi JS'i yok (hesap türü anahtarı kalktı). --}}
+{{-- Şifre göz düğmeleri layouts/app.blade.php'deki ortak [data-sifre-hedef] dinleyicisinde. --}}
