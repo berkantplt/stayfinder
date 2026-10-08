@@ -17,10 +17,15 @@
             return [
                 'basvuru' => \App\Models\Agency::pendingApproval()->count(),
                 'talep' => \App\Models\CategoryRequest::pending()->count(),
+                // Tur Puanlama rozeti: aktif ama güncel rubrik puanı olmayan tur
+                'puansiz' => \App\Models\Tour::where('is_active', true)
+                    ->whereNotIn('id', \App\Models\TourRubricScore::where('rubric_version', \App\Services\Matching\Rubric::VERSION)->select('tour_id'))
+                    ->count(),
             ];
         });
         $pendingAgencyApplicationsCount = $bekleyen['basvuru'];
         $pendingCategoryRequestsCount = $bekleyen['talep'];
+        $puansizTurSayisi = $bekleyen['puansiz'] ?? 0; // eski 60 sn'lik önbellekte anahtar olmayabilir
     @endphp
 
     <div class="p-sb-liste">
@@ -42,6 +47,13 @@
         </a>
         <a href="{{ route('admin.tour-visa') }}" class="sidebar-link {{ request()->routeIs('admin.tour-visa*') ? 'active' : '' }}">
             <span class="sidebar-icon">🛂</span> Vize Durumu
+        </a>
+        <a href="{{ route('admin.rubric.index') }}" class="sidebar-link {{ request()->routeIs('admin.rubric*') ? 'active' : '' }}">
+            <span class="sidebar-icon">🎯</span>
+            <span class="p-sb-esnek">Tur Puanlama</span>
+            @if($puansizTurSayisi > 0)
+                <span class="p-sb-rozet">{{ $puansizTurSayisi }}</span>
+            @endif
         </a>
         <a href="{{ route('admin.categories.parents') }}" class="sidebar-link {{ request()->routeIs('admin.categories*') ? 'active' : '' }}">
             <span class="sidebar-icon">📁</span> Kategori Yönetimi

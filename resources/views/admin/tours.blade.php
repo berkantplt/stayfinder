@@ -105,7 +105,7 @@
             @else
                 <div class="card" style="padding:0;overflow:hidden;margin:0;">
                     <div class="table-wrap"><table class="table" style="margin:0;border:none;">
-                        <thead><tr><th>Tur</th><th>Acenta</th><th>Destinasyon</th><th>Süre</th><th>Fiyat</th><th>Tarih</th><th style="text-align:right;">Tıklama</th><th style="text-align:right;">Görüntülenme</th><th>Durum</th></tr></thead>
+                        <thead><tr><th>Tur</th><th>Acenta</th><th>Destinasyon</th><th>Süre</th><th>Fiyat</th><th>Tarih</th><th style="text-align:right;">Tıklama</th><th style="text-align:right;">Görüntülenme</th><th>Durum</th><th>Puan</th></tr></thead>
                         <tbody>
                             @foreach($tours as $tour)
                             <tr style="border-bottom:1px solid var(--border-light);">
@@ -124,6 +124,8 @@
                                 </td>
                                 <td style="text-align:right;font-weight:600;color:{{ $tour->views_count > 0 ? '#8b5cf6' : '#cbd5e1' }};">{{ number_format($tour->views_count) }}</td>
                                 <td><span class="badge {{ $tour->is_active ? 'badge-green' : '' }}" style="{{ !$tour->is_active ? 'background:#fef2f2;color:#991b1b;' : '' }}">{{ $tour->is_active ? 'Aktif' : 'Pasif' }}</span></td>
+                                @php($puan = $puanDurumlari[$tour->id] ?? \App\Services\Matching\RubricCoverage::PUANSIZ)
+                                <td><a href="{{ route('admin.rubric.index', ['sekme' => $puan]) }}" class="p-etiket {{ \App\Services\Matching\RubricCoverage::ETIKET[$puan][1] }}" title="Tur Puanlama sayfasında aç">{{ \App\Services\Matching\RubricCoverage::ETIKET[$puan][0] }}</a></td>
                             </tr>
                             @endforeach
                         </tbody>

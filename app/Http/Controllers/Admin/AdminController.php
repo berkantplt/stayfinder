@@ -700,11 +700,14 @@ class AdminController extends Controller
 
         $tours = $query->paginate(15)->withQueryString();
 
+        // Puan sütunu: yalnız sayfadaki 15 tur için durum türetilir (tüm katalog değil)
+        $puanDurumlari = app(\App\Services\Matching\RubricCoverage::class)->durumlar($tours->getCollection());
+
         // Dropdown data
         $agencies = Agency::orderBy('name')->get();
         $destinations = DestinationFilter::vocabulary(Tour::whereNotNull('destination'));
 
-        return view('admin.tours', compact('tours', 'agencies', 'destinations'));
+        return view('admin.tours', compact('tours', 'agencies', 'destinations', 'puanDurumlari'));
     }
 
     // --- Destination Management ---

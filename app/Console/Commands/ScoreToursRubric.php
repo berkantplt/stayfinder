@@ -2,16 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ScoreTourRubricJob;
-use App\Models\Tour;
-use App\Models\TourRubricScore;
-use App\Services\Matching\Rubric;
+use App\Services\Matching\RubricCoverage;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Rubrik puanı eksik/bayat turları kuyruğa alır. Yeni/güncellenen turları
  * TourObserver otomatik yakalar; bu komut geriye dönük tarama içindir.
+ *
+ * Durum hesabı ve kuyruğa alma RubricCoverage'da — admin "Tur Puanlama"
+ * sayfasıyla aynı sayıları basar.
  */
 class ScoreToursRubric extends Command
 {
@@ -23,41 +22,32 @@ class ScoreToursRubric extends Command
 
     protected $description = 'Rubrik (v1) puanı eksik veya bayat turlar için ScoreTourRubricJob kuyruğa alır';
 
-    public function handle(): int
+    public function handle(RubricCoverage $kapsam): int
     {
-        $query = Tour::query()->orderBy('id');
-        if (! $this->option('all')) {
-            $query->where('is_active', true);
-        }
-
-        $scored = TourRubricScore::where('rubric_version', Rubric::VERSION)->get()->keyBy('tour_id');
+        $pasifDahil = (bool) $this->option('all');
+        $rapor = $kapsam->rapor($pasifDahil);
+        $ozet = $rapor['ozet'];
 
         // Durum özeti: "kaç tur chat'te kart olarak çıkabilir" sorusunun cevabı.
         // (Sunucuda tinker --execute tırnak sorunları çıkardığı için buraya kondu.)
-        $incelemede = $scored->where('review_status', TourRubricScore::STATUS_NEEDS_REVIEW)->count();
-        $yayinlanabilir = $scored->count() - $incelemede;
         $this->line(sprintf(
-            'DURUM → aktif tur: %d | puanlı: %d | YAYINLANABİLİR (chat kart gösterebilir): %d | editör onayı bekleyen: %d',
-            Tour::where('is_active', true)->count(),
-            $scored->count(),
-            $yayinlanabilir,
-            $incelemede,
+            'DURUM → %s tur: %d | puanlı: %d | YAYINLANABİLİR (chat kart gösterebilir): %d | editör onayı bekleyen: %d | puansız: %d | bayat: %d | kuyrukta: %d | başarısız: %d',
+            $pasifDahil ? 'toplam' : 'aktif',
+            $ozet['tur'],
+            $ozet['puanli'] + $ozet['bayat'] + $ozet['incelemede'],
+            $ozet['yayinlanabilir'],
+            $ozet['incelemede'],
+            $ozet['puansiz'],
+            $ozet['bayat'],
+            $ozet['kuyrukta'],
+            $ozet['basarisiz'],
         ));
 
-        $ids = $query->get(['id', 'duration_days', 'destination', 'hotel_info', 'included', 'extras', 'itinerary'])
-            ->filter(function (Tour $tour) use ($scored) {
-                if ($this->option('force')) {
-                    return true;
-                }
-                $existing = $scored->get($tour->id);
-                if (! $existing) {
-                    return true;
-                }
-                $hash = hash('sha256', Rubric::VERSION.'|'.ScoreTourRubricJob::sanitizedInput($tour));
-
-                return $existing->input_hash !== $hash; // program değişmiş → bayat
-            })
-            ->pluck('id');
+        $ids = $rapor['satirlar']
+            ->filter(fn (array $satir) => $this->option('force')
+                || in_array($satir['durum'], [RubricCoverage::PUANSIZ, RubricCoverage::BAYAT], true))
+            ->map(fn (array $satir) => $satir['tour']->id)
+            ->values();
 
         if ($limit = (int) $this->option('limit')) {
             $ids = $ids->take($limit);
@@ -74,14 +64,7 @@ class ScoreToursRubric extends Command
             return self::SUCCESS;
         }
 
-        $dispatched = 0;
-        foreach ($ids as $id) {
-            if (! Cache::add(ScoreTourRubricJob::DISPATCH_LOCK_PREFIX.$id, 1, 600)) {
-                continue;
-            }
-            ScoreTourRubricJob::dispatch($id, (bool) $this->option('force'));
-            $dispatched++;
-        }
+        $dispatched = $kapsam->kuyrugaAl($ids, (bool) $this->option('force'));
 
         $this->info($dispatched.' tur rubrik puanlaması için kuyruğa alındı (tur başına 2 geçiş).');
 

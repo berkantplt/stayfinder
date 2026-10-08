@@ -433,6 +433,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/rubrik-inceleme', [RubricReviewController::class, 'index'])->name('rubric.index');
     Route::post('/rubrik-inceleme/{score}/onayla', [RubricReviewController::class, 'approve'])->name('rubric.approve');
+    Route::post('/rubrik-inceleme/kuyruk', [RubricReviewController::class, 'queue'])->name('rubric.queue');
     Route::get('/kategori-yetkilendirme', [AdminCategoryLicenseController::class, 'index'])->name('category-licenses.index');
     Route::get('/kategori-yetkilendirme/kategori-tarifesi', [AdminCategoryLicenseController::class, 'pricing'])->name('category-licenses.pricing');
     Route::get('/kategori-yetkilendirme/acenta-erisimleri', [AdminCategoryLicenseController::class, 'access'])->name('category-licenses.access');
