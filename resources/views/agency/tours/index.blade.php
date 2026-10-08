@@ -17,6 +17,8 @@
         @if(session('success'))
             <div class="alert alert-success" style="max-width:94%;margin-left:auto;margin-right:auto;">{{ session('success') }}</div>
         @endif
+        {{-- Arşivle / Geri al arka planda (fetch) çalışır; sonuç mesajı bu kutuda --}}
+        <div class="alert" data-tur-flash hidden role="status" aria-live="polite" style="max-width:94%;margin-left:auto;margin-right:auto;"></div>
 
         @unless($canCreateTours)
             <div class="alert alert-error" style="max-width:94%;margin-left:auto;margin-right:auto;">
@@ -41,43 +43,12 @@
                             <th>İşlem</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse($tours as $tour)
-                        <tr>
-                            <td style="padding-left:0;"><a href="{{ route('agency.tours.show', $tour) }}" style="font-weight:600;color:#0f172a;">{{ $tour->title }}</a></td>
-                            <td>{{ $tour->category?->name ?? '—' }}</td>
-                            <td>{{ $tour->destination }}</td>
-                            <td style="white-space:nowrap;">{{ $tour->formatted_price }}</td>
-                            <td style="white-space:nowrap;">{{ $tour->departure_date?->format('d.m.Y') ?? '—' }}</td>
-                            <td>
-                                <span class="badge" style="background:{{ $tour->is_active ? '#d1fae5;color:#065f46' : '#fef2f2;color:#991b1b' }};border:none;padding:6px 12px;border-radius:20px;font-weight:600;">
-                                    {{ $tour->is_active ? 'Aktif' : 'Pasif' }}
-                                </span>
-                            </td>
-                            <td>
-                                {{-- C9: "Aktif" ayarı ile sitede görünürlük farklı şeyler; sebep burada --}}
-                                @if($tour->visibility_issue === null)
-                                    <span class="p-etiket p-etiket-basari">Yayında</span>
-                                @else
-                                    <span class="p-etiket p-etiket-uyari">Yayında değil</span>
-                                    <div style="font-size:11px;color:var(--p-uyari-metin);margin-top:4px;white-space:nowrap;">{{ $tour->visibility_issue }}</div>
-                                @endif
-                            </td>
-                            <td style="white-space:nowrap;">
-                                <div style="display:inline-flex;gap:8px;align-items:center;">
-                                    <a href="{{ route('agency.tours.show', $tour) }}" class="btn btn-outline btn-sm" title="Görüntüle">👁️</a>
-                                    <a href="{{ route('agency.tours.edit', $tour) }}" class="btn btn-outline btn-sm">Düzenle</a>
-                                    {{-- C18: silme = arşivleme (A10); onay metni etkiyi sayılarla söyler --}}
-                                    <form method="POST" action="{{ route('agency.tours.destroy', $tour) }}" onsubmit="return confirm({{ \Illuminate\Support\Js::from(\App\Models\Tour::archiveConfirmText($tour->title, $tour->reviews_count, $tour->favorited_by_count)) }})" style="margin:0;">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm" title="Arşive taşı — 30 gün içinde geri alınabilir">Arşivle</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:40px;">Henüz tur eklemediniz.</td></tr>
-                        @endforelse
+                    <tbody data-tur-listesi>
+                        @foreach($tours as $tour)
+                            @include('agency.tours._row', ['tour' => $tour])
+                        @endforeach
+                        {{-- Boş durum satırı hep basılır; JS son tur arşivlenince açar, geri alınca gizler --}}
+                        <tr data-bos-satir{{ $tours->isNotEmpty() ? ' hidden' : '' }}><td colspan="8" style="text-align:center;color:#94a3b8;padding:40px;">Henüz tur eklemediniz.</td></tr>
                     </tbody>
                 </table></div>
             </div>
@@ -85,31 +56,116 @@
 
         <div style="margin-top:16px;">{{ $tours->links() }}</div>
 
-        {{-- A10: Arşiv — silinen turlar 30 gün geri alınabilir --}}
-        @if($archivedTours->isNotEmpty())
-        <details class="p-kart" style="padding:16px 24px;max-width:94%;margin:24px auto 0;">
-            <summary style="cursor:pointer;font-weight:700;color:var(--p-metin-2);">🗄️ Arşiv — {{ $archivedTours->count() }} silinmiş tur (30 gün içinde geri alınabilir)</summary>
+        {{-- A10: Arşiv — silinen turlar 30 gün geri alınabilir. Boşken gizli durur;
+             JS ilk arşivlemede sayfa yenilemeden açar, sayacı ve satırları günceller. --}}
+        <details class="p-kart" data-arsiv-kutu{{ $archivedTours->isEmpty() ? ' hidden' : '' }} style="padding:16px 24px;max-width:94%;margin:24px auto 0;">
+            <summary style="cursor:pointer;font-weight:700;color:var(--p-metin-2);">🗄️ Arşiv — <span data-arsiv-sayac>{{ $archivedTours->count() }}</span> silinmiş tur (30 gün içinde geri alınabilir)</summary>
             <div class="table-wrap" style="margin-top:12px;"><table class="table" style="width:100%;text-align:left;">
                 <thead><tr><th style="padding-left:0;">Tur</th><th>Silinme</th><th>Kalıcı silinme</th><th></th></tr></thead>
-                <tbody>
+                <tbody data-arsiv-listesi>
                 @foreach($archivedTours as $arsiv)
-                    <tr>
-                        <td style="padding-left:0;font-weight:600;color:var(--p-metin);">{{ $arsiv->title }}</td>
-                        <td style="white-space:nowrap;">{{ $arsiv->deleted_at->format('d.m.Y H:i') }}</td>
-                        <td style="white-space:nowrap;color:var(--p-metin-3);">{{ $arsiv->deleted_at->copy()->addDays(30)->format('d.m.Y') }}</td>
-                        <td style="text-align:right;">
-                            <form method="POST" action="{{ route('agency.tours.restore', $arsiv) }}" style="display:inline;">
-                                @csrf
-                                <button type="submit" class="p-btn p-btn-ikincil p-btn-kucuk">↩ Geri al</button>
-                            </form>
-                        </td>
-                    </tr>
+                    @include('agency.tours._arsiv_row', ['arsiv' => $arsiv])
                 @endforeach
                 </tbody>
             </table></div>
         </details>
-        @endif
         </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    'use strict';
+    // Arşivle / Geri al: form gönderimi yakalanır, fetch ile JSON istenir, satırlar
+    // iki tablo arasında taşınır. JS yoksa formlar klasik POST + yönlendirme ile çalışır.
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const turListesi = document.querySelector('[data-tur-listesi]');
+    const bosSatir = document.querySelector('[data-bos-satir]');
+    const arsivKutu = document.querySelector('[data-arsiv-kutu]');
+    const arsivListesi = document.querySelector('[data-arsiv-listesi]');
+    const arsivSayac = document.querySelector('[data-arsiv-sayac]');
+    const flashBox = document.querySelector('[data-tur-flash]');
+    let flashTimer;
+
+    function flash(message, type) {
+        if (!flashBox || !message) return;
+        flashBox.className = type === 'error' ? 'alert alert-error' : 'alert alert-success';
+        flashBox.textContent = message;
+        flashBox.hidden = false;
+        clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => { flashBox.hidden = true; }, 4000);
+    }
+
+    function arsivSayisiniYaz(sayi) {
+        const n = Number(sayi) || 0;
+        if (arsivSayac) arsivSayac.textContent = String(n);
+        if (arsivKutu) arsivKutu.hidden = n === 0;
+    }
+
+    function bosDurumuGuncelle() {
+        if (!turListesi || !bosSatir) return;
+        bosSatir.hidden = turListesi.querySelector('tr[data-tour-id]') !== null;
+    }
+
+    function arsivle(form, data) {
+        form.closest('tr[data-tour-id]')?.remove();
+        if (arsivListesi && data.arsiv_html) arsivListesi.insertAdjacentHTML('afterbegin', data.arsiv_html);
+        arsivSayisiniYaz(data.arsiv_sayisi);
+        bosDurumuGuncelle();
+    }
+
+    function geriAl(form, data) {
+        form.closest('tr[data-arsiv-id]')?.remove();
+        if (turListesi && data.satir_html) turListesi.insertAdjacentHTML('afterbegin', data.satir_html);
+        arsivSayisiniYaz(data.arsiv_sayisi);
+        bosDurumuGuncelle();
+    }
+
+    async function gonder(form, islem) {
+        if (form.dataset.busy === '1') return;
+        const button = form.querySelector('button[type="submit"]');
+        form.dataset.busy = '1';
+        if (button) button.disabled = true;
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST', // _method=DELETE gizli alanı FormData içinde gider
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrf,
+                },
+                body: new FormData(form),
+            });
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data || data.ok !== true) {
+                flash(data?.message || 'İşlem tamamlanamadı. Lütfen sayfayı yenileyip tekrar deneyin.', 'error');
+                return;
+            }
+
+            (islem === 'arsiv' ? arsivle : geriAl)(form, data);
+            flash(data.message, 'success');
+        } catch (error) {
+            flash('Bağlantı hatası. Lütfen tekrar deneyin.', 'error');
+        } finally {
+            form.dataset.busy = '0';
+            if (button) button.disabled = false;
+        }
+    }
+
+    // Satırlar JS ile yeniden basıldığı için dinleyici document seviyesinde.
+    // Arşivle formunun satır içi onsubmit onayı (confirm) önce çalışır; kullanıcı
+    // vazgeçtiyse event.defaultPrevented gelir ve istek atılmaz.
+    document.addEventListener('submit', function (event) {
+        const form = event.target.closest('form[data-arsiv-form], form[data-geri-al-form]');
+        if (!form || event.defaultPrevented) return;
+        event.preventDefault();
+        gonder(form, form.hasAttribute('data-arsiv-form') ? 'arsiv' : 'geri-al');
+    });
+})();
+</script>
+@endpush

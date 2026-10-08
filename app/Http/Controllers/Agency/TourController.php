@@ -63,13 +63,8 @@ class TourController extends Controller
         // C9: yayın durumu — "Aktif" ayarı tek başına sitede göründüğü anlamına
         // gelmez (abonelik bitmiş / kategori pasif / acenta pasif). Abonelik
         // id'leri tek sorguda alınır; tur başına ek sorgu atılmaz.
-        $subscribedCategoryIds = $agency->legacy_category_access
-            ? []
-            : $agency->activeCategorySubscriptions()->pluck('category_id')->map(fn ($id) => (int) $id)->all();
-        $tours->getCollection()->each(function (Tour $tour) use ($agency, $subscribedCategoryIds) {
-            $tour->setRelation('agency', $agency);
-            $tour->visibility_issue = $tour->publicVisibilityIssue($subscribedCategoryIds);
-        });
+        $subscribedCategoryIds = $this->aboneKategoriIdleri($agency);
+        $tours->getCollection()->each(fn (Tour $tour) => $this->listeIcinHazirla($tour, $agency, $subscribedCategoryIds));
 
         $canCreateTours = $agency->legacy_category_access || count($agency->accessibleCategoryIds()) > 0;
 
@@ -300,17 +295,35 @@ class TourController extends Controller
             ->with('success', 'Tur güncellendi.');
     }
 
-    public function destroy(Tour $tour)
+    /**
+     * A10: soft delete — arşive gider, 30 gün geri alınabilir. Liste sayfası fetch ile
+     * JSON ister: arşiv satırının HTML'i + güncel arşiv sayısı döner, sayfa yenilenmez.
+     * JS kapalıysa klasik yönlendirme korunur.
+     */
+    public function destroy(Request $request, Tour $tour)
     {
         $this->authorize($tour);
-        $tour->delete(); // A10: soft delete — arşive gider, 30 gün geri alınabilir
+        $tour->delete();
 
-        return redirect()->route('agency.tours.index')
-            ->with('success', 'Tur arşive taşındı. 30 gün içinde "Arşiv" bölümünden geri alabilirsiniz.');
+        $mesaj = 'Tur arşive taşındı. 30 gün içinde "Arşiv" bölümünden geri alabilirsiniz.';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $mesaj,
+                'arsiv_html' => view('agency.tours._arsiv_row', ['arsiv' => $tour])->render(),
+                'arsiv_sayisi' => $this->arsivSayisi($tour->agency),
+            ]);
+        }
+
+        return redirect()->route('agency.tours.index')->with('success', $mesaj);
     }
 
-    /** A10 — Arşivdeki turu geri alır (rota withTrashed ile bağlar). */
-    public function restore(Tour $tour)
+    /**
+     * A10 — Arşivdeki turu geri alır (rota withTrashed ile bağlar). JSON istenirse
+     * liste satırının HTML'i (index ile aynı parça, aynı sayaçlar) + arşiv sayısı döner.
+     */
+    public function restore(Request $request, Tour $tour)
     {
         $this->authorize($tour);
 
@@ -318,8 +331,22 @@ class TourController extends Controller
             $tour->restore();
         }
 
-        return redirect()->route('agency.tours.index')
-            ->with('success', 'Tur geri alındı.');
+        $mesaj = 'Tur geri alındı.';
+
+        if ($request->expectsJson()) {
+            $agency = $tour->agency;
+            $tour->load('category')->loadCount(['reviews', 'favoritedBy']);
+            $this->listeIcinHazirla($tour, $agency, $this->aboneKategoriIdleri($agency));
+
+            return response()->json([
+                'ok' => true,
+                'message' => $mesaj,
+                'satir_html' => view('agency.tours._row', ['tour' => $tour])->render(),
+                'arsiv_sayisi' => $this->arsivSayisi($agency),
+            ]);
+        }
+
+        return redirect()->route('agency.tours.index')->with('success', $mesaj);
     }
 
     private function authorize(Tour $tour): void
@@ -327,6 +354,26 @@ class TourController extends Controller
         if ($tour->agency_id !== auth()->user()->agency_id) {
             abort(403);
         }
+    }
+
+    /** C9: abonelik kategori id'leri tek sorguda; legacy erişimde boş liste (kontrol atlanır). */
+    private function aboneKategoriIdleri(Agency $agency): array
+    {
+        return $agency->legacy_category_access
+            ? []
+            : $agency->activeCategorySubscriptions()->pluck('category_id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /** Liste satırının ihtiyaç duyduğu türetilmiş alanlar (acenta ilişkisi + yayın durumu sebebi). */
+    private function listeIcinHazirla(Tour $tour, Agency $agency, array $subscribedCategoryIds): void
+    {
+        $tour->setRelation('agency', $agency);
+        $tour->visibility_issue = $tour->publicVisibilityIssue($subscribedCategoryIds);
+    }
+
+    private function arsivSayisi(Agency $agency): int
+    {
+        return $agency->tours()->onlyTrashed()->count();
     }
 
     private function ensureAgencyHasCategoryAccess(Agency $agency, int $categoryId): void
