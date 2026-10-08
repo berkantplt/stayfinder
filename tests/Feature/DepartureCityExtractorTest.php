@@ -182,88 +182,9 @@ class DepartureCityExtractorTest extends TestCase
         $this->assertSame('İstanbul', $tour->fresh()->departure_city);
     }
 
-    // ── Admin toplu düzenleme ekranı ────────────────────────────────────────
-
-    private function admin(): \App\Models\User
-    {
-        return \App\Models\User::create([
-            'name' => 'Yönetici',
-            'email' => uniqid().'@ornek.com',
-            'password' => bcrypt('sifre1234'),
-            'role' => 'admin',
-        ]);
-    }
-
-    public function test_admin_ekrani_eksik_turlari_listeler(): void
-    {
-        $eksik = $this->tur(['title' => 'Kalkışsız Tur']);
-        $dolu = $this->tur(['title' => 'Dolu Tur', 'departure_city' => 'Ankara']);
-
-        $this->actingAs($this->admin())
-            ->get(route('admin.departure-cities'))
-            ->assertOk()
-            ->assertSee('Kalkışsız Tur')
-            ->assertDontSee('Dolu Tur');
-    }
-
-    public function test_admin_ekrani_otomatik_oneriyi_gosterir(): void
-    {
-        $this->tur(['title' => 'İstanbul Kalkışlı Kapadokya Turu']);
-
-        $this->actingAs($this->admin())
-            ->get(route('admin.departure-cities'))
-            ->assertOk()
-            ->assertSee('öneri: İstanbul');
-    }
-
-    public function test_toplu_kaydetme_calisir(): void
-    {
-        $a = $this->tur(['title' => 'A Turu']);
-        $b = $this->tur(['title' => 'B Turu']);
-
-        $this->actingAs($this->admin())
-            ->put(route('admin.departure-cities.update'), [
-                'cities' => [$a->id => 'İzmir', $b->id => 'Bursa'],
-            ])
-            ->assertRedirect();
-
-        $this->assertSame('İzmir', $a->fresh()->departure_city);
-        $this->assertSame('Bursa', $b->fresh()->departure_city);
-    }
-
-    public function test_listede_olmayan_sehir_kaydedilmez(): void
-    {
-        // Serbest metin filtreyi bozar ("Istanbul" ≠ "İstanbul").
-        $tour = $this->tur();
-
-        $this->actingAs($this->admin())
-            ->put(route('admin.departure-cities.update'), [
-                'cities' => [$tour->id => 'Vakvakistan'],
-            ])
-            ->assertRedirect();
-
-        $this->assertNull($tour->fresh()->departure_city);
-    }
-
-    public function test_bos_deger_alani_temizler(): void
-    {
-        $tour = $this->tur(['departure_city' => 'Ankara']);
-
-        $this->actingAs($this->admin())
-            ->put(route('admin.departure-cities.update'), ['cities' => [$tour->id => '']])
-            ->assertRedirect();
-
-        $this->assertNull($tour->fresh()->departure_city);
-    }
-
-    public function test_admin_olmayan_ekrana_giremez(): void
-    {
-        $this->get(route('admin.departure-cities'))->assertRedirect();
-    }
-
     public function test_doldurulan_sehir_filtreyle_bulunur(): void
     {
-        // Alanın asıl amacı: departsFrom scope'u ve şehir kalkışlı sayfalar.
+        // Alanın asıl tüketicisi: departsFrom scope'u (müşteri "kalkış şehrim" filtresi).
         $tour = $this->tur(['title' => 'İstanbul Kalkışlı Kapadokya Turu']);
         $this->artisan('seo:backfill-departure-city');
 

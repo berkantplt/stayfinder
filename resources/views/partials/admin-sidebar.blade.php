@@ -40,9 +40,6 @@
         <a href="{{ route('admin.tours') }}" class="sidebar-link {{ request()->routeIs('admin.tours') ? 'active' : '' }}">
             <span class="sidebar-icon">📋</span> Tüm Turlar
         </a>
-        <a href="{{ route('admin.departure-cities') }}" class="sidebar-link {{ request()->routeIs('admin.departure-cities*') ? 'active' : '' }}">
-            <span class="sidebar-icon">🚌</span> Kalkış Şehirleri
-        </a>
         <a href="{{ route('admin.tour-visa') }}" class="sidebar-link {{ request()->routeIs('admin.tour-visa*') ? 'active' : '' }}">
             <span class="sidebar-icon">🛂</span> Vize Durumu
         </a>

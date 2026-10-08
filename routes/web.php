@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\CategoryBannerController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryLicenseController as AdminCategoryLicenseController;
-use App\Http\Controllers\Admin\DepartureCityController;
 use App\Http\Controllers\Admin\DestinationProfileController;
 use App\Http\Controllers\Admin\DiscoveryCityBaseController;
 use App\Http\Controllers\Admin\FeaturedCityController;
@@ -460,9 +459,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Trafik — hangi tur tıklanıyor/görüntüleniyor (dashboard kutularının hedefi)
     Route::get('/trafik', [TrafficController::class, 'index'])->name('traffic');
     Route::get('/trafik/{tour}', [TrafficController::class, 'show'])->name('traffic.show');
-    // Kalkış şehri toplu düzenleme — "{şehir} kalkışlı" sayfa ailesinin girdisi
-    Route::get('/kalkis-sehirleri', [DepartureCityController::class, 'index'])->name('departure-cities');
-    Route::put('/kalkis-sehirleri', [DepartureCityController::class, 'update'])->name('departure-cities.update');
     Route::get('/vize-durumu', [TourVisaController::class, 'index'])->name('tour-visa');
     Route::put('/vize-durumu', [TourVisaController::class, 'update'])->name('tour-visa.update');
     Route::get('/destinasyonlar', [AdminController::class, 'destinations'])->name('destinations');
