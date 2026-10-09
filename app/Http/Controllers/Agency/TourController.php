@@ -12,6 +12,7 @@ use App\Services\TourImage\TourImageService;
 use App\Services\Tours\TourPayloadBuilder;
 use App\Support\TurkishCities;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -56,7 +57,7 @@ class TourController extends Controller
         $tours = $agency
             ->tours()
             ->with('category')
-            ->withCount(['reviews', 'favoritedBy']) // C18: arşivleme onayında etki sayıları
+            ->withCount(['reviews', 'favoritedBy', 'dates']) // C18: arşivleme / kalıcı silme onayında etki sayıları
             ->orderByDesc('created_at')
             ->paginate(15);
 
@@ -69,7 +70,9 @@ class TourController extends Controller
         $canCreateTours = $agency->legacy_category_access || count($agency->accessibleCategoryIds()) > 0;
 
         // A10: arşiv (soft-deleted) — geri alınabilir, 30 gün sonra kalıcı silinir
-        $archivedTours = $agency->tours()->onlyTrashed()->orderByDesc('deleted_at')->get();
+        $archivedTours = $agency->tours()->onlyTrashed()
+            ->withCount(['reviews', 'favoritedBy', 'dates']) // arşiv satırındaki "Kalıcı sil" onayı
+            ->orderByDesc('deleted_at')->get();
 
         return view('agency.tours.index', compact('tours', 'canCreateTours', 'archivedTours'));
     }
@@ -308,6 +311,8 @@ class TourController extends Controller
         $mesaj = 'Tur arşive taşındı. 30 gün içinde "Arşiv" bölümünden geri alabilirsiniz.';
 
         if ($request->expectsJson()) {
+            $tour->loadCount(['reviews', 'favoritedBy', 'dates']); // arşiv satırındaki "Kalıcı sil" onayı
+
             return response()->json([
                 'ok' => true,
                 'message' => $mesaj,
@@ -335,13 +340,104 @@ class TourController extends Controller
 
         if ($request->expectsJson()) {
             $agency = $tour->agency;
-            $tour->load('category')->loadCount(['reviews', 'favoritedBy']);
+            $tour->load('category')->loadCount(['reviews', 'favoritedBy', 'dates']);
             $this->listeIcinHazirla($tour, $agency, $this->aboneKategoriIdleri($agency));
 
             return response()->json([
                 'ok' => true,
                 'message' => $mesaj,
                 'satir_html' => view('agency.tours._row', ['tour' => $tour])->render(),
+                'arsiv_sayisi' => $this->arsivSayisi($agency),
+            ]);
+        }
+
+        return redirect()->route('agency.tours.index')->with('success', $mesaj);
+    }
+
+    /**
+     * Kalıcı silme — listeden ("Sil") ya da arşivden ("Kalıcı sil", rota withTrashed).
+     * forceDelete: tarihler, yorumlar, favoriler, kampanyalar, fiyat geçmişi FK cascade ile
+     * gider; TourObserver@deleted RAG chunk'ını temizler; görsel dosyaları başka tur
+     * kullanmıyorsa diskten silinir (prune bunu yapmıyor, yetim dosya bırakıyordu). Geri alınamaz.
+     */
+    public function forceDestroy(Request $request, Tour $tour)
+    {
+        $this->authorize($tour);
+        $agency = $tour->agency;
+        $this->kaliciSil($tour);
+
+        $mesaj = '"'.$tour->title.'" kalıcı olarak silindi.';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $mesaj,
+                'arsiv_sayisi' => $this->arsivSayisi($agency),
+            ]);
+        }
+
+        return redirect()->route('agency.tours.index')->with('success', $mesaj);
+    }
+
+    /**
+     * Seç modu toplu işlem: islem=arsivle|sil + ids[]. Yalnız acentanın kendi turları
+     * işlenir; yabancı / olmayan id sessizce atlanır (cevaptaki ids gerçekten işlenenlerdir).
+     * "sil" arşivdeki turu da kapsar; "arsivle" yalnız listedekileri. JS kapalıysa yönlendirme.
+     */
+    public function bulk(Request $request)
+    {
+        $data = $request->validate([
+            'islem' => ['required', Rule::in(['arsivle', 'sil'])],
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['integer', 'min:1'],
+        ]);
+
+        $agency = auth()->user()->agency;
+        $sil = $data['islem'] === 'sil';
+        $ids = array_values(array_unique(array_map('intval', $data['ids'])));
+
+        $turlar = $agency->tours()
+            ->when($sil, fn ($q) => $q->withTrashed())
+            ->whereIn('id', $ids)
+            ->get();
+
+        if (! $sil) {
+            $turlar->loadCount(['reviews', 'favoritedBy', 'dates']); // arşiv satırının "Kalıcı sil" onayı
+        }
+
+        $islenen = [];
+        $arsivHtml = [];
+        foreach ($turlar as $tour) {
+            if ($sil) {
+                $this->kaliciSil($tour);
+            } else {
+                $tour->delete();
+                $arsivHtml[] = view('agency.tours._arsiv_row', ['arsiv' => $tour])->render();
+            }
+            $islenen[] = $tour->id;
+        }
+
+        $sayi = count($islenen);
+
+        if ($sayi === 0) {
+            $mesaj = 'Seçilen turlar bulunamadı. Sayfayı yenileyip tekrar deneyin.';
+
+            return $request->expectsJson()
+                ? response()->json(['ok' => false, 'message' => $mesaj], 422)
+                : redirect()->route('agency.tours.index')->with('error', $mesaj);
+        }
+
+        $mesaj = $sil
+            ? $sayi.' tur kalıcı olarak silindi.'
+            : $sayi.' tur arşive taşındı. 30 gün içinde "Arşiv" bölümünden geri alabilirsiniz.';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $mesaj,
+                'islem' => $data['islem'],
+                'ids' => $islenen,
+                'arsiv_html' => $arsivHtml,
                 'arsiv_sayisi' => $this->arsivSayisi($agency),
             ]);
         }
@@ -374,6 +470,36 @@ class TourController extends Controller
     private function arsivSayisi(Agency $agency): int
     {
         return $agency->tours()->onlyTrashed()->count();
+    }
+
+    /**
+     * forceDelete + yetim görsel temizliği. Yollar silmeden önce toplanır; silme sonrası
+     * aynı dosyayı başka bir tur (arşivdeki dahil) kullanıyorsa dosyaya dokunulmaz.
+     * Dosya hatası isteği düşürmez, yalnız loglanır — kayıt zaten gitmiştir.
+     */
+    private function kaliciSil(Tour $tour): void
+    {
+        $yollar = array_values(array_unique(array_filter(
+            array_merge([(string) $tour->image], is_array($tour->images) ? $tour->images : []),
+            fn ($yol) => is_string($yol) && str_starts_with($yol, '/storage/')
+        )));
+
+        $tour->forceDelete();
+
+        foreach ($yollar as $yol) {
+            $baskaTurdaVar = Tour::withTrashed()
+                ->where(fn ($q) => $q->where('image', $yol)->orWhereJsonContains('images', $yol))
+                ->exists();
+            if ($baskaTurdaVar) {
+                continue;
+            }
+
+            try {
+                $this->images->delete($yol);
+            } catch (\Throwable $e) {
+                Log::warning('[Tour] Kalıcı silmede görsel silinemedi: '.$yol.' — '.$e->getMessage());
+            }
+        }
     }
 
     private function ensureAgencyHasCategoryAccess(Agency $agency, int $categoryId): void

@@ -610,6 +610,32 @@ class Tour extends Model
     }
 
     /**
+     * Kalıcı silme onayı (acenta listesi "Sil" + arşiv satırı "Kalıcı sil"): arşive gitmez,
+     * geri alınamaz; etki sayılarla (tarih / yorum / favori) söylenir.
+     */
+    public static function permanentDeleteConfirmText(string $title, int $reviewCount, int $favoriteCount, int $dateCount): string
+    {
+        $etki = [];
+        if ($dateCount > 0) {
+            $etki[] = $dateCount.' tarih';
+        }
+        if ($reviewCount > 0) {
+            $etki[] = $reviewCount.' yorum';
+        }
+        if ($favoriteCount > 0) {
+            $etki[] = $favoriteCount.' favori';
+        }
+
+        $metin = '"'.$title.'" KALICI olarak silinecek. Arşive gitmez, geri alınamaz.';
+
+        if ($etki !== []) {
+            $metin .= "\n\nSilinecekler: ".implode(', ', $etki).'.';
+        }
+
+        return $metin."\n\nKalıcı olarak silinsin mi?";
+    }
+
+    /**
      * C9 — Tur sitede yayında değilse Türkçe sebebi, yayındaysa null.
      * Kurallar Tour::active() scope'u ile birebir aynı sırada. Liste ekranı
      * tur başına abonelik sorgusu atmasın diye acentanın aktif abonelik

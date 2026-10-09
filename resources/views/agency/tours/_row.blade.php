@@ -1,6 +1,9 @@
 {{-- Acenta tur listesi satırı. index.blade ve JS "Geri al" cevabı (TourController::restore)
-     aynı parçayı basar; $tour category + reviews_count/favorited_by_count + visibility_issue ile gelir. --}}
-<tr data-tour-id="{{ $tour->id }}">
+     aynı parçayı basar; $tour category + reviews_count/favorited_by_count/dates_count + visibility_issue ile gelir.
+     data-yorum/favori/tarih: seç modunda toplu "Kalıcı Sil" onayı etkiyi bunlardan toplar. --}}
+<tr data-tour-id="{{ $tour->id }}" data-yorum="{{ (int) $tour->reviews_count }}" data-favori="{{ (int) $tour->favorited_by_count }}" data-tarih="{{ (int) $tour->dates_count }}">
+    {{-- Seç modu kutusu: yalnız tablo kabı data-sec-modu taşırken görünür (index CSS) --}}
+    <td class="sec-sutun"><input type="checkbox" class="sec-kutu" data-sec-kutu value="{{ $tour->id }}" aria-label="{{ $tour->title }} turunu seç"></td>
     <td style="padding-left:0;"><a href="{{ route('agency.tours.show', $tour) }}" style="font-weight:600;color:#0f172a;">{{ $tour->title }}</a></td>
     <td>{{ $tour->category?->name ?? '—' }}</td>
     <td>{{ $tour->destination }}</td>
@@ -29,6 +32,12 @@
             <form method="POST" action="{{ route('agency.tours.destroy', $tour) }}" data-arsiv-form onsubmit="return confirm({{ \Illuminate\Support\Js::from(\App\Models\Tour::archiveConfirmText($tour->title, $tour->reviews_count, $tour->favorited_by_count)) }})" style="margin:0;">
                 @csrf @method('DELETE')
                 <button type="submit" class="btn btn-danger btn-sm" title="Arşive taşı — 30 gün içinde geri alınabilir">Arşivle</button>
+            </form>
+            {{-- Kalıcı silme (forceDelete): arşive gitmez, geri alınamaz; onay metni etkiyi sayılarla söyler.
+                 Aynı uç arşiv satırından da çağrılır (rota withTrashed). --}}
+            <form method="POST" action="{{ route('agency.tours.force-destroy', $tour) }}" data-kalici-sil-form onsubmit="return confirm({{ \Illuminate\Support\Js::from(\App\Models\Tour::permanentDeleteConfirmText($tour->title, (int) $tour->reviews_count, (int) $tour->favorited_by_count, (int) $tour->dates_count)) }})" style="margin:0;">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn btn-outline btn-sm" style="color:#b91c1c;border-color:#fecaca;" title="Kalıcı sil — geri alınamaz">Sil</button>
             </form>
         </div>
     </td>

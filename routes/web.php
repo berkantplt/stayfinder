@@ -395,6 +395,10 @@ Route::prefix('acenta')->name('agency.')->middleware(['auth', 'role:agency'])->g
         Route::delete('/turlar/{tour}', [AgencyTourController::class, 'destroy'])->name('tours.destroy');
         // A10: arşivden geri alma — silinmiş kayıt bağlanabilsin diye withTrashed
         Route::post('/turlar/{tour}/geri-al', [AgencyTourController::class, 'restore'])->withTrashed()->name('tours.restore');
+        // Kalıcı silme (forceDelete): listeden ya da arşivden — arşivli kayıt bağlansın diye withTrashed; geri alınamaz
+        Route::delete('/turlar/{tour}/kalici', [AgencyTourController::class, 'forceDestroy'])->withTrashed()->name('tours.force-destroy');
+        // Seç modu toplu işlem: islem=arsivle|sil + ids[] (yalnız acentanın kendi turları)
+        Route::post('/turlar/toplu', [AgencyTourController::class, 'bulk'])->name('tours.bulk');
 
         // Tour dates
         Route::post('/turlar/{tour}/tarihler', [TourDateController::class, 'store'])->name('tours.dates.store');
