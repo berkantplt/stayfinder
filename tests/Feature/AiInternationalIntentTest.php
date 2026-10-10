@@ -52,4 +52,18 @@ class AiInternationalIntentTest extends TestCase
         $this->assertNull($this->detect('tatil yapmak istiyorum'));
         $this->assertNull($this->detect('5 gün gezi'));
     }
+
+    /** 'roma' + 4 harf ek toleransı "romantik"i Roma sanıyordu — "romantik tatil" yurt dışına kilitleniyordu. */
+    public function test_romantik_kelimesi_roma_sanilmaz(): void
+    {
+        $this->assertNull($this->detect('romantik bir tatil istiyorum'));
+        $this->assertNull($this->detect('Karımla romantik bir kaçamak yapalım'));
+        $this->assertTrue($this->detect('roma turu'));
+    }
+
+    public function test_bitisik_yurtici_yazimi_taninir(): void
+    {
+        $this->assertFalse($this->detect('yurtiçi tatil'));
+        $this->assertFalse($this->detect('yurtiçinde kalalım'));
+    }
 }

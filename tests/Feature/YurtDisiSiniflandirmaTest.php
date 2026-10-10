@@ -94,4 +94,20 @@ class YurtDisiSiniflandirmaTest extends TestCase
 
         $this->assertTrue((bool) $tour->fresh()->is_international);
     }
+
+    /** Canlı şikayet: "Male Atolü" destinasyonlu Maldivler turu "yurt içi" kalmıştı. */
+    public function test_maldiv_atolleri_taniniyor(): void
+    {
+        foreach (['Male Atolü', 'Güney Male Atolü', 'Ari Atolü', 'Maldivler', 'Maldiv Adaları'] as $yer) {
+            $this->assertTrue(DestinationClassifier::isInternational($yer), $yer.' yurt dışı olmalı');
+        }
+    }
+
+    /** 'roma' + 4 harf ek toleransı "romantik"i Roma sanıyordu. */
+    public function test_romantik_sifati_roma_sanilmaz(): void
+    {
+        $this->assertFalse(DestinationClassifier::isInternational('Romantik Karadeniz'));
+        $this->assertFalse(DestinationClassifier::isInternational('Romantik Ege'));
+        $this->assertTrue(DestinationClassifier::isInternational('Roma'));
+    }
 }

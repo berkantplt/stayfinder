@@ -307,6 +307,17 @@
       "beklenen_davranis": "1) İLK mesajda tur_ara'yı çağırır ve filtre.vize=\"vizesiz\" gönderir; kart basar. Soru sorarsa bile kartlardan SONRA ve tek soru sorar. 2) Gösterilen turların hepsi vizesizdir (kart 'vize' alanı 'vizesiz'). 3) İkinci mesajdan sonra filtre.vize=\"kapida\" ile arar ya da iki kümeyi ayırarak sunar; kapıda vizeyi 'vizesiz' diye anlatmaz.",
       "basarisizlik_isareti": "İlk mesajda tek bir tur bile göstermeyip soru sorarsa; VEYA vize filtresini hiç göndermeyip vizeli/beyanı olmayan tur listelerse; VEYA bir turun vize durumunu araç çıktısındaki 'vize' alanı yerine kendi dünya bilgisinden söylerse (ör. beyan yokken 'burası vizesiz' derse); VEYA kapıda vizeli turu vizesiz gibi sunarsa.",
       "hangi_madde": "Madde 8 (soruyla boğmama) + Madde 4 (dürüstlük sınırı içinde pazarlama)"
+    },
+    {
+      "no": 27,
+      "ad": "Yön düzeltmesi: \"Yurt içi olsun\" sonrası kartlar da değişmeli",
+      "kullanici_mesajlari": [
+        "Kanka karımla bu aylarda romantik bir tatil yapmak istiyorum ama aynı zamanda eğlenelim",
+        "Yurt içi olsun"
+      ],
+      "beklenen_davranis": "1) İlk mesajda tur_ara ile arar ve kart basar (yön belirtilmediği için yurt dışı turlar çıkabilir). 2) \"Yurt içi olsun\" mesajında tur_ara'yı YENİDEN çağırır; filtre.yurt_disi=false ile arar (sunucu bunu modelden bağımsız yazar) ve gösterilen kartların hepsi yurt içi turlardır. 3) Metinde anlattığı turlar kartlarda da vardır — metin yurt içi, kart yurt dışı diye ayrışmaz.",
+      "basarisizlik_isareti": "İkinci mesajdan sonra aynı yurt dışı kartları yeniden basarsa; VEYA metinde yurt içi tur anlatıp altında yurt dışı kart gösterirse; VEYA tur_ara'yı yeniden çağırmayıp eski sonuçtan konuşursa.",
+      "hangi_madde": "Madde 1 (konuşmayı baştan sona hatırlama) + sert filtre emniyeti (canlı şikayet 2026-10-01: Male Atolü destinasyonlu Maldivler turu yurt içi bayrağıyla kayıtlıydı, yurt_disi filtresi de tamamen modele bırakılmıştı)"
     }
   ]
 }

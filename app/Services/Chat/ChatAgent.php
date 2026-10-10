@@ -36,6 +36,7 @@ class ChatAgent
         EnvanterOzeti $envanterOzeti,
         private readonly ResponseValidator $validator,
         private readonly ReferenceDestinationDetector $referansTespiti,
+        private readonly OriginIntentDetector $yonTespiti,
     ) {
         $this->tools = [
             TurAra::name() => $turAra,
@@ -105,7 +106,7 @@ class ChatAgent
                 ], $toolCalls),
             ];
 
-            $this->araclariCalistir($toolCalls, $transkript, $durum, $faz, $messages, $aracSonuclari, $turlar, $iz);
+            $this->araclariCalistir($toolCalls, $mesaj, $transkript, $durum, $faz, $messages, $aracSonuclari, $turlar, $iz);
 
             $aracTuru++;
         }
@@ -168,6 +169,7 @@ class ChatAgent
      */
     private function araclariCalistir(
         iterable $toolCalls,
+        string $mesaj,
         string $transkript,
         ConversationState $durum,
         ?\Closure $faz,
@@ -195,7 +197,7 @@ class ChatAgent
             // filtreyi görsün. Aksi halde modelin ham filtresi hafızaya yazılır,
             // düzeltilen kısıt bir sonraki turda geri gelirdi.
             if ($ad === TurAra::name()) {
-                $args = $this->turAraArgumanlari($args, $transkript, $durum);
+                $args = $this->turAraArgumanlari($args, $mesaj, $transkript, $durum);
             }
 
             $sonuc = $this->runTool($ad, $args, $transkript, $durum);
@@ -233,9 +235,10 @@ class ChatAgent
     /**
      * tur_ara argümanlarını arama ÖNCESİ düzeltir.
      *
-     * Üç iş: (1) oturumdaki kısıtları taşı — model tekrar geçirmeyi unutursa
+     * Dört iş: (1) oturumdaki kısıtları taşı — model tekrar geçirmeyi unutursa
      * arama sert filtresiz koşmasın, (2) kullanıcının vazgeçtiği kısıtları
-     * düşür, (3) kıyas için anılan yeri destinasyon'dan referans_yer'e taşı.
+     * düşür, (3) kıyas için anılan yeri destinasyon'dan referans_yer'e taşı,
+     * (4) kullanıcı BU mesajda yurt içi/dışı dediyse yurt_disi'yi sunucu yazsın.
      *
      * Kıyas taşıması "kaldirilan_kisitlar"a da yazılır: absorb() kısıtları
      * BİRLEŞTİRDİĞİ için, yalnız filtreden silmek yetmez — hafızadaki eski
@@ -244,7 +247,7 @@ class ChatAgent
      * @param  array<string, mixed>  $args
      * @return array<string, mixed>
      */
-    private function turAraArgumanlari(array $args, string $transkript, ConversationState $durum): array
+    private function turAraArgumanlari(array $args, string $mesaj, string $transkript, ConversationState $durum): array
     {
         $filtre = array_merge($durum->varsayilanFiltre(), (array) ($args['filtre'] ?? []));
 
@@ -264,10 +267,46 @@ class ChatAgent
             }
         }
 
+        $duzeltilmis = $this->yonuUygula($duzeltilmis, $kaldirilan, $mesaj);
+
         $args['filtre'] = $duzeltilmis;
         $args['kaldirilan_kisitlar'] = $kaldirilan;
 
         return $args;
+    }
+
+    /**
+     * Yurt içi/dışı beyanını sunucu yazar (kıyas yerindeki emniyetin eşi).
+     *
+     * Canlı şikayet: "Yurt içi olsun" düzeltmesinde metin yurt içi turları
+     * anlattı, kartlar yurt dışında kaldı — filtre tamamen modele bırakılmıştı.
+     *
+     * Yurt içi diyen için hafızadaki vize kısıtı da düşer: eşleştiricide vize
+     * yurt dışını ima eder ve yurt_disi=false'u EZER (yurt içi + vizeli tur
+     * yok); vize kalsaydı yurt içi isteği sessizce yurt dışı aramasına dönerdi.
+     *
+     * @param  string[]  $kaldirilan  by-ref: vize düşerse hafızadan da silinsin
+     */
+    private function yonuUygula(array $filtre, array &$kaldirilan, string $mesaj): array
+    {
+        $yurtDisi = $this->yonTespiti->detect($mesaj);
+        if ($yurtDisi === null) {
+            return $filtre;
+        }
+
+        $filtre['yurt_disi'] = $yurtDisi;
+        // Model aynı çağrıda "vazgeçti" dese bile kullanıcının açık sözü kazanır;
+        // listede kalsaydı absorb() yeni değeri hafızaya yazdıktan sonra silerdi
+        $kaldirilan = array_values(array_filter($kaldirilan, fn ($a) => $a !== 'yurt_disi'));
+
+        if ($yurtDisi === false && array_key_exists('vize', $filtre)) {
+            unset($filtre['vize']);
+            if (! in_array('vize', $kaldirilan, true)) {
+                $kaldirilan[] = 'vize';
+            }
+        }
+
+        return $filtre;
     }
 
     /**

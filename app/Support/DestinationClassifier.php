@@ -47,6 +47,11 @@ class DestinationClassifier
         'rovaniemi', 'lapland', 'laponya', 'tromso', 'lofoten', 'bergen', 'stavanger',
         'trondheim', 'reykjavik', 'izlanda', 'kuzey isiklari', 'kuzey isigi',
         'riga', 'tallinn', 'vilnius', 'letonya', 'litvanya', 'estonya',
+        // Maldivler: tur destinasyonu çoğu zaman ülke adıyla değil atol adıyla
+        // geliyor ("Male Atolü", "Güney Male Atolü", "Ari Atolü"). Canlıda
+        // Maldivler turu bu yüzden "yurt içi" kalmış, "yurt içi olsun" diyen
+        // kullanıcıya kart olarak çıkmıştı.
+        'male', 'atolu', 'maldiv', 'hulhumale',
         // Avrupa şehirleri (ülke adı geçmeyen turlar için)
         'nice', 'marsilya', 'lyon', 'bordo', 'strazburg', 'cannes', 'monako',
         'pisa', 'verona', 'siena', 'bologna', 'torino', 'cenova', 'palermo', 'como',
@@ -98,6 +103,9 @@ class DestinationClassifier
         }
 
         $normalized = self::normalize($destination);
+        // "Romantik Karadeniz", "Romantik Ege": 'roma' + 4 harf ek toleransı
+        // "romantik"i Roma sanıyor, tur yurt dışı sayılıyordu. Sıfat düşülür.
+        $normalized = preg_replace('/(?<![\p{L}\d])romanti\p{L}*/u', ' ', $normalized) ?? $normalized;
         $parts = array_filter(array_map('trim', preg_split('/[,\/&+]|\s[-–—]\s/u', $normalized) ?: []));
 
         $foundDomestic = false;

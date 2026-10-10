@@ -354,6 +354,10 @@ class IntentHeuristics
             $text
         ) ?? $text;
 
+        // "romantik" kelimesi aşağıdaki 'roma' + 4 harf ek toleransına takılıyordu:
+        // "romantik bir tatil" araması yurt dışına kilitleniyordu. Sıfat düşülür.
+        $text = preg_replace('/(?<![\p{L}\d])romanti\p{L}*/u', ' ', $text) ?? $text;
+
         $international = false;
         $domestic = false;
 
@@ -367,7 +371,7 @@ class IntentHeuristics
             }
         }
 
-        foreach (['yurt ici', 'yurt icinde', 'turkiye', 'ulke ici', 'anadolu'] as $signal) {
+        foreach (['yurt ici', 'yurt icinde', 'yurtici', 'turkiye', 'ulke ici', 'anadolu'] as $signal) {
             if (TurkishText::hasWord($text, $signal)) {
                 $domestic = true;
                 break;
