@@ -852,4 +852,100 @@ class TourImportParserTest extends TestCase
         $this->assertSame(['values' => [4999.0], 'currency' => null], $this->invoke('priceTokensFromLine', ['4.999']));
         $this->assertSame(['values' => [], 'currency' => null], $this->invoke('priceTokensFromLine', ['Kabul Edilemez']));
     }
+
+    /**
+     * Malitur "Özel Dönem & Bayram 2027" paketleri: üstü çizili ESKİ + YENİ TL
+     * fiyat aynı satırda ("7.332,00 ₺ 5.499,00 ₺"). Satırın tümü priceFloat'a
+     * verilince binlik noktaları yüzünden rakamlar birleşip sayısal olmaktan
+     * çıkıyor, satır fiyat sayılmıyordu → 2027 tarihleri bloksuz kalıp forma ilk
+     * bloğun matrisiyle şablonlanıyordu (canlı: 76 tarihin 63'ü aynı fiyat).
+     * Fixture: gerçek Kapadokya sayfası (3 mobil modal + 2 masaüstü tablo).
+     */
+    public function test_malitur_ozel_donem_cift_tl_fiyat_her_tarihe_kendi_blogu(): void
+    {
+        $text = (string) file_get_contents(__DIR__.'/../Fixtures/import/malitur_kapadokya_ozel_donem_cift_fiyat.txt');
+        $out = $this->invoke('deterministicPricingBlocks', [$text]);
+
+        $this->assertSame('TRY', $out['currency']);
+        $this->assertCount(3, $out['blocks'], 'Üç tarihin üçü de kendi bloğunu almalı');
+        $this->assertSame(['2026-12-25'], $out['blocks'][0]['dates']);
+        $this->assertSame(['2027-01-08'], $out['blocks'][1]['dates']);
+        $this->assertSame(['2027-03-19'], $out['blocks'][2]['dates']);
+
+        foreach ($out['blocks'] as $block) {
+            $this->assertCount(1, $block['packages'], 'Mobil+masaüstü kopyası tek pakete inmeli: '.implode(',', $block['dates']));
+        }
+
+        $aralik = $out['blocks'][0]['packages'][0];
+        $this->assertSame('5* Suhan Cappadocia Hotel & Spa', $aralik['hotel']);
+        $this->assertNull($aralik['prices']['double_pp']['old']);
+        $this->assertSame(4999.0, $aralik['prices']['double_pp']['new']);
+        $this->assertSame(6499.0, $aralik['prices']['single']['new']);
+
+        $ocak = $out['blocks'][1]['packages'][0];
+        $this->assertSame('Özel Dönem & Bayram 2027', $ocak['hotel']);
+        $this->assertSame(7332.0, $ocak['prices']['double_pp']['old']);
+        $this->assertSame(5499.0, $ocak['prices']['double_pp']['new']);
+        $this->assertSame(9998.67, $ocak['prices']['single']['old']);
+        $this->assertSame(7499.0, $ocak['prices']['single']['new']);
+        $this->assertSame(5499.0, $ocak['prices']['extra_bed']['new']);
+        $this->assertSame(4499.0, $ocak['prices']['child_3_5']['new']);
+        $this->assertSame(4999.0, $ocak['prices']['child_7_11']['new']);
+
+        $mart = $out['blocks'][2]['packages'][0];
+        $this->assertSame(8665.33, $mart['prices']['double_pp']['old']);
+        $this->assertSame(6499.0, $mart['prices']['double_pp']['new']);
+        $this->assertSame(5499.0, $mart['prices']['child_3_5']['new']);
+        $this->assertSame(5999.0, $mart['prices']['child_7_11']['new']);
+    }
+
+    public function test_is_price_line_ayni_satirda_iki_binlikli_fiyati_tanir(): void
+    {
+        $this->assertTrue($this->invoke('isPriceLine', ['7.332,00 ₺ 5.499,00 ₺']));
+        $this->assertTrue($this->invoke('isPriceLine', ['9.998,67 ₺ 7.499,00 ₺']));
+        $this->assertTrue($this->invoke('isPriceLine', ['559,00 € 531,05 € (29.632,59 TRY)']));
+        $this->assertTrue($this->invoke('isPriceLine', ['5.499,00 ₺']));
+        $this->assertTrue($this->invoke('isPriceLine', ['4.999']));
+        $this->assertFalse($this->invoke('isPriceLine', ['Özel Dönem & Bayram 2027']));
+        $this->assertFalse($this->invoke('isPriceLine', ['3 - 5,99 Yaş']));
+        $this->assertFalse($this->invoke('isPriceLine', ['Rezervasyon Yap']));
+        $this->assertFalse($this->invoke('isPriceLine', ['Kabul Edilemez']));
+    }
+
+    /**
+     * Mobil kart başlığı kampanya rozetini ada yapıştırır ("4*Otel Konaklama SÜPER
+     * EKİM FIRSATI %5 İNDİRİM"), masaüstü tablo yalın adı basar ("4*Otel
+     * Konaklama"). Biri diğerinin ön ekiyse ve fiyatlar çelişmiyorsa aynı pakettir;
+     * kısa ad kalır. Çelişen fiyat ya da boş ad birleşmez.
+     */
+    public function test_on_ek_adli_responsive_kopya_paketler_birlesir(): void
+    {
+        $cell = fn (?float $old, float $new) => ['old' => $old, 'new' => $new];
+
+        $merged = $this->invoke('mergeDuplicatePackages', [[
+            ['hotel' => '4*Otel Konaklama SÜPER EKİM FIRSATI %5 İNDİRİM', 'prices' => ['double_pp' => $cell(559.0, 531.05)]],
+            ['hotel' => '4*Otel Konaklama', 'prices' => ['double_pp' => $cell(559.0, 531.05), 'single' => $cell(759.0, 721.05)]],
+        ]]);
+        $this->assertCount(1, $merged);
+        $this->assertSame('4*Otel Konaklama', $merged[0]['hotel'], 'Kısa (yalın) ad kalmalı');
+        $this->assertSame(721.05, $merged[0]['prices']['single']['new'], 'Eksik hücre diğer kopyadan dolmalı');
+
+        $conflict = $this->invoke('mergeDuplicatePackages', [[
+            ['hotel' => '4*Otel Konaklama Deluxe', 'prices' => ['double_pp' => $cell(null, 600.0)]],
+            ['hotel' => '4*Otel Konaklama', 'prices' => ['double_pp' => $cell(null, 531.05)]],
+        ]]);
+        $this->assertCount(2, $conflict, 'Çelişen fiyat → gerçekten ayrı paket');
+
+        $empty = $this->invoke('mergeDuplicatePackages', [[
+            ['hotel' => '', 'prices' => ['double_pp' => $cell(null, 531.05)]],
+            ['hotel' => 'Standart Paket', 'prices' => ['double_pp' => $cell(null, 531.05)]],
+        ]]);
+        $this->assertCount(2, $empty, 'Boş ad her şeyin ön ekidir — birleşmemeli');
+
+        $unrelated = $this->invoke('mergeDuplicatePackages', [[
+            ['hotel' => '3* Oteller', 'prices' => ['double_pp' => $cell(null, 531.05)]],
+            ['hotel' => '4* Oteller', 'prices' => ['double_pp' => $cell(null, 531.05)]],
+        ]]);
+        $this->assertCount(2, $unrelated);
+    }
 }

@@ -13,14 +13,14 @@ use RuntimeException;
 
 class TourUrlImporter
 {
-    private const MAX_BODY_BYTES = 500000;   // ~500KB ham gövde üst sınırı
+    private const MAX_BODY_BYTES = 4000000;  // ~4MB ham gövde üst sınırı (Malitur fiyat takvimli sayfalar 1,5-3,3 MB; 500KB mobil/masaüstü tabloları kesiyordu)
 
     private const SCAN_CHARS = 120000;       // odaklamadan önce taranan metin tavanı
 
     private const MAX_TEXT_CHARS = 52000;    // LLM'e gönderilen (odaklanmış) metin sınırı
 
     /** Harvest/çıkarım mantığı değişince artır: deploy sonrası eski cache sonuç döndürmesin */
-    private const CACHE_VERSION = 23;
+    private const CACHE_VERSION = 24;
 
     /**
      * Yaygın boyut-varyantı ekleri (…-1024.jpg): yalnızca bu değerler boyut eki sayılır.
@@ -2898,7 +2898,14 @@ JS;
             $merged = false;
 
             foreach ($kept as $k => $existing) {
-                if ($this->foldTr((string) ($existing['hotel'] ?? '')) !== $name) {
+                $existingName = $this->foldTr((string) ($existing['hotel'] ?? ''));
+                // Mobil kart başlığı kampanya rozetini ada yapıştırabiliyor ("4*Otel
+                // Konaklama SÜPER EKİM FIRSATI %5 İNDİRİM"), masaüstü tablo yalın adı
+                // basar ("4*Otel Konaklama"): biri diğerinin ÖN EKİyse ve fiyatlar
+                // çelişmiyorsa aynı pakettir; kısa (yalın) ad kalır.
+                $prefixMatch = $existingName !== '' && $name !== ''
+                    && (str_starts_with($existingName, $name) || str_starts_with($name, $existingName));
+                if ($existingName !== $name && ! $prefixMatch) {
                     continue;
                 }
                 $combined = $this->mergeCompatiblePrices($existing['prices'], $pkg['prices']);
@@ -2906,6 +2913,9 @@ JS;
                     continue; // aynı ad ama çelişen fiyat → gerçekten ayrı paket
                 }
                 $kept[$k]['prices'] = $combined;
+                if (mb_strlen($name) < mb_strlen($existingName)) {
+                    $kept[$k]['hotel'] = $pkg['hotel'];
+                }
                 $merged = true;
                 break;
             }
@@ -3658,8 +3668,23 @@ JS;
             return false;
         }
         $value = $this->priceFloat($t);
+        if ($value !== null && $value >= 1) {
+            return true;
+        }
 
-        return $value !== null && $value >= 1;
+        // Aynı satırda birden çok para birimli fiyat ("7.332,00 ₺ 5.499,00 ₺" —
+        // Malitur üstü çizili eski + yeni): tüm satır priceFloat'a verilince
+        // rakamlar birleşip ("7.332,005.499,00") sayısal olmaktan çıkıyor ve satır
+        // fiyat sayılmıyordu. Para birimi varsa token token oku.
+        if ($hasCurrency) {
+            foreach ($this->priceTokensFromLine($t)['values'] as $v) {
+                if ($v >= 1) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /** Satırdaki para birimi sembolünü desteklenen koda çevirir. */
