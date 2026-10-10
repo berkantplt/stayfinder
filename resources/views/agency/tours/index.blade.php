@@ -3,6 +3,34 @@
 
 @push('head')
 <style>
+    /* Tur tablosu: 9 sütun (kategori, destinasyon, durum, yayın ayrı) 1440 px'te bile yatay kaydırıyordu →
+       5 sütun: kategori · destinasyon başlığın altında tek satır (… ile kesilir), Aktif + Yayın tek hücrede,
+       panel dolgusu 20/24 → 14/12, işlem düğmeleri sıkı. Seçiciler panelin .table kuralını (0,2,1) ezmek için 3 sınıflı. */
+    body.panel-layout-active .tur-tablo .table th,
+    body.panel-layout-active .tur-tablo .table td { padding:14px 12px; }
+    body.panel-layout-active .tur-tablo .tur-hucre { padding-left:0; }
+    /* max-width:0 — tek satırlık meta sütunu genişletemez; genişlik yüzde + min ile gelir */
+    .tur-tablo .tur-hucre { width:42%; max-width:0; min-width:200px; }
+    .tur-tablo .tur-baslik { display:block; font-weight:600; color:var(--p-metin); line-height:1.35; text-decoration:none; }
+    .tur-tablo .tur-baslik:hover { color:var(--p-vurgu-koyu); }
+    .tur-tablo .tur-meta { margin-top:4px; font-size:13px; color:var(--p-metin-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tur-tablo .tur-sayi { white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .tur-tablo .tur-durum { display:flex; flex-wrap:wrap; gap:6px; }
+    .tur-tablo .tur-durum-not { margin-top:5px; max-width:200px; font-size:11px; line-height:1.35; color:var(--p-uyari-metin); }
+    .tur-tablo .tur-islem { white-space:nowrap; }
+    .tur-tablo .tur-islem-grup { display:inline-flex; align-items:center; gap:6px; }
+    .tur-tablo .tur-islem-grup .btn-sm { padding:6px 10px; font-size:13px; border-radius:8px; }
+    .tur-tablo .tur-sil { color:#b91c1c; border-color:#fecaca; }
+    .tur-tablo .tur-sil:hover { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    /* Tablet (kenar çubuğu 220px, tablo ~660px): dört düğme tek sırada 254px sığmıyordu → 2×2 ızgara,
+       dolgu 8px, başlık sütunu min 180px (toplam ≤ 640px tablo). 768 altında kenar çubuğu çekmece olur, tablo gene ~640px. */
+    @media (max-width:1100px) {
+        body.panel-layout-active .tur-tablo .table th,
+        body.panel-layout-active .tur-tablo .table td { padding:12px 8px; }
+        .tur-tablo .tur-hucre { min-width:180px; }
+        .tur-tablo .tur-islem { white-space:normal; min-width:150px; }
+        .tur-tablo .tur-islem-grup { flex-wrap:wrap; max-width:134px; }
+    }
     /* Seç modu: onay kutusu sütunu yalnız tablo kabı data-sec-modu taşırken görünür */
     .sec-sutun { display:none; width:36px; }
     body.panel-layout-active .table .sec-sutun { padding-left:8px; padding-right:0; }
@@ -54,31 +82,27 @@
         @endunless
 
         <div class="stat-card" style="padding:24px;max-width:94%;margin-left:auto;margin-right:auto;">
-            <div style="overflow-x:auto;">
-                {{-- data-tur-tablo: seç modunda data-sec-modu alır, kutu sütunu CSS ile açılır --}}
-                <div class="table-wrap" data-tur-tablo><table class="table" style="width:100%;text-align:left;">
-                    <thead>
-                        <tr>
-                            <th class="sec-sutun"><input type="checkbox" class="sec-kutu" data-sec-tumu aria-label="Bu sayfadaki tüm turları seç"></th>
-                            <th style="padding-left:0;">Tur</th>
-                            <th>Kategori</th>
-                            <th>Destinasyon</th>
-                            <th>Fiyat</th>
-                            <th>Tarih</th>
-                            <th>Durum</th>
-                            <th>Yayın</th>
-                            <th>İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody data-tur-listesi>
-                        @foreach($tours as $tour)
-                            @include('agency.tours._row', ['tour' => $tour])
-                        @endforeach
-                        {{-- Boş durum satırı hep basılır; JS son tur arşivlenince/silinince açar, geri alınca gizler --}}
-                        <tr data-bos-satir{{ $tours->isNotEmpty() ? ' hidden' : '' }}><td colspan="9" style="text-align:center;color:#94a3b8;padding:40px;">Henüz tur eklemediniz.</td></tr>
-                    </tbody>
-                </table></div>
-            </div>
+            {{-- data-tur-tablo: seç modunda data-sec-modu alır, kutu sütunu CSS ile açılır.
+                 Sütunlar _row.blade ile aynı sırada; dar ekranda .table-wrap yatay kaydırır. --}}
+            <div class="table-wrap tur-tablo" data-tur-tablo><table class="table" style="width:100%;text-align:left;">
+                <thead>
+                    <tr>
+                        <th class="sec-sutun"><input type="checkbox" class="sec-kutu" data-sec-tumu aria-label="Bu sayfadaki tüm turları seç"></th>
+                        <th class="tur-hucre">Tur</th>
+                        <th>Fiyat</th>
+                        <th>Tarih</th>
+                        <th>Durum</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody data-tur-listesi>
+                    @foreach($tours as $tour)
+                        @include('agency.tours._row', ['tour' => $tour])
+                    @endforeach
+                    {{-- Boş durum satırı hep basılır; JS son tur arşivlenince/silinince açar, geri alınca gizler --}}
+                    <tr data-bos-satir{{ $tours->isNotEmpty() ? ' hidden' : '' }}><td colspan="6" style="text-align:center;color:#94a3b8;padding:40px;">Henüz tur eklemediniz.</td></tr>
+                </tbody>
+            </table></div>
         </div>
 
         <div style="margin-top:16px;">{{ $tours->links() }}</div>
